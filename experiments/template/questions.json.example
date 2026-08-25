@@ -1,0 +1,11 @@
+{
+  "schemaVersion": 1,
+  "questions": [
+    {
+      "id": "Q1",
+      "text": "Replace with a frozen question",
+      "requiredEvidence": ["XML or BSL path and line range"],
+      "forbiddenClaims": ["Runtime state inferred only from configuration files"]
+    }
+  ]
+}

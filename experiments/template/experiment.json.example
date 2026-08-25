@@ -1,0 +1,20 @@
+{
+  "schemaVersion": 1,
+  "id": "replace-study-id",
+  "snapshot": {
+    "root": "/workspace/1c-agent-harness/.local/runs/replace/snapshot",
+    "manifest": "/workspace/1c-agent-harness/.local/runs/replace/snapshot.manifest",
+    "contentId": "sha256:REPLACE_WITH_64_HEX"
+  },
+  "questions": {
+    "path": "/workspace/1c-agent-harness/.local/experiments/replace-study-id/questions.json",
+    "sha256": "REPLACE_WITH_64_HEX"
+  },
+  "outputRoot": "/workspace/1c-agent-harness/.local/experiments/replace-study-id/answers",
+  "cacheRoot": "/workspace/1c-agent-harness/.local/experiments/replace-study-id/cache",
+  "evaluation": {
+    "minimumFactAccuracy": 0.9,
+    "maxDangerousFalseClaims": 0,
+    "maximumInvalidLocators": 0
+  }
+}
