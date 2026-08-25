@@ -1,0 +1,44 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://github.com/Kwentin3/1c-agent-harness/contracts/experiment.schema.json",
+  "title": "1C read-only experiment",
+  "type": "object",
+  "additionalProperties": false,
+  "required": ["schemaVersion", "id", "snapshot", "questions", "outputRoot", "cacheRoot", "evaluation"],
+  "properties": {
+    "schemaVersion": {"const": 1},
+    "id": {"type": "string", "minLength": 1, "pattern": "^[a-z0-9][a-z0-9._-]*$"},
+    "snapshot": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["root", "manifest", "contentId"],
+      "properties": {
+        "root": {"type": "string", "minLength": 1},
+        "manifest": {"type": "string", "minLength": 1},
+        "contentId": {"type": "string", "pattern": "^sha256:[0-9a-f]{64}$"}
+      }
+    },
+    "questions": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["path", "sha256"],
+      "properties": {
+        "path": {"type": "string", "minLength": 1},
+        "sha256": {"type": "string", "pattern": "^[0-9a-f]{64}$"}
+      }
+    },
+    "outputRoot": {"type": "string", "minLength": 1},
+    "cacheRoot": {"type": "string", "minLength": 1},
+    "clients": {"type": "array", "minItems": 1, "items": {"type": "string", "minLength": 1}, "uniqueItems": true},
+    "evaluation": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["minimumFactAccuracy", "maxDangerousFalseClaims", "maximumInvalidLocators"],
+      "properties": {
+        "minimumFactAccuracy": {"type": "number", "minimum": 0, "maximum": 1},
+        "maxDangerousFalseClaims": {"type": "integer", "minimum": 0},
+        "maximumInvalidLocators": {"const": 0}
+      }
+    }
+  }
+}

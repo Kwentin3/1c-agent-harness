@@ -1,0 +1,31 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://github.com/Kwentin3/1c-agent-harness/contracts/adjudication.schema.json",
+  "title": "Human adjudication for two frozen arms",
+  "$defs": {
+    "arm": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["factsCorrect", "factsTotal", "dangerousFalseClaims"],
+      "properties": {
+        "factsCorrect": {"type": "integer", "minimum": 0},
+        "factsTotal": {"type": "integer", "minimum": 1},
+        "dangerousFalseClaims": {"type": "integer", "minimum": 0}
+      }
+    }
+  },
+  "type": "object",
+  "additionalProperties": false,
+  "required": ["schemaVersion", "experimentId", "arms", "reviewer"],
+  "properties": {
+    "schemaVersion": {"const": 1},
+    "experimentId": {"type": "string", "minLength": 1},
+    "reviewer": {"type": "string", "minLength": 1},
+    "arms": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["baseline", "candidate"],
+      "properties": {"baseline": {"$ref": "#/$defs/arm"}, "candidate": {"$ref": "#/$defs/arm"}}
+    }
+  }
+}

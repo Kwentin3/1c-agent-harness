@@ -1,0 +1,17 @@
+{
+  "schemaVersion": 1,
+  "experimentId": "replace-study-id",
+  "reviewer": "replace-with-independent-reviewer",
+  "arms": {
+    "baseline": {
+      "factsCorrect": 0,
+      "factsTotal": 1,
+      "dangerousFalseClaims": 0
+    },
+    "candidate": {
+      "factsCorrect": 0,
+      "factsTotal": 1,
+      "dangerousFalseClaims": 0
+    }
+  }
+}
