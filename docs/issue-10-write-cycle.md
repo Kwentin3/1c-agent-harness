@@ -1,281 +1,269 @@
-# Issue #10 — Цикл изменения и нативной проверки конфигурации 1С (R&D)
+# Issue #10 — цикл изменения и нативной проверки конфигурации 1С (R&D)
 
-Статус: **эксперимент выполнен, результат подтверждён в одноразовой ИБ; PR не смержен автоматически.**
-Дата: 2026-08-26. Платформа: официальная учебная «1С:Предприятие 8.5, учебная версия 8.5.1.1150», Linux 64-bit.
-Конфигурация: официальный release asset `1Ci-Company/Jet` `v1.0.3.1-tr`.
+**Статус:** эксперимент выполнен и подтверждён; это R&D-отчёт, а не начало write-платформы.
+Дата: 2026-08-26. Платформа: официальная учебная «1С:Предприятие 8.5, учебная версия 8.5.1.1150»,
+Linux 64-bit. Конфигурация: официальный release asset `1Ci-Company/Jet` `v1.0.3.1-tr`.
 
-Это R&D по способу достижения цели, а не начало универсальной write-платформы. Эксперимент подтверждает
-горизонтальный срез: **агент способен за один цикл получить задачу → найти место изменения → понять
-существующую логику → внести минимальную правку → загрузить её в изолированную 1С → доказать новое
-поведение.**
+Доказывается один горизонтальный срез:
 
-Не утверждается, что этот результат распространяется на старые платформы (#3), другие агентные клиенты
-(#4) или production. Эти темы остаются отдельными этапами.
+> агент способен получить задачу → найти место изменения → внести минимальную правку →
+> загрузить её в изолированную 1С → доказать новое поведение.
+
+Не утверждается переносимость на другие конфигурации, metadata-объекты, старые платформы (#3),
+другие агентные клиенты (#4) или production.
+
+---
 
 ## 1. Выбранная задача и почему она достаточна
 
-Функция `StringFunctionsClientServer.StringToNumber` (`CommonModules/StringFunctionsClientServer/Ext/Module.bsl`)
-преобразует строку в число без вызова исключений. Она сворачивает только обычный пробел `" "` и не обрабатывает
-типичные непечатаемые разделители, которые появляются при копировании чисел: табуляцию (`Chars.Tab`) и
-неразрывный пробел (`Chars.NBSp`). Для `"1⇥234"` или `"1␣234"` она возвращает `Undefined`.
+`StringFunctionsClientServer.StringToNumber` (`CommonModules/StringFunctionsClientServer/Ext/Module.bsl`)
+преобразует строку в число без исключений. Она сворачивает только обычный пробел `" "` и не
+обрабатывает непечатаемые разделители, появляющиеся при копировании чисел: табуляцию
+(`Chars.Tab`) и неразрывный пробел (`Chars.NBSp`). Для `"1⇥234"` / `"1␣234"` она возвращает
+`Undefined`.
 
-**Фича:** принимать эти два непечатаемых разделителя при разборе числа, но продолжать отклонять
-нечисловой текст (`12x3` → `Undefined`).
+**Фича:** принимать эти два разделителя при разборе числа, но по-прежнему отклонять нечисловой
+текст (`12x3` → `Undefined`).
 
-Почему задача достаточна:
+Достаточность: маленькая и локальная (одно место); наблюдаемое поведение «до/после»
+(`Undefined` → `1234`); есть положительный, отрицательный и сохраняемый сценарии; не сводится к
+константе; без GUI, внешних интеграций, production-данных и секретов.
 
-- маленькая и локальная: правка в одном модуле;
-- поведение «до/после» наблюдаемо: `Undefined` → `1234`;
-- есть и положительный (`1⇥234` → `1234`), и отрицательный (`12x3` → `Undefined`), и сохраняемый
-  (`1234.56` → `1234.56`) сценарии;
-- тест не сводится к функции, всегда возвращающей заранее известное значение: поведение зависит от входа;
-- не требует GUI, внешней интеграции, production-данных или секретов.
+## 2. Исходные locators
 
-## 2. Исходные locators и минимальный patch
-
-Локатор функции в **иммутабельном исходнике**
+Локатор в **иммутабельном исходнике**
 `CommonModules/StringFunctionsClientServer/Ext/Module.bsl`:
+
 - комментарий контракта функции: 797–809;
 - тело `Function StringToNumber(Val Value) Export`: 810–827.
 
-В **изменённой рабочей копии** тело сдвинуто на +4 строки (810–832), потому что добавлены 4 строки.
-Обе ссылки относятся к одному и тому же коду; у приведённого ниже diff указан контекст по исходнику.
+В изменённой рабочей копии тело сдвинуто на +4 строки (810–832). Обе ссылки относятся к одному
+коду; diff ниже приведён с контекстом по исходнику.
 
-Изменение вносится **только в рабочую копию** `.local/runs/issue10-jet-string-whitespace/work-config`:
+## 3. Honest tri-разделение diff
+
+| Слой | Файл | Additions | Deletions |
+|---|---|---|---|
+| **Production patch (фича)** | `CommonModules/StringFunctionsClientServer/Ext/Module.bsl` | **+4** | −0 |
+| **Test instrumentation (probe)** | `Ext/ManagedApplicationModule.bsl` | **+35** | −0 |
+| **Итого: полный diff work copy** | 2 файла | +39 | −0 |
+
+Точные файлы diff: [`production-patch.diff`](../experiments/issue10-write-cycle-20260826/production-patch.diff),
+[`instrumentation.diff`](../experiments/issue10-write-cycle-20260826/instrumentation.diff),
+[`full-work-copy.diff`](../experiments/issue10-write-cycle-20260826/full-work-copy.diff).
+
+**Production patch** — ровно 4 строки (2 комментария + 2 `StrReplace`):
 
 ```text
-До:
-Value  = StrReplace(Value, " ", "");
-...
-После:
-Value  = StrReplace(Value, " ", "");
-// Digits are commonly separated by tab or a non-breaking space in copied
-// text. Strip those as well, not just the regular space.
-Value  = StrReplace(Value, Chars.Tab, "");
-Value  = StrReplace(Value, Chars.NBSp, "");
-...
+@@ Function StringToNumber(Val Value) Export @@
+	Value  = StrReplace(Value, " ", "");
++	// Digits are commonly separated by tab or a non-breaking space in copied
++	// text. Strip those as well, not just the regular space.
++	Value  = StrReplace(Value, Chars.Tab, "");
++	Value  = StrReplace(Value, Chars.NBSp, "");
 ```
 
-Полный diff рабочей копии против иммутабельного snapshot: **ровно +4 строки** (2 комментария +
-2 `StrReplace`), `0` удалённых; отличаются два файла — `StringFunctionsClientServer/Module.bsl` и
-`Ext/ManagedApplicationModule.bsl` (probe). Больше ничего в конфигурации не менялось.
+`StringToNumber` сам по-прежнему не выполняет ввода-вывода (только `StrReplace` +
+`New TypeDescription` + `AdjustValue` + `Return ?(...)`). Всё, что пишет файл — тестовый probe
+(`ManagedApplicationModule`), а не реализация.
 
-## 3. Границы (frozen в task-contract.json)
+## 4. Runtime probe (тестовая instrumentation)
 
-| Роль | Путь |
+Probe добавляется **только в throwaway work copy**. Вызов в `OnStart` и процедура:
+
+```bsl
+// Probe-only (test harness, NOT part of the implementation)
+Procedure Issue10WriteRuntimeReceipt()
+	Receipt = New TextWriter("<RUN_DIR>/evidence/<variant>-receipt.txt", TextEncoding.UTF8);
+	WriteProbeCase(Receipt, "tab",     StringFunctionsClientServer.StringToNumber("1" + Chars.Tab  + "234"));
+	WriteProbeCase(Receipt, "nbsp",    StringFunctionsClientServer.StringToNumber("1" + Chars.NBSp + "234"));
+	WriteProbeCase(Receipt, "invalid", StringFunctionsClientServer.StringToNumber("12x3"));
+	WriteProbeCase(Receipt, "decimal", StringFunctionsClientServer.StringToNumber("1234.56"));
+	WriteProbeCase(Receipt, "space",   StringFunctionsClientServer.StringToNumber(" 567 "));
+	Receipt.Close();
+EndProcedure
+
+Procedure WriteProbeCase(Receipt, Label, Result)
+	TypeMarker = String(TypeOf(Result));
+	If TypeMarker = "Number" Then
+		ValueText = String(Result);
+	Else
+		ValueText = "";
+	EndIf;
+	Receipt.Write(Label + "###" + ValueText + "###" + TypeMarker + Chars.LF);
+EndProcedure
+```
+
+Каждая строка receipt — `label###value###type`. `Undefined` кодируется **типом** (`###Undefined`),
+а не пустой строкой: пустая строка, `Undefined` и ошибка выполнения различимы. В `OnStart`
+добавляется `Issue10WriteRuntimeReceipt(); Return;` — это исполняет только probe, полный
+жизненный цикл приложения в этом цикле не доказан (честная узость, см. §10).
+
+## 5. Границы
+
+| Роль | Путь (относительно repo root) |
 |---|---|
 | immutable source CF | `.local/dist/Jet-1.0.3.1-tr.cf` |
 | immutable source snapshot | `.local/runs/training-jet-review-final/snapshot` |
-| immutable source manifest | `.local/runs/training-jet-review-final/snapshot.manifest` |
-| writable work copy | `.local/runs/issue10-jet-string-whitespace/work-config` |
-| disposable test IB (changed) | `.local/runs/issue10-jet-string-whitespace/instr-ib` |
-| disposable test IB (original) | `.local/runs/issue10-jet-string-whitespace/red-ib` |
-| evidence | `.local/runs/issue10-jet-string-whitespace/evidence` |
+| immutable manifest | `.local/runs/training-jet-review-final/snapshot.manifest` |
+| writable work copy (GREEN) | `.local/runs/<run-id>/img/files` |
+| writable work copy (RED) | `.local/runs/<run-id>/img-red/files` |
+| disposable test ИБ | `.local/runs/<run-id>/instr-ib`, `red-ib` |
+| evidence | `.local/runs/<run-id>/evidence` |
 
-Все write-операции выполнялись только в work copy и disposable ИБ внутри `.local/`. Исходные source CF,
-source snapshot и source manifest не записывались.
+`<run-id>` — уникальный каталог, созданный заново для этого прогона; он не существовал до
+прогона. source/snapshot/manifest/platform лежат **вне** run-каталога; проверяется
+физическая непересекаемость до первой записи. Все записи — только в work copy и disposable ИБ.
 
-## 4. Runtime probe (тестовая инструментация)
+## 6. Точные native-шаги и результаты
 
-Чтобы доказать, что изменённый BSL действительно исполняется внутри 1С, в одноразовую рабочую копию
-добавлен `Issue10WriteRuntimeReceipt()` в `OnStart` модуля управляемого приложения. Он вызывает
-production `StringToNumber` для пяти кейсов и пишет текстовый receipt в `run/home/issue10-runtime-receipt.txt`:
-
-```text
-1⇥234 (tab), 1␣234 (NBSP), 12x3, 1234.56, " 567 "
-```
-
-Probe не является реализацией. Он остаётся только в throwaway work copy и не попадает в исходник или
-в репозиторий. Это осознанный выбор: так фича доказывается исполнением, а не парсингом файлов.
-
-## 5. Нативная загрузка, проверка и runtime (точные команды)
-
-Создание одноразовой файловой ИБ и нативная загрузка изменённой конфигурации:
+Переменные (абсолютные пути):
 
 ```bash
-1cv8t CREATEINFOBASE "File=<run>/instr-ib" /DisableStartupDialogs /DisableStartupMessages /Out <log> /DumpResult <result>
-1cv8t DESIGNER /F "<run>/instr-ib" /LoadConfigFromFiles "<run>/work-config/files" /UpdateDBCfg /DisableStartupDialogs /DisableStartupMessages /Out <log> /DumpResult <result>
+ROOT=<REPO_ROOT>                       # корень рабочей копии репозитория
+RUN_DIR=$ROOT/.local/runs/issue10-write-cycle-final-20260826T173251   # уникальный, не существовал
+V=$ROOT/.local/platform/1cv8t/x86_64/8.5.1.1150
+L=$ROOT/.local/platform/libs
+export PATH="$L/usr/bin:$PATH"
+export LD_LIBRARY_PATH="$V:$L/usr/lib/x86_64-linux-gnu"
+export FONTCONFIG_FILE="$ROOT/.local/platform/fonts.conf"
+export HOME="$RUN_DIR/home" TMPDIR="$RUN_DIR/tmp"
+export XDG_CACHE_HOME="$HOME/xdg-cache" XDG_CONFIG_HOME="$HOME/xdg-config" XDG_DATA_HOME="$HOME/xdg-data"
+XRUN="$L/usr/bin/xvfb-run -a -s '-screen 0 1280x1024x8 -nolisten tcp'"
 ```
 
-`/DumpResult` == `0`; в логе `Configuration successfully updated` — **платформа приняла изменение** (уровень 1).
-
-Runtime-сценарий внутри одноразовой ИБ:
+**GREEN** (изменённая конфигурация). Каждый `*.result` не должен существовать заранее:
 
 ```bash
-xvfb-run -a -s "-screen 0 1280x1024x8 -nolisten tcp" \
-  1cv8t ENTERPRISE /F "<run>/instr-ib" /DisableStartupDialogs /DisableStartupMessages /DisplayManager "none" /Out <log>
+# 1. создать файловую ИБ
+$XRUN "$V/1cv8t" CREATEINFOBASE "File=$RUN_DIR/instr-ib" \
+  /DisableStartupDialogs /DisableStartupMessages \
+  /Out "$RUN_DIR/logs/green-create.log" /DumpResult "$RUN_DIR/logs/green-create.result"
+# 2. нативно загрузить изменённую конфигурацию и привести БД в исполнимое состояние
+$XRUN "$V/1cv8t" DESIGNER /F "$RUN_DIR/instr-ib" \
+  /LoadConfigFromFiles "$RUN_DIR/img/files" /UpdateDBCfg \
+  /DisableStartupDialogs /DisableStartupMessages \
+  /Out "$RUN_DIR/logs/green-load.log" /DumpResult "$RUN_DIR/logs/green-load.result"
+# 3. runtime-сценарий внутри disposable ИБ
+$XRUN "$V/1cv8t" ENTERPRISE /F "$RUN_DIR/instr-ib" \
+  /DisableStartupDialogs /DisableStartupMessages /DisplayManager "none" \
+  /Out "$RUN_DIR/logs/green-run.log" &
+PID=$!
+# ожидать появления receipt (<= 180 c), затем завершить процесс-группу:
+for i in $(seq 1 180); do [ -f "$RUN_DIR/evidence/green-receipt.txt" ] && break; sleep 1; done
+kill -KILL -$PID 2>/dev/null || kill -KILL $PID 2>/dev/null || true
 ```
 
-## 5b. Воспроизведение одним скриптом (committed driver)
+**RED** (исходная конфигурация, тот же probe, без production-правки):
+те же три шага для `red-ib`, `img-red/files`, `red-receipt.txt`.
 
-Вместо ручного повтора шагов в репозиторий добавлен **самодостаточный драйвер**
-[`scripts/issue10_write_cycle.py`](../scripts/issue10_write_cycle.py). Он от начала до конца
-воспроизводит цикл: проверяет immutable source, копирует snapshot в writable work copy, вносит
-минимальную BSL-правку, добавляет probe в `ManagedApplicationModule`, создаёт одноразовые ИБ,
-нативно загружает каждую конфигурацию, прогоняет RED и GREEN, вычисляет mutation power и снова
-сверяет immutable source. Ничего нового в репозиторий, кроме самого скрипта и этого отчёта, не
-добавляется; все артефакты остаются в `.local/`.
+**Exit status и DumpResult этого прогона** (реальные значения):
 
-```bash
-# Полный цикл (по умолчанию всё в .local/runs/issue10-jet-string-whitespace-driven)
-python3 scripts/issue10_write_cycle.py run
-
-# Read-only проверка уже выполненного прогона (без запуска 1С)
-python3 scripts/issue10_write_cycle.py check \
-  --work-root .local/runs/issue10-jet-string-whitespace-driven
-```
-
-Проверенный прогон (2026-08-26) дал на выходе:
-
-```text
-[preflight] source CF sha256=5694f9e4bdf9a0857185118ba816d562d8ee8de2b8da3f60792397a399ca128a
-[preflight] snapshot 5099/5099 OK, missing=0 mismatch=0
-[mutation] green={'tab': '1234', 'nbsp': '1234', 'invalid': '', 'decimal': '1234.56', 'space': '567'}
-[mutation] red={'tab': '', 'nbsp': '', 'invalid': '', 'decimal': '1234.56', 'space': '567'}
-[mutation] feature_flipped=True control_changed=False mutation_power=True
-[postflight] source CF sha256=5694f9e4bdf9a0857185118ba816d562d8ee8de2b8da3f60792397a399ca128a
-[postflight] snapshot 5099/5099 OK, missing=0 mismatch=0
-```
-
-То есть драйвер доказал цикл с чистого состояния, а не только описал его. Эксперимент с этим
-драйвером сам остаётся в `.local/runs/issue10-jet-string-whitespace-driven/`.
-
-## 6. RED / GREEN и сила теста
-
-**Рабочая (изменённая) конфигурация** — `evidence/green-receipt.txt`:
-
-```text
-tab###1234
-nbsp###1234
-invalid###
-decimal###1234.56
-space###567
-```
-
-**Исходная конфигурация** (тот же probe, но без правки) — `evidence/red-receipt.txt`:
-
-```text
-tab###
-nbsp###
-invalid###
-decimal###1234.56
-space###567
-```
-
-| Вход | Исходная (RED) | Изменённая (GREEN) |
+| Шаг | `/DumpResult` | Лог |
 |---|---|---|
-| `1`+TAB+`234` | Undefined | **1234** |
-| `1`+NBSP+`234` | Undefined | **1234** |
-| `12x3` | Undefined | Undefined |
-| `1234.56` | 1234.56 | 1234.56 |
-| ` 567 ` | 567 | 567 |
+| `green-create` | `0` | `Creation of infobase … completed successfully` |
+| `green-load` | `0` | `Configuration successfully updated` |
+| `red-create` | `0` | `Creation of infobase … completed successfully` |
+| `red-load` | `0` | `Configuration successfully updated` |
 
-- **Положительный** сценарий: таб/неразрывный пробел теперь дают число.
-- **Отрицательный** сценарий: `12x3` отклоняется в обеих версиях.
-- **Сохраняемый** сценарий: десятичная и обычные пробелы ведут себя как раньше.
+Экстракты сохранены санитизированно в
+[`native-results.md`](../experiments/issue10-write-cycle-20260826/native-results.md).
+(Шаг ENTERPRISE не пишет `/DumpResult`; результат — receipt.)
 
-Тест различает старую и новую версию (mutation power): без правки `tab###`/`nbsp###` пусто (Undefined),
-с правкой — `1234`. Это не тавтология: контроль падает при отсутствии фичи.
+## 7. RED / GREEN (точное значение И тип)
 
-## 7. Hashes неизменного источника (до/после)
+`evidence/green-receipt.txt` (изменённая):
+
+```text
+tab###1234###Number
+nbsp###1234###Number
+invalid######Undefined
+decimal###1234.56###Number
+space###567###Number
+```
+
+`evidence/red-receipt.txt` (исходная):
+
+```text
+tab######Undefined
+nbsp######Undefined
+invalid######Undefined
+decimal###1234.56###Number
+space###567###Number
+```
+
+| Case | RED (исходная) | GREEN (изменённая) | Тип |
+|---|---|---|---|
+| `1⇥234` | value `""`, **type `Undefined`** | value `1234`, **type `Number`** | flip |
+| `1␣234` | `""` / `Undefined` | `1234` / `Number` | flip |
+| `12x3` | `""` / `Undefined` | `""` / `Undefined` | контроль |
+| `1234.56` | `1234.56` / `Number` | `1234.56` / `Number` | сохранено |
+| ` 567 ` | `567` / `Number` | `567` / `Number` | сохранено |
+
+- **Положительный:** таб/NBSP теперь дают число.
+- **Отрицательный:** `12x3` отклоняется в обеих версиях.
+- **Сохраняемый:** десятичная и обычные пробелы не изменились.
+- **Mutation power:** без правки `tab###`/`nbsp###` — `Undefined`; с правкой — `1234`.
+  Контроли не флипаются → проверка не тавтология.
+- **Типы:** значение и тип проверяются по каждому case; `###Undefined` != пустая строка.
+
+## 8. Immutable source (до/после, с закрытием manifest)
 
 - Source CF SHA-256: `5694f9e4bdf9a0857185118ba816d562d8ee8de2b8da3f60792397a399ca128a`
-  (совпадает с зафиксированным fixture hash из bootstrap).
-- `work-config/original.cf` == source CF: да.
-- Source snapshot: все **5099/5099** записей `snapshot.manifest` существуют на диске и совпадают по
-  SHA-256 (0 missing, 0 mismatch) — снимок не изменялся.
+  (до и после — одинаковый).
+- Manifest identity (SHA-256 байтов `snapshot.manifest`):
+  `70972b5e11901ca31c7f7ec67dca03f78986206b024be01aeb34e0e1f3ff6691` (одинаковый до/после).
+- Пофайловая сверка snapshot после прогона: **5099/5099 OK, missing 0, mismatch 0, extra 0,
+  symlink 0** — проверка закрывает и отсутствующие, и лишние файлы, и ссылки.
 
-Примечание: агрегатный content ID из `docs/lab.md` (`sha256:70972b5e…`) относится к другому прогону
-выгрузки и другой конвенции хеширования. Авторитетное доказательство неизменности здесь — пофайловое
-совпадение 5099/5099, а не агрегат.
+## 9. Решение по инструментам
 
-## 8. Решение по инструментам
+Нативных средств платформы достаточно: `CREATEINFOBASE`, `DESIGNER /LoadConfigFromFiles
+/UpdateDBCfg`, `ENTERPRISE`. Новая зависимость, patch-engine, parser, RAG, MCP, graph, SDK или
+плагин-система не добавлялись. В репозиторий добавлены:
+- небольшой frozen evidence package
+  [`experiments/issue10-write-cycle-20260826/`](../experiments/issue10-write-cycle-20260826/);
+- его fail-closed валидатор `tests/test_issue10_evidence.py`;
+- этот отчёт.
 
-Нативных средств платформы оказалось достаточно для полного цикла edit → load → check → runtime:
-`CREATEINFOBASE`, `DESIGNER /LoadConfigFromFiles /UpdateDBCfg`, `ENTERPRISE`. Никакая новая зависимость,
-patch-engine, parser, RAG, MCP, graph, adapter SDK или тестовая система плагинов не добавлялась.
-Единственное использованное вспомогательное средство — локальные `cc-1c-skills` генераторы форм/драйверов
-в `.local/tools/`, предшествующие этому эксперименту и не добавленные в репозиторий.
+Использованная ранее локальная обвязка `cc-1c-skills` (генераторы форм/драйверов) находится в
+`.local/tools/`, предшествовала эксперименту и не входит в репозиторий.
 
-В репозиторий добавлены только две вещи, потребовавшиеся циклу:
-- [`scripts/issue10_write_cycle.py`](../scripts/issue10_write_cycle.py) — воспроизводимый драйвер цикла (§5b);
-- `docs/issue-10-write-cycle.md` — настоящий отчёт и runbook.
+## 10. Honest limits и переносимость
 
-Они оркеструют нативные команды платформы, а не подменяют её и не создают write-фреймворк.
+- Доказан **один** срез на **одной** учебной конфигурации Jet: BSL-логика одной функции.
+  Не доказаны: перенос на другие конфигурации, metadata-объекты, старые платформы (#3),
+  другие агентные клиенты (#4), серверный контекст, полный жизненный цикл приложения.
+- Probe исполняется на клиенте файловой ИБ; в `OnStart` после probe стоит `Return`, поэтому
+  доказано исполнение именно `StringToNumber`, а не полный старт/выход 1С. Это осознанная узость.
+- Receipt записывается только probe (`TextWriter`); production-функция ввода-вывода не выполняет.
+  Символы `\r\n` в receipt порождены платформенным `TextWriter`; значения детерминированы.
+- Учебная редакция имеет лимит соединений с ИБ (`Infobase connections limitation reached`);
+  «зависшая» клиентская сессия держит слот. Безопасное завершение — `kill` на всю
+  процесс-группу (`kill -KILL -$PID`) и/или пересоздание одноразовой ИБ. Влияет на тайминг,
+  не на результат.
+- Xvfb рендерится на глубине 8, чтобы обойти сегфолт рендерера (pixman/cairo) на глубине 24 в
+  этом контейнере. Затрагивает только headless-дисплей, не логику BSL.
+- Никакого write-framework: это не эквивалент универсальной среды разработки 1С. Исходный
+  CF, snapshot и исходная ИБ неизменяемы.
 
-## 9. Verdict независимого reviewer
+## 11. Воспроизведение из чистого состояния
 
-Независимый критик (отдельный агент, работал read-only только с файлами и собственными замерами, не
-опирался на этот отчёт) подтвердил **все 7 контрольных пунктов**:
+1. Развернуть стенд: `docs/lab.md` / `docs/lab-bootstrap.md` (платформа, libs, fontconfig,
+   Xvfb, xkbcomp).
+2. Получить Jet `v1.0.3.1-tr` CF, проверить `SHA-256 = 5694f9e4bd…`.
+3. Восстановить immutable snapshot: `DESIGNER /DumpConfigToFiles -Format Hierarchical`
+   в новый пустой каталог + `snapshot.manifest` (identity `70972b5e…`).
+4. Создать уникальный `<RUN_DIR>` (не должен существовать; иначе стоп).
+5. Скопировать snapshot в `img/files` и `img-red/files`, разрешить запись только внутри копий.
+6. В `img/files` применить production patch (см. §3); в `img-red` — не патчить.
+7. В обе копии внести probe и вызов в `OnStart` (см. §4; пути receipt —
+   `<RUN_DIR>/evidence/<variant>-receipt.txt`).
+8. Выполнить шаги §6 для GREEN и RED: `CREATEINFOBASE` → `DESIGNER /LoadConfigFromFiles
+   /UpdateDBCfg` → `ENTERPRISE` (проверить `DumpResult == 0`, `Configuration successfully updated`,
+   receipt существует; после — завершить процесс-группу).
+9. Сверить receipts с таблицей §7 (точные значения И типы, 5 строк, без дубликатов).
+10. Сверить immutable source: CF hash и manifest identity — до/после; snapshot 5099/5099,
+    missing/mismatch/extra/symlink = 0.
 
-1. **Иммутабельный источник** — ✅ источник CF `5694f9e4bd…` == `original.cf`; snapshot сверен
-   `sha256sum -c`: 5099/5099 OK, 0 failed, 0 missing, exit 0.
-2. **Минимальная правка только в рабочей копии** — ✅ единственный hunk, +4 строки, 0 удалённых;
-   отличаются ровно 2 файла (Module.bsl и probe в ManagedApplicationModule).
-3. **Probe — тестовая обвязка** — ✅ `Issue10WriteRuntimeReceipt()` есть и вызывается в `OnStart`;
-   `StringToNumber` сам не выполняет ввода-вывода (только `StrReplace` + `AdjustValue` + `Return ?(...)`).
-4. **Runtime внутри 1С** — ✅ подтверждено настоящими runtime-ошибками платформы в логах
-   (`Object method not found (WriteString)`, `Training version limitation… / Infobase connections
-   limitation…`), значениями receipts, BOM и возникновением отдельных ИБ/сессий.
-5. **Проверка не тавтологична (mutation power)** — ✅ green `tab###1234,nbsp###1234` ↔ red
-   `tab###,nbsp###` (пусто/Undefined); контроли (invalid/decimal/space) совпадают.
-6. **Source не затронут, runtime не подменён парсингом** — ✅ mtime/mode неизменны (до прогона);
-   результат — живое исполнение.
-7. **Новые зависимости/артефакты** — ✅ в репозитории единственный новый файл
-   `docs/issue-10-write-cycle.md`; весь ран-мусор в `.local/` (gitignored).
-
-**Неразрешённые reviewer'ом технические детали (не опровергают доказательность):**
-
-- **CRLF в receipt против `Chars.LF`.** Reviewer отметил, что не может воспроизвести байтовое
-  происхождение receipt. Объяснение: receipt сохранялся посредством `shutil.copyfile` (побайтово),
-  без какой-либо постобработки; следовательно `\r\n` порождён самим `TextWriter` платформы при
-  записи, а не моим кодом. Значения строк детерминированы (выводимы из probe), а независимым
-  подтверждением живого исполнения служат реальные runtime-ошибки платформы в логах.
-- **`OnStart` в инструментированной копии завершается через `Return;`** (строки 58–59): это означает,
-  что доказано исполнение именно `StringToNumber`, а не полного жизненного цикла приложения.
-  Отчёт это фиксирует честно (см. §10). Полный жизненный цикл приложения не проверялся.
-- **Локатор `:797-828`** — точный locator по иммутабельному исходнику (контракт 797–809, тело
-  810–827); reviewer измерил тело в изменённом файле (810–832), что согласовано (сдвиг +4 строки).
-
-Главный вывод reviewer: цикл «понять → минимальная правка → нативная загрузка → доказанное новое
-поведение» **доказан на этом стенде**; правка минимальна и локальна; иммутабельный источник не изменён;
-A/B-тест обладает mutation power.
-
-## 10. Известные ограничения переносимости и честные границы
-
-- Доказан **один** горизонтальный срез на **одной** учебной конфигурации Jet. Не доказаны: переносимость
-  на другие конфигурации, изменение metadata-объектов (иначе, чем BSL-логика), старые платформы (#3),
-  другие агентные клиенты (#4).
-- Probe исполняется на клиенте (файловая ИБ); это валидное исполнение BSL, но не доказательство
-  серверного контекста/процессов.
-- В инструментированной копии `OnStart` завершается через `Return;` после вызова probe, поэтому
-  доказано исполнение именно `StringToNumber`, а не полного жизненного цикла приложения. Это
-  осознанная узость: целью было доказать исполнение целевой функции, а не полный старт/выход 1С.
-- Receipt записывается только тестовым probe (`TextWriter`); сама production-функция `StringToNumber`
-  ввода-вывода не выполняет. Символы `\r\n` в receipt порождены `TextWriter` платформы; файлы
-  сохранялись побайтово (`shutil.copyfile`) без постобработки. Значения строк детерминированы
-  и воспроизводимы из кода probe; независимым подтверждением живого исполнения служат
-  реальные runtime-ошибки платформы в логах.
-- Изменение минимально и локально; существующий read-only evidence harness не переделывался в write-framework.
-- Учебная редакция вводит лимит соединений с ИБ. «Зависшая» клиентская сессия (например, не вышедший
-  корректно процесс ENTERPRISE, убитый через `xvfb-run`-wrapper) держит слот и может на время исчерпать
-  лимит `Infobase connections limitation reached`. Снимается завершением осиротевшего `1cv8t`-ребёнка
-  и/или пересозданием одноразовой ИБ. Это влияло на тайминг, но не на результат.
-- Xvfb рендерится на глубине 8 (`-screen 0 1280x1024x8`), чтобы обойти сегфолт рендерера
-  (pixman/cairo) на глубине 24 в этом контейнере. Это затрагивает только headless-дисплей, не логику BSL.
-
-## 11. Способ воспроизведения из чистого состояния
-
-1. Развернуть стенд по `docs/lab.md` / `docs/lab-bootstrap.md` (платформа, libs, fontconfig, Xvfb, xkbcomp).
-2. Скачать официальный Jet `v1.0.3.1-tr` fixture и проверить hash `5694f9e4…` (см. `docs/lab-bootstrap.md`).
-3. Восстановить иммутабельный snapshot (если нужен источник для сверки):
-   `1cv8t DESIGNER /F ib /DumpConfigToFiles snapshot -Format Hierarchical` в новый пустой каталог.
-4. Создать writable work copy из исходного CF: `/DumpConfigToFiles`, или развернуть из split-каталога.
-5. Применить patch из раздела 2 к `CommonModules/StringFunctionsClientServer/Ext/Module.bsl`.
-6. Добавить probe из раздела 4 в `Ext/ManagedApplicationModule.bsl` (только в work copy).
-7. `CREATEINFOBASE` → `DESIGNER /LoadConfigFromFiles ... /UpdateDBCfg` (проверить `DumpResult` == 0).
-8. `xvfb-run -s "-screen 0 1280x1024x8"` → `ENTERPRISE /F ib`; после завершения прочитать receipt.
-9. Повторить 7–8 для исходной версии (без patch) — получить RED (пустые `tab###`/`nbsp###`).
-10. Сверить source CF и snapshot hashes (раздел 7).
-
-Все пути и переменные среды зафиксированы в `task-contract.json` и `evidence/EVIDENCE.md`.
+Автоматическая проверка evidence-пакета: `python3 -m unittest tests.test_issue10_evidence -v`.

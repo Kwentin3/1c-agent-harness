@@ -1,0 +1,5 @@
+﻿tab######Undefined
+nbsp######Undefined
+invalid######Undefined
+decimal###1234.56###Number
+space###567###Number
