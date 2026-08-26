@@ -379,10 +379,27 @@ runner или плагин-система не добавлялись. В реп
 # 2) загрузить конфигурацию и выгрузить split-dump
 "${XVFB[@]}" "$V/1cv8t" DESIGNER /F "$TMP_IB" /LoadCfg "$CF" /UpdateDBCfg /DisableStartupDialogs /DisableStartupMessages
 "${XVFB[@]}" "$V/1cv8t" DESIGNER /F "$TMP_IB" /DumpConfigToFiles "$SNAP" -Format Hierarchical /DisableStartupDialogs /DisableStartupMessages
-# 3) зафиксировать manifest и identity
-find "$SNAP" -type f -exec sha256sum {} \; | sed "s# $SNAP/#  #" | sort -k2 > "$MANIFEST"
+# 3) зафиксировать manifest и identity (точно как в docs/lab.md: сортировка
+#    Path-объектов Python, формат "<sha256><два пробела><relative POSIX path><LF>")
+python3 - "$SNAP" <<'PY'
+from pathlib import Path
+import hashlib, sys
+snap = Path(sys.argv[1])
+files = sorted(path for path in snap.rglob('*') if path.is_file())
+if len(files) != 5099:
+    raise SystemExit(f'file_count={len(files)}, expected 5099')
+with (snap / '..' / 'snapshot.manifest').open('w', encoding='utf-8', newline='\n') as out:
+    for path in files:
+        digest = hashlib.sha256(path.read_bytes()).hexdigest()
+        out.write(f'{digest}  {path.relative_to(snap).as_posix()}\n')
+PY
 sha256sum "$MANIFEST"   # должно быть 70972b5e...
 ```
+
+Порядок строк важен: манифест должен быть отсортирован так же, как в `docs/lab.md`
+(Python `sorted` по `Path`-объектам, component-wise), иначе identity `70972b5e…` не
+воспроизведётся. Проверено: `sort -k2` и locale-aware `sort` дают другой порядок строк
+и другой identity; только указанный Python-вариант воспроизводит байт-в-байт.
 
 После этого выполняется runbook из §6. Автоматическая проверка evidence-пакета:
 `python3 -m unittest tests.test_issue10_evidence -v`.
