@@ -39,14 +39,14 @@
     "baseline": {
       "accepted": true,
       "dangerousFalseClaims": 0,
-      "factAccuracy": 0.9574468085106383,
+      "exactOracleCoverage": 0.9574468085106383,
       "factsCorrect": 45,
       "factsTotal": 47
     },
     "candidate": {
       "accepted": true,
       "dangerousFalseClaims": 0,
-      "factAccuracy": 0.9361702127659575,
+      "exactOracleCoverage": 0.9361702127659575,
       "factsCorrect": 44,
       "factsTotal": 47
     }

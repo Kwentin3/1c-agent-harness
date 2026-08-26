@@ -610,6 +610,26 @@ def answer_locator_strings(answer: dict[str, Any]) -> dict[str, set[str]]:
     return result
 
 
+def validate_oracle_locator(root: Path, state: dict[str, Any], raw: str) -> None:
+    match = re.fullmatch(r"(.+):([1-9][0-9]*)-([1-9][0-9]*)", raw)
+    if match is None:
+        raise ContractError(f"invalid oracle locator: {raw}")
+    rel = safe_relative(match.group(1), "oracle locator path")
+    expected_hash = state["_manifestEntries"].get(rel.as_posix())
+    if expected_hash is None:
+        raise ContractError(f"oracle locator path is absent from snapshot manifest: {rel.as_posix()}")
+    start, end = int(match.group(2)), int(match.group(3))
+    if end < start:
+        raise ContractError(f"invalid oracle locator line range: {raw}")
+    try:
+        locator_bytes = read_snapshot_bytes(root, rel, expected_hash, "oracle locator file")
+        line_count = len(locator_bytes.decode("utf-8-sig").splitlines())
+    except (OSError, UnicodeError, ContractError) as exc:
+        raise ContractError(f"oracle locator file is not readable admitted UTF-8 text: {rel.as_posix()}: {exc}") from exc
+    if end > line_count:
+        raise ContractError(f"oracle locator line range exceeds file: {raw}, lines={line_count}")
+
+
 def verify_oracle_ledger(
     spec: dict[str, Any], state: dict[str, Any], oracle_path: Path, ledger_path: Path,
     baseline_answer: dict[str, Any], candidate_answer: dict[str, Any],
@@ -637,6 +657,8 @@ def verify_oracle_ledger(
         locators = require_string_list(value["locators"], f"oracle locators for {question_id}")
         if not locators:
             raise ContractError(f"oracle locators for {question_id} must not be empty")
+        for locator in locators:
+            validate_oracle_locator(spec["_snapshotRoot"], state, locator)
         if "dangerousFalseClaims" in value:
             require_string_list(value["dangerousFalseClaims"], f"oracle dangerous claims for {question_id}")
         oracle_items[question_id] = expected
@@ -779,11 +801,11 @@ def compare(args: argparse.Namespace) -> dict[str, Any]:
             raise ContractError(f"invalid adjudication counts for {name}")
         if arm != frozen["totals"][name]:
             raise ContractError(f"adjudication arm {name} totals do not match recomputed ledger totals")
-        accuracy = correct / total
+        exact_oracle_coverage = correct / total
         scores[name] = {
             **arm,
-            "factAccuracy": accuracy,
-            "accepted": accuracy >= minimum and dangerous <= spec["evaluation"]["maxDangerousFalseClaims"],
+            "exactOracleCoverage": exact_oracle_coverage,
+            "accepted": exact_oracle_coverage >= minimum and dangerous <= spec["evaluation"]["maxDangerousFalseClaims"],
         }
     bmetrics, cmetrics = baseline["document"]["metrics"], candidate["document"]["metrics"]
     return {

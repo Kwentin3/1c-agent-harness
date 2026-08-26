@@ -592,7 +592,10 @@ class HarnessContractTests(unittest.TestCase):
         compared = self.outputs / "comparison.json"
         result = self.run_compare(compared)
         self.assertEqual(result.returncode, 0, result.stderr)
-        self.assertEqual(json.loads(compared.read_text())["status"], "ok")
+        comparison = json.loads(compared.read_text())
+        self.assertEqual(comparison["status"], "ok")
+        self.assertIn("exactOracleCoverage", comparison["scores"]["baseline"])
+        self.assertNotIn("factAccuracy", comparison["scores"]["baseline"])
         sealed = self.outputs / "sealed.json"
         result = self.run_cli("seal", "--experiment", self.spec, "--artifact", self.answer, "--artifact", compared, "--output", sealed)
         self.assertEqual(result.returncode, 0, result.stderr)
@@ -634,6 +637,23 @@ class HarnessContractTests(unittest.TestCase):
                 self.assertIn("identity", result.stderr.lower())
                 self.assertFalse(output.exists())
         self.write_adjudication()
+
+    def test_oracle_locator_requires_manifest_path_range_and_hash(self) -> None:
+        module = load_harness("harness_oracle_locator")
+        spec = module.load_experiment(self.spec)
+        state = module.verify_snapshot(spec)
+        root = spec["_snapshotRoot"]
+        locator = "CommonModules/Demo/Ext/Module.bsl:1-1"
+
+        with self.assertRaises(module.ContractError):
+            module.validate_oracle_locator(root, state, "CommonModules/Missing/Ext/Module.bsl:1-1")
+        with self.assertRaises(module.ContractError):
+            module.validate_oracle_locator(root, state, "CommonModules/Demo/Ext/Module.bsl:1-999")
+
+        source = self.snapshot / "CommonModules" / "Demo" / "Ext" / "Module.bsl"
+        source.write_text("Function Changed() Export\nEndFunction\n", encoding="utf-8")
+        with self.assertRaises(module.ContractError):
+            module.validate_oracle_locator(root, state, locator)
 
     def test_compare_rejects_oracle_ledger_item_mismatch(self) -> None:
         ledger = json.loads(self.ledger.read_text())

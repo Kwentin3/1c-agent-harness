@@ -4,7 +4,7 @@
 
 > Статус: этап 0 подтверждён. Для этапа 1 выполнен один frozen eval на открытой,
 > функционально насыщенной SDMS: direct-source baseline прошёл установленный
-> порог oracle alignment, а индексный arm не показал преимущества в этом run.
+> порог exact oracle coverage, а индексный arm не показал преимущества в этом run.
 > Evidence contract теперь fail-closed связывает claims, locators, oracle,
 > per-item ledger и точные bytes обоих answers. Финальное принятие 47-item
 > human benchmark остаётся решением владельца.
