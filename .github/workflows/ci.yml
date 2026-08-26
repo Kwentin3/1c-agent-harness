@@ -21,13 +21,19 @@ jobs:
         with:
           python-version: ${{ matrix.python-version }}
       - name: Compile
-        run: python -m py_compile scripts/harness.py tests/test_harness.py
+        run: >-
+          python -m py_compile
+          scripts/harness.py
+          scripts/antigravity_adapter.py
+          tests/test_harness.py
+          tests/test_antigravity_adapter.py
       - name: Unit and contract tests
         run: python -m unittest discover -s tests -v
       - name: Validate committed JSON examples
         run: |
           python -m json.tool contracts/experiment.schema.json >/dev/null
           python -m json.tool contracts/answer.schema.json >/dev/null
+          python -m json.tool contracts/answer-unit.schema.json >/dev/null
           python -m json.tool contracts/adjudication.schema.json >/dev/null
           python -m json.tool experiments/template/experiment.json.example >/dev/null
           python -m json.tool experiments/template/questions.json.example >/dev/null

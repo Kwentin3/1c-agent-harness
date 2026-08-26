@@ -7,8 +7,9 @@
 > порог oracle alignment, а индексный arm не показал преимущества в этом run.
 
 > Обобщение результата требует повторов и человеческой предметной приёмки.
-> Следующие этапы также имеют внешние prerequisites: точная старая платформа и
-> второй arm-proven coding-agent client.
+> Второй клиент Antigravity завершил тот же технический контракт, но получил
+> 31/47 и не прошёл общий порог качества. Для legacy-этапа по-прежнему нужна
+> точная старая платформа.
 
 ## Цель MVP
 
@@ -51,6 +52,7 @@ MVP считается полезным не потому, что агент н�
 - [Результат SDMS A/B](docs/sdms-evaluation.md)
 - [Подтверждённая граница совместимости](docs/compatibility.md)
 - [Готовность агентных клиентов](docs/client-readiness.md)
+- [Результат Antigravity arm](docs/antigravity-evaluation.md)
 - [Правила работы кодового агента](AGENTS.md)
 
 ## Evidence harness
@@ -59,8 +61,14 @@ MVP считается полезным не потому, что агент н�
 
 ```bash
 python3 scripts/harness.py --help
-python3 -m unittest -v tests/test_harness.py
+python3 -m unittest -v tests/test_harness.py tests/test_antigravity_adapter.py
 ```
+
+Для внешних клиентов harness также умеет fail-closed проверять небольшие
+`answer unit` результаты и детерминированно собирать полный `answer.json`:
+`verify-unit → assemble-answer → verify-answer`. Модель формирует содержание, а
+frozen IDs, client identity, metrics, порядок и финальную сериализацию добавляет
+обычный код.
 
 Крупные snapshots, raw answers, transcripts, индексы и полный oracle остаются в `.local/`. В Git публикуется только redacted evidence без закрытого кода и секретов.
 

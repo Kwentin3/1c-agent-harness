@@ -10,21 +10,18 @@ canary-proven → arm-proven.
 |---|---|---|
 | Hermes subagent, baseline | arm-proven | 7/7 ответов, machine-valid locators, 45/47 oracle facts |
 | Hermes subagent, indexed candidate | arm-proven | тот же контракт, 44/47 facts; индексы не приняты в MVP |
-| AgentBridge Antigravity | canary-proven | auth ready, `AGY_READY`; два frozen arm attempts завершились `cli_exit_nonzero` |
+| AgentBridge Antigravity | arm-proven, quality gate failed | 7/7 machine-valid answers, 27 locators, 31/47 oracle facts, 0 dangerous false claims |
 | standalone Codex/Claude/OpenCode/Gemini CLI | not installed | executable не найден в текущем workspace runtime |
 
-Canary Antigravity доказывает bridge runner и credential context, но не доступ к
-локальному snapshot. Оба attempts одной и той же frozen задачи упали до создания
-answer artifact, поэтому считать Antigravity вторым работающим клиентом нельзя.
+Завершённый Antigravity arm доказывает, что bridge runner видит bounded read-only
+bundle и может вернуть проверяемый артефакт общего контракта. Это не доказывает
+равное качество модели: 31/47 ниже общего порога 90%. `arm-proven` описывает
+техническую готовность поверхности, а не прохождение предметного eval.
 
-## Внешняя предпосылка второго arm
+## Внешняя предпосылка воспроизведения
 
-Нужен один из вариантов:
-
-1. исправленный Antigravity runner с read-only доступом к выбранному workspace;
-2. установленный и однократно авторизованный второй coding-agent CLI, который
-   поддерживает headless запуск и явную read-only policy.
-
-После этого клиент получает без изменений snapshot content ID, question hash,
-answer schema и locator rules из [`client-protocol.md`](client-protocol.md). Новый
-универсальный adapter или третий гипотетический клиент не требуется.
+Нужен авторизованный AgentBridge Antigravity runner с read-only монтированием
+того же bundle. Клиент получает без изменений snapshot content ID, question
+hash и locator rules из [`client-protocol.md`](client-protocol.md). Native
+envelope извлекается тонким adapter без semantic repair. Подробный результат и
+ограничения: [`antigravity-evaluation.md`](antigravity-evaluation.md).

@@ -25,6 +25,30 @@ Harness фиксирует контракт исследования, а не AP
 - `locators`: относительный путь и строки, связанные с claim IDs;
 - фактические client/model/tool versions и метрики.
 
+Клиент может вернуть полный документ сразу либо один work unit на вопрос. Unit
+имеет форму одного элемента `answers[]` и закреплён в
+`contracts/answer-unit.schema.json`. При unit-пути модель не повторяет
+`experimentId`, content IDs, client identity или metrics: эти значения добавляет
+детерминированный assembler из authoritative inputs.
+
+```bash
+python3 scripts/harness.py verify-unit \
+  --experiment .local/experiments/<id>/experiment.json \
+  --unit .local/experiments/<id>/runs/<arm>/Q1.json \
+  --output .local/experiments/<id>/runs/<arm>/Q1.verified.json
+
+python3 scripts/harness.py assemble-answer \
+  --experiment .local/experiments/<id>/experiment.json \
+  --unit .local/experiments/<id>/runs/<arm>/Q1.json \
+  --client .local/experiments/<id>/runs/<arm>/client.json \
+  --metrics .local/experiments/<id>/runs/<arm>/metrics.json \
+  --output .local/experiments/<id>/runs/<arm>/answer.json
+```
+
+`--unit` повторяется для каждого frozen question. Порядок аргументов не является
+authority: assembler использует порядок из `questions.json` и fail-closed
+отклоняет missing, extra и duplicate question IDs.
+
 Имя объекта, текстовый match или результат индекса сами по себе не доказывают назначение, runtime-состояние или call graph.
 
 ## Client-specific слой
@@ -35,6 +59,12 @@ Harness фиксирует контракт исследования, а не AP
 - sandbox/read-only permissions;
 - выбор реально доступной модели;
 - объявленная версия клиента.
+
+Client-specific representation adapter находится вне общего доменного
+контракта. Например, `scripts/antigravity_adapter.py` принимает только terminal
+task record, требует один JSON object в `summary` и пустые остальные поля native
+research envelope. Он не выполняет schema/locator verification и не ремонтирует
+malformed output — это остаётся общей обязанностью harness.
 
 Нельзя вводить общий SDK, plugin framework или скрывать различия context budget/model. `scripts/harness.py` намеренно не запускает клиентов.
 

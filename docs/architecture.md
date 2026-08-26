@@ -90,6 +90,36 @@ Hermes Project Workspace предоставляет проекту файлов�
 
 Машинная форма закреплена в `contracts/answer.schema.json`. Сопоставимость эксперимента задаёт `contracts/experiment.schema.json`, а предметная оценка двух frozen arms — `contracts/adjudication.schema.json`. Автоматическая проверка locators не заменяет независимый эталон.
 
+### Изолированный внешний клиент
+
+Большой итоговый JSON не является обязанностью LLM. Для внешнего клиента контракт
+разделён на владельцев:
+
+```text
+immutable snapshot/questions → внешний runner → один answer unit
+                                          ↓
+                         deterministic assembly → answer.json
+                                          ↓
+                                  harness verification
+```
+
+- transport клиента владеет lifecycle и своим native envelope;
+- LLM владеет содержанием одного `answer unit`;
+- experiment владеет snapshot/question identity;
+- runner владеет фактическими client version и metrics;
+- `assemble-answer` проверяет полный набор units, добавляет системные metadata и
+  собирает итог в frozen question order;
+- `verify-answer` независимо повторяет snapshot и locator gates.
+
+`contracts/answer-unit.schema.json` повторяет ровно один элемент `answers[]` из
+полного контракта. Adapter может только извлечь это представление: он не чинит
+JSON, не переименовывает claims, не добавляет defaults и не классифицирует
+утверждения. Путь runner workspace, bundle ID, MCP task ID и native envelope не
+входят в доменную схему ответа.
+
+Это минимальная граница для двух реально используемых клиентов, а не SDK или
+framework для гипотетического третьего клиента.
+
 ## Native-first, не native-only
 
 Платформа 1С должна выполнять операции, для которых она является наиболее надёжным источником истины: выгрузку, проверку формата и позднее — загрузку или синтаксический контроль. Файловые инструменты обеспечивают быстрый поиск и агентную навигацию.
