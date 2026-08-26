@@ -1,6 +1,8 @@
+diff --git a/Ext/ManagedApplicationModule.bsl b/Ext/ManagedApplicationModule.bsl
+index 03ca2b2..6ebf93a 100644
 --- a/Ext/ManagedApplicationModule.bsl
 +++ b/Ext/ManagedApplicationModule.bsl
-@@ -55,6 +55,9 @@
+@@ -55,6 +55,9 @@ EndProcedure
  
  Procedure OnStart()
  	
@@ -10,7 +12,7 @@
  	// StandardSubsystems
  #If MobileClient Then
  	Execute("StandardSubsystemsClient.OnStart()");
-@@ -92,4 +95,36 @@
+@@ -92,4 +95,36 @@ Procedure CollaborationSystemUsersChoiceFormGetProcessing(ChoicePurpose,
  	
  EndProcedure
  
@@ -47,3 +49,4 @@
 +EndProcedure
 +
  #EndRegion
+\ No newline at end of file

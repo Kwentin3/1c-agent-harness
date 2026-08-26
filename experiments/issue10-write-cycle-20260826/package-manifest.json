@@ -6,24 +6,24 @@
     "manifestIdentitySha256": "70972b5e11901ca31c7f7ec67dca03f78986206b024be01aeb34e0e1f3ff6691"
   },
   "artifacts": {
+    "README.md": "79120642eacec341d8d9d77c149145619fba3c1e36eaffde305963d6f39c2c56",
     "evidence/green-receipt.txt": "dc74e6b856be4eebad8533d8fecae7ccee4428c9a67a522fa41435ac656ab28c",
     "evidence/red-receipt.txt": "bea67d71a847c87f564788b5d242789943dd29f293930cc709e11a7cf5da83ef",
-    "full-work-copy.diff": "8c3a3df9f5afd38757418e9bb33139f23876bda7cf1069aa56b5bc663b21f0dd",
-    "instrumentation.diff": "dda0201d6a60639d320a72e6bdb5fa8a8f4b74badba36ff3a4e70b656b3efcee",
+    "full-work-copy.diff": "840c025f4031f5acae39e0c8fb1d1233dd066bb5a46e52d7a59ee562cc313852",
+    "instrumentation.diff": "e52d77fe8a8902bbdf1cac786d90164f4df1a3f237a42dacbf88cc7f747ded5c",
     "native-results.md": "c72a7d108ae44b62a71df0c7bc95a44d48335748a1e8e6d785a4c9bb509f7e7f",
-    "production-patch.diff": "31ac46acc37947639b19f15bd67f4c63d6467ac774a179d54507ab4faee436a4",
-    "task-contract.json": "839450eb56e81926d818960a142cd1ce1692beef11b9e60f90132b0bb8619dec",
-    "README.md": "79120642eacec341d8d9d77c149145619fba3c1e36eaffde305963d6f39c2c56"
+    "production-patch.diff": "e0531bad1e11b70fe15aced5c966ce3d66782c2fee03cf852c6995ec6514d23b",
+    "task-contract.json": "839450eb56e81926d818960a142cd1ce1692beef11b9e60f90132b0bb8619dec"
   },
   "artifactStats": {
+    "README.md": 7268,
     "evidence/green-receipt.txt": 120,
     "evidence/red-receipt.txt": 118,
-    "full-work-copy.diff": 2297,
-    "instrumentation.diff": 1722,
+    "full-work-copy.diff": 2746,
+    "instrumentation.diff": 1991,
     "native-results.md": 423,
-    "production-patch.diff": 574,
-    "task-contract.json": 3407,
-    "README.md": 7268
+    "production-patch.diff": 755,
+    "task-contract.json": 3407
   },
   "run": "verified clean run 2026-08-26 (.local/runs/issue10-write-cycle-final-20260826T173251, not committed)"
 }

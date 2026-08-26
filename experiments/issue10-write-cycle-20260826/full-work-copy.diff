@@ -1,6 +1,8 @@
+diff --git a/CommonModules/StringFunctionsClientServer/Ext/Module.bsl b/CommonModules/StringFunctionsClientServer/Ext/Module.bsl
+index 23f66e5..7c86f02 100644
 --- a/CommonModules/StringFunctionsClientServer/Ext/Module.bsl
 +++ b/CommonModules/StringFunctionsClientServer/Ext/Module.bsl
-@@ -810,6 +810,10 @@
+@@ -810,6 +810,10 @@ EndFunction
  Function StringToNumber(Val Value) Export
  	
  	Value  = StrReplace(Value, " ", "");
@@ -11,10 +13,11 @@
  	If StrStartsWith(Value, "(") Then
  		Value = StrReplace(Value, "(", "-");
  		Value = StrReplace(Value, ")", "");
-
+diff --git a/Ext/ManagedApplicationModule.bsl b/Ext/ManagedApplicationModule.bsl
+index 03ca2b2..6ebf93a 100644
 --- a/Ext/ManagedApplicationModule.bsl
 +++ b/Ext/ManagedApplicationModule.bsl
-@@ -55,6 +55,9 @@
+@@ -55,6 +55,9 @@ EndProcedure
  
  Procedure OnStart()
  	
@@ -24,7 +27,7 @@
  	// StandardSubsystems
  #If MobileClient Then
  	Execute("StandardSubsystemsClient.OnStart()");
-@@ -92,4 +95,36 @@
+@@ -92,4 +95,36 @@ Procedure CollaborationSystemUsersChoiceFormGetProcessing(ChoicePurpose,
  	
  EndProcedure
  
@@ -61,3 +64,4 @@
 +EndProcedure
 +
  #EndRegion
+\ No newline at end of file

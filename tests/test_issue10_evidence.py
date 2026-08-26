@@ -118,8 +118,8 @@ class Issue10EvidencePackageTests(unittest.TestCase):
         full = (PACKAGE / "full-work-copy.diff").read_text().splitlines()
         prod = (PACKAGE / "production-patch.diff").read_text().splitlines()
         inst = (PACKAGE / "instrumentation.diff").read_text().splitlines()
-        # The full diff is the concatenation of both parts (headers included).
-        self.assertEqual(full, prod + [""] + inst)
+        # The full diff is the exact byte-concatenation of both git patches.
+        self.assertEqual(full, prod + inst)
 
     def test_no_private_paths_in_package(self) -> None:
         for p in PACKAGE.rglob("*"):
