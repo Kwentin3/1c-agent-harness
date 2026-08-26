@@ -106,6 +106,40 @@ xvfb-run -a -s "-screen 0 1280x1024x8 -nolisten tcp" \
   1cv8t ENTERPRISE /F "<run>/instr-ib" /DisableStartupDialogs /DisableStartupMessages /DisplayManager "none" /Out <log>
 ```
 
+## 5b. Воспроизведение одним скриптом (committed driver)
+
+Вместо ручного повтора шагов в репозиторий добавлен **самодостаточный драйвер**
+[`scripts/issue10_write_cycle.py`](../scripts/issue10_write_cycle.py). Он от начала до конца
+воспроизводит цикл: проверяет immutable source, копирует snapshot в writable work copy, вносит
+минимальную BSL-правку, добавляет probe в `ManagedApplicationModule`, создаёт одноразовые ИБ,
+нативно загружает каждую конфигурацию, прогоняет RED и GREEN, вычисляет mutation power и снова
+сверяет immutable source. Ничего нового в репозиторий, кроме самого скрипта и этого отчёта, не
+добавляется; все артефакты остаются в `.local/`.
+
+```bash
+# Полный цикл (по умолчанию всё в .local/runs/issue10-jet-string-whitespace-driven)
+python3 scripts/issue10_write_cycle.py run
+
+# Read-only проверка уже выполненного прогона (без запуска 1С)
+python3 scripts/issue10_write_cycle.py check \
+  --work-root .local/runs/issue10-jet-string-whitespace-driven
+```
+
+Проверенный прогон (2026-08-26) дал на выходе:
+
+```text
+[preflight] source CF sha256=5694f9e4bdf9a0857185118ba816d562d8ee8de2b8da3f60792397a399ca128a
+[preflight] snapshot 5099/5099 OK, missing=0 mismatch=0
+[mutation] green={'tab': '1234', 'nbsp': '1234', 'invalid': '', 'decimal': '1234.56', 'space': '567'}
+[mutation] red={'tab': '', 'nbsp': '', 'invalid': '', 'decimal': '1234.56', 'space': '567'}
+[mutation] feature_flipped=True control_changed=False mutation_power=True
+[postflight] source CF sha256=5694f9e4bdf9a0857185118ba816d562d8ee8de2b8da3f60792397a399ca128a
+[postflight] snapshot 5099/5099 OK, missing=0 mismatch=0
+```
+
+То есть драйвер доказал цикл с чистого состояния, а не только описал его. Эксперимент с этим
+драйвером сам остаётся в `.local/runs/issue10-jet-string-whitespace-driven/`.
+
 ## 6. RED / GREEN и сила теста
 
 **Рабочая (изменённая) конфигурация** — `evidence/green-receipt.txt`:
@@ -162,6 +196,12 @@ space###567
 patch-engine, parser, RAG, MCP, graph, adapter SDK или тестовая система плагинов не добавлялась.
 Единственное использованное вспомогательное средство — локальные `cc-1c-skills` генераторы форм/драйверов
 в `.local/tools/`, предшествующие этому эксперименту и не добавленные в репозиторий.
+
+В репозиторий добавлены только две вещи, потребовавшиеся циклу:
+- [`scripts/issue10_write_cycle.py`](../scripts/issue10_write_cycle.py) — воспроизводимый драйвер цикла (§5b);
+- `docs/issue-10-write-cycle.md` — настоящий отчёт и runbook.
+
+Они оркеструют нативные команды платформы, а не подменяют её и не создают write-фреймворк.
 
 ## 9. Verdict независимого reviewer
 
