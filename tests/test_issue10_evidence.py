@@ -425,6 +425,15 @@ if snapshot_verify; then exit 1; else exit 0; fi
 """
         self.assertEqual(_run_bash(script, env={"SNAP": str(snap), "MANIFEST": str(self.td / "manifest")}), 0)
 
+    def test_snapshot_listed_file_replaced_by_directory_rejected(self) -> None:
+        snap = self._make_snapshot(self.td)
+        (snap / "a.xml").unlink()
+        (snap / "a.xml").mkdir()
+        script = self.funcs + f"""
+if snapshot_verify; then exit 1; else exit 0; fi
+"""
+        self.assertEqual(_run_bash(script, env={"SNAP": str(snap), "MANIFEST": str(self.td / "manifest")}), 0)
+
 
 if __name__ == "__main__":
     unittest.main()

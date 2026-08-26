@@ -174,7 +174,7 @@ for p in snap.rglob('*'):
         extra.append(rel); continue
     if hashlib.sha256(p.read_bytes()).hexdigest() != entries[rel]:
         mismatch.append(rel)
-missing = [r for r in entries if not (snap / r).exists() or (snap / r).is_symlink()]
+missing = [r for r in entries if not (snap / r).is_file() or (snap / r).is_symlink()]
 problems = (missing, mismatch, extra, symlinks, nonregular)
 if any(problems):
     print("SNAPSHOT_FAIL missing=%d mismatch=%d extra=%d symlinks=%d nonregular=%d"
@@ -350,6 +350,7 @@ runbook'ом — проверено выполнением дословно из
 | `DumpResult = "error0"` | `result_zero` ≠ 0 → FAIL |
 | лишний файл в snapshot | `SNAPSHOT_FAIL extra=1` → FAIL |
 | listed-файл заменён symlink'ом с теми же байтами | `SNAPSHOT_FAIL symlinks=1` → FAIL |
+| listed-файл заменён каталогом | `SNAPSHOT_FAIL missing=1` → FAIL |
 
 Те же обходы закреплены регрессионными тестами `Issue10RunbookFailClosedTests`
 (извлекают check-функции из этого дока и исполняют их через bash).
