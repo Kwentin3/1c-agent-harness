@@ -6,7 +6,7 @@
     "manifestIdentitySha256": "70972b5e11901ca31c7f7ec67dca03f78986206b024be01aeb34e0e1f3ff6691"
   },
   "artifacts": {
-    "README.md": "79120642eacec341d8d9d77c149145619fba3c1e36eaffde305963d6f39c2c56",
+    "README.md": "77d5fa086797f2a0e6c86eb32301138735c9a24585cd1c29f56a6e8968df3fb5",
     "evidence/green-receipt.txt": "dc74e6b856be4eebad8533d8fecae7ccee4428c9a67a522fa41435ac656ab28c",
     "evidence/red-receipt.txt": "bea67d71a847c87f564788b5d242789943dd29f293930cc709e11a7cf5da83ef",
     "full-work-copy.diff": "840c025f4031f5acae39e0c8fb1d1233dd066bb5a46e52d7a59ee562cc313852",
@@ -16,7 +16,7 @@
     "task-contract.json": "839450eb56e81926d818960a142cd1ce1692beef11b9e60f90132b0bb8619dec"
   },
   "artifactStats": {
-    "README.md": 7268,
+    "README.md": 5209,
     "evidence/green-receipt.txt": 120,
     "evidence/red-receipt.txt": 118,
     "full-work-copy.diff": 2746,
@@ -25,5 +25,5 @@
     "production-patch.diff": 755,
     "task-contract.json": 3407
   },
-  "run": "verified clean run 2026-08-26 (.local/runs/issue10-write-cycle-final-20260826T173251, not committed)"
+  "run": "verified clean run 2026-08-26 (.local/runs/issue10-write-cycle-20260826T190503, executed from the committed runbook; receipts byte-identical to this package)"
 }

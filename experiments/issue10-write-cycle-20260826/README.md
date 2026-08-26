@@ -1,8 +1,10 @@
 # Issue #10 — frozen evidence package
 
 Доказательство вертикального среза «изменить → нативно загрузить → доказать новое поведение»
-на конфигурации Jet (issue #10). Прогон выполнен **заново, изолированно**, 2026-08-26, в новом
-уникальном каталоге `.local/runs/issue10-write-cycle-final-20260826T173251`.
+на конфигурации Jet (issue #10). Финальный чистый прогон выполнен **буквально исполнением
+committed runbook** (2026-08-26, `docs/issue-10-write-cycle.md` §6) в новом уникальном
+каталоге `.local/runs/issue10-write-cycle-20260826T190503`; его receipts байт-в-байт
+совпадают с receipts этого пакета.
 
 Это **санитизированный frozen evidence**: никаких CF, snapshot, информационных баз, больших raw
 логов, секретов или приватных абсолютных путей. Приватные пути заменены на `<RUN_DIR>`.
@@ -36,63 +38,26 @@
 
 ## Как воспроизвести прогон с нуля
 
-Prerequisites: стенд из `docs/lab.md` (платформа 1С учебная 8.5.1.1150, libs, fontconfig,
-`xvfb-run`, `xkbcomp`), официальный Jet fixture `.cf` (hash `5694f9e4bd…`) и развёрнутый
-immutable snapshot `.local/runs/training-jet-review-final/snapshot` + `snapshot.manifest`
-(identity `70972b5e…`).
+Единственный авторитетный исполнимый runbook — раздел §6 документа
+`docs/issue-10-write-cycle.md` (bash-блок выполняется буквально из корня репозитория).
+Краткий конспект его контракта:
 
-Шаги (все пути — абсолютные; `<RUN_DIR>` — новый уникальный каталог, который не должен
-существовать до прогона):
+1. **Pre-flight (fail-closed):** source CF hash `5694f9e4bd…`, manifest identity `70972b5e…`,
+   `sha256sum -c` snapshot — иначе стоп. `RUN_DIR` генерируется с уникальным timestamp и
+   **не должен существовать** до `mkdir`.
+2. **Work copies:** `cp -R snapshot/. -> img` (GREEN) и `img-red` (RED), запись — только
+   `chmod -R u+w` внутри копий.
+3. **Diff:** в `img` применяются `production-patch.diff` + `instrumentation.diff`
+   (`git apply -p1`), в `img-red` — только `instrumentation.diff`; путь receipt подставляется
+   `sed` в `<variant>-receipt.txt`.
+4. **Native:** `CREATEINFOBASE` → `DESIGNER /LoadConfigFromFiles /UpdateDBCfg` → `ENTERPRISE`
+   для каждого варианта; `DumpResult == 0` и `Configuration successfully updated` проверяются.
+5. **Lifecycle:** ENTERPRISE запускается через `setsid` (своя process group); ожидание —
+   строгий receipt (5 непустых строк `label###value###type` + стабильность хэша), затем
+   `kill -KILL -$PID` по всей группе.
+6. **Post-flight (fail-closed):** те же immutable identities + строгие receipts, иначе стоп.
 
-```bash
-RUN_DIR=.local/runs/issue10-write-cycle-<timestamp>          # уникальный, не существующий!
-V=.local/platform/1cv8t/x86_64/8.5.1.1150
-L=.local/platform/libs
-export PATH="$L/usr/bin:$PATH"
-export LD_LIBRARY_PATH="$V:$L/usr/lib/x86_64-linux-gnu"
-export FONTCONFIG_FILE="$(pwd)/.local/platform/fonts.conf"
-export HOME="$PWD/$RUN_DIR/home" TMPDIR="$PWD/$RUN_DIR/tmp"
-export XDG_CACHE_HOME="$HOME/xdg-cache" XDG_CONFIG_HOME="$HOME/xdg-config" XDG_DATA_HOME="$HOME/xdg-data"
-XRUN="$L/usr/bin/xvfb-run -a -s '-screen 0 1280x1024x8 -nolisten tcp'"
-mkdir -p "$PWD/$RUN_DIR"/{logs,evidence,home,tmp,img,img-red}
-```
-
-1. **Проверка границ.** source CF, snapshot, manifest и platform лежат ВНЕ `$RUN_DIR`
-   (см. `task-contract.json`). Нарушение — стоп.
-2. **Копии работы.** `cp -r snapshot -> $RUN_DIR/img/files` (GREEN) и `-> $RUN_DIR/img-red/files`
-   (RED); каждая — полная копия 5099 файлов, затем `chmod` только внутри копий.
-3. **Production patch (GREEN).** В `img/files/CommonModules/StringFunctionsClientServer/Ext/Module.bsl`
-   после строки `Value  = StrReplace(Value, " ", "");` в `StringToNumber` вставить 2 строки
-   `StrReplace(Value, Chars.Tab, "")` и `StrReplace(Value, Chars.NBSp, "")` (см.
-   `production-patch.diff`). В `img-red` НЕ патчить.
-4. **Instrumentation.** В обе копии `Ext/ManagedApplicationModule.bsl` добавить вызов
-   `Issue10WriteRuntimeReceipt(); Return;` в `OnStart` и процедуру probe (см.
-   `instrumentation.diff`; путь receipt — `$RUN_DIR/evidence/<variant>-receipt.txt`).
-5. **Создать ИБ** (для GREEN и RED отдельно, каждый файл `*.result` не должен существовать
-   заранее):
-   ```bash
-   $XRUN $V/1cv8t CREATEINFOBASE "File=$PWD/$RUN_DIR/instr-ib" /DisableStartupDialogs /DisableStartupMessages /Out "$PWD/$RUN_DIR/logs/green-create.log" /DumpResult "$PWD/$RUN_DIR/logs/green-create.result"
-   ```
-   Проверить `DumpResult == 0`.
-6. **Нативная загрузка** (на шаге используется родной `DESIGNER`):
-   ```bash
-   $XRUN $V/1cv8t DESIGNER /F "$PWD/$RUN_DIR/instr-ib" /LoadConfigFromFiles "$PWD/$RUN_DIR/img/files" /UpdateDBCfg /DisableStartupDialogs /DisableStartupMessages /Out "$PWD/$RUN_DIR/logs/green-load.log" /DumpResult "$PWD/$RUN_DIR/logs/green-load.result"
-   ```
-   Проверить `DumpResult == 0` и строку `Configuration successfully updated` в логе.
-   Повторить 5–6 для RED (`red-ib`, `img-red/files`).
-7. **Runtime.** Удалить старый receipt (не должен существовать), затем:
-   ```bash
-   $XRUN $V/1cv8t ENTERPRISE /F "$PWD/$RUN_DIR/instr-ib" /DisableStartupDialogs /DisableStartupMessages /DisplayManager "none" /Out "$PWD/$RUN_DIR/logs/green-run.log" &
-   PID=$!
-   # ждать появления receipt (максимум ~180 c), затем завершить процесс-группу:
-   kill -KILL -$PID 2>/dev/null || kill -KILL $PID
-   ```
-   Повторить для RED. Receipt читать только после завершения записи (файл существует
-   и непуст).
-8. **Проверка.** Каждый receipt: ровно 5 строк `label###value###type`; значения и типы
-   совпадают с таблицей выше (см. `tests/test_issue10_evidence.py`). Immutable source:
-   source CF hash `5694f9e4bd…`, manifest identity `70972b5e…`, snapshot 5099/5099 без
-   missing/mismatch/extra/symlink.
+Все остальные прозовые описания в этом файле — не источник истины для воспроизведения.
 
 ## Проверка пакета
 
@@ -100,5 +65,7 @@ mkdir -p "$PWD/$RUN_DIR"/{logs,evidence,home,tmp,img,img-red}
 python3 -m unittest tests.test_issue10_evidence -v
 ```
 
-Тесты fail-closed: отклоняют изменённые/подделанные receipt, неверную статистику diff,
-приватные пути и несовпадение immutable identities.
+Тесты fail-closed: ровно 5 непустых строк, ровно 3 поля, без игнорируемых строк,
+duplicate/unknown/missing labels, точные value/type; множество файлов пакета == множество
+manifest artifacts (исключая сам manifest); missing/changed/unlisted artifact → FAIL;
+приватные пути и несовпадение immutable identities → FAIL.
