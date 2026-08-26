@@ -4,7 +4,10 @@
 
 > Статус: этап 0 подтверждён. Для этапа 1 выполнен один frozen eval на открытой,
 > функционально насыщенной SDMS: direct-source baseline прошёл установленный
-> порог oracle alignment, а индексный arm не показал преимущества в этом run.
+> порог exact oracle coverage, а индексный arm не показал преимущества в этом run.
+> Evidence contract теперь fail-closed связывает claims, locators, oracle,
+> per-item ledger и точные bytes обоих answers. Финальное принятие 47-item
+> human benchmark остаётся решением владельца.
 
 > Обобщение результата требует повторов и человеческой предметной приёмки.
 > Следующие этапы также имеют внешние prerequisites: точная старая платформа и
@@ -49,6 +52,7 @@ MVP считается полезным не потому, что агент н�
 - [Runbook read-only эксперимента](docs/experiment-runbook.md)
 - [Client-neutral протокол](docs/client-protocol.md)
 - [Результат SDMS A/B](docs/sdms-evaluation.md)
+- [Публичный SDMS review package](experiments/sdms-product-eval-20260825-review/README.md)
 - [Подтверждённая граница совместимости](docs/compatibility.md)
 - [Готовность агентных клиентов](docs/client-readiness.md)
 - [Правила работы кодового агента](AGENTS.md)
@@ -62,7 +66,7 @@ python3 scripts/harness.py --help
 python3 -m unittest -v tests/test_harness.py
 ```
 
-Крупные snapshots, raw answers, transcripts, индексы и полный oracle остаются в `.local/`. В Git публикуется только redacted evidence без закрытого кода и секретов.
+Крупные snapshots, raw transcripts и индексы остаются в `.local/`. Для открытого SDMS в Git опубликован только небольшой review package из авторских вопросов, oracle items, ответов, per-item ledger и hashes — без исходного XML/BSL, закрытого кода и секретов.
 
 ## Как работать с репозиторием
 

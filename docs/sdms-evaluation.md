@@ -1,8 +1,10 @@
 # SDMS: доказательный read-only эксперимент
 
-Дата: 2026-08-25. Этот документ — redacted summary. Полный snapshot, вопросы,
-oracle, ответы, transcripts, индексы и машинные evidence остаются в `.local/` и
-не публикуются.
+Дата: 2026-08-25. Полный snapshot, transcripts и индексы остаются в `.local/`.
+Небольшой пакет вопросов, oracle, точных answers, 47-item ledger и hashes
+опубликован в
+[`experiments/sdms-product-eval-20260825-review/`](../experiments/sdms-product-eval-20260825-review/);
+он не содержит исходный XML/BSL.
 
 ## Объект исследования
 
@@ -40,7 +42,8 @@ SHA-256. Управление GUI и запись в исследуемую ко
   запретом читать oracle/ответ другого arm;
 - пользователь делегировал агенту роль human-in-the-loop; итоговые 47 атомарных
   фактов отдельно adjudicated агентом, не участвовавшим в arms;
-- все locators затем проверены машинно по существованию файла и диапазону строк.
+- answer и oracle locators затем проверены машинно по пути в manifest, hash
+  принятых байтов и диапазону строк.
 
 Это независимая агентная adjudication, но не экспертная приёмка владельцем SDMS.
 До runs не был создан отдельный криптографически запечатанный manifest prompts,
@@ -52,8 +55,8 @@ tool budgets и isolation policy. Поэтому сохранённый паке
 
 | Метрика | Baseline: XML/BSL | Candidate: `cf-index` + `ast-index` + source fallback |
 |---|---:|---:|
-| Факты, совпавшие с oracle | 45 / 47 | 44 / 47 |
-| Oracle alignment | 95,74% | 93,62% |
+| Exact oracle coverage | 45 / 47 | 44 / 47 |
+| Exact oracle coverage, % | 95,74% | 93,62% |
 | Dangerous false claims | 0 | 0 |
 | Время | 154 с | 204 с |
 | Transcript tool operations | 44 | 53 |
@@ -75,11 +78,11 @@ unknown; candidate дополнительно не упомянул sprint в с
 Для MVP выбран **baseline direct-source workflow**:
 
 1. штатный полный snapshot и manifest остаются источником истины;
-2. `scripts/harness.py` проверяет frozen inputs, безопасность, locators,
-   adjudication и seal;
+2. `scripts/harness.py` проверяет frozen inputs, безопасность, claim→locator
+  coverage, hash-bound adjudication и seal;
 3. стандартное чтение/search XML/BSL оказалось достаточно для данного run;
 4. `cf-index` и `ast-index` не входят в обязательную реализацию: на этом
-   run они не улучшили oracle alignment, а причинное преимущество эффективности
+   run они не улучшили exact oracle coverage, а причинное преимущество эффективности
    не доказано;
 5. отдельный parser, RAG, MCP, graph или fork не требуются.
 
@@ -95,7 +98,7 @@ feature-rich SDMS A/B не дал положительного сигнала.
 mkdir -p .local/experiments/<id>/runs/reproduction
 python3 scripts/harness.py preflight --experiment .local/experiments/<id>/experiment.json --output .local/experiments/<id>/runs/reproduction/preflight.json
 python3 scripts/harness.py verify-answer --experiment .local/experiments/<id>/experiment.json --answer .local/experiments/<id>/runs/baseline/answer.json --output .local/experiments/<id>/runs/baseline/verified.json
-python3 scripts/harness.py compare --experiment .local/experiments/<id>/experiment.json --baseline .local/experiments/<id>/runs/baseline/answer.json --candidate .local/experiments/<id>/runs/candidate/answer.json --adjudication .local/experiments/<id>/adjudication.json --output .local/experiments/<id>/runs/reproduction/comparison.json
+python3 scripts/harness.py compare --experiment .local/experiments/<id>/experiment.json --baseline .local/experiments/<id>/runs/baseline/answer.json --candidate .local/experiments/<id>/runs/candidate/answer.json --oracle .local/experiments/<id>/oracle.json --ledger .local/experiments/<id>/adjudication-ledger.json --adjudication .local/experiments/<id>/adjudication.json --output .local/experiments/<id>/runs/reproduction/comparison.json
 ```
 
 Полный порядок и fail-closed ограничения описаны в

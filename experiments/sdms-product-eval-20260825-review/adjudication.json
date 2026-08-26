@@ -1,0 +1,25 @@
+{
+  "arms": {
+    "baseline": {
+      "dangerousFalseClaims": 0,
+      "factsCorrect": 45,
+      "factsTotal": 47
+    },
+    "candidate": {
+      "dangerousFalseClaims": 0,
+      "factsCorrect": 44,
+      "factsTotal": 47
+    }
+  },
+  "experimentId": "sdms-product-eval-20260825",
+  "identity": {
+    "baselineAnswerSha256": "7fb3abd6758c617a305a1563a2164b6bafc6543730cd8536199f97611aab2fdd",
+    "candidateAnswerSha256": "89e51cc00f21c5323c3a962ea8432a5b51631c271343c41b7c66aef5f4aeaa73",
+    "ledgerSha256": "a23517c418bf21a4983f63fbf3ee0336523ff00d84e38d7afb9650bf71836765",
+    "oracleSha256": "761cb235b9fd2d984a4c4817104f26b58760062bc9d863f03600aec53b0f674f",
+    "questionSetSha256": "3eba62e70085d74f954968832f5c5d9ab06db0c0da44e83af6bf22651fcbcd90",
+    "snapshotContentId": "sha256:3357ee63204ff863aac116417927240930084dce0eb7613126ad88cff68a424d"
+  },
+  "reviewer": "independent-hermes-adjudicator-gpt-5.6-sol",
+  "schemaVersion": 2
+}

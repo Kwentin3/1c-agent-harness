@@ -65,7 +65,7 @@ Hermes Project Workspace предоставляет проекту файлов�
 - сведения о полноте и ошибках получения;
 - подтверждение, что дальнейшее исследование не требует записи в источник.
 
-Первая реализация фиксирует manifest как UTF-8 файл со строками `<sha256><два пробела><relative POSIX path><LF>`; content ID равен SHA-256 байтов manifest. `scripts/harness.py preflight` проверяет полный набор файлов, hashes, отсутствие symlink и размещение output/cache вне snapshot. Это файловый контракт, а не framework адаптеров.
+Первая реализация фиксирует manifest как UTF-8 файл со строками `<sha256><два пробела><relative POSIX path><LF>`; content ID равен SHA-256 байтов manifest. `scripts/harness.py preflight` проверяет полный набор файлов, hashes, отсутствие symlink и размещение output/cache вне snapshot. Manifest, questions и snapshot-файлы читаются через descriptor-bound `O_NOFOLLOW`; `fstat` до и после чтения должен совпасть. Locator повторно сверяется с hash из уже принятого manifest. Output сначала полностью записывается и `fsync`-ится во временный inode внутри заранее открытого descriptor разрешённого каталога, затем атомарно публикуется без перезаписи существующего имени. Поэтому замена ancestor не перенаправляет публикацию, а прерывание до publish не оставляет частичный финальный файл. `seal` дополнительно связывает hash с inode/metadata identity pathname и повторно проверяет её непосредственно перед публикацией receipt. Это Linux/POSIX файловый контракт, а не framework адаптеров.
 
 ## Контракт доказательства
 
@@ -78,6 +78,13 @@ Hermes Project Workspace предоставляет проекту файлов�
 
 Вывод из нескольких источников обязан ссылаться на каждый значимый источник. Непроверенное предположение не маскируется числовой «уверенностью».
 
+SchemaVersion 1 применяет прямое правило без evidence graph: каждый `fact` и
+`inference` должен быть упомянут хотя бы одним `locator.claimIds` в том же
+ответе. `assumptions` и `unknowns` могут оставаться без locator. Harness
+проверяет покрытие, путь и строки; reviewer проверяет, что строки действительно
+доказывают claim и что краткое поле `answer` не добавляет новых существенных
+утверждений вне классифицированных claims.
+
 ## Контракт ответа агента
 
 Для предметного вопроса ответ содержит:
@@ -88,7 +95,7 @@ Hermes Project Workspace предоставляет проекту файлов�
 4. неизвестное и альтернативные объяснения;
 5. следующий шаг только тогда, когда данных недостаточно.
 
-Машинная форма закреплена в `contracts/answer.schema.json`. Сопоставимость эксперимента задаёт `contracts/experiment.schema.json`, а предметная оценка двух frozen arms — `contracts/adjudication.schema.json`. Автоматическая проверка locators не заменяет независимый эталон.
+Машинная форма закреплена в `contracts/answer.schema.json`. Сопоставимость эксперимента задаёт `contracts/experiment.schema.json`, frozen oracle — `contracts/oracle.schema.json`, per-item review — `contracts/adjudication-ledger.schema.json`, а hash-bound итог двух arms — `contracts/adjudication.schema.json`. `compare` пересчитывает totals из ledger и отклоняет оценку при несовпадении любых frozen bytes. Автоматическая проверка locators не заменяет независимый эталон.
 
 ## Native-first, не native-only
 

@@ -1,0 +1,1388 @@
+{
+  "dangerousClaims": {
+    "baseline": {
+      "claims": [],
+      "count": 0,
+      "rationale": "Q6 explicitly says cryptographic signature verification is not proved by the visible chain; no dangerous runtime success/publication assertion was found."
+    },
+    "candidate": {
+      "claims": [],
+      "count": 0,
+      "rationale": "Q6 explicitly says cryptographic signature verification is not proved by the visible chain; no dangerous runtime success/publication assertion was found."
+    }
+  },
+  "experimentId": "sdms-product-eval-20260825",
+  "questions": [
+    {
+      "items": [
+        {
+          "arms": {
+            "baseline": {
+              "citedLocators": [
+                "Configuration.xml:34-56",
+                "Configuration.xml:269-276"
+              ],
+              "correct": true,
+              "rationale": "The baseline response states this atomic fact accurately; its question-level cited locators point into the frozen snapshot and are semantically consistent with the preregistered oracle locators."
+            },
+            "candidate": {
+              "citedLocators": [
+                "Configuration.xml:34-56",
+                "Configuration.xml:269-276"
+              ],
+              "correct": true,
+              "rationale": "The candidate response states this atomic fact accurately; its question-level cited locators point into the frozen snapshot and are semantically consistent with the preregistered oracle locators."
+            }
+          },
+          "expected": "Name SDMS",
+          "index": 1
+        },
+        {
+          "arms": {
+            "baseline": {
+              "citedLocators": [
+                "Configuration.xml:34-56",
+                "Configuration.xml:269-276"
+              ],
+              "correct": true,
+              "rationale": "The baseline response states this atomic fact accurately; its question-level cited locators point into the frozen snapshot and are semantically consistent with the preregistered oracle locators."
+            },
+            "candidate": {
+              "citedLocators": [
+                "Configuration.xml:34-56",
+                "Configuration.xml:269-276"
+              ],
+              "correct": true,
+              "rationale": "The candidate response states this atomic fact accurately; its question-level cited locators point into the frozen snapshot and are semantically consistent with the preregistered oracle locators."
+            }
+          },
+          "expected": "Vendor ООО ДНС Технологии, IT-группа WEB-клиент",
+          "index": 2
+        },
+        {
+          "arms": {
+            "baseline": {
+              "citedLocators": [
+                "Configuration.xml:34-56",
+                "Configuration.xml:269-276"
+              ],
+              "correct": true,
+              "rationale": "The baseline response states this atomic fact accurately; its question-level cited locators point into the frozen snapshot and are semantically consistent with the preregistered oracle locators."
+            },
+            "candidate": {
+              "citedLocators": [
+                "Configuration.xml:34-56",
+                "Configuration.xml:269-276"
+              ],
+              "correct": true,
+              "rationale": "The candidate response states this atomic fact accurately; its question-level cited locators point into the frozen snapshot and are semantically consistent with the preregistered oracle locators."
+            }
+          },
+          "expected": "Version 0.1.1.0",
+          "index": 3
+        },
+        {
+          "arms": {
+            "baseline": {
+              "citedLocators": [
+                "Configuration.xml:34-56",
+                "Configuration.xml:269-276"
+              ],
+              "correct": true,
+              "rationale": "The baseline response states this atomic fact accurately; its question-level cited locators point into the frozen snapshot and are semantically consistent with the preregistered oracle locators."
+            },
+            "candidate": {
+              "citedLocators": [
+                "Configuration.xml:34-56",
+                "Configuration.xml:269-276"
+              ],
+              "correct": true,
+              "rationale": "The candidate response states this atomic fact accurately; its question-level cited locators point into the frozen snapshot and are semantically consistent with the preregistered oracle locators."
+            }
+          },
+          "expected": "ScriptVariant Russian",
+          "index": 4
+        },
+        {
+          "arms": {
+            "baseline": {
+              "citedLocators": [
+                "Configuration.xml:34-56",
+                "Configuration.xml:269-276"
+              ],
+              "correct": true,
+              "rationale": "The baseline response states this atomic fact accurately; its question-level cited locators point into the frozen snapshot and are semantically consistent with the preregistered oracle locators."
+            },
+            "candidate": {
+              "citedLocators": [
+                "Configuration.xml:34-56",
+                "Configuration.xml:269-276"
+              ],
+              "correct": true,
+              "rationale": "The candidate response states this atomic fact accurately; its question-level cited locators point into the frozen snapshot and are semantically consistent with the preregistered oracle locators."
+            }
+          },
+          "expected": "DefaultRunMode ManagedApplication",
+          "index": 5
+        },
+        {
+          "arms": {
+            "baseline": {
+              "citedLocators": [
+                "Configuration.xml:34-56",
+                "Configuration.xml:269-276"
+              ],
+              "correct": true,
+              "rationale": "The baseline response states this atomic fact accurately; its question-level cited locators point into the frozen snapshot and are semantically consistent with the preregistered oracle locators."
+            },
+            "candidate": {
+              "citedLocators": [
+                "Configuration.xml:34-56",
+                "Configuration.xml:269-276"
+              ],
+              "correct": true,
+              "rationale": "The candidate response states this atomic fact accurately; its question-level cited locators point into the frozen snapshot and are semantically consistent with the preregistered oracle locators."
+            }
+          },
+          "expected": "ConfigurationExtensionCompatibilityMode Version8_5_1",
+          "index": 6
+        }
+      ],
+      "questionId": "Q1"
+    },
+    {
+      "items": [
+        {
+          "arms": {
+            "baseline": {
+              "citedLocators": [
+                "HTTPServices/API/Ext/Module.bsl:1-7",
+                "Configuration.xml:765-828",
+                "Configuration.xml:869-923",
+                "Configuration.xml:544-677",
+                "Configuration.xml:924-1026",
+                "CommonModules/API/Ext/Module.bsl:1-1",
+                "Configuration.xml:819-923"
+              ],
+              "correct": true,
+              "rationale": "The baseline response states this atomic fact accurately; its question-level cited locators point into the frozen snapshot and are semantically consistent with the preregistered oracle locators."
+            },
+            "candidate": {
+              "citedLocators": [
+                "Documents/Трудозатраты/Ext/ObjectModule.bsl:1-5",
+                "HTTPServices/API/Ext/Module.bsl:262-281",
+                "Documents/Трудозатраты/Ext/ObjectModule.bsl:130-191",
+                "Catalogs/Мессенджеры/Ext/ManagerModule.bsl:42-58",
+                "CommonModules/РегламентныеЗаданияСервер/Ext/Module.bsl:706-713",
+                "Configuration.xml:544-677",
+                "Configuration.xml:765-828",
+                "Configuration.xml:924-1026"
+              ],
+              "correct": true,
+              "rationale": "The candidate response states this atomic fact accurately; its question-level cited locators point into the frozen snapshot and are semantically consistent with the preregistered oracle locators."
+            }
+          },
+          "expected": "Corporate software-development/project-management system",
+          "index": 1
+        },
+        {
+          "arms": {
+            "baseline": {
+              "citedLocators": [
+                "HTTPServices/API/Ext/Module.bsl:1-7",
+                "Configuration.xml:765-828",
+                "Configuration.xml:869-923",
+                "Configuration.xml:544-677",
+                "Configuration.xml:924-1026",
+                "CommonModules/API/Ext/Module.bsl:1-1",
+                "Configuration.xml:819-923"
+              ],
+              "correct": true,
+              "rationale": "The baseline response states this atomic fact accurately; its question-level cited locators point into the frozen snapshot and are semantically consistent with the preregistered oracle locators."
+            },
+            "candidate": {
+              "citedLocators": [
+                "Documents/Трудозатраты/Ext/ObjectModule.bsl:1-5",
+                "HTTPServices/API/Ext/Module.bsl:262-281",
+                "Documents/Трудозатраты/Ext/ObjectModule.bsl:130-191",
+                "Catalogs/Мессенджеры/Ext/ManagerModule.bsl:42-58",
+                "CommonModules/РегламентныеЗаданияСервер/Ext/Module.bsl:706-713",
+                "Configuration.xml:544-677",
+                "Configuration.xml:765-828",
+                "Configuration.xml:924-1026"
+              ],
+              "correct": false,
+              "rationale": "The response evidences request/task creation, elapsed-time posting, API, messenger and scheduled mechanisms, but does not state sprint support. Because the preregistered expected item is atomic and includes request, task, sprint, elapsed-time documents and API, the complete item is not stated."
+            }
+          },
+          "expected": "Capabilities evidenced by request, task, sprint and elapsed-time documents plus API",
+          "index": 2
+        },
+        {
+          "arms": {
+            "baseline": {
+              "citedLocators": [
+                "HTTPServices/API/Ext/Module.bsl:1-7",
+                "Configuration.xml:765-828",
+                "Configuration.xml:869-923",
+                "Configuration.xml:544-677",
+                "Configuration.xml:924-1026",
+                "CommonModules/API/Ext/Module.bsl:1-1",
+                "Configuration.xml:819-923"
+              ],
+              "correct": true,
+              "rationale": "The baseline response states this atomic fact accurately; its question-level cited locators point into the frozen snapshot and are semantically consistent with the preregistered oracle locators."
+            },
+            "candidate": {
+              "citedLocators": [
+                "Documents/Трудозатраты/Ext/ObjectModule.bsl:1-5",
+                "HTTPServices/API/Ext/Module.bsl:262-281",
+                "Documents/Трудозатраты/Ext/ObjectModule.bsl:130-191",
+                "Catalogs/Мессенджеры/Ext/ManagerModule.bsl:42-58",
+                "CommonModules/РегламентныеЗаданияСервер/Ext/Module.bsl:706-713",
+                "Configuration.xml:544-677",
+                "Configuration.xml:765-828",
+                "Configuration.xml:924-1026"
+              ],
+              "correct": true,
+              "rationale": "The candidate response states this atomic fact accurately; its question-level cited locators point into the frozen snapshot and are semantically consistent with the preregistered oracle locators."
+            }
+          },
+          "expected": "Document=10",
+          "index": 3
+        },
+        {
+          "arms": {
+            "baseline": {
+              "citedLocators": [
+                "HTTPServices/API/Ext/Module.bsl:1-7",
+                "Configuration.xml:765-828",
+                "Configuration.xml:869-923",
+                "Configuration.xml:544-677",
+                "Configuration.xml:924-1026",
+                "CommonModules/API/Ext/Module.bsl:1-1",
+                "Configuration.xml:819-923"
+              ],
+              "correct": true,
+              "rationale": "The baseline response states this atomic fact accurately; its question-level cited locators point into the frozen snapshot and are semantically consistent with the preregistered oracle locators."
+            },
+            "candidate": {
+              "citedLocators": [
+                "Documents/Трудозатраты/Ext/ObjectModule.bsl:1-5",
+                "HTTPServices/API/Ext/Module.bsl:262-281",
+                "Documents/Трудозатраты/Ext/ObjectModule.bsl:130-191",
+                "Catalogs/Мессенджеры/Ext/ManagerModule.bsl:42-58",
+                "CommonModules/РегламентныеЗаданияСервер/Ext/Module.bsl:706-713",
+                "Configuration.xml:544-677",
+                "Configuration.xml:765-828",
+                "Configuration.xml:924-1026"
+              ],
+              "correct": true,
+              "rationale": "The candidate response states this atomic fact accurately; its question-level cited locators point into the frozen snapshot and are semantically consistent with the preregistered oracle locators."
+            }
+          },
+          "expected": "Catalog=54",
+          "index": 4
+        },
+        {
+          "arms": {
+            "baseline": {
+              "citedLocators": [
+                "HTTPServices/API/Ext/Module.bsl:1-7",
+                "Configuration.xml:765-828",
+                "Configuration.xml:869-923",
+                "Configuration.xml:544-677",
+                "Configuration.xml:924-1026",
+                "CommonModules/API/Ext/Module.bsl:1-1",
+                "Configuration.xml:819-923"
+              ],
+              "correct": true,
+              "rationale": "The baseline response states this atomic fact accurately; its question-level cited locators point into the frozen snapshot and are semantically consistent with the preregistered oracle locators."
+            },
+            "candidate": {
+              "citedLocators": [
+                "Documents/Трудозатраты/Ext/ObjectModule.bsl:1-5",
+                "HTTPServices/API/Ext/Module.bsl:262-281",
+                "Documents/Трудозатраты/Ext/ObjectModule.bsl:130-191",
+                "Catalogs/Мессенджеры/Ext/ManagerModule.bsl:42-58",
+                "CommonModules/РегламентныеЗаданияСервер/Ext/Module.bsl:706-713",
+                "Configuration.xml:544-677",
+                "Configuration.xml:765-828",
+                "Configuration.xml:924-1026"
+              ],
+              "correct": true,
+              "rationale": "The candidate response states this atomic fact accurately; its question-level cited locators point into the frozen snapshot and are semantically consistent with the preregistered oracle locators."
+            }
+          },
+          "expected": "CommonModule=100",
+          "index": 5
+        },
+        {
+          "arms": {
+            "baseline": {
+              "citedLocators": [
+                "HTTPServices/API/Ext/Module.bsl:1-7",
+                "Configuration.xml:765-828",
+                "Configuration.xml:869-923",
+                "Configuration.xml:544-677",
+                "Configuration.xml:924-1026",
+                "CommonModules/API/Ext/Module.bsl:1-1",
+                "Configuration.xml:819-923"
+              ],
+              "correct": true,
+              "rationale": "The baseline response states this atomic fact accurately; its question-level cited locators point into the frozen snapshot and are semantically consistent with the preregistered oracle locators."
+            },
+            "candidate": {
+              "citedLocators": [
+                "Documents/Трудозатраты/Ext/ObjectModule.bsl:1-5",
+                "HTTPServices/API/Ext/Module.bsl:262-281",
+                "Documents/Трудозатраты/Ext/ObjectModule.bsl:130-191",
+                "Catalogs/Мессенджеры/Ext/ManagerModule.bsl:42-58",
+                "CommonModules/РегламентныеЗаданияСервер/Ext/Module.bsl:706-713",
+                "Configuration.xml:544-677",
+                "Configuration.xml:765-828",
+                "Configuration.xml:924-1026"
+              ],
+              "correct": true,
+              "rationale": "The candidate response states this atomic fact accurately; its question-level cited locators point into the frozen snapshot and are semantically consistent with the preregistered oracle locators."
+            }
+          },
+          "expected": "InformationRegister=103",
+          "index": 6
+        },
+        {
+          "arms": {
+            "baseline": {
+              "citedLocators": [
+                "HTTPServices/API/Ext/Module.bsl:1-7",
+                "Configuration.xml:765-828",
+                "Configuration.xml:869-923",
+                "Configuration.xml:544-677",
+                "Configuration.xml:924-1026",
+                "CommonModules/API/Ext/Module.bsl:1-1",
+                "Configuration.xml:819-923"
+              ],
+              "correct": true,
+              "rationale": "The baseline response states this atomic fact accurately; its question-level cited locators point into the frozen snapshot and are semantically consistent with the preregistered oracle locators."
+            },
+            "candidate": {
+              "citedLocators": [
+                "Documents/Трудозатраты/Ext/ObjectModule.bsl:1-5",
+                "HTTPServices/API/Ext/Module.bsl:262-281",
+                "Documents/Трудозатраты/Ext/ObjectModule.bsl:130-191",
+                "Catalogs/Мессенджеры/Ext/ManagerModule.bsl:42-58",
+                "CommonModules/РегламентныеЗаданияСервер/Ext/Module.bsl:706-713",
+                "Configuration.xml:544-677",
+                "Configuration.xml:765-828",
+                "Configuration.xml:924-1026"
+              ],
+              "correct": true,
+              "rationale": "The candidate response states this atomic fact accurately; its question-level cited locators point into the frozen snapshot and are semantically consistent with the preregistered oracle locators."
+            }
+          },
+          "expected": "ScheduledJob=24",
+          "index": 7
+        },
+        {
+          "arms": {
+            "baseline": {
+              "citedLocators": [
+                "HTTPServices/API/Ext/Module.bsl:1-7",
+                "Configuration.xml:765-828",
+                "Configuration.xml:869-923",
+                "Configuration.xml:544-677",
+                "Configuration.xml:924-1026",
+                "CommonModules/API/Ext/Module.bsl:1-1",
+                "Configuration.xml:819-923"
+              ],
+              "correct": true,
+              "rationale": "The baseline response states this atomic fact accurately; its question-level cited locators point into the frozen snapshot and are semantically consistent with the preregistered oracle locators."
+            },
+            "candidate": {
+              "citedLocators": [
+                "Documents/Трудозатраты/Ext/ObjectModule.bsl:1-5",
+                "HTTPServices/API/Ext/Module.bsl:262-281",
+                "Documents/Трудозатраты/Ext/ObjectModule.bsl:130-191",
+                "Catalogs/Мессенджеры/Ext/ManagerModule.bsl:42-58",
+                "CommonModules/РегламентныеЗаданияСервер/Ext/Module.bsl:706-713",
+                "Configuration.xml:544-677",
+                "Configuration.xml:765-828",
+                "Configuration.xml:924-1026"
+              ],
+              "correct": true,
+              "rationale": "The candidate response states this atomic fact accurately; its question-level cited locators point into the frozen snapshot and are semantically consistent with the preregistered oracle locators."
+            }
+          },
+          "expected": "HTTPService=1",
+          "index": 8
+        },
+        {
+          "arms": {
+            "baseline": {
+              "citedLocators": [
+                "HTTPServices/API/Ext/Module.bsl:1-7",
+                "Configuration.xml:765-828",
+                "Configuration.xml:869-923",
+                "Configuration.xml:544-677",
+                "Configuration.xml:924-1026",
+                "CommonModules/API/Ext/Module.bsl:1-1",
+                "Configuration.xml:819-923"
+              ],
+              "correct": true,
+              "rationale": "The stated recursive *.bsl count is 646. Independent corpus enumeration reproduced 646; the top-level snapshotContentId identifies the counted frozen source corpus."
+            },
+            "candidate": {
+              "citedLocators": [
+                "Documents/Трудозатраты/Ext/ObjectModule.bsl:1-5",
+                "HTTPServices/API/Ext/Module.bsl:262-281",
+                "Documents/Трудозатраты/Ext/ObjectModule.bsl:130-191",
+                "Catalogs/Мессенджеры/Ext/ManagerModule.bsl:42-58",
+                "CommonModules/РегламентныеЗаданияСервер/Ext/Module.bsl:706-713",
+                "Configuration.xml:544-677",
+                "Configuration.xml:765-828",
+                "Configuration.xml:924-1026"
+              ],
+              "correct": true,
+              "rationale": "The stated recursive *.bsl count is 646. Independent corpus enumeration reproduced 646; the top-level snapshotContentId identifies the counted frozen source corpus."
+            }
+          },
+          "expected": "BSL files=646",
+          "index": 9
+        }
+      ],
+      "questionId": "Q2"
+    },
+    {
+      "items": [
+        {
+          "arms": {
+            "baseline": {
+              "citedLocators": [
+                "HTTPServices/API/Ext/Module.bsl:262-281",
+                "CommonModules/API/Ext/Module.bsl:995-1022",
+                "Documents/ЗаявкаНаРазработку/Ext/ManagerModule.bsl:376-434",
+                "Documents/ЗаявкаНаРазработку/Ext/ManagerModule.bsl:436-475",
+                "Documents/ЗаявкаНаРазработку/Ext/ManagerModule.bsl:813-869"
+              ],
+              "correct": true,
+              "rationale": "The baseline response states this atomic fact accurately; its question-level cited locators point into the frozen snapshot and are semantically consistent with the preregistered oracle locators."
+            },
+            "candidate": {
+              "citedLocators": [
+                "HTTPServices/API.xml:459-525",
+                "HTTPServices/API/Ext/Module.bsl:262-281",
+                "CommonModules/API/Ext/Module.bsl:995-1022",
+                "CommonModules/API/Ext/Module.bsl:5085-5088",
+                "Documents/ЗаявкаНаРазработку/Ext/ManagerModule.bsl:376-434",
+                "Documents/ЗаявкаНаРазработку/Ext/ManagerModule.bsl:436-471"
+              ],
+              "correct": true,
+              "rationale": "The candidate response states this atomic fact accurately; its question-level cited locators point into the frozen snapshot and are semantically consistent with the preregistered oracle locators."
+            }
+          },
+          "expected": "POST handler chooses method=tasks",
+          "index": 1
+        },
+        {
+          "arms": {
+            "baseline": {
+              "citedLocators": [
+                "HTTPServices/API/Ext/Module.bsl:262-281",
+                "CommonModules/API/Ext/Module.bsl:995-1022",
+                "Documents/ЗаявкаНаРазработку/Ext/ManagerModule.bsl:376-434",
+                "Documents/ЗаявкаНаРазработку/Ext/ManagerModule.bsl:436-475",
+                "Documents/ЗаявкаНаРазработку/Ext/ManagerModule.bsl:813-869"
+              ],
+              "correct": true,
+              "rationale": "The baseline response states this atomic fact accurately; its question-level cited locators point into the frozen snapshot and are semantically consistent with the preregistered oracle locators."
+            },
+            "candidate": {
+              "citedLocators": [
+                "HTTPServices/API.xml:459-525",
+                "HTTPServices/API/Ext/Module.bsl:262-281",
+                "CommonModules/API/Ext/Module.bsl:995-1022",
+                "CommonModules/API/Ext/Module.bsl:5085-5088",
+                "Documents/ЗаявкаНаРазработку/Ext/ManagerModule.bsl:376-434",
+                "Documents/ЗаявкаНаРазработку/Ext/ManagerModule.bsl:436-471"
+              ],
+              "correct": true,
+              "rationale": "The candidate response states this atomic fact accurately; its question-level cited locators point into the frozen snapshot and are semantically consistent with the preregistered oracle locators."
+            }
+          },
+          "expected": "Calls API.СоздатьЗадачуОтЗаявки",
+          "index": 2
+        },
+        {
+          "arms": {
+            "baseline": {
+              "citedLocators": [
+                "HTTPServices/API/Ext/Module.bsl:262-281",
+                "CommonModules/API/Ext/Module.bsl:995-1022",
+                "Documents/ЗаявкаНаРазработку/Ext/ManagerModule.bsl:376-434",
+                "Documents/ЗаявкаНаРазработку/Ext/ManagerModule.bsl:436-475",
+                "Documents/ЗаявкаНаРазработку/Ext/ManagerModule.bsl:813-869"
+              ],
+              "correct": true,
+              "rationale": "The baseline response states this atomic fact accurately; its question-level cited locators point into the frozen snapshot and are semantically consistent with the preregistered oracle locators."
+            },
+            "candidate": {
+              "citedLocators": [
+                "HTTPServices/API.xml:459-525",
+                "HTTPServices/API/Ext/Module.bsl:262-281",
+                "CommonModules/API/Ext/Module.bsl:995-1022",
+                "CommonModules/API/Ext/Module.bsl:5085-5088",
+                "Documents/ЗаявкаНаРазработку/Ext/ManagerModule.bsl:376-434",
+                "Documents/ЗаявкаНаРазработку/Ext/ManagerModule.bsl:436-471"
+              ],
+              "correct": true,
+              "rationale": "The candidate response states this atomic fact accurately; its question-level cited locators point into the frozen snapshot and are semantically consistent with the preregistered oracle locators."
+            }
+          },
+          "expected": "Rejects service user",
+          "index": 3
+        },
+        {
+          "arms": {
+            "baseline": {
+              "citedLocators": [
+                "HTTPServices/API/Ext/Module.bsl:262-281",
+                "CommonModules/API/Ext/Module.bsl:995-1022",
+                "Documents/ЗаявкаНаРазработку/Ext/ManagerModule.bsl:376-434",
+                "Documents/ЗаявкаНаРазработку/Ext/ManagerModule.bsl:436-475",
+                "Documents/ЗаявкаНаРазработку/Ext/ManagerModule.bsl:813-869"
+              ],
+              "correct": true,
+              "rationale": "The baseline response states this atomic fact accurately; its question-level cited locators point into the frozen snapshot and are semantically consistent with the preregistered oracle locators."
+            },
+            "candidate": {
+              "citedLocators": [
+                "HTTPServices/API.xml:459-525",
+                "HTTPServices/API/Ext/Module.bsl:262-281",
+                "CommonModules/API/Ext/Module.bsl:995-1022",
+                "CommonModules/API/Ext/Module.bsl:5085-5088",
+                "Documents/ЗаявкаНаРазработку/Ext/ManagerModule.bsl:376-434",
+                "Documents/ЗаявкаНаРазработку/Ext/ManagerModule.bsl:436-471"
+              ],
+              "correct": true,
+              "rationale": "The candidate response states this atomic fact accurately; its question-level cited locators point into the frozen snapshot and are semantically consistent with the preregistered oracle locators."
+            }
+          },
+          "expected": "Resolves request reference and parameters",
+          "index": 4
+        },
+        {
+          "arms": {
+            "baseline": {
+              "citedLocators": [
+                "HTTPServices/API/Ext/Module.bsl:262-281",
+                "CommonModules/API/Ext/Module.bsl:995-1022",
+                "Documents/ЗаявкаНаРазработку/Ext/ManagerModule.bsl:376-434",
+                "Documents/ЗаявкаНаРазработку/Ext/ManagerModule.bsl:436-475",
+                "Documents/ЗаявкаНаРазработку/Ext/ManagerModule.bsl:813-869"
+              ],
+              "correct": true,
+              "rationale": "The baseline response states this atomic fact accurately; its question-level cited locators point into the frozen snapshot and are semantically consistent with the preregistered oracle locators."
+            },
+            "candidate": {
+              "citedLocators": [
+                "HTTPServices/API.xml:459-525",
+                "HTTPServices/API/Ext/Module.bsl:262-281",
+                "CommonModules/API/Ext/Module.bsl:995-1022",
+                "CommonModules/API/Ext/Module.bsl:5085-5088",
+                "Documents/ЗаявкаНаРазработку/Ext/ManagerModule.bsl:376-434",
+                "Documents/ЗаявкаНаРазработку/Ext/ManagerModule.bsl:436-471"
+              ],
+              "correct": true,
+              "rationale": "The candidate response states this atomic fact accurately; its question-level cited locators point into the frozen snapshot and are semantically consistent with the preregistered oracle locators."
+            }
+          },
+          "expected": "Calls document manager СоздатьЗадачуПоСистеме",
+          "index": 5
+        },
+        {
+          "arms": {
+            "baseline": {
+              "citedLocators": [
+                "HTTPServices/API/Ext/Module.bsl:262-281",
+                "CommonModules/API/Ext/Module.bsl:995-1022",
+                "Documents/ЗаявкаНаРазработку/Ext/ManagerModule.bsl:376-434",
+                "Documents/ЗаявкаНаРазработку/Ext/ManagerModule.bsl:436-475",
+                "Documents/ЗаявкаНаРазработку/Ext/ManagerModule.bsl:813-869"
+              ],
+              "correct": true,
+              "rationale": "The baseline response states this atomic fact accurately; its question-level cited locators point into the frozen snapshot and are semantically consistent with the preregistered oracle locators."
+            },
+            "candidate": {
+              "citedLocators": [
+                "HTTPServices/API.xml:459-525",
+                "HTTPServices/API/Ext/Module.bsl:262-281",
+                "CommonModules/API/Ext/Module.bsl:995-1022",
+                "CommonModules/API/Ext/Module.bsl:5085-5088",
+                "Documents/ЗаявкаНаРазработку/Ext/ManagerModule.bsl:376-434",
+                "Documents/ЗаявкаНаРазработку/Ext/ManagerModule.bsl:436-471"
+              ],
+              "correct": true,
+              "rationale": "The candidate response states this atomic fact accurately; its question-level cited locators point into the frozen snapshot and are semantically consistent with the preregistered oracle locators."
+            }
+          },
+          "expected": "Author must belong to IT",
+          "index": 6
+        },
+        {
+          "arms": {
+            "baseline": {
+              "citedLocators": [
+                "HTTPServices/API/Ext/Module.bsl:262-281",
+                "CommonModules/API/Ext/Module.bsl:995-1022",
+                "Documents/ЗаявкаНаРазработку/Ext/ManagerModule.bsl:376-434",
+                "Documents/ЗаявкаНаРазработку/Ext/ManagerModule.bsl:436-475",
+                "Documents/ЗаявкаНаРазработку/Ext/ManagerModule.bsl:813-869"
+              ],
+              "correct": true,
+              "rationale": "The baseline response states this atomic fact accurately; its question-level cited locators point into the frozen snapshot and are semantically consistent with the preregistered oracle locators."
+            },
+            "candidate": {
+              "citedLocators": [
+                "HTTPServices/API.xml:459-525",
+                "HTTPServices/API/Ext/Module.bsl:262-281",
+                "CommonModules/API/Ext/Module.bsl:995-1022",
+                "CommonModules/API/Ext/Module.bsl:5085-5088",
+                "Documents/ЗаявкаНаРазработку/Ext/ManagerModule.bsl:376-434",
+                "Documents/ЗаявкаНаРазработку/Ext/ManagerModule.bsl:436-471"
+              ],
+              "correct": true,
+              "rationale": "The candidate response states this atomic fact accurately; its question-level cited locators point into the frozen snapshot and are semantically consistent with the preregistered oracle locators."
+            }
+          },
+          "expected": "Rejects draft or rejected-system request",
+          "index": 7
+        },
+        {
+          "arms": {
+            "baseline": {
+              "citedLocators": [
+                "HTTPServices/API/Ext/Module.bsl:262-281",
+                "CommonModules/API/Ext/Module.bsl:995-1022",
+                "Documents/ЗаявкаНаРазработку/Ext/ManagerModule.bsl:376-434",
+                "Documents/ЗаявкаНаРазработку/Ext/ManagerModule.bsl:436-475",
+                "Documents/ЗаявкаНаРазработку/Ext/ManagerModule.bsl:813-869"
+              ],
+              "correct": true,
+              "rationale": "The baseline response states this atomic fact accurately; its question-level cited locators point into the frozen snapshot and are semantically consistent with the preregistered oracle locators."
+            },
+            "candidate": {
+              "citedLocators": [
+                "HTTPServices/API.xml:459-525",
+                "HTTPServices/API/Ext/Module.bsl:262-281",
+                "CommonModules/API/Ext/Module.bsl:995-1022",
+                "CommonModules/API/Ext/Module.bsl:5085-5088",
+                "Documents/ЗаявкаНаРазработку/Ext/ManagerModule.bsl:376-434",
+                "Documents/ЗаявкаНаРазработку/Ext/ManagerModule.bsl:436-471"
+              ],
+              "correct": true,
+              "rationale": "The candidate response states this atomic fact accurately; its question-level cited locators point into the frozen snapshot and are semantically consistent with the preregistered oracle locators."
+            }
+          },
+          "expected": "Due date must be later than current day",
+          "index": 8
+        },
+        {
+          "arms": {
+            "baseline": {
+              "citedLocators": [
+                "HTTPServices/API/Ext/Module.bsl:262-281",
+                "CommonModules/API/Ext/Module.bsl:995-1022",
+                "Documents/ЗаявкаНаРазработку/Ext/ManagerModule.bsl:376-434",
+                "Documents/ЗаявкаНаРазработку/Ext/ManagerModule.bsl:436-475",
+                "Documents/ЗаявкаНаРазработку/Ext/ManagerModule.bsl:813-869"
+              ],
+              "correct": true,
+              "rationale": "The baseline response states this atomic fact accurately; its question-level cited locators point into the frozen snapshot and are semantically consistent with the preregistered oracle locators."
+            },
+            "candidate": {
+              "citedLocators": [
+                "HTTPServices/API.xml:459-525",
+                "HTTPServices/API/Ext/Module.bsl:262-281",
+                "CommonModules/API/Ext/Module.bsl:995-1022",
+                "CommonModules/API/Ext/Module.bsl:5085-5088",
+                "Documents/ЗаявкаНаРазработку/Ext/ManagerModule.bsl:376-434",
+                "Documents/ЗаявкаНаРазработку/Ext/ManagerModule.bsl:436-471"
+              ],
+              "correct": true,
+              "rationale": "The candidate response states this atomic fact accurately; its question-level cited locators point into the frozen snapshot and are semantically consistent with the preregistered oracle locators."
+            }
+          },
+          "expected": "Creates and writes Документ.Задача with New status, base request and core fields",
+          "index": 9
+        }
+      ],
+      "questionId": "Q3"
+    },
+    {
+      "items": [
+        {
+          "arms": {
+            "baseline": {
+              "citedLocators": [
+                "Documents/Трудозатраты/Ext/ObjectModule.bsl:130-153",
+                "Documents/Трудозатраты/Ext/ObjectModule.bsl:155-193",
+                "Documents/Трудозатраты/Ext/ObjectModule.bsl:48-68"
+              ],
+              "correct": true,
+              "rationale": "The baseline response states this atomic fact accurately; its question-level cited locators point into the frozen snapshot and are semantically consistent with the preregistered oracle locators."
+            },
+            "candidate": {
+              "citedLocators": [
+                "Documents/Трудозатраты/Ext/ObjectModule.bsl:130-153",
+                "Documents/Трудозатраты/Ext/ObjectModule.bsl:155-191",
+                "Documents/Трудозатраты/Ext/ObjectModule.bsl:51-68"
+              ],
+              "correct": true,
+              "rationale": "The candidate response states this atomic fact accurately; its question-level cited locators point into the frozen snapshot and are semantically consistent with the preregistered oracle locators."
+            }
+          },
+          "expected": "Always clears and writes one Трудозатраты movement populated from document/session fields",
+          "index": 1
+        },
+        {
+          "arms": {
+            "baseline": {
+              "citedLocators": [
+                "Documents/Трудозатраты/Ext/ObjectModule.bsl:130-153",
+                "Documents/Трудозатраты/Ext/ObjectModule.bsl:155-193",
+                "Documents/Трудозатраты/Ext/ObjectModule.bsl:48-68"
+              ],
+              "correct": true,
+              "rationale": "The baseline response states this atomic fact accurately; its question-level cited locators point into the frozen snapshot and are semantically consistent with the preregistered oracle locators."
+            },
+            "candidate": {
+              "citedLocators": [
+                "Documents/Трудозатраты/Ext/ObjectModule.bsl:130-153",
+                "Documents/Трудозатраты/Ext/ObjectModule.bsl:155-191",
+                "Documents/Трудозатраты/Ext/ObjectModule.bsl:51-68"
+              ],
+              "correct": true,
+              "rationale": "The candidate response states this atomic fact accurately; its question-level cited locators point into the frozen snapshot and are semantically consistent with the preregistered oracle locators."
+            }
+          },
+          "expected": "ОказанныеУслуги movement is considered only when legal entity and service are filled",
+          "index": 2
+        },
+        {
+          "arms": {
+            "baseline": {
+              "citedLocators": [
+                "Documents/Трудозатраты/Ext/ObjectModule.bsl:130-153",
+                "Documents/Трудозатраты/Ext/ObjectModule.bsl:155-193",
+                "Documents/Трудозатраты/Ext/ObjectModule.bsl:48-68"
+              ],
+              "correct": true,
+              "rationale": "The baseline response states this atomic fact accurately; its question-level cited locators point into the frozen snapshot and are semantically consistent with the preregistered oracle locators."
+            },
+            "candidate": {
+              "citedLocators": [
+                "Documents/Трудозатраты/Ext/ObjectModule.bsl:130-153",
+                "Documents/Трудозатраты/Ext/ObjectModule.bsl:155-191",
+                "Documents/Трудозатраты/Ext/ObjectModule.bsl:51-68"
+              ],
+              "correct": true,
+              "rationale": "The candidate response states this atomic fact accurately; its question-level cited locators point into the frozen snapshot and are semantically consistent with the preregistered oracle locators."
+            }
+          },
+          "expected": "Task resolves base request",
+          "index": 3
+        },
+        {
+          "arms": {
+            "baseline": {
+              "citedLocators": [
+                "Documents/Трудозатраты/Ext/ObjectModule.bsl:130-153",
+                "Documents/Трудозатраты/Ext/ObjectModule.bsl:155-193",
+                "Documents/Трудозатраты/Ext/ObjectModule.bsl:48-68"
+              ],
+              "correct": true,
+              "rationale": "The baseline response states this atomic fact accurately; its question-level cited locators point into the frozen snapshot and are semantically consistent with the preregistered oracle locators."
+            },
+            "candidate": {
+              "citedLocators": [
+                "Documents/Трудозатраты/Ext/ObjectModule.bsl:130-153",
+                "Documents/Трудозатраты/Ext/ObjectModule.bsl:155-191",
+                "Documents/Трудозатраты/Ext/ObjectModule.bsl:51-68"
+              ],
+              "correct": true,
+              "rationale": "The candidate response states this atomic fact accurately; its question-level cited locators point into the frozen snapshot and are semantically consistent with the preregistered oracle locators."
+            }
+          },
+          "expected": "Movement is added only with filled base object and Price>0",
+          "index": 4
+        },
+        {
+          "arms": {
+            "baseline": {
+              "citedLocators": [
+                "Documents/Трудозатраты/Ext/ObjectModule.bsl:130-153",
+                "Documents/Трудозатраты/Ext/ObjectModule.bsl:155-193",
+                "Documents/Трудозатраты/Ext/ObjectModule.bsl:48-68"
+              ],
+              "correct": true,
+              "rationale": "The baseline response states this atomic fact accurately; its question-level cited locators point into the frozen snapshot and are semantically consistent with the preregistered oracle locators."
+            },
+            "candidate": {
+              "citedLocators": [
+                "Documents/Трудозатраты/Ext/ObjectModule.bsl:130-153",
+                "Documents/Трудозатраты/Ext/ObjectModule.bsl:155-191",
+                "Documents/Трудозатраты/Ext/ObjectModule.bsl:51-68"
+              ],
+              "correct": true,
+              "rationale": "The candidate response states this atomic fact accurately; its question-level cited locators point into the frozen snapshot and are semantically consistent with the preregistered oracle locators."
+            }
+          },
+          "expected": "Quantity=Затрата",
+          "index": 5
+        },
+        {
+          "arms": {
+            "baseline": {
+              "citedLocators": [
+                "Documents/Трудозатраты/Ext/ObjectModule.bsl:130-153",
+                "Documents/Трудозатраты/Ext/ObjectModule.bsl:155-193",
+                "Documents/Трудозатраты/Ext/ObjectModule.bsl:48-68"
+              ],
+              "correct": true,
+              "rationale": "The baseline response states this atomic fact accurately; its question-level cited locators point into the frozen snapshot and are semantically consistent with the preregistered oracle locators."
+            },
+            "candidate": {
+              "citedLocators": [
+                "Documents/Трудозатраты/Ext/ObjectModule.bsl:130-153",
+                "Documents/Трудозатраты/Ext/ObjectModule.bsl:155-191",
+                "Documents/Трудозатраты/Ext/ObjectModule.bsl:51-68"
+              ],
+              "correct": true,
+              "rationale": "The candidate response states this atomic fact accurately; its question-level cited locators point into the frozen snapshot and are semantically consistent with the preregistered oracle locators."
+            }
+          },
+          "expected": "Amount=Затрата*Цена",
+          "index": 6
+        }
+      ],
+      "questionId": "Q4"
+    },
+    {
+      "items": [
+        {
+          "arms": {
+            "baseline": {
+              "citedLocators": [
+                "ScheduledJobs/ОбновитьIDПользователейМессенджера.xml:3-20",
+                "Catalogs/Мессенджеры/Ext/Predefined.xml:3-14",
+                "Catalogs/Мессенджеры/Ext/ManagerModule.bsl:20-32",
+                "Catalogs/Мессенджеры/Ext/ManagerModule.bsl:42-58",
+                "Catalogs/Мессенджеры/Ext/ManagerModule.bsl:74-99"
+              ],
+              "correct": false,
+              "rationale": "The response substitutes ScheduledJob ОбновитьIDПользователейМессенджера. It never states the preregistered fact that ПересчитатьОчередьЗадач calls CommonModule.РегламентныеЗаданияСервер.ПересчитатьОчередьЗадач."
+            },
+            "candidate": {
+              "citedLocators": [
+                "ScheduledJobs/ОбновитьIDПользователейМессенджера.xml:3-20",
+                "ScheduledJobs/ОбновитьIDПользователейМессенджера/Ext/Schedule.xml:2-6",
+                "CommonModules/РегламентныеЗаданияСервер/Ext/Module.bsl:706-713",
+                "Catalogs/Мессенджеры/Ext/ManagerModule.bsl:20-58",
+                "Catalogs/Мессенджеры/Ext/ManagerModule.bsl:74-99"
+              ],
+              "correct": false,
+              "rationale": "The response substitutes ScheduledJob ОбновитьIDПользователейМессенджера. It never states the preregistered fact that ПересчитатьОчередьЗадач calls CommonModule.РегламентныеЗаданияСервер.ПересчитатьОчередьЗадач."
+            }
+          },
+          "expected": "Scheduled job ПересчитатьОчередьЗадач calls CommonModule.РегламентныеЗаданияСервер.ПересчитатьОчередьЗадач",
+          "index": 1
+        },
+        {
+          "arms": {
+            "baseline": {
+              "citedLocators": [
+                "ScheduledJobs/ОбновитьIDПользователейМессенджера.xml:3-20",
+                "Catalogs/Мессенджеры/Ext/Predefined.xml:3-14",
+                "Catalogs/Мессенджеры/Ext/ManagerModule.bsl:20-32",
+                "Catalogs/Мессенджеры/Ext/ManagerModule.bsl:42-58",
+                "Catalogs/Мессенджеры/Ext/ManagerModule.bsl:74-99"
+              ],
+              "correct": true,
+              "rationale": "For the substituted but valid scheduled-job example, the cited XML directly states Use=false and Predefined=true; this expected atom does not itself name a job."
+            },
+            "candidate": {
+              "citedLocators": [
+                "ScheduledJobs/ОбновитьIDПользователейМессенджера.xml:3-20",
+                "ScheduledJobs/ОбновитьIDПользователейМессенджера/Ext/Schedule.xml:2-6",
+                "CommonModules/РегламентныеЗаданияСервер/Ext/Module.bsl:706-713",
+                "Catalogs/Мессенджеры/Ext/ManagerModule.bsl:20-58",
+                "Catalogs/Мессенджеры/Ext/ManagerModule.bsl:74-99"
+              ],
+              "correct": true,
+              "rationale": "For the substituted but valid scheduled-job example, the cited XML directly states Use=false and Predefined=true; this expected atom does not itself name a job."
+            }
+          },
+          "expected": "Metadata Use=false and predefined=true",
+          "index": 2
+        },
+        {
+          "arms": {
+            "baseline": {
+              "citedLocators": [
+                "ScheduledJobs/ОбновитьIDПользователейМессенджера.xml:3-20",
+                "Catalogs/Мессенджеры/Ext/Predefined.xml:3-14",
+                "Catalogs/Мессенджеры/Ext/ManagerModule.bsl:20-32",
+                "Catalogs/Мессенджеры/Ext/ManagerModule.bsl:42-58",
+                "Catalogs/Мессенджеры/Ext/ManagerModule.bsl:74-99"
+              ],
+              "correct": true,
+              "rationale": "The baseline response states this atomic fact accurately; its question-level cited locators point into the frozen snapshot and are semantically consistent with the preregistered oracle locators."
+            },
+            "candidate": {
+              "citedLocators": [
+                "ScheduledJobs/ОбновитьIDПользователейМессенджера.xml:3-20",
+                "ScheduledJobs/ОбновитьIDПользователейМессенджера/Ext/Schedule.xml:2-6",
+                "CommonModules/РегламентныеЗаданияСервер/Ext/Module.bsl:706-713",
+                "Catalogs/Мессенджеры/Ext/ManagerModule.bsl:20-58",
+                "Catalogs/Мессенджеры/Ext/ManagerModule.bsl:74-99"
+              ],
+              "correct": true,
+              "rationale": "The candidate response states this atomic fact accurately; its question-level cited locators point into the frozen snapshot and are semantically consistent with the preregistered oracle locators."
+            }
+          },
+          "expected": "Messenger is selected by ОсновнойМессенджер constant when not supplied",
+          "index": 3
+        },
+        {
+          "arms": {
+            "baseline": {
+              "citedLocators": [
+                "ScheduledJobs/ОбновитьIDПользователейМессенджера.xml:3-20",
+                "Catalogs/Мессенджеры/Ext/Predefined.xml:3-14",
+                "Catalogs/Мессенджеры/Ext/ManagerModule.bsl:20-32",
+                "Catalogs/Мессенджеры/Ext/ManagerModule.bsl:42-58",
+                "Catalogs/Мессенджеры/Ext/ManagerModule.bsl:74-99"
+              ],
+              "correct": true,
+              "rationale": "The baseline response states this atomic fact accurately; its question-level cited locators point into the frozen snapshot and are semantically consistent with the preregistered oracle locators."
+            },
+            "candidate": {
+              "citedLocators": [
+                "ScheduledJobs/ОбновитьIDПользователейМессенджера.xml:3-20",
+                "ScheduledJobs/ОбновитьIDПользователейМессенджера/Ext/Schedule.xml:2-6",
+                "CommonModules/РегламентныеЗаданияСервер/Ext/Module.bsl:706-713",
+                "Catalogs/Мессенджеры/Ext/ManagerModule.bsl:20-58",
+                "Catalogs/Мессенджеры/Ext/ManagerModule.bsl:74-99"
+              ],
+              "correct": true,
+              "rationale": "The candidate response states this atomic fact accurately; its question-level cited locators point into the frozen snapshot and are semantically consistent with the preregistered oracle locators."
+            }
+          },
+          "expected": "Rocket.Chat and Mattermost adapters are supported",
+          "index": 4
+        },
+        {
+          "arms": {
+            "baseline": {
+              "citedLocators": [
+                "ScheduledJobs/ОбновитьIDПользователейМессенджера.xml:3-20",
+                "Catalogs/Мессенджеры/Ext/Predefined.xml:3-14",
+                "Catalogs/Мессенджеры/Ext/ManagerModule.bsl:20-32",
+                "Catalogs/Мессенджеры/Ext/ManagerModule.bsl:42-58",
+                "Catalogs/Мессенджеры/Ext/ManagerModule.bsl:74-99"
+              ],
+              "correct": true,
+              "rationale": "The baseline response states this atomic fact accurately; its question-level cited locators point into the frozen snapshot and are semantically consistent with the preregistered oracle locators."
+            },
+            "candidate": {
+              "citedLocators": [
+                "ScheduledJobs/ОбновитьIDПользователейМессенджера.xml:3-20",
+                "ScheduledJobs/ОбновитьIDПользователейМессенджера/Ext/Schedule.xml:2-6",
+                "CommonModules/РегламентныеЗаданияСервер/Ext/Module.bsl:706-713",
+                "Catalogs/Мессенджеры/Ext/ManagerModule.bsl:20-58",
+                "Catalogs/Мессенджеры/Ext/ManagerModule.bsl:74-99"
+              ],
+              "correct": true,
+              "rationale": "The candidate response states this atomic fact accurately; its question-level cited locators point into the frozen snapshot and are semantically consistent with the preregistered oracle locators."
+            }
+          },
+          "expected": "Actual selected messenger and effective schedule/runtime enabled state are unknown",
+          "index": 5
+        }
+      ],
+      "questionId": "Q5"
+    },
+    {
+      "items": [
+        {
+          "arms": {
+            "baseline": {
+              "citedLocators": [
+                "InformationRegisters/ТокеныДоступаПользователей/Ext/ManagerModule.bsl:93-131",
+                "InformationRegisters/ТокеныДоступаПользователей/Ext/ManagerModule.bsl:133-179",
+                "InformationRegisters/ТокеныДоступаПользователей/Ext/ManagerModule.bsl:22-56",
+                "InformationRegisters/ТокеныДоступаПользователей/Ext/ManagerModule.bsl:204-214"
+              ],
+              "correct": true,
+              "rationale": "The baseline response states this atomic fact accurately; its question-level cited locators point into the frozen snapshot and are semantically consistent with the preregistered oracle locators."
+            },
+            "candidate": {
+              "citedLocators": [
+                "CommonModules/API/Ext/Module.bsl:4670-4693",
+                "InformationRegisters/ТокеныДоступаПользователей/Ext/ManagerModule.bsl:93-131",
+                "InformationRegisters/ТокеныДоступаПользователей/Ext/ManagerModule.bsl:133-176",
+                "InformationRegisters/ТокеныДоступаПользователей/Ext/ManagerModule.bsl:22-58"
+              ],
+              "correct": true,
+              "rationale": "The candidate response states this atomic fact accurately; its question-level cited locators point into the frozen snapshot and are semantically consistent with the preregistered oracle locators."
+            }
+          },
+          "expected": "Reads Authorization and requires Bearer prefix",
+          "index": 1
+        },
+        {
+          "arms": {
+            "baseline": {
+              "citedLocators": [
+                "InformationRegisters/ТокеныДоступаПользователей/Ext/ManagerModule.bsl:93-131",
+                "InformationRegisters/ТокеныДоступаПользователей/Ext/ManagerModule.bsl:133-179",
+                "InformationRegisters/ТокеныДоступаПользователей/Ext/ManagerModule.bsl:22-56",
+                "InformationRegisters/ТокеныДоступаПользователей/Ext/ManagerModule.bsl:204-214"
+              ],
+              "correct": true,
+              "rationale": "The baseline response states this atomic fact accurately; its question-level cited locators point into the frozen snapshot and are semantically consistent with the preregistered oracle locators."
+            },
+            "candidate": {
+              "citedLocators": [
+                "CommonModules/API/Ext/Module.bsl:4670-4693",
+                "InformationRegisters/ТокеныДоступаПользователей/Ext/ManagerModule.bsl:93-131",
+                "InformationRegisters/ТокеныДоступаПользователей/Ext/ManagerModule.bsl:133-176",
+                "InformationRegisters/ТокеныДоступаПользователей/Ext/ManagerModule.bsl:22-58"
+              ],
+              "correct": true,
+              "rationale": "The candidate response states this atomic fact accurately; its question-level cited locators point into the frozen snapshot and are semantically consistent with the preregistered oracle locators."
+            }
+          },
+          "expected": "Requires JWT-shaped three parts",
+          "index": 2
+        },
+        {
+          "arms": {
+            "baseline": {
+              "citedLocators": [
+                "InformationRegisters/ТокеныДоступаПользователей/Ext/ManagerModule.bsl:93-131",
+                "InformationRegisters/ТокеныДоступаПользователей/Ext/ManagerModule.bsl:133-179",
+                "InformationRegisters/ТокеныДоступаПользователей/Ext/ManagerModule.bsl:22-56",
+                "InformationRegisters/ТокеныДоступаПользователей/Ext/ManagerModule.bsl:204-214"
+              ],
+              "correct": true,
+              "rationale": "The baseline response states this atomic fact accurately; its question-level cited locators point into the frozen snapshot and are semantically consistent with the preregistered oracle locators."
+            },
+            "candidate": {
+              "citedLocators": [
+                "CommonModules/API/Ext/Module.bsl:4670-4693",
+                "InformationRegisters/ТокеныДоступаПользователей/Ext/ManagerModule.bsl:93-131",
+                "InformationRegisters/ТокеныДоступаПользователей/Ext/ManagerModule.bsl:133-176",
+                "InformationRegisters/ТокеныДоступаПользователей/Ext/ManagerModule.bsl:22-58"
+              ],
+              "correct": true,
+              "rationale": "The candidate response states this atomic fact accurately; its question-level cited locators point into the frozen snapshot and are semantically consistent with the preregistered oracle locators."
+            }
+          },
+          "expected": "Decodes payload and reads jti",
+          "index": 3
+        },
+        {
+          "arms": {
+            "baseline": {
+              "citedLocators": [
+                "InformationRegisters/ТокеныДоступаПользователей/Ext/ManagerModule.bsl:93-131",
+                "InformationRegisters/ТокеныДоступаПользователей/Ext/ManagerModule.bsl:133-179",
+                "InformationRegisters/ТокеныДоступаПользователей/Ext/ManagerModule.bsl:22-56",
+                "InformationRegisters/ТокеныДоступаПользователей/Ext/ManagerModule.bsl:204-214"
+              ],
+              "correct": true,
+              "rationale": "The baseline response states this atomic fact accurately; its question-level cited locators point into the frozen snapshot and are semantically consistent with the preregistered oracle locators."
+            },
+            "candidate": {
+              "citedLocators": [
+                "CommonModules/API/Ext/Module.bsl:4670-4693",
+                "InformationRegisters/ТокеныДоступаПользователей/Ext/ManagerModule.bsl:93-131",
+                "InformationRegisters/ТокеныДоступаПользователей/Ext/ManagerModule.bsl:133-176",
+                "InformationRegisters/ТокеныДоступаПользователей/Ext/ManagerModule.bsl:22-58"
+              ],
+              "correct": true,
+              "rationale": "The candidate response states this atomic fact accurately; its question-level cited locators point into the frozen snapshot and are semantically consistent with the preregistered oracle locators."
+            }
+          },
+          "expected": "Checks current user, jti and non-expired date in ТокеныДоступаПользователей",
+          "index": 4
+        },
+        {
+          "arms": {
+            "baseline": {
+              "citedLocators": [
+                "InformationRegisters/ТокеныДоступаПользователей/Ext/ManagerModule.bsl:93-131",
+                "InformationRegisters/ТокеныДоступаПользователей/Ext/ManagerModule.bsl:133-179",
+                "InformationRegisters/ТокеныДоступаПользователей/Ext/ManagerModule.bsl:22-56",
+                "InformationRegisters/ТокеныДоступаПользователей/Ext/ManagerModule.bsl:204-214"
+              ],
+              "correct": true,
+              "rationale": "The baseline response states this atomic fact accurately; its question-level cited locators point into the frozen snapshot and are semantically consistent with the preregistered oracle locators."
+            },
+            "candidate": {
+              "citedLocators": [
+                "CommonModules/API/Ext/Module.bsl:4670-4693",
+                "InformationRegisters/ТокеныДоступаПользователей/Ext/ManagerModule.bsl:93-131",
+                "InformationRegisters/ТокеныДоступаПользователей/Ext/ManagerModule.bsl:133-176",
+                "InformationRegisters/ТокеныДоступаПользователей/Ext/ManagerModule.bsl:22-58"
+              ],
+              "correct": true,
+              "rationale": "The candidate response states this atomic fact accurately; its question-level cited locators point into the frozen snapshot and are semantically consistent with the preregistered oracle locators."
+            }
+          },
+          "expected": "Updates last-used date on success",
+          "index": 5
+        },
+        {
+          "arms": {
+            "baseline": {
+              "citedLocators": [
+                "InformationRegisters/ТокеныДоступаПользователей/Ext/ManagerModule.bsl:93-131",
+                "InformationRegisters/ТокеныДоступаПользователей/Ext/ManagerModule.bsl:133-179",
+                "InformationRegisters/ТокеныДоступаПользователей/Ext/ManagerModule.bsl:22-56",
+                "InformationRegisters/ТокеныДоступаПользователей/Ext/ManagerModule.bsl:204-214"
+              ],
+              "correct": true,
+              "rationale": "The answer explicitly says the visible chain does not prove signature verification and distinguishes token issuance/signing from request-path verification."
+            },
+            "candidate": {
+              "citedLocators": [
+                "CommonModules/API/Ext/Module.bsl:4670-4693",
+                "InformationRegisters/ТокеныДоступаПользователей/Ext/ManagerModule.bsl:93-131",
+                "InformationRegisters/ТокеныДоступаПользователей/Ext/ManagerModule.bsl:133-176",
+                "InformationRegisters/ТокеныДоступаПользователей/Ext/ManagerModule.bsl:22-58"
+              ],
+              "correct": true,
+              "rationale": "The answer explicitly says the visible chain does not prove signature verification and notes that the signature part is unused in the shown check."
+            }
+          },
+          "expected": "This visible chain does not prove cryptographic signature verification",
+          "index": 6
+        }
+      ],
+      "questionId": "Q6"
+    },
+    {
+      "items": [
+        {
+          "arms": {
+            "baseline": {
+              "citedLocators": [
+                "HTTPServices/API/Ext/Module.bsl:262-281",
+                "ScheduledJobs/ОбновитьIDПользователейМессенджера.xml:13-19",
+                "Catalogs/Мессенджеры/Ext/ManagerModule.bsl:42-54",
+                "Configuration.xml:819-828",
+                "Configuration.xml:1022-1027",
+                "InformationRegisters/ТокеныДоступаПользователей/Ext/ManagerModule.bsl:133-171",
+                "Configuration.xml:44-56",
+                "Configuration.xml:269-276"
+              ],
+              "correct": true,
+              "rationale": "The baseline response states this atomic fact accurately; its question-level cited locators point into the frozen snapshot and are semantically consistent with the preregistered oracle locators."
+            },
+            "candidate": {
+              "citedLocators": [
+                "HTTPServices/API.xml:3-16",
+                "HTTPServices/API.xml:459-525",
+                "ScheduledJobs/ОбновитьIDПользователейМессенджера.xml:3-20",
+                "ScheduledJobs/ОбновитьIDПользователейМессенджера/Ext/Schedule.xml:2-6",
+                "Catalogs/Мессенджеры/Ext/ManagerModule.bsl:20-58",
+                "Documents/Трудозатраты/Ext/ObjectModule.bsl:130-191",
+                "Configuration.xml:44-56",
+                "InformationRegisters/ТокеныДоступаПользователей/Ext/ManagerModule.bsl:93-176"
+              ],
+              "correct": true,
+              "rationale": "The candidate response states this atomic fact accurately; its question-level cited locators point into the frozen snapshot and are semantically consistent with the preregistered oracle locators."
+            }
+          },
+          "expected": "Cannot know actual production publication/routes or reachability",
+          "index": 1
+        },
+        {
+          "arms": {
+            "baseline": {
+              "citedLocators": [
+                "HTTPServices/API/Ext/Module.bsl:262-281",
+                "ScheduledJobs/ОбновитьIDПользователейМессенджера.xml:13-19",
+                "Catalogs/Мессенджеры/Ext/ManagerModule.bsl:42-54",
+                "Configuration.xml:819-828",
+                "Configuration.xml:1022-1027",
+                "InformationRegisters/ТокеныДоступаПользователей/Ext/ManagerModule.bsl:133-171",
+                "Configuration.xml:44-56",
+                "Configuration.xml:269-276"
+              ],
+              "correct": true,
+              "rationale": "The baseline response states this atomic fact accurately; its question-level cited locators point into the frozen snapshot and are semantically consistent with the preregistered oracle locators."
+            },
+            "candidate": {
+              "citedLocators": [
+                "HTTPServices/API.xml:3-16",
+                "HTTPServices/API.xml:459-525",
+                "ScheduledJobs/ОбновитьIDПользователейМессенджера.xml:3-20",
+                "ScheduledJobs/ОбновитьIDПользователейМессенджера/Ext/Schedule.xml:2-6",
+                "Catalogs/Мессенджеры/Ext/ManagerModule.bsl:20-58",
+                "Documents/Трудозатраты/Ext/ObjectModule.bsl:130-191",
+                "Configuration.xml:44-56",
+                "InformationRegisters/ТокеныДоступаПользователей/Ext/ManagerModule.bsl:93-176"
+              ],
+              "correct": true,
+              "rationale": "The candidate response states this atomic fact accurately; its question-level cited locators point into the frozen snapshot and are semantically consistent with the preregistered oracle locators."
+            }
+          },
+          "expected": "Cannot know live records or register movements",
+          "index": 2
+        },
+        {
+          "arms": {
+            "baseline": {
+              "citedLocators": [
+                "HTTPServices/API/Ext/Module.bsl:262-281",
+                "ScheduledJobs/ОбновитьIDПользователейМессенджера.xml:13-19",
+                "Catalogs/Мессенджеры/Ext/ManagerModule.bsl:42-54",
+                "Configuration.xml:819-828",
+                "Configuration.xml:1022-1027",
+                "InformationRegisters/ТокеныДоступаПользователей/Ext/ManagerModule.bsl:133-171",
+                "Configuration.xml:44-56",
+                "Configuration.xml:269-276"
+              ],
+              "correct": true,
+              "rationale": "The baseline response states this atomic fact accurately; its question-level cited locators point into the frozen snapshot and are semantically consistent with the preregistered oracle locators."
+            },
+            "candidate": {
+              "citedLocators": [
+                "HTTPServices/API.xml:3-16",
+                "HTTPServices/API.xml:459-525",
+                "ScheduledJobs/ОбновитьIDПользователейМессенджера.xml:3-20",
+                "ScheduledJobs/ОбновитьIDПользователейМессенджера/Ext/Schedule.xml:2-6",
+                "Catalogs/Мессенджеры/Ext/ManagerModule.bsl:20-58",
+                "Documents/Трудозатраты/Ext/ObjectModule.bsl:130-191",
+                "Configuration.xml:44-56",
+                "InformationRegisters/ТокеныДоступаПользователей/Ext/ManagerModule.bsl:93-176"
+              ],
+              "correct": true,
+              "rationale": "The candidate response states this atomic fact accurately; its question-level cited locators point into the frozen snapshot and are semantically consistent with the preregistered oracle locators."
+            }
+          },
+          "expected": "Cannot know effective scheduled-job state",
+          "index": 3
+        },
+        {
+          "arms": {
+            "baseline": {
+              "citedLocators": [
+                "HTTPServices/API/Ext/Module.bsl:262-281",
+                "ScheduledJobs/ОбновитьIDПользователейМессенджера.xml:13-19",
+                "Catalogs/Мессенджеры/Ext/ManagerModule.bsl:42-54",
+                "Configuration.xml:819-828",
+                "Configuration.xml:1022-1027",
+                "InformationRegisters/ТокеныДоступаПользователей/Ext/ManagerModule.bsl:133-171",
+                "Configuration.xml:44-56",
+                "Configuration.xml:269-276"
+              ],
+              "correct": true,
+              "rationale": "The baseline response states this atomic fact accurately; its question-level cited locators point into the frozen snapshot and are semantically consistent with the preregistered oracle locators."
+            },
+            "candidate": {
+              "citedLocators": [
+                "HTTPServices/API.xml:3-16",
+                "HTTPServices/API.xml:459-525",
+                "ScheduledJobs/ОбновитьIDПользователейМессенджера.xml:3-20",
+                "ScheduledJobs/ОбновитьIDПользователейМессенджера/Ext/Schedule.xml:2-6",
+                "Catalogs/Мессенджеры/Ext/ManagerModule.bsl:20-58",
+                "Documents/Трудозатраты/Ext/ObjectModule.bsl:130-191",
+                "Configuration.xml:44-56",
+                "InformationRegisters/ТокеныДоступаПользователей/Ext/ManagerModule.bsl:93-176"
+              ],
+              "correct": true,
+              "rationale": "The candidate response states this atomic fact accurately; its question-level cited locators point into the frozen snapshot and are semantically consistent with the preregistered oracle locators."
+            }
+          },
+          "expected": "Cannot know selected messenger or connection settings/secrets",
+          "index": 4
+        },
+        {
+          "arms": {
+            "baseline": {
+              "citedLocators": [
+                "HTTPServices/API/Ext/Module.bsl:262-281",
+                "ScheduledJobs/ОбновитьIDПользователейМессенджера.xml:13-19",
+                "Catalogs/Мессенджеры/Ext/ManagerModule.bsl:42-54",
+                "Configuration.xml:819-828",
+                "Configuration.xml:1022-1027",
+                "InformationRegisters/ТокеныДоступаПользователей/Ext/ManagerModule.bsl:133-171",
+                "Configuration.xml:44-56",
+                "Configuration.xml:269-276"
+              ],
+              "correct": false,
+              "rationale": "The response discusses active tokens and authentication logs, but does not state that actual user-role assignments are unknown. The atomic expected item joins actual user roles with token validity, so it is incomplete."
+            },
+            "candidate": {
+              "citedLocators": [
+                "HTTPServices/API.xml:3-16",
+                "HTTPServices/API.xml:459-525",
+                "ScheduledJobs/ОбновитьIDПользователейМессенджера.xml:3-20",
+                "ScheduledJobs/ОбновитьIDПользователейМессенджера/Ext/Schedule.xml:2-6",
+                "Catalogs/Мессенджеры/Ext/ManagerModule.bsl:20-58",
+                "Documents/Трудозатраты/Ext/ObjectModule.bsl:130-191",
+                "Configuration.xml:44-56",
+                "InformationRegisters/ТокеныДоступаПользователей/Ext/ManagerModule.bsl:93-176"
+              ],
+              "correct": false,
+              "rationale": "The response does not state that actual user-role assignments or live token validity are unknown; it substitutes deployed extensions and possible external JWT verification. The preregistered atomic item is therefore not stated."
+            }
+          },
+          "expected": "Cannot know actual user roles/token validity",
+          "index": 5
+        },
+        {
+          "arms": {
+            "baseline": {
+              "citedLocators": [
+                "HTTPServices/API/Ext/Module.bsl:262-281",
+                "ScheduledJobs/ОбновитьIDПользователейМессенджера.xml:13-19",
+                "Catalogs/Мессенджеры/Ext/ManagerModule.bsl:42-54",
+                "Configuration.xml:819-828",
+                "Configuration.xml:1022-1027",
+                "InformationRegisters/ТокеныДоступаПользователей/Ext/ManagerModule.bsl:133-171",
+                "Configuration.xml:44-56",
+                "Configuration.xml:269-276"
+              ],
+              "correct": true,
+              "rationale": "The baseline response states this atomic fact accurately; its question-level cited locators point into the frozen snapshot and are semantically consistent with the preregistered oracle locators."
+            },
+            "candidate": {
+              "citedLocators": [
+                "HTTPServices/API.xml:3-16",
+                "HTTPServices/API.xml:459-525",
+                "ScheduledJobs/ОбновитьIDПользователейМессенджера.xml:3-20",
+                "ScheduledJobs/ОбновитьIDПользователейМессенджера/Ext/Schedule.xml:2-6",
+                "Catalogs/Мессенджеры/Ext/ManagerModule.bsl:20-58",
+                "Documents/Трудозатраты/Ext/ObjectModule.bsl:130-191",
+                "Configuration.xml:44-56",
+                "InformationRegisters/ТокеныДоступаПользователей/Ext/ManagerModule.bsl:93-176"
+              ],
+              "correct": true,
+              "rationale": "The candidate response states this atomic fact accurately; its question-level cited locators point into the frozen snapshot and are semantically consistent with the preregistered oracle locators."
+            }
+          },
+          "expected": "Needs server publication config, read-only DB/runtime queries, scheduled-job state, constants/secure-storage inventory or access logs respectively",
+          "index": 6
+        }
+      ],
+      "questionId": "Q7"
+    }
+  ],
+  "reviewer": "independent-hermes-adjudicator-gpt-5.6-sol",
+  "schemaVersion": 1
+}

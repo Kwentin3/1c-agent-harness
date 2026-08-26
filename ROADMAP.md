@@ -22,11 +22,14 @@ Smoke-конфигурация этапа 0 может использовать�
 
 **Гейт:** выполнены критерии из `docs/evaluation.md`; источник не изменён; решение о зависимостях основано на сравнении, а не на количестве доступных инструментов.
 
-**Статус:** один SDMS-run дал oracle alignment 45/47 для baseline и 44/47 для
+**Статус:** один SDMS-run дал exact oracle coverage 45/47 для baseline и 44/47 для
 indexed candidate, опасных ложных выводов 0/0. Это поддерживает минимальный
 direct-source MVP для данного сценария, но не доказывает статистическое
 преимущество или переносимость; человеческая предметная приёмка остаётся
-открытым гейтом. См. [`docs/sdms-evaluation.md`](docs/sdms-evaluation.md).
+открытым гейтом. Машинный контур требует locator для каждого fact/inference,
+связывает adjudication с точными snapshot/questions/oracle/ledger/answers и
+пересчитывает 47-item denominator. Публичный review package готов для решения
+владельца. См. [`docs/sdms-evaluation.md`](docs/sdms-evaluation.md).
 
 ## Этап 2. Определить границу поддержки кастомных и старых конфигураций
 

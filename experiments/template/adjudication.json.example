@@ -1,17 +1,17 @@
 {
-  "schemaVersion": 1,
+  "schemaVersion": 2,
   "experimentId": "replace-study-id",
   "reviewer": "replace-with-independent-reviewer",
+  "identity": {
+    "snapshotContentId": "sha256:0000000000000000000000000000000000000000000000000000000000000000",
+    "questionSetSha256": "0000000000000000000000000000000000000000000000000000000000000000",
+    "oracleSha256": "0000000000000000000000000000000000000000000000000000000000000000",
+    "ledgerSha256": "0000000000000000000000000000000000000000000000000000000000000000",
+    "baselineAnswerSha256": "0000000000000000000000000000000000000000000000000000000000000000",
+    "candidateAnswerSha256": "0000000000000000000000000000000000000000000000000000000000000000"
+  },
   "arms": {
-    "baseline": {
-      "factsCorrect": 0,
-      "factsTotal": 1,
-      "dangerousFalseClaims": 0
-    },
-    "candidate": {
-      "factsCorrect": 0,
-      "factsTotal": 1,
-      "dangerousFalseClaims": 0
-    }
+    "baseline": {"factsCorrect": 0, "factsTotal": 1, "dangerousFalseClaims": 0},
+    "candidate": {"factsCorrect": 0, "factsTotal": 1, "dangerousFalseClaims": 0}
   }
 }

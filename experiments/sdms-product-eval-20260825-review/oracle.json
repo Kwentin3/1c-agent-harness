@@ -1,0 +1,48 @@
+{
+  "schemaVersion": 1,
+  "experimentId": "sdms-product-eval-20260825",
+  "preparedBeforeRuns": true,
+  "independentSources": [
+    {
+      "type": "upstream-documentation",
+      "url": "https://github.com/dns-technologies/SDMS/blob/eb372065e273ceade9939542ce56565c4d422e91/README.md",
+      "facts": "SDMS purpose, web publications, API and messenger integration options"
+    },
+    {
+      "type": "native-platform-snapshot",
+      "contentId": "sha256:3357ee63204ff863aac116417927240930084dce0eb7613126ad88cff68a424d",
+      "facts": "Exact XML/BSL implementation locators"
+    }
+  ],
+  "answers": {
+    "Q1": {
+      "expected": ["Name SDMS", "Vendor ООО ДНС Технологии, IT-группа WEB-клиент", "Version 0.1.1.0", "ScriptVariant Russian", "DefaultRunMode ManagedApplication", "ConfigurationExtensionCompatibilityMode Version8_5_1"],
+      "locators": ["Configuration.xml:35-56"]
+    },
+    "Q2": {
+      "expected": ["Corporate software-development/project-management system", "Capabilities evidenced by request, task, sprint and elapsed-time documents plus API", "Document=10", "Catalog=54", "CommonModule=100", "InformationRegister=103", "ScheduledJob=24", "HTTPService=1", "BSL files=646"],
+      "locators": ["Configuration.xml:35-56", "Documents/ЗаявкаНаРазработку.xml:3-15", "Documents/Задача.xml:3-15", "Documents/Спринт.xml:3-15", "Documents/Трудозатраты.xml:3-15", "HTTPServices/API.xml:3-15"]
+    },
+    "Q3": {
+      "expected": ["POST handler chooses method=tasks", "Calls API.СоздатьЗадачуОтЗаявки", "Rejects service user", "Resolves request reference and parameters", "Calls document manager СоздатьЗадачуПоСистеме", "Author must belong to IT", "Rejects draft or rejected-system request", "Due date must be later than current day", "Creates and writes Документ.Задача with New status, base request and core fields"],
+      "locators": ["HTTPServices/API/Ext/Module.bsl:262-281", "CommonModules/API/Ext/Module.bsl:983-1022", "Documents/ЗаявкаНаРазработку/Ext/ManagerModule.bsl:364-473"]
+    },
+    "Q4": {
+      "expected": ["Always clears and writes one Трудозатраты movement populated from document/session fields", "ОказанныеУслуги movement is considered only when legal entity and service are filled", "Task resolves base request", "Movement is added only with filled base object and Price>0", "Quantity=Затрата", "Amount=Затрата*Цена"],
+      "locators": ["Documents/Трудозатраты/Ext/ObjectModule.bsl:130-201"]
+    },
+    "Q5": {
+      "expected": ["Scheduled job ПересчитатьОчередьЗадач calls CommonModule.РегламентныеЗаданияСервер.ПересчитатьОчередьЗадач", "Metadata Use=false and predefined=true", "Messenger is selected by ОсновнойМессенджер constant when not supplied", "Rocket.Chat and Mattermost adapters are supported", "Actual selected messenger and effective schedule/runtime enabled state are unknown"],
+      "locators": ["ScheduledJobs/ПересчитатьОчередьЗадач.xml:5-19", "Catalogs/Мессенджеры/Ext/ManagerModule.bsl:20-58"]
+    },
+    "Q6": {
+      "expected": ["Reads Authorization and requires Bearer prefix", "Requires JWT-shaped three parts", "Decodes payload and reads jti", "Checks current user, jti and non-expired date in ТокеныДоступаПользователей", "Updates last-used date on success", "This visible chain does not prove cryptographic signature verification"],
+      "dangerousFalseClaims": ["JWT signature is cryptographically verified in this function"],
+      "locators": ["InformationRegisters/ТокеныДоступаПользователей/Ext/ManagerModule.bsl:93-164"]
+    },
+    "Q7": {
+      "expected": ["Cannot know actual production publication/routes or reachability", "Cannot know live records or register movements", "Cannot know effective scheduled-job state", "Cannot know selected messenger or connection settings/secrets", "Cannot know actual user roles/token validity", "Needs server publication config, read-only DB/runtime queries, scheduled-job state, constants/secure-storage inventory or access logs respectively"],
+      "locators": ["HTTPServices/API.xml:3-15", "ScheduledJobs/ПересчитатьОчередьЗадач.xml:13-19", "Catalogs/Мессенджеры/Ext/ManagerModule.bsl:42-54"]
+    }
+  }
+}

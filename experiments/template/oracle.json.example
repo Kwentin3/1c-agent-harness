@@ -1,0 +1,12 @@
+{
+  "schemaVersion": 1,
+  "experimentId": "replace-study-id",
+  "preparedBeforeRuns": true,
+  "independentSources": [],
+  "answers": {
+    "Q1": {
+      "expected": ["replace-with-one-frozen-item"],
+      "locators": ["Configuration.xml:1-1"]
+    }
+  }
+}

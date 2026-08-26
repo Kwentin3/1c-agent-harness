@@ -1,0 +1,35 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://github.com/Kwentin3/1c-agent-harness/contracts/oracle.schema.json",
+  "title": "Frozen question oracle",
+  "$defs": {
+    "strings": {
+      "type": "array",
+      "items": {"type": "string", "minLength": 1}
+    },
+    "oracleAnswer": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["expected", "locators"],
+      "properties": {
+        "expected": {"type": "array", "minItems": 1, "items": {"type": "string", "minLength": 1}},
+        "locators": {"type": "array", "minItems": 1, "items": {"type": "string", "minLength": 1}},
+        "dangerousFalseClaims": {"$ref": "#/$defs/strings"}
+      }
+    }
+  },
+  "type": "object",
+  "additionalProperties": false,
+  "required": ["schemaVersion", "experimentId", "preparedBeforeRuns", "independentSources", "answers"],
+  "properties": {
+    "schemaVersion": {"const": 1},
+    "experimentId": {"type": "string", "minLength": 1},
+    "preparedBeforeRuns": {"const": true},
+    "independentSources": {"type": "array", "items": {"type": "object"}},
+    "answers": {
+      "type": "object",
+      "minProperties": 1,
+      "additionalProperties": {"$ref": "#/$defs/oracleAnswer"}
+    }
+  }
+}

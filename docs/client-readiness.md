@@ -8,8 +8,8 @@ canary-proven → arm-proven.
 
 | Клиент/поверхность | Максимально доказанный уровень | Результат |
 |---|---|---|
-| Hermes subagent, baseline | arm-proven | 7/7 ответов, machine-valid locators, 45/47 oracle facts |
-| Hermes subagent, indexed candidate | arm-proven | тот же контракт, 44/47 facts; индексы не приняты в MVP |
+| Hermes subagent, baseline | arm-proven | 7/7 ответов, machine-valid locators, exact oracle coverage 45/47 |
+| Hermes subagent, indexed candidate | arm-proven | тот же контракт, exact oracle coverage 44/47; индексы не приняты в MVP |
 | AgentBridge Antigravity | canary-proven | auth ready, `AGY_READY`; два frozen arm attempts завершились `cli_exit_nonzero` |
 | standalone Codex/Claude/OpenCode/Gemini CLI | not installed | executable не найден в текущем workspace runtime |
 

@@ -1,0 +1,20 @@
+{
+  "cacheRoot": "../../.local/experiments/sdms-product-eval-20260825/review-cache",
+  "evaluation": {
+    "maxDangerousFalseClaims": 0,
+    "maximumInvalidLocators": 0,
+    "minimumFactAccuracy": 0.9
+  },
+  "id": "sdms-product-eval-20260825",
+  "outputRoot": "../../.local/experiments/sdms-product-eval-20260825/review-runs",
+  "questions": {
+    "path": "questions.json",
+    "sha256": "3eba62e70085d74f954968832f5c5d9ab06db0c0da44e83af6bf22651fcbcd90"
+  },
+  "schemaVersion": 1,
+  "snapshot": {
+    "contentId": "sha256:3357ee63204ff863aac116417927240930084dce0eb7613126ad88cff68a424d",
+    "manifest": "../../.local/runs/sdms-native-02/snapshot.manifest",
+    "root": "../../.local/runs/sdms-native-02/snapshot"
+  }
+}

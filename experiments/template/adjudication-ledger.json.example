@@ -1,0 +1,24 @@
+{
+  "schemaVersion": 1,
+  "experimentId": "replace-study-id",
+  "reviewer": "replace-with-independent-reviewer",
+  "questions": [
+    {
+      "questionId": "Q1",
+      "items": [
+        {
+          "index": 1,
+          "expected": "replace-with-one-frozen-item",
+          "arms": {
+            "baseline": {"correct": false, "rationale": "replace", "citedLocators": ["Configuration.xml:1-1"]},
+            "candidate": {"correct": false, "rationale": "replace", "citedLocators": ["Configuration.xml:1-1"]}
+          }
+        }
+      ]
+    }
+  ],
+  "dangerousClaims": {
+    "baseline": {"count": 0, "claims": [], "rationale": "replace"},
+    "candidate": {"count": 0, "claims": [], "rationale": "replace"}
+  }
+}
