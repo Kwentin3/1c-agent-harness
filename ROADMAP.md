@@ -48,9 +48,11 @@ workspace нет. Этап не закрыт до появления закон�
 
 **Гейт:** различия ограничены адаптером или инструкциями клиента; evals используют общий набор вопросов и доказательств; абстракции для гипотетических клиентов не добавлены.
 
-**Статус:** Antigravity canary-proven, но два frozen arm attempts упали до answer
-artifact; standalone альтернативные CLI не установлены. Этап не закрыт; см.
-[`docs/client-readiness.md`](docs/client-readiness.md).
+**Статус:** Antigravity завершил общий технический контракт: 7/7 answers и 27
+locators прошли harness. Независимая оценка дала 31/47 и 0 опасных ложных
+выводов; общий порог 90% не пройден. Техническая независимость подтверждена, но
+этап не закрыт до quality-passing второго arm; см.
+[`docs/antigravity-evaluation.md`](docs/antigravity-evaluation.md).
 
 ## После read-only MVP
 

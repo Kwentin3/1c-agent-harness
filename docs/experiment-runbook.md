@@ -66,6 +66,26 @@ symlink/hard-link и размещение output/cache вне snapshot.
 
 Индекс или иной candidate-tool обязан хранить cache в объявленном `.local` cache root. Отрицательный результат индекса перепроверяется чтением XML/BSL.
 
+Для внешнего клиента с ограниченным output envelope предпочтителен unit-run:
+
+1. один frozen question → один новый task;
+2. native task record сохраняется неизменным;
+3. client adapter извлекает ровно один `answer-unit.schema.json` payload;
+4. `verify-unit` сразу проверяет форму, claim references и locators;
+5. итог публикуется только когда присутствуют все frozen question IDs.
+
+Пример строгого Antigravity extraction без repair:
+
+```bash
+python3 scripts/antigravity_adapter.py extract-unit \
+  --task-record .local/experiments/<id>/runs/<arm>/Q1.task.json \
+  --output .local/experiments/<id>/runs/<arm>/Q1.json
+```
+
+Retry policy фиксируется до запуска. Невалидный unit не разрешается вручную
+редактировать, дополнять данными другого arm или превращать эвристикой в новый
+семантический ответ.
+
 ## 5. Проверить ответы
 
 ```bash

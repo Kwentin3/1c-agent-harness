@@ -18,6 +18,25 @@ class ContractError(RuntimeError):
     pass
 
 
+def strict_json_loads(data: str) -> Any:
+    def object_without_duplicates(pairs: list[tuple[str, Any]]) -> dict[str, Any]:
+        result: dict[str, Any] = {}
+        for key, value in pairs:
+            if key in result:
+                raise ContractError(f"duplicate JSON key: {key}")
+            result[key] = value
+        return result
+
+    def reject_non_finite(value: str) -> Any:
+        raise ContractError(f"non-finite JSON number is not allowed: {value}")
+
+    return json.loads(
+        data,
+        object_pairs_hook=object_without_duplicates,
+        parse_constant=reject_non_finite,
+    )
+
+
 def digest_bytes(data: bytes) -> str:
     return hashlib.sha256(data).hexdigest()
 
@@ -36,8 +55,8 @@ def read_json_hashed(path: Path, label: str) -> tuple[dict[str, Any], str]:
         raise ContractError(f"{label} is not a regular file: {path}")
     try:
         data = path.read_bytes()
-        value = json.loads(data.decode("utf-8-sig"))
-    except (OSError, UnicodeError, json.JSONDecodeError) as exc:
+        value = strict_json_loads(data.decode("utf-8-sig"))
+    except (OSError, UnicodeError, json.JSONDecodeError, ContractError) as exc:
         raise ContractError(f"invalid {label}: {exc}") from exc
     if not isinstance(value, dict):
         raise ContractError(f"{label} must be a JSON object")
@@ -79,6 +98,8 @@ def is_within(path: Path, root: Path) -> bool:
 
 
 def require_keys(value: dict[str, Any], keys: Iterable[str], label: str) -> None:
+    if any(not isinstance(key, str) for key in value):
+        raise ContractError(f"{label} keys must be strings")
     missing = sorted(set(keys) - value.keys())
     if missing:
         raise ContractError(f"{label} missing keys: {', '.join(missing)}")
@@ -241,6 +262,51 @@ def claim_ids(items: Any, label: str) -> set[str]:
     return result
 
 
+def verify_answer_entry(entry: Any, root: Path) -> tuple[str, int]:
+    if not isinstance(entry, dict):
+        raise ContractError("answer unit must be an object")
+    entry_keys = ("questionId", "answer", "facts", "inferences", "assumptions", "unknowns", "locators")
+    require_contract_keys(entry, entry_keys, entry_keys, "answer unit")
+    if not isinstance(entry["questionId"], str) or not entry["questionId"] or not isinstance(entry["answer"], str):
+        raise ContractError("answer unit questionId must be non-empty and answer must be a string")
+    ids: set[str] = set()
+    for label in ("facts", "inferences", "assumptions", "unknowns"):
+        current = claim_ids(entry[label], label)
+        duplicate = ids & current
+        if duplicate:
+            raise ContractError(f"claim ids must be unique within an answer: {sorted(duplicate)}")
+        ids |= current
+    if not isinstance(entry["locators"], list):
+        raise ContractError("locators must be an array")
+    locator_count = 0
+    for locator in entry["locators"]:
+        if not isinstance(locator, dict):
+            raise ContractError("each locator must be an object")
+        locator_keys = ("path", "startLine", "endLine", "claimIds")
+        require_contract_keys(locator, locator_keys, locator_keys, "locator")
+        rel = safe_relative(locator["path"], "locator path")
+        target = root.joinpath(*rel.parts)
+        reject_symlink_path(target, f"locator {rel.as_posix()}")
+        if not target.is_file() or not is_within(target, root):
+            raise ContractError(f"locator file does not exist inside snapshot: {rel.as_posix()}")
+        start, end = locator["startLine"], locator["endLine"]
+        if not isinstance(start, int) or isinstance(start, bool) or not isinstance(end, int) or isinstance(end, bool) or start < 1 or end < start:
+            raise ContractError(f"invalid locator line range: {rel.as_posix()}:{start}-{end}")
+        try:
+            line_count = len(target.read_text(encoding="utf-8-sig").splitlines())
+        except (OSError, UnicodeError) as exc:
+            raise ContractError(f"locator file is not readable UTF-8 text: {rel.as_posix()}: {exc}") from exc
+        if end > line_count:
+            raise ContractError(f"locator line range exceeds file: {rel.as_posix()}:{start}-{end}, lines={line_count}")
+        claim_ids_value = locator["claimIds"]
+        if not isinstance(claim_ids_value, list) or not claim_ids_value or any(x not in ids for x in claim_ids_value):
+            raise ContractError(f"locator claimIds must reference claims in the same answer: {rel.as_posix()}")
+        if len(claim_ids_value) != len(set(claim_ids_value)):
+            raise ContractError(f"locator claimIds must be unique: {rel.as_posix()}")
+        locator_count += 1
+    return entry["questionId"], locator_count
+
+
 def verify_answer_doc(spec: dict[str, Any], answer_path: Path) -> dict[str, Any]:
     state = verify_snapshot(spec)
     doc, answer_sha256 = read_json_hashed(answer_path, "answer")
@@ -269,47 +335,9 @@ def verify_answer_doc(spec: dict[str, Any], answer_path: Path) -> dict[str, Any]
     locator_count = 0
     root: Path = spec["_snapshotRoot"]
     for entry in doc["answers"]:
-        if not isinstance(entry, dict):
-            raise ContractError("each answer entry must be an object")
-        entry_keys = ("questionId", "answer", "facts", "inferences", "assumptions", "unknowns", "locators")
-        require_contract_keys(entry, entry_keys, entry_keys, "answer entry")
-        if not isinstance(entry["questionId"], str) or not isinstance(entry["answer"], str):
-            raise ContractError("answer questionId and answer must be strings")
-        seen_questions.append(entry["questionId"])
-        ids: set[str] = set()
-        for label in ("facts", "inferences", "assumptions", "unknowns"):
-            current = claim_ids(entry[label], label)
-            duplicate = ids & current
-            if duplicate:
-                raise ContractError(f"claim ids must be unique within an answer: {sorted(duplicate)}")
-            ids |= current
-        if not isinstance(entry["locators"], list):
-            raise ContractError("locators must be an array")
-        for locator in entry["locators"]:
-            if not isinstance(locator, dict):
-                raise ContractError("each locator must be an object")
-            locator_keys = ("path", "startLine", "endLine", "claimIds")
-            require_contract_keys(locator, locator_keys, locator_keys, "locator")
-            rel = safe_relative(locator["path"], "locator path")
-            target = root.joinpath(*rel.parts)
-            reject_symlink_path(target, f"locator {rel.as_posix()}")
-            if not target.is_file() or not is_within(target, root):
-                raise ContractError(f"locator file does not exist inside snapshot: {rel.as_posix()}")
-            start, end = locator["startLine"], locator["endLine"]
-            if not isinstance(start, int) or isinstance(start, bool) or not isinstance(end, int) or isinstance(end, bool) or start < 1 or end < start:
-                raise ContractError(f"invalid locator line range: {rel.as_posix()}:{start}-{end}")
-            try:
-                line_count = len(target.read_text(encoding="utf-8-sig").splitlines())
-            except (OSError, UnicodeError) as exc:
-                raise ContractError(f"locator file is not readable UTF-8 text: {rel.as_posix()}: {exc}") from exc
-            if end > line_count:
-                raise ContractError(f"locator line range exceeds file: {rel.as_posix()}:{start}-{end}, lines={line_count}")
-            claim_ids_value = locator["claimIds"]
-            if not isinstance(claim_ids_value, list) or not claim_ids_value or any(x not in ids for x in claim_ids_value):
-                raise ContractError(f"locator claimIds must reference claims in the same answer: {rel.as_posix()}")
-            if len(claim_ids_value) != len(set(claim_ids_value)):
-                raise ContractError(f"locator claimIds must be unique: {rel.as_posix()}")
-            locator_count += 1
+        question_id, current_locator_count = verify_answer_entry(entry, root)
+        seen_questions.append(question_id)
+        locator_count += current_locator_count
     if seen_questions != state["questionIds"]:
         raise ContractError(f"answer question order/set mismatch: expected {state['questionIds']}, got {seen_questions}")
     if not isinstance(doc["metrics"], dict):
@@ -325,7 +353,10 @@ def write_new_json(path: Path, value: dict[str, Any]) -> None:
     reject_symlink_path(parent, "output parent")
     if not parent.is_dir():
         raise ContractError(f"output parent must already exist: {parent}")
-    data = json.dumps(value, ensure_ascii=False, indent=2, sort_keys=True) + "\n"
+    try:
+        data = json.dumps(value, ensure_ascii=False, indent=2, sort_keys=True, allow_nan=False) + "\n"
+    except (TypeError, ValueError) as exc:
+        raise ContractError(f"output is not strict JSON: {exc}") from exc
     try:
         with path.open("x", encoding="utf-8", newline="\n") as stream:
             stream.write(data)
@@ -352,6 +383,57 @@ def verify_answer(args: argparse.Namespace) -> dict[str, Any]:
         "answerSha256": checked["answerSha256"],
         "snapshotContentId": checked["state"]["snapshotContentId"],
         "questionSetSha256": checked["state"]["questionSetSha256"],
+    }
+
+
+def verify_unit(args: argparse.Namespace) -> dict[str, Any]:
+    spec = load_experiment(args.experiment)
+    state = verify_snapshot(spec)
+    unit, unit_sha256 = read_json_hashed(args.unit, "answer unit")
+    question_id, locator_count = verify_answer_entry(unit, spec["_snapshotRoot"])
+    if question_id not in state["questionIds"]:
+        raise ContractError(f"answer unit questionId is not in frozen question set: {question_id}")
+    return {
+        "schemaVersion": 1,
+        "status": "ok",
+        "experimentId": spec["id"],
+        "questionId": question_id,
+        "locatorCount": locator_count,
+        "unitSha256": unit_sha256,
+        "snapshotContentId": state["snapshotContentId"],
+        "questionSetSha256": state["questionSetSha256"],
+    }
+
+
+def assemble_answer(args: argparse.Namespace) -> dict[str, Any]:
+    spec = load_experiment(args.experiment)
+    state = verify_snapshot(spec)
+    client = read_json(args.client, "client descriptor")
+    require_contract_keys(client, ("name", "version"), ("name", "version"), "client descriptor")
+    if any(not isinstance(client[key], str) or not client[key] for key in ("name", "version")):
+        raise ContractError("client descriptor name and version must be non-empty strings")
+    metrics = read_json(args.metrics, "metrics")
+    units: dict[str, dict[str, Any]] = {}
+    root: Path = spec["_snapshotRoot"]
+    for path in args.unit:
+        unit = read_json(path, "answer unit")
+        question_id, _ = verify_answer_entry(unit, root)
+        if question_id in units:
+            raise ContractError(f"duplicate answer unit questionId: {question_id}")
+        units[question_id] = unit
+    expected = state["questionIds"]
+    if set(units) != set(expected):
+        missing = sorted(set(expected) - set(units))
+        extra = sorted(set(units) - set(expected))
+        raise ContractError(f"answer unit question set mismatch; missing={missing}, extra={extra}")
+    return {
+        "schemaVersion": 1,
+        "experimentId": spec["id"],
+        "snapshotContentId": state["snapshotContentId"],
+        "questionSetSha256": state["questionSetSha256"],
+        "client": client,
+        "answers": [units[question_id] for question_id in expected],
+        "metrics": metrics,
     }
 
 
@@ -432,11 +514,15 @@ def seal(args: argparse.Namespace) -> dict[str, Any]:
 def parser() -> argparse.ArgumentParser:
     result = argparse.ArgumentParser(description=__doc__)
     commands = result.add_subparsers(dest="command", required=True)
-    for name in ("preflight", "verify-answer", "compare", "seal"):
+    for name in ("preflight", "verify-unit", "verify-answer", "assemble-answer", "compare", "seal"):
         command = commands.add_parser(name)
         command.add_argument("--experiment", type=Path, required=True)
         command.add_argument("--output", type=Path, required=True)
     commands.choices["verify-answer"].add_argument("--answer", type=Path, required=True)
+    commands.choices["verify-unit"].add_argument("--unit", type=Path, required=True)
+    commands.choices["assemble-answer"].add_argument("--unit", type=Path, action="append", required=True)
+    commands.choices["assemble-answer"].add_argument("--client", type=Path, required=True)
+    commands.choices["assemble-answer"].add_argument("--metrics", type=Path, required=True)
     commands.choices["compare"].add_argument("--baseline", type=Path, required=True)
     commands.choices["compare"].add_argument("--candidate", type=Path, required=True)
     commands.choices["compare"].add_argument("--adjudication", type=Path, required=True)
@@ -446,7 +532,7 @@ def parser() -> argparse.ArgumentParser:
 
 def main() -> int:
     args = parser().parse_args()
-    handlers = {"preflight": preflight, "verify-answer": verify_answer, "compare": compare, "seal": seal}
+    handlers = {"preflight": preflight, "verify-unit": verify_unit, "verify-answer": verify_answer, "assemble-answer": assemble_answer, "compare": compare, "seal": seal}
     try:
         spec = load_experiment(args.experiment)
         if not is_within(args.output.absolute(), spec["_outputRoot"]):

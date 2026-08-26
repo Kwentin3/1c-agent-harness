@@ -89,6 +89,132 @@ class HarnessContractTests(unittest.TestCase):
         self.assertEqual(result.returncode, 0, result.stderr)
         self.assertEqual(json.loads(verified.read_text())["locatorCount"], 1)
 
+    def test_assemble_answer_uses_system_metadata_and_question_order(self) -> None:
+        questions = {
+            "schemaVersion": 1,
+            "questions": [
+                {"id": "Q1", "text": "What is the demo?"},
+                {"id": "Q2", "text": "What is unknown?"},
+            ],
+        }
+        self.questions.write_text(json.dumps(questions) + "\n", encoding="utf-8")
+        spec = json.loads(self.spec.read_text())
+        spec["questions"]["sha256"] = sha256(self.questions)
+        self.spec.write_text(json.dumps(spec) + "\n", encoding="utf-8")
+
+        q1 = self.root / "q1.json"
+        q2 = self.root / "q2.json"
+        base = json.loads(self.answer.read_text())["answers"][0]
+        q1.write_text(json.dumps(base) + "\n", encoding="utf-8")
+        q2.write_text(json.dumps({
+            "questionId": "Q2",
+            "answer": "The live state is not in the snapshot.",
+            "facts": [],
+            "inferences": [],
+            "assumptions": [],
+            "unknowns": [{"id": "U1", "text": "Live state is unknown."}],
+            "locators": [],
+        }) + "\n", encoding="utf-8")
+        client = self.root / "client.json"
+        client.write_text(json.dumps({"name": "second-client", "version": "2"}) + "\n")
+        metrics = self.root / "metrics.json"
+        metrics.write_text(json.dumps({"durationSeconds": 3, "toolOperations": 4}) + "\n")
+
+        assembled = self.outputs / "assembled.json"
+        result = self.run_cli(
+            "assemble-answer", "--experiment", self.spec,
+            "--unit", q2, "--unit", q1,
+            "--client", client, "--metrics", metrics,
+            "--output", assembled,
+        )
+        self.assertEqual(result.returncode, 0, result.stderr)
+        answer = json.loads(assembled.read_text())
+        self.assertEqual([item["questionId"] for item in answer["answers"]], ["Q1", "Q2"])
+        self.assertEqual(answer["client"], {"name": "second-client", "version": "2"})
+        self.assertEqual(answer["experimentId"], "fixture")
+        self.assertNotIn("bundleId", answer)
+        self.assertEqual(answer["metrics"]["toolOperations"], 4)
+
+    def test_verify_unit_returns_receipt_without_publishing_an_answer(self) -> None:
+        unit = self.root / "unit.json"
+        unit.write_text(json.dumps(json.loads(self.answer.read_text())["answers"][0]) + "\n")
+        receipt = self.outputs / "unit.verified.json"
+
+        result = self.run_cli(
+            "verify-unit", "--experiment", self.spec, "--unit", unit,
+            "--output", receipt,
+        )
+
+        self.assertEqual(result.returncode, 0, result.stderr)
+        verified = json.loads(receipt.read_text())
+        self.assertEqual(verified["status"], "ok")
+        self.assertEqual(verified["questionId"], "Q1")
+        self.assertEqual(verified["locatorCount"], 1)
+        self.assertEqual(verified["unitSha256"], sha256(unit))
+        self.assertNotIn("answers", verified)
+
+    def test_verify_unit_rejects_non_string_contract_key_without_traceback(self) -> None:
+        harness = importlib.util.module_from_spec(importlib.util.spec_from_file_location("harness", CLI))
+        assert harness.__spec__ is not None and harness.__spec__.loader is not None
+        harness.__spec__.loader.exec_module(harness)
+        unit = json.loads(self.answer.read_text())["answers"][0]
+        unit["facts"][0][1] = "unexpected"
+
+        with self.assertRaises(harness.ContractError):
+            harness.verify_answer_entry(unit, self.snapshot)
+
+    def test_assemble_answer_rejects_non_finite_metrics_without_output(self) -> None:
+        unit = self.root / "unit.json"
+        unit.write_text(json.dumps(json.loads(self.answer.read_text())["answers"][0]) + "\n")
+        client = self.root / "client.json"
+        client.write_text('{"name":"client","version":"1"}\n')
+        metrics = self.root / "metrics.json"
+        metrics.write_text('{"durationSeconds":NaN}\n')
+        output = self.outputs / "must-not-exist-nan.json"
+
+        result = self.run_cli(
+            "assemble-answer", "--experiment", self.spec,
+            "--unit", unit, "--client", client, "--metrics", metrics,
+            "--output", output,
+        )
+
+        self.assertNotEqual(result.returncode, 0)
+        self.assertIn("non-finite", result.stderr.lower())
+        self.assertFalse(output.exists())
+
+    def test_assemble_answer_refuses_incomplete_unit_set_without_output(self) -> None:
+        unit = self.root / "wrong-unit.json"
+        value = json.loads(self.answer.read_text())["answers"][0]
+        value["questionId"] = "Q2"
+        unit.write_text(json.dumps(value) + "\n")
+        client = self.root / "client.json"
+        client.write_text('{"name":"client","version":"1"}\n')
+        metrics = self.root / "metrics.json"
+        metrics.write_text("{}\n")
+        output = self.outputs / "must-not-exist.json"
+
+        result = self.run_cli(
+            "assemble-answer", "--experiment", self.spec,
+            "--unit", unit, "--client", client, "--metrics", metrics,
+            "--output", output,
+        )
+
+        self.assertNotEqual(result.returncode, 0)
+        self.assertIn("question set mismatch", result.stderr.lower())
+        self.assertFalse(output.exists())
+
+    def test_answer_unit_schema_is_the_same_contract_used_by_full_answers(self) -> None:
+        answer_schema = json.loads((ROOT / "contracts" / "answer.schema.json").read_text())
+        unit_schema = json.loads((ROOT / "contracts" / "answer-unit.schema.json").read_text())
+
+        self.assertEqual(answer_schema["$defs"]["answerUnit"], unit_schema["allOf"][0])
+        self.assertEqual(answer_schema["$defs"]["claim"], unit_schema["$defs"]["claim"])
+        self.assertEqual(answer_schema["$defs"]["locator"], unit_schema["$defs"]["locator"])
+        self.assertEqual(
+            answer_schema["properties"]["answers"]["items"],
+            {"$ref": "#/$defs/answerUnit"},
+        )
+
     def test_preflight_rejects_tampered_snapshot(self) -> None:
         (self.snapshot / "Configuration.xml").write_text("tampered\n", encoding="utf-8")
         result = self.run_cli("preflight", "--experiment", self.spec, "--output", self.outputs / "out.json")
