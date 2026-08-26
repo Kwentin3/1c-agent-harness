@@ -2,6 +2,7 @@ from __future__ import annotations
 
 import hashlib
 import json
+import os
 import re
 import tempfile
 import shutil
@@ -245,6 +246,184 @@ class Issue10EvidencePackageTests(unittest.TestCase):
             manifest = json.loads((dst / MANIFEST_SELF).read_text())
             with self.assertRaises(AssertionError):
                 validate_manifest(manifest, files, root=dst)
+
+
+# ----------------------------------------------------------------------
+# Runbook fail-closed regression tests.
+#
+# The literal check functions are extracted from the committed runbook
+# (docs/issue-10-write-cycle.md §6 bash block) and executed with bash on
+# crafted inputs inside disposable temp dirs. This tests the actual text an
+# operator would run, not a copy of the logic. The five owner-reproduced
+# bypasses must now FAIL:
+#   1. nonsense/duplicate receipt          -> receipt_ok != 0
+#   2. extra empty or sixth line           -> receipt_ok != 0
+#   3. DumpResult "10" and "error0"        -> result_zero != 0
+#   4. extra snapshot file                 -> snapshot_verify != 0
+#   5. listed file replaced by a symlink   -> snapshot_verify != 0
+# ----------------------------------------------------------------------
+
+import subprocess as _subprocess  # noqa: E402
+
+
+def _bash_block() -> str:
+    doc = (ROOT / "docs" / "issue-10-write-cycle.md").read_text(encoding="utf-8")
+    blocks = re.findall(r"```bash\n(.*?)```", doc, re.S)
+    main = [b for b in blocks if "set -euo pipefail" in b]
+    if len(main) != 1:
+        raise AssertionError(f"expected exactly one runbook bash block, got {len(main)}")
+    return main[0]
+
+
+def _extract_function(name: str) -> str:
+    """Extract one bash function definition (by name) from the runbook block.
+
+    Every check function in the runbook ends with a line that is exactly
+    ``}`` (the bodies contain no bare ``}`` lines), so the function body is
+    everything from ``<name>() {`` through that first bare closing brace.
+    """
+    lines = _bash_block().splitlines()
+    for i, line in enumerate(lines):
+        if line.strip() == f"{name}() {{":
+            body = []
+            for rest in lines[i:]:
+                body.append(rest)
+                if rest == "}":
+                    return "\n".join(body) + "\n"
+    raise AssertionError(f"function {name} not found in runbook")
+
+
+def _run_bash(script: str, env: dict | None = None) -> int:
+    """Run a bash snippet; return its exit code."""
+    proc = _subprocess.run(
+        ["bash", "-c", script],
+        capture_output=True, text=True, timeout=120,
+        env={**os.environ, **(env or {})},
+    )
+    return proc.returncode
+
+
+class Issue10RunbookFailClosedTests(unittest.TestCase):
+    """The five reproduced false-positive bypasses must FAIL the runbook checks."""
+
+    def setUp(self) -> None:
+        self._td = tempfile.TemporaryDirectory()
+        self.td = Path(self._td.name)
+        self.funcs = (
+            _extract_function("receipt_ok")
+            + _extract_function("result_zero")
+            + _extract_function("snapshot_verify")
+        )
+
+    def tearDown(self) -> None:
+        self._td.cleanup()
+
+    # -- receipts ---------------------------------------------------------
+
+    def test_receipt_nonsense_and_duplicates_rejected(self) -> None:
+        got = self.td / "nonsense.txt"
+        got.write_text("foo###999###Number\n" * 5, encoding="utf-8")
+        expected = PACKAGE / "evidence" / "green-receipt.txt"
+        script = self.funcs + f"""
+if receipt_ok "{got}" "{expected}"; then exit 1; else exit 0; fi
+"""
+        self.assertEqual(_run_bash(script), 0)
+
+    def test_receipt_extra_empty_line_rejected(self) -> None:
+        got = self.td / "emptyeol.txt"
+        base = (PACKAGE / "evidence" / "green-receipt.txt").read_bytes()
+        got.write_bytes(base + b"\r\n")
+        expected = PACKAGE / "evidence" / "green-receipt.txt"
+        script = self.funcs + f"""
+if receipt_ok "{got}" "{expected}"; then exit 1; else exit 0; fi
+"""
+        self.assertEqual(_run_bash(script), 0)
+
+    def test_receipt_extra_sixth_line_rejected(self) -> None:
+        got = self.td / "sixth.txt"
+        base = (PACKAGE / "evidence" / "green-receipt.txt").read_bytes()
+        got.write_bytes(base + b"extra###boom###Number\r\n")
+        expected = PACKAGE / "evidence" / "green-receipt.txt"
+        script = self.funcs + f"""
+if receipt_ok "{got}" "{expected}"; then exit 1; else exit 0; fi
+"""
+        self.assertEqual(_run_bash(script), 0)
+
+    def test_receipt_exact_frozen_passes(self) -> None:
+        got = self.td / "ok.txt"
+        got.write_bytes((PACKAGE / "evidence" / "green-receipt.txt").read_bytes())
+        expected = PACKAGE / "evidence" / "green-receipt.txt"
+        script = self.funcs + f"""
+if receipt_ok "{got}" "{expected}"; then exit 0; else exit 1; fi
+"""
+        self.assertEqual(_run_bash(script), 0)
+
+    # -- DumpResult --------------------------------------------------------
+
+    def test_dumpresult_10_rejected(self) -> None:
+        f = self.td / "r10"
+        f.write_bytes(b"\xef\xbb\xbf10")
+        script = self.funcs + f"""
+if result_zero "{f}"; then exit 1; else exit 0; fi
+"""
+        self.assertEqual(_run_bash(script), 0)
+
+    def test_dumpresult_error0_rejected(self) -> None:
+        f = self.td / "rerr"
+        f.write_bytes(b"\xef\xbb\xbferror0")
+        script = self.funcs + f"""
+if result_zero "{f}"; then exit 1; else exit 0; fi
+"""
+        self.assertEqual(_run_bash(script), 0)
+
+    def test_dumpresult_exact_zero_passes(self) -> None:
+        f = self.td / "rok"
+        f.write_bytes(b"\xef\xbb\xbf0")
+        script = self.funcs + f"""
+if result_zero "{f}"; then exit 0; else exit 1; fi
+"""
+        self.assertEqual(_run_bash(script), 0)
+
+    # -- snapshot closure ---------------------------------------------------
+
+    def _make_snapshot(self, root: Path) -> Path:
+        snap = root / "snap"
+        (snap / "Sub").mkdir(parents=True)
+        (snap / "a.xml").write_text("<a/>", encoding="utf-8")
+        (snap / "Sub" / "b.bsl").write_text("//b\n", encoding="utf-8")
+        lines = []
+        for p in sorted(snap.rglob("*")):
+            if p.is_file():
+                lines.append(f"{sha256(p)}  {p.relative_to(snap).as_posix()}")
+        manifest = root / "manifest"
+        manifest.write_text("\n".join(lines) + "\n", encoding="utf-8")
+        return snap
+
+    def test_snapshot_clean_passes(self) -> None:
+        snap = self._make_snapshot(self.td)
+        script = self.funcs + f"""
+if snapshot_verify; then exit 0; else exit 1; fi
+"""
+        self.assertEqual(_run_bash(script, env={"SNAP": str(snap), "MANIFEST": str(self.td / "manifest")}), 0)
+
+    def test_snapshot_extra_file_rejected(self) -> None:
+        snap = self._make_snapshot(self.td)
+        (snap / "smuggled.xml").write_text("<x/>", encoding="utf-8")
+        script = self.funcs + f"""
+if snapshot_verify; then exit 1; else exit 0; fi
+"""
+        self.assertEqual(_run_bash(script, env={"SNAP": str(snap), "MANIFEST": str(self.td / "manifest")}), 0)
+
+    def test_snapshot_symlink_replacing_listed_file_rejected(self) -> None:
+        snap = self._make_snapshot(self.td)
+        target = self.td / "same-bytes"
+        target.write_bytes((snap / "a.xml").read_bytes())
+        (snap / "a.xml").unlink()
+        (snap / "a.xml").symlink_to(target)
+        script = self.funcs + f"""
+if snapshot_verify; then exit 1; else exit 0; fi
+"""
+        self.assertEqual(_run_bash(script, env={"SNAP": str(snap), "MANIFEST": str(self.td / "manifest")}), 0)
 
 
 if __name__ == "__main__":

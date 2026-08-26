@@ -43,19 +43,21 @@ committed runbook** (2026-08-26, `docs/issue-10-write-cycle.md` §6) в ново
 Краткий конспект его контракта:
 
 1. **Pre-flight (fail-closed):** source CF hash `5694f9e4bd…`, manifest identity `70972b5e…`,
-   `sha256sum -c` snapshot — иначе стоп. `RUN_DIR` генерируется с уникальным timestamp и
-   **не должен существовать** до `mkdir`.
+   closure snapshot (missing/mismatch/extra/symlink/недопустимые типы) — иначе стоп.
+   `RUN_DIR` генерируется с уникальным timestamp и **не должен существовать** до `mkdir`.
 2. **Work copies:** `cp -R snapshot/. -> img` (GREEN) и `img-red` (RED), запись — только
    `chmod -R u+w` внутри копий.
 3. **Diff:** в `img` применяются `production-patch.diff` + `instrumentation.diff`
    (`git apply -p1`), в `img-red` — только `instrumentation.diff`; путь receipt подставляется
    `sed` в `<variant>-receipt.txt`.
 4. **Native:** `CREATEINFOBASE` → `DESIGNER /LoadConfigFromFiles /UpdateDBCfg` → `ENTERPRISE`
-   для каждого варианта; `DumpResult == 0` и `Configuration successfully updated` проверяются.
+   для каждого варианта; `DumpResult` — весь нормализованный файл ровно `0`, оба load-лога
+   содержат `Configuration successfully updated`.
 5. **Lifecycle:** ENTERPRISE запускается через `setsid` (своя process group); ожидание —
-   строгий receipt (5 непустых строк `label###value###type` + стабильность хэша), затем
+   байт-точный receipt (`cmp` с frozen expected из пакета + стабильность хэша), затем
    `kill -KILL -$PID` по всей группе.
-6. **Post-flight (fail-closed):** те же immutable identities + строгие receipts, иначе стоп.
+6. **Post-flight (fail-closed):** те же immutable identities + closure snapshot +
+   `cmp` receipts, иначе стоп. `RUN OK` печатается только после всех проверок.
 
 Все остальные прозовые описания в этом файле — не источник истины для воспроизведения.
 

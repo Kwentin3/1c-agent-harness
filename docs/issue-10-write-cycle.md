@@ -137,10 +137,56 @@ CF=$ROOT/.local/dist/Jet-1.0.3.1-tr.cf
 CF_SHA=5694f9e4bdf9a0857185118ba816d562d8ee8de2b8da3f60792397a399ca128a
 MAN_SHA=70972b5e11901ca31c7f7ec67dca03f78986206b024be01aeb34e0e1f3ff6691
 
-# --- pre-flight: immutable identities + fail-closed run-root -----------------
+# --- строгие проверки (fail-closed) -------------------------------------------
+# Receipt: байт-в-байт равен frozen expected из замороженного пакета
+# (покрывает: nonsense/duplicate labels, unknown/missing labels, лишние и пустые строки)
+receipt_ok() {
+  local got=$1 expected=$2
+  [ -s "$got" ] || return 1
+  cmp -s "$got" "$expected" || return 1
+}
+# DumpResult: весь нормализованный файл (BOM, CR, LF удалены) ровно "0"
+result_zero() {
+  local f=$1
+  [ "$(sed '1s/^\xEF\xBB\xBF//' "$f" | tr -d '\r\n')" = "0" ] || return 1
+}
+# Snapshot closure: missing/mismatch/extra/symlink/недопустимые типы — стоп
+snapshot_verify() {
+  python3 - "$SNAP" "$MANIFEST" <<'PY'
+import hashlib, sys
+from pathlib import Path
+snap = Path(sys.argv[1]); manifest = Path(sys.argv[2])
+entries = {}
+for line in manifest.read_text(encoding='utf-8-sig').splitlines():
+    if line.strip():
+        digest, rel = line.split(maxsplit=1)
+        entries[rel] = digest
+missing, mismatch, extra, symlinks, nonregular = [], [], [], [], []
+for p in snap.rglob('*'):
+    if p.is_symlink():
+        symlinks.append(str(p.relative_to(snap))); continue
+    if p.is_dir():
+        continue
+    if not p.is_file():
+        nonregular.append(str(p.relative_to(snap))); continue
+    rel = p.relative_to(snap).as_posix()
+    if rel not in entries:
+        extra.append(rel); continue
+    if hashlib.sha256(p.read_bytes()).hexdigest() != entries[rel]:
+        mismatch.append(rel)
+missing = [r for r in entries if not (snap / r).exists() or (snap / r).is_symlink()]
+problems = (missing, mismatch, extra, symlinks, nonregular)
+if any(problems):
+    print("SNAPSHOT_FAIL missing=%d mismatch=%d extra=%d symlinks=%d nonregular=%d"
+          % tuple(len(x) for x in problems))
+    sys.exit(1)
+PY
+}
+
+# --- pre-flight: immutable identities + closure + fail-closed run-root --------
 [ "$(sha256sum "$CF" | cut -d' ' -f1)" = "$CF_SHA" ]        || { echo "FAIL: source CF hash"; exit 1; }
 [ "$(sha256sum "$MANIFEST" | cut -d' ' -f1)" = "$MAN_SHA" ] || { echo "FAIL: manifest identity"; exit 1; }
-( cd "$SNAP" && sha256sum -c ../snapshot.manifest --quiet ) || { echo "FAIL: snapshot verification"; exit 1; }
+snapshot_verify || { echo "FAIL: snapshot closure (pre)"; exit 1; }
 
 RUN_DIR=$ROOT/.local/runs/issue10-write-cycle-$(date -u +%Y%m%dT%H%M%S)
 [ ! -e "$RUN_DIR" ] && mkdir -p "$RUN_DIR" || { echo "FAIL: run dir already exists: $RUN_DIR"; exit 1; }
@@ -175,26 +221,19 @@ export GIT_DIR="$RUN_DIR/git-dummy"
   && git apply -p1 "$PKG/instrumentation.diff" \
   && sed -i "s#<RUN_DIR>/evidence/runtime-receipt.txt#$RUN_DIR/evidence/red-receipt.txt#" Ext/ManagedApplicationModule.bsl )
 
-# --- строгая проверка receipt: ровно 5 непустых строк label###value###type ----
-receipt_strict_ok() {
-  local p=$1 lines total
-  [ -s "$p" ] || return 1
-  lines=$(sed '1s/^\xEF\xBB\xBF//' "$p" | tr -d '\r' | grep -cE '^[a-z]+###[^#]*###(Number|Undefined)$' || true)
-  total=$(sed '1s/^\xEF\xBB\xBF//' "$p" | tr -d '\r' | grep -c . || true)
-  [ "$lines" = "5" ] && [ "$total" = "5" ] || return 1
-}
-
 # --- GREEN: создать ИБ, нативно загрузить, исполнить, остановить группу -------
 "${XVFB[@]}" "$V/1cv8t" CREATEINFOBASE "File=$RUN_DIR/instr-ib" \
   /DisableStartupDialogs /DisableStartupMessages \
   /Out "$RUN_DIR/logs/green-create.log" /DumpResult "$RUN_DIR/logs/green-create.result"
-[ "$(tr -d '\r\n' < "$RUN_DIR/logs/green-create.result" | tail -c1)" = "0" ] || { echo "FAIL: green-create"; exit 1; }
+result_zero "$RUN_DIR/logs/green-create.result" || { echo "FAIL: green-create DumpResult"; exit 1; }
 
 "${XVFB[@]}" "$V/1cv8t" DESIGNER /F "$RUN_DIR/instr-ib" \
   /LoadConfigFromFiles "$RUN_DIR/img" /UpdateDBCfg \
   /DisableStartupDialogs /DisableStartupMessages \
   /Out "$RUN_DIR/logs/green-load.log" /DumpResult "$RUN_DIR/logs/green-load.result"
-[ "$(tr -d '\r\n' < "$RUN_DIR/logs/green-load.result" | tail -c1)" = "0" ] || { echo "FAIL: green-load"; exit 1; }
+result_zero "$RUN_DIR/logs/green-load.result" || { echo "FAIL: green-load DumpResult"; exit 1; }
+grep -q "Configuration successfully updated" "$RUN_DIR/logs/green-load.log" \
+  || { echo "FAIL: green-load log missing success marker"; exit 1; }
 
 setsid "${XVFB[@]}" "$V/1cv8t" ENTERPRISE /F "$RUN_DIR/instr-ib" \
   /DisableStartupDialogs /DisableStartupMessages /DisplayManager "none" \
@@ -202,7 +241,7 @@ setsid "${XVFB[@]}" "$V/1cv8t" ENTERPRISE /F "$RUN_DIR/instr-ib" \
 PID=$!
 ok=0
 for i in $(seq 1 180); do
-  if receipt_strict_ok "$RUN_DIR/evidence/green-receipt.txt"; then
+  if receipt_ok "$RUN_DIR/evidence/green-receipt.txt" "$PKG/evidence/green-receipt.txt"; then
     sleep 2; h1=$(sha256sum "$RUN_DIR/evidence/green-receipt.txt" | cut -d' ' -f1)
     sleep 1; h2=$(sha256sum "$RUN_DIR/evidence/green-receipt.txt" | cut -d' ' -f1)
     if [ "$h1" = "$h2" ]; then ok=1; break; fi
@@ -210,7 +249,7 @@ for i in $(seq 1 180); do
   kill -0 "$PID" 2>/dev/null || { echo "FAIL: ENTERPRISE exited before valid receipt"; exit 1; }
   sleep 1
 done
-[ "$ok" = "1" ] || { echo "FAIL: no strictly valid green receipt in 180s"; kill -KILL -"$PID" 2>/dev/null || true; exit 1; }
+[ "$ok" = "1" ] || { echo "FAIL: no byte-exact green receipt in 180s"; kill -KILL -"$PID" 2>/dev/null || true; exit 1; }
 kill -KILL -"$PID" 2>/dev/null || kill -KILL "$PID" 2>/dev/null || true
 wait "$PID" 2>/dev/null || true
 
@@ -218,13 +257,15 @@ wait "$PID" 2>/dev/null || true
 "${XVFB[@]}" "$V/1cv8t" CREATEINFOBASE "File=$RUN_DIR/red-ib" \
   /DisableStartupDialogs /DisableStartupMessages \
   /Out "$RUN_DIR/logs/red-create.log" /DumpResult "$RUN_DIR/logs/red-create.result"
-[ "$(tr -d '\r\n' < "$RUN_DIR/logs/red-create.result" | tail -c1)" = "0" ] || { echo "FAIL: red-create"; exit 1; }
+result_zero "$RUN_DIR/logs/red-create.result" || { echo "FAIL: red-create DumpResult"; exit 1; }
 
 "${XVFB[@]}" "$V/1cv8t" DESIGNER /F "$RUN_DIR/red-ib" \
   /LoadConfigFromFiles "$RUN_DIR/img-red" /UpdateDBCfg \
   /DisableStartupDialogs /DisableStartupMessages \
   /Out "$RUN_DIR/logs/red-load.log" /DumpResult "$RUN_DIR/logs/red-load.result"
-[ "$(tr -d '\r\n' < "$RUN_DIR/logs/red-load.result" | tail -c1)" = "0" ] || { echo "FAIL: red-load"; exit 1; }
+result_zero "$RUN_DIR/logs/red-load.result" || { echo "FAIL: red-load DumpResult"; exit 1; }
+grep -q "Configuration successfully updated" "$RUN_DIR/logs/red-load.log" \
+  || { echo "FAIL: red-load log missing success marker"; exit 1; }
 
 setsid "${XVFB[@]}" "$V/1cv8t" ENTERPRISE /F "$RUN_DIR/red-ib" \
   /DisableStartupDialogs /DisableStartupMessages /DisplayManager "none" \
@@ -232,7 +273,7 @@ setsid "${XVFB[@]}" "$V/1cv8t" ENTERPRISE /F "$RUN_DIR/red-ib" \
 PID=$!
 ok=0
 for i in $(seq 1 180); do
-  if receipt_strict_ok "$RUN_DIR/evidence/red-receipt.txt"; then
+  if receipt_ok "$RUN_DIR/evidence/red-receipt.txt" "$PKG/evidence/red-receipt.txt"; then
     sleep 2; h1=$(sha256sum "$RUN_DIR/evidence/red-receipt.txt" | cut -d' ' -f1)
     sleep 1; h2=$(sha256sum "$RUN_DIR/evidence/red-receipt.txt" | cut -d' ' -f1)
     if [ "$h1" = "$h2" ]; then ok=1; break; fi
@@ -240,19 +281,19 @@ for i in $(seq 1 180); do
   kill -0 "$PID" 2>/dev/null || { echo "FAIL: ENTERPRISE exited before valid receipt"; exit 1; }
   sleep 1
 done
-[ "$ok" = "1" ] || { echo "FAIL: no strictly valid red receipt in 180s"; kill -KILL -"$PID" 2>/dev/null || true; exit 1; }
+[ "$ok" = "1" ] || { echo "FAIL: no byte-exact red receipt in 180s"; kill -KILL -"$PID" 2>/dev/null || true; exit 1; }
 kill -KILL -"$PID" 2>/dev/null || kill -KILL "$PID" 2>/dev/null || true
 wait "$PID" 2>/dev/null || true
 
-# --- post-flight: immutable identities и строгие receipts --------------------
+# --- post-flight: immutable identities + closure + точные receipts ------------
 [ "$(sha256sum "$CF" | cut -d' ' -f1)" = "$CF_SHA" ]        || { echo "FAIL: source CF changed"; exit 1; }
 [ "$(sha256sum "$MANIFEST" | cut -d' ' -f1)" = "$MAN_SHA" ] || { echo "FAIL: manifest changed"; exit 1; }
-( cd "$SNAP" && sha256sum -c ../snapshot.manifest --quiet ) || { echo "FAIL: snapshot changed"; exit 1; }
-receipt_strict_ok "$RUN_DIR/evidence/green-receipt.txt" || { echo "FAIL: green receipt invalid"; exit 1; }
-receipt_strict_ok "$RUN_DIR/evidence/red-receipt.txt"   || { echo "FAIL: red receipt invalid"; exit 1; }
+snapshot_verify || { echo "FAIL: snapshot closure"; exit 1; }
+receipt_ok "$RUN_DIR/evidence/green-receipt.txt" "$PKG/evidence/green-receipt.txt" || { echo "FAIL: green receipt mismatch"; exit 1; }
+receipt_ok "$RUN_DIR/evidence/red-receipt.txt" "$PKG/evidence/red-receipt.txt"     || { echo "FAIL: red receipt mismatch"; exit 1; }
 
 echo "RUN OK: $RUN_DIR"
-echo "  green-create/load/run, red-create/load/run completed; receipts strictly valid"
+echo "  all steps passed: DumpResult==0, load logs updated, receipts byte-exact, snapshot closure clean"
 ```
 
 **Замечания к runbook:**
@@ -267,12 +308,15 @@ echo "  green-create/load/run, red-create/load/run completed; receipts strictly 
 - ENTERPRISE запускается через `setsid` — PID становится лидером собственной process group,
   и `kill -KILL -$PID` останавливает всю группу (включая `1cv8t`-ребёнка внутри `xvfb-run`),
   а не только wrapper.
-- Ожидание receipt — строгое: пять непустых строк формата `label###value###type`, плюс
-  стабильность (хэш не меняется между двумя замерами через 2 с и 1 с), чтобы исключить
-  завершение ENTERPRISE во время записи.
-- Точное значение И тип каждого case проверяет committed валидатор пакета
-  `tests/test_issue10_evidence.py`; runbook проверяет структуру/формат и передаёт receipts
-  в evidence-пакет.
+- Ожидание receipt — байт-точное: `cmp` файла текущего run с frozen expected из пакета
+  (`$PKG/evidence/*-receipt.txt`), плюс стабильность (хэш не меняется между двумя замерами
+  через 2 с и 1 с), чтобы исключить завершение ENTERPRISE во время записи. `cmp` покрывает
+  nonsense/duplicate/unknown/missing labels, лишние и пустые строки.
+- `DumpResult` проверяется целиком: нормализованный файл (BOM/CR/LF удалены) должен быть
+  ровно `"0"` — значения `10` или `error0` отклоняются.
+- Оба load-лога дополнительно проверяются на `Configuration successfully updated`.
+- Pre/post snapshot-проверка — closure: missing/mismatch/extra/symlink/недопустимые типы
+  файлов приводят к `SNAPSHOT_FAIL` и стопу; `RUN OK` печатается только после всех проверок.
 
 **Результаты этого прогона** — `RUN_DIR = .local/runs/issue10-write-cycle-20260826T190503`
 (выполнен буквально этим runbook'ом из корня репозитория; receipts нового прогона
@@ -288,6 +332,27 @@ echo "  green-create/load/run, red-create/load/run completed; receipts strictly 
 Экстракты сохранены санитизированно в
 [`native-results.md`](../experiments/issue10-write-cycle-20260826/native-results.md).
 (Шаг ENTERPRISE не пишет `/DumpResult`; результат — строго валидный receipt.)
+
+**Усиленный post-flight применён к артефактам этого прогона** (2026-08-26, без повторного
+нативного прогона — каталог сохранён): receipts байт-в-байт равны frozen (`cmp`), все четыре
+`*.result` нормализованно равны `"0"`, оба load-лога содержат `Configuration successfully
+updated`, snapshot closure чист. Результат: все проверки прошли.
+
+**Пять ложноположительных обходов (репродукция ревью владельца) отклоняются** усиленным
+runbook'ом — проверено выполнением дословно извлечённых check-функций на поддельных входах:
+
+| Обход | Результат |
+|---|---|
+| пять одинаковых строк `foo###999###Number` | `receipt_ok` ≠ 0 → FAIL |
+| лишняя пустая строка в receipt | `cmp` ≠ 0 → FAIL |
+| лишняя шестая строка | `cmp` ≠ 0 → FAIL |
+| `DumpResult = "10"` | `result_zero` ≠ 0 → FAIL |
+| `DumpResult = "error0"` | `result_zero` ≠ 0 → FAIL |
+| лишний файл в snapshot | `SNAPSHOT_FAIL extra=1` → FAIL |
+| listed-файл заменён symlink'ом с теми же байтами | `SNAPSHOT_FAIL symlinks=1` → FAIL |
+
+Те же обходы закреплены регрессионными тестами `Issue10RunbookFailClosedTests`
+(извлекают check-функции из этого дока и исполняют их через bash).
 
 ## 7. RED / GREEN (точное значение И тип)
 
