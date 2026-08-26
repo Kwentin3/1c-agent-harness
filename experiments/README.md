@@ -10,4 +10,9 @@
 человеческой проверки 47 frozen items. Для повторного `compare` ему нужен
 локальный snapshot с указанным content ID.
 
+`issue12-narrow-context-20260826/` — закрытый по manifest review package сравнения
+обычного direct-source поиска с bounded context-frontier protocol на SDMS и Jet;
+содержит frozen arm packets, независимую adjudication, нативные receipts и
+fail-closed decision без добавления нового runtime-компонента.
+
 Исполняемый порядок описан в [`docs/experiment-runbook.md`](../docs/experiment-runbook.md).

@@ -1,0 +1,37 @@
+{
+  "schemaVersion": 1,
+  "issue": 12,
+  "frozenBeforeArms": true,
+  "frozenArtifactHashes": {
+    "preregisteredDesign": "f071e67d7d365660f6a8ccd92d7d8529eb28d39a00ad8ec1aa639ee8fd91cf66",
+    "armOutputContract": "bd008919ed889c65dab99ac547a9f2e1bd87b8cfd4740edd759e59e20bb7122b",
+    "candidateResearch": "68f4b03e81a9b8c90eb8daa874bd5a85fa01d81b6161b4bad585442c769f3012",
+    "preResultsAmendment": "a3844715972c19e9e7f055c97b171c50cf395bd5a60df66bb387b67143874c2a",
+    "sdmsPublicTask": "6989d4b315f268846a367758b1ed86a5329f4479200caa2c8c4ffcfbbe8415ab",
+    "jetPublicTask": "0d2f03591317ad98f9bce1fd4f34834817c00de137a381f0ae6462d3e2b9984a"
+  },
+  "priorEvidence": "Issue #10 is reused as the existing local BSL/write task and was not rerun.",
+  "baseline": "Standard direct filename/content search and source reads over the immutable split snapshot, without a mandatory navigation recipe or derived index.",
+  "candidate": "The same tools and snapshot plus a bounded context-frontier protocol: bind identity, derive terms, log selected hits, attach rationale/locator/bytes/claim, expand only to required owners/callers/effects, run a sufficiency checklist, and stop.",
+  "excludedCandidateComponents": [
+    "parser",
+    "persistent index",
+    "catalog or graph",
+    "embeddings or RAG",
+    "MCP service",
+    "daemon",
+    "live-infobase integration",
+    "new dependency"
+  ],
+  "hardGates": [
+    "candidate coverage is not lower per task",
+    "zero dangerous unsupported claims",
+    "all substantive claims have exact-snapshot locators",
+    "metadata native acceptance is at least as strong as baseline",
+    "stale, insufficient and same-term-distractor negatives fail closed"
+  ],
+  "originalPositiveSignal": "At least one oracle-essential relation found only by candidate, or at least one 25% reduction in context bytes, navigation operations, or wall clock under the original companion conditions.",
+  "preResultsAmendment": "A reduction counts only with <=10% regression in every other observed efficiency metric; candidate-only essential coverage also requires <=10% regression. Signed reductions only. Designer load/update proves platform acceptance, not runtime semantics.",
+  "decisionRule": "Keep the candidate only when all hard gates, the cost ceiling, and an amended positive branch pass. Otherwise retain direct source and add no component.",
+  "claimScope": "One SDMS cross-object task, one Jet metadata task, and reused issue #10 evidence; no universal or statistical claim about 1C navigation."
+}

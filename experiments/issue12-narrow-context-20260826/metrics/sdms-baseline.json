@@ -1,0 +1,18 @@
+{
+  "schemaVersion": 1,
+  "taskId": "issue12-sdms-cross-object-business-01",
+  "startedUtc": "2026-08-26T21:38:25Z",
+  "finishedUtc": "2026-08-26T21:44:51Z",
+  "wallClockSeconds": 386,
+  "searchOperations": 25,
+  "readOperations": 13,
+  "otherNavigationOperations": 11,
+  "selectedFileCount": 6,
+  "selectedFragmentCount": 9,
+  "selectedLineCount": 393,
+  "selectedContextBytes": 24966,
+  "preparationSeconds": 0,
+  "derivedDiskBytes": 19448,
+  "manualSetup": false,
+  "notes": "Observed operation counts include the initial output-directory probe, every direct filename/content search (including Python line scans), contract/task/source reads, timestamps, integrity/status checks and context byte aggregation. One initial Python manifest-closure command was blocked by the gateway command guard and was counted; closure was then verified with sha256sum plus a simpler direct Python set comparison. A jsonschema-based check could not run because that package was absent; this failed check was counted, and the published answer contract was then validated with direct deterministic assertions. No index, parser, catalog, graph, RAG, MCP or network was used. No token count was available or invented. derivedDiskBytes is the final sum of the four arm-output files."
+}

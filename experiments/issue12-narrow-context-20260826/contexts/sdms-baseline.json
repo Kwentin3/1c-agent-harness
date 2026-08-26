@@ -1,0 +1,92 @@
+{
+  "schemaVersion": 1,
+  "taskId": "issue12-sdms-cross-object-business-01",
+  "snapshotContentId": "sha256:3357ee63204ff863aac116417927240930084dce0eb7613126ad88cff68a424d",
+  "fragments": [
+    {
+      "path": "HTTPServices/API.xml",
+      "startLine": 459,
+      "endLine": 526,
+      "fileSha256": "92c7df61649b51ee502405f7baff8788ef79d630e801dbc12b2a7a821c189d40",
+      "byteCount": 1929,
+      "reason": "Defines the devrequests/{id}/{method} route, POST method and handler binding.",
+      "supports": ["F1"]
+    },
+    {
+      "path": "HTTPServices/API/Ext/Module.bsl",
+      "startLine": 262,
+      "endLine": 281,
+      "fileSha256": "126bcca35a21cedab5526f81738e7197f29310ba2035513d0d3d5c8f27b17e29",
+      "byteCount": 1277,
+      "reason": "Shows request pre-processing and method=tasks dispatch to task creation.",
+      "supports": ["F1"]
+    },
+    {
+      "path": "CommonModules/API/Ext/Module.bsl",
+      "startLine": 995,
+      "endLine": 1020,
+      "fileSha256": "7dcb1de5fb773f597d08a400b3958e8815822ba1798c1faabb30f99702d6b3d6",
+      "byteCount": 1648,
+      "reason": "Covers service-user/id/parameter gates, domain delegation and API success/error mapping.",
+      "supports": ["F2", "F10", "F11"]
+    },
+    {
+      "path": "CommonModules/API/Ext/Module.bsl",
+      "startLine": 5085,
+      "endLine": 5088,
+      "fileSha256": "7dcb1de5fb773f597d08a400b3958e8815822ba1798c1faabb30f99702d6b3d6",
+      "byteCount": 498,
+      "reason": "Defines operation-specific query parameter mapping.",
+      "supports": ["F3"]
+    },
+    {
+      "path": "Documents/ЗаявкаНаРазработку/Ext/ManagerModule.bsl",
+      "startLine": 376,
+      "endLine": 475,
+      "fileSha256": "cd47415b307a9b6f9fee633afc99bf06ccbb7c872a7454c982866d285ef96fbe",
+      "byteCount": 6823,
+      "reason": "Primary business flow: author/status/date/base gates, field population, write and failure handling.",
+      "supports": ["F4", "F6", "F7", "F8", "F9", "F10"]
+    },
+    {
+      "path": "Documents/ЗаявкаНаРазработку/Ext/ManagerModule.bsl",
+      "startLine": 813,
+      "endLine": 869,
+      "fileSha256": "cd47415b307a9b6f9fee633afc99bf06ccbb7c872a7454c982866d285ef96fbe",
+      "byteCount": 4923,
+      "reason": "Cross-object query binds the selected system to the request and supplies inherited request data/status.",
+      "supports": ["F5", "F6", "F9"]
+    },
+    {
+      "path": "Documents/Задача/Ext/ManagerModule.bsl",
+      "startLine": 78,
+      "endLine": 114,
+      "fileSha256": "e0b3b969445773f71179fb200e20c8c7056ecbb5ac4f49ca4ab8b7539a6894e1",
+      "byteCount": 2626,
+      "reason": "Defines common base-object rejection conditions used by creation.",
+      "supports": ["F8"]
+    },
+    {
+      "path": "InformationRegisters/МинимальныеСтатусыЗаявок/Ext/ManagerModule.bsl",
+      "startLine": 200,
+      "endLine": 232,
+      "fileSha256": "49648a9fc6f5d3da56c4cd9ac1dc2a0074ef9cf666b84616ed5c40b6e0d3b0a0",
+      "byteCount": 2190,
+      "reason": "Defines 'works completed' as resolved/rejected status older than five days.",
+      "supports": ["F8"]
+    },
+    {
+      "path": "CommonModules/API/Ext/Module.bsl",
+      "startLine": 10846,
+      "endLine": 10893,
+      "fileSha256": "7dcb1de5fb773f597d08a400b3958e8815822ba1798c1faabb30f99702d6b3d6",
+      "byteCount": 3052,
+      "reason": "Defines the successful API response fields for the created task.",
+      "supports": ["F11"]
+    }
+  ],
+  "sufficiency": {
+    "decision": "sufficient",
+    "rationale": "The selected fragments cover the HTTP entry point and operation selection, operation parameters, cross-object link from request to selected system, all statically traced business rejection branches, the created native Document.Задача fields, write attempt/error boundary, and success response. The negative boundary is explicit: deployment, authentication, live data, handlers and durable database commit remain runtime-only and are not asserted."
+  }
+}

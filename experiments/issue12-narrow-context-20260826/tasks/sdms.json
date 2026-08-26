@@ -1,0 +1,26 @@
+{
+  "schemaVersion": 1,
+  "issue": 12,
+  "taskId": "issue12-sdms-cross-object-business-01",
+  "language": "ru",
+  "taskText": "В SDMS внешняя система запрашивает создание задачи на основании заявки на разработку через HTTP API. Восстановите сквозной бизнес-сценарий обработки этого запроса: как определяется требуемая операция, при каких бизнес-условиях создание отклоняется и какой объект с какими ключевыми данными фиксируется при успехе. Для каждого существенного утверждения приведите точный locator path:line из snapshot. Отделите подтверждаемое статическим анализом от фактов, требующих runtime-проверки.",
+  "snapshot": {
+    "root": ".local/runs/sdms-native-02/snapshot",
+    "manifest": ".local/runs/sdms-native-02/snapshot.manifest",
+    "contentId": "sha256:3357ee63204ff863aac116417927240930084dce0eb7613126ad88cff68a424d",
+    "fileCount": 2581,
+    "upstreamCommit": "eb372065e273ceade9939542ce56565c4d422e91"
+  },
+  "answerRequirements": [
+    "Ответ должен быть сформулирован на языке бизнеса, а не как перечень найденных файлов.",
+    "Каждый существенный вывод должен иметь точный locator path:line в замороженном snapshot.",
+    "Нельзя выдавать статически прослеживаемое поведение за результат runtime-теста или факт успешной публикации API."
+  ],
+  "blindness": {
+    "solutionPathsDisclosed": false,
+    "functionOrModuleNamesDisclosed": false,
+    "oracleDisclosed": false
+  },
+  "frozenAtUtc": "2026-08-26T21:33:32Z",
+  "status": "frozen"
+}

@@ -1,0 +1,42 @@
+{
+  "schemaVersion": 1,
+  "arm": "jet-baseline",
+  "workCopy": ".local/experiments/issue12/arms/jet-baseline/work-copy",
+  "runRoot": ".local/runs/issue12-jet-baseline-20260826T220240Z-c2510d47",
+  "platform": "1C training 8.5.1.1150",
+  "preSnapshot": {
+    "listed": 5099,
+    "actual": 5099,
+    "missing": 0,
+    "extra": 0,
+    "mismatch": 0,
+    "symlinks": 0
+  },
+  "steps": [
+    {
+      "step": "create",
+      "processExit": 0,
+      "dumpResultZero": true,
+      "logSha256": "ec54e87ed4aa545af38542709403253bf3a4549347114e425f8609cc787714d6",
+      "stderrBytes": 0,
+      "stdoutBytes": 0
+    },
+    {
+      "step": "load",
+      "processExit": 0,
+      "dumpResultZero": true,
+      "logSha256": "4d841be04b71dd0ee7cfebcfa7af194d74902e2ec1c213987889d7d3940c0f86",
+      "stderrBytes": 0,
+      "stdoutBytes": 0
+    }
+  ],
+  "postSnapshot": {
+    "listed": 5099,
+    "actual": 5099,
+    "missing": 0,
+    "extra": 0,
+    "mismatch": 0,
+    "symlinks": 0
+  },
+  "status": "ok"
+}

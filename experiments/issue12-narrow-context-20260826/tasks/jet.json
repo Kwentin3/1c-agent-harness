@@ -1,0 +1,29 @@
+{
+  "task_id": "issue12-jet-metadata-v3-warehouse-negative-balance",
+  "snapshot": {
+    "root": ".local/runs/training-jet-review-final/snapshot",
+    "identity": {
+      "kind": "sha256-manifest",
+      "manifest_sha256": "70972b5e11901ca31c7f7ec67dca03f78986206b024be01aeb34e0e1f3ff6691",
+      "file_count": 5099
+    }
+  },
+  "business_wording": "Warehouse master data must record whether a warehouse permits inventory to fall below zero. Add one Boolean business attribute with the English presentation ‘Allow negative inventory balance’ to the existing warehouse master-data object. The setting is false by default and applies to warehouse items. This task changes metadata only: do not add or change forms, BSL modules, posting logic, or other runtime behavior.",
+  "acceptance": [
+    "Start from an isolated writable copy of the identified immutable snapshot; the snapshot itself must remain byte-identical to its manifest.",
+    "Exactly one business attribute is added to exactly one existing metadata object, with the requested English presentation, Boolean value type, false default, and item-level use.",
+    "No forms, BSL modules, runtime enforcement, unrelated metadata, or source serialization settings are changed.",
+    "The candidate split source is accepted by native Designer /LoadConfigFromFiles and /UpdateDBCfg in a disposable infobase. Native validation is an evaluation gate, not part of this frozen selection package."
+  ],
+  "blindness": {
+    "model_visible": "this entire public-task.json and an isolated writable copy of the identified snapshot only",
+    "forbidden": [
+      "oracle.json",
+      "selection-report.md",
+      "SHA256SUMS before submission",
+      "prior selection attempts or validation workspaces",
+      "solution patches, exact metadata paths, XML insertion instructions, or expected UUIDs",
+      "upstream history or network lookup used to recover a solution"
+    ]
+  }
+}

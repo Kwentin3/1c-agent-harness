@@ -1,0 +1,36 @@
+{
+  "schemaVersion": 1,
+  "issue": 12,
+  "selectedApproach": "direct-source-baseline",
+  "candidateDecision": "rejected",
+  "newRuntimeComponents": [],
+  "scope": "one SDMS task and one Jet metadata task, with issue #10 reused as prior local BSL/write evidence",
+  "taskResults": {
+    "sdms": {
+      "quality": "tie: 9/9 oracle items, zero dangerous claims, zero invalid locators, sufficient context for both arms",
+      "baseline": {"contextBytes": 24966, "navigationOperations": 49, "wallClockSeconds": 386},
+      "candidate": {"contextBytes": 30448, "navigationOperations": 56, "wallClockSeconds": 342},
+      "signedCandidateChangePercent": {"contextBytesReduction": -21.9579, "navigationReduction": -14.2857, "wallClockReduction": 11.3990},
+      "originalRule": "not useful",
+      "amendedRule": "not useful",
+      "reason": "No >=25% reduction or candidate-only essential relation; context and navigation regress beyond the amended 10% ceiling."
+    },
+    "jet": {
+      "quality": "baseline 11/11 semantic fields and native PASS; candidate 10/11 and native PASS because it adds unrequested FullTextSearch=Use instead of minimal DontUse",
+      "baseline": {"selectedSourceFiles": 2, "sourceFragments": 3, "sourceContextBytes": 2860, "selectedSourceLines": 90, "wallClockSeconds": 480},
+      "candidate": {"selectedSourceFiles": 3, "sourceFragments": 5, "sourceContextBytes": 7438, "selectedSourceLines": 218, "wallClockSeconds": 347.93},
+      "signedCandidateChangePercent": {"sourceContextBytesReduction": -160.0699, "wallClockReduction": 27.5146, "navigationReduction": null},
+      "originalRule": "not useful",
+      "amendedRule": "not useful",
+      "reason": "Candidate fails the no-lower-coverage hard gate. Its wall-clock reduction exceeds 25%, but comparable navigation telemetry is absent and source context regresses by 160.07%, far beyond the amended 10% Pareto ceiling."
+    }
+  },
+  "oracleDefect": "The private Jet oracle required one exact UUIDv5 while the public blind task explicitly hid the UUID algorithm and expected value. That arbitrary exact-identifier criterion is not a fair arm discriminator. Both unique valid UUIDs are graded semantically and accepted by native 1C; the frozen oracle remains unchanged and the defect is reported rather than silently repaired.",
+  "negativeScenarios": {
+    "staleBinding": "rejected by exact content-ID validation",
+    "insufficientContext": "rejected when the SDMS request-manager fragment is removed",
+    "sameTermDistractor": "Reports/ЗадачиПоЗаявкам.xml is rejected as non-evidence for the HTTP creation chain",
+    "metadataScopeExpansion": "Jet form/BSL/Configuration/ConfigDumpInfo expansion is rejected"
+  },
+  "conclusion": "Standard direct-source tools remain sufficient for these frozen runs. The bounded-frontier protocol may be retained as human guidance, but its measured cost does not justify adding a product component, dependency, index, parser, daemon, MCP service, or persistent derived state."
+}
