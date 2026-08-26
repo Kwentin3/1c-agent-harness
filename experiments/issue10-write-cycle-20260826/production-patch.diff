@@ -1,0 +1,15 @@
+diff --git a/CommonModules/StringFunctionsClientServer/Ext/Module.bsl b/CommonModules/StringFunctionsClientServer/Ext/Module.bsl
+index 23f66e5..7c86f02 100644
+--- a/CommonModules/StringFunctionsClientServer/Ext/Module.bsl
++++ b/CommonModules/StringFunctionsClientServer/Ext/Module.bsl
+@@ -810,6 +810,10 @@ EndFunction
+ Function StringToNumber(Val Value) Export
+ 	
+ 	Value  = StrReplace(Value, " ", "");
++	// Digits are commonly separated by tab or a non-breaking space in copied
++	// text. Strip those as well, not just the regular space.
++	Value  = StrReplace(Value, Chars.Tab, "");
++	Value  = StrReplace(Value, Chars.NBSp, "");
+ 	If StrStartsWith(Value, "(") Then
+ 		Value = StrReplace(Value, "(", "-");
+ 		Value = StrReplace(Value, ")", "");

@@ -1,0 +1,52 @@
+diff --git a/Ext/ManagedApplicationModule.bsl b/Ext/ManagedApplicationModule.bsl
+index 03ca2b2..6ebf93a 100644
+--- a/Ext/ManagedApplicationModule.bsl
++++ b/Ext/ManagedApplicationModule.bsl
+@@ -55,6 +55,9 @@ EndProcedure
+ 
+ Procedure OnStart()
+ 	
++	Issue10WriteRuntimeReceipt();
++	Return;
++	
+ 	// StandardSubsystems
+ #If MobileClient Then
+ 	Execute("StandardSubsystemsClient.OnStart()");
+@@ -92,4 +95,36 @@ Procedure CollaborationSystemUsersChoiceFormGetProcessing(ChoicePurpose,
+ 	
+ EndProcedure
+ 
++// Probe-only (test harness, NOT part of the implementation): runs the production
++// StringToNumber for the issue-10 whitespace contract and writes a receipt.
++// Each line is "label###VALUE###TYPE"; TYPE is the 1C type name, so an Undefined
++// result is distinguishable from an empty string or a formatting error.
++Procedure Issue10WriteRuntimeReceipt()
++	
++	Receipt = New TextWriter("<RUN_DIR>/evidence/runtime-receipt.txt", TextEncoding.UTF8);
++	
++	WriteProbeCase(Receipt, "tab", StringFunctionsClientServer.StringToNumber("1" + Chars.Tab + "234"));
++	WriteProbeCase(Receipt, "nbsp", StringFunctionsClientServer.StringToNumber("1" + Chars.NBSp + "234"));
++	WriteProbeCase(Receipt, "invalid", StringFunctionsClientServer.StringToNumber("12x3"));
++	WriteProbeCase(Receipt, "decimal", StringFunctionsClientServer.StringToNumber("1234.56"));
++	WriteProbeCase(Receipt, "space", StringFunctionsClientServer.StringToNumber(" 567 "));
++	
++	Receipt.Close();
++	
++EndProcedure
++
++// Writes a single "label###value###type" line. If the result is not a Number,
++// the value column stays empty and only the type marker is written.
++Procedure WriteProbeCase(Receipt, Label, Result)
++	
++	TypeMarker = String(TypeOf(Result));
++	If TypeMarker = "Number" Then
++		ValueText = String(Result);
++	Else
++		ValueText = "";
++	EndIf;
++	Receipt.Write(Label + "###" + ValueText + "###" + TypeMarker + Chars.LF);
++	
++EndProcedure
++
+ #EndRegion
+\ No newline at end of file
