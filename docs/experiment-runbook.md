@@ -15,7 +15,10 @@
 └── evidence/
 ```
 
-В Git разрешено помещать только redacted summary без исходной конфигурации, raw transcripts и закрытого oracle.
+В Git разрешено помещать только redacted summary без исходной конфигурации и raw
+transcripts. Для открытой конфигурации допустим небольшой review package из
+авторских вопросов, oracle items, ответов, per-item ledger и hashes, если он не
+копирует исходный XML/BSL и не содержит секретов.
 
 ## 1. Подготовить snapshot
 
@@ -52,7 +55,9 @@ python3 scripts/harness.py preflight \
 
 Проверяются manifest/content ID, обязательные корневые `Configuration.xml` и
 `ConfigDumpInfo.xml`, полный набор файлов, question hash, lossy `?` paths,
-symlink/hard-link и размещение output/cache вне snapshot.
+symlink/hard-link и размещение output/cache вне snapshot. Чтение выполняется
+через descriptor-bound `O_NOFOLLOW` с проверкой стабильности `fstat`, а не через
+схему «проверить путь, затем заново открыть его по имени».
 
 ## 4. Запустить arms
 
@@ -75,22 +80,35 @@ python3 scripts/harness.py verify-answer \
   --output .local/experiments/<id>/evidence/baseline.verified.json
 ```
 
-Проверка locators включает confinement, отсутствие symlink, существование файла и диапазона строк. Семантическая истинность факта остаётся задачей независимого reviewer.
+Проверка locators включает confinement, отсутствие symlink, существование файла,
+совпадение прочитанных байтов с hash из принятого manifest, диапазон строк и
+обратное покрытие каждого `fact`/`inference`. `assumptions` и
+`unknowns` могут быть без locator. Семантическая истинность и отсутствие новых
+существенных утверждений только в поле `answer` остаются задачей reviewer.
 
 ## 6. Adjudication и сравнение
 
-Reviewer заполняет `contracts/adjudication.schema.json` после выполнения обоих arms:
+Reviewer заполняет per-item ledger и hash-bound adjudication после выполнения обоих arms:
 
 ```bash
 python3 scripts/harness.py compare \
   --experiment .local/experiments/<id>/experiment.json \
   --baseline .local/experiments/<id>/answers/baseline.json \
   --candidate .local/experiments/<id>/answers/candidate.json \
+  --oracle .local/experiments/<id>/oracle.json \
+  --ledger .local/experiments/<id>/adjudication-ledger.json \
   --adjudication .local/experiments/<id>/adjudication.json \
   --output .local/experiments/<id>/evidence/comparison.json
 ```
 
-`status=ok` означает сопоставимый frozen contract. Решение о принятии инструмента делается по `scores.*.accepted`, dangerous false claims, метрикам и заранее объявленному порогу.
+До вычисления `accepted` harness требует совпадения snapshot content ID,
+question-set SHA-256, oracle SHA-256, ledger SHA-256 и SHA-256 обоих answers.
+Oracle items и ledger должны совпасть по порядку и тексту; denominator, correct
+totals и dangerous counts пересчитываются из ledger. `status=ok` означает
+целостный frozen contract, но не человеческое подтверждение семантики.
+
+Публичный 47-item пример и checklist находятся в
+[`experiments/sdms-product-eval-20260825-review/`](../experiments/sdms-product-eval-20260825-review/).
 
 ## 7. Seal
 

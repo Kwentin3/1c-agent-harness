@@ -1,0 +1,47 @@
+{
+  "schemaVersion": 1,
+  "questions": [
+    {
+      "id": "Q1",
+      "text": "Составьте паспорт конфигурации: имя, поставщик, версия, язык встроенного языка, режим запуска и compatibility mode расширений.",
+      "requiredEvidence": ["Configuration.xml path:line"],
+      "forbiddenClaims": ["Не подменять compatibility mode расширений версией платформы стенда"]
+    },
+    {
+      "id": "Q2",
+      "text": "Каково подтверждаемое назначение конфигурации? Назовите минимум четыре прикладные возможности и дайте компактную карту масштаба: Documents, Catalogs, CommonModules, InformationRegisters, ScheduledJobs, HTTPServices и BSL files.",
+      "requiredEvidence": ["Configuration.xml и/или metadata object locators", "Числа должны быть воспроизводимы"],
+      "forbiddenClaims": ["Название объекта само по себе не доказывает runtime-поведение"]
+    },
+    {
+      "id": "Q3",
+      "text": "Проследите статическую цепочку создания задачи из заявки через HTTP API: handler, common module и document manager. Перечислите ключевые запреты до записи и созданные основные поля. Не называйте это runtime-тестом.",
+      "requiredEvidence": ["Минимум три BSL locators по цепочке"],
+      "forbiddenClaims": ["Не утверждать, что endpoint реально опубликован или запрос успешно выполнялся"]
+    },
+    {
+      "id": "Q4",
+      "text": "Что делает проведение документа Трудозатраты? Разделите безусловное движение Трудозатраты и условное движение ОказанныеУслуги, включая условия и вычисляемые ресурсы.",
+      "requiredEvidence": ["Documents/Трудозатраты/Ext/ObjectModule.bsl path:line"],
+      "forbiddenClaims": ["Не утверждать наличие фактических записей в живой ИБ"]
+    },
+    {
+      "id": "Q5",
+      "text": "Покажите один регламентный механизм и механизм выбора мессенджера. Что настроено в metadata, какие варианты интеграции есть, и что нельзя узнать о фактическом runtime-состоянии?",
+      "requiredEvidence": ["ScheduledJob XML", "Messenger BSL locator"],
+      "forbiddenClaims": ["Use=false в конфигурации не доказывает текущее состояние задания в production"]
+    },
+    {
+      "id": "Q6",
+      "text": "Разберите видимую в snapshot проверку Bearer/JWT для API: формат, какие поля и состояния сверяются, и подтверждена ли криптографическая проверка подписи токена этой цепочкой?",
+      "requiredEvidence": ["Token register manager BSL path:line"],
+      "forbiddenClaims": ["Не приписывать проверку подписи без исходного locator"]
+    },
+    {
+      "id": "Q7",
+      "text": "Перечислите минимум четыре существенных факта о развернутой системе, которые нельзя установить по этому configuration snapshot. Для каждого укажите, какое дополнительное read-only доказательство потребовалось бы.",
+      "requiredEvidence": ["Locators к местам, показывающим только конфигурационные варианты, плюс явное unknown"],
+      "forbiddenClaims": ["Не выдавать конфигурационную возможность за факт эксплуатации"]
+    }
+  ]
+}

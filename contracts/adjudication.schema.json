@@ -1,8 +1,9 @@
 {
   "$schema": "https://json-schema.org/draft/2020-12/schema",
   "$id": "https://github.com/Kwentin3/1c-agent-harness/contracts/adjudication.schema.json",
-  "title": "Human adjudication for two frozen arms",
+  "title": "Hash-bound human adjudication for two frozen arms",
   "$defs": {
+    "sha256": {"type": "string", "pattern": "^[0-9a-f]{64}$"},
     "arm": {
       "type": "object",
       "additionalProperties": false,
@@ -16,16 +17,32 @@
   },
   "type": "object",
   "additionalProperties": false,
-  "required": ["schemaVersion", "experimentId", "arms", "reviewer"],
+  "required": ["schemaVersion", "experimentId", "identity", "arms", "reviewer"],
   "properties": {
-    "schemaVersion": {"const": 1},
+    "schemaVersion": {"const": 2},
     "experimentId": {"type": "string", "minLength": 1},
     "reviewer": {"type": "string", "minLength": 1},
+    "identity": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["snapshotContentId", "questionSetSha256", "oracleSha256", "ledgerSha256", "baselineAnswerSha256", "candidateAnswerSha256"],
+      "properties": {
+        "snapshotContentId": {"type": "string", "pattern": "^sha256:[0-9a-f]{64}$"},
+        "questionSetSha256": {"$ref": "#/$defs/sha256"},
+        "oracleSha256": {"$ref": "#/$defs/sha256"},
+        "ledgerSha256": {"$ref": "#/$defs/sha256"},
+        "baselineAnswerSha256": {"$ref": "#/$defs/sha256"},
+        "candidateAnswerSha256": {"$ref": "#/$defs/sha256"}
+      }
+    },
     "arms": {
       "type": "object",
       "additionalProperties": false,
       "required": ["baseline", "candidate"],
-      "properties": {"baseline": {"$ref": "#/$defs/arm"}, "candidate": {"$ref": "#/$defs/arm"}}
+      "properties": {
+        "baseline": {"$ref": "#/$defs/arm"},
+        "candidate": {"$ref": "#/$defs/arm"}
+      }
     }
   }
 }

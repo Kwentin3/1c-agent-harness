@@ -47,11 +47,11 @@
         "required": ["questionId", "answer", "facts", "inferences", "assumptions", "unknowns", "locators"],
         "properties": {
           "questionId": {"type": "string", "minLength": 1},
-          "answer": {"type": "string"},
-          "facts": {"type": "array", "items": {"$ref": "#/$defs/claim"}},
-          "inferences": {"type": "array", "items": {"$ref": "#/$defs/claim"}},
-          "assumptions": {"type": "array", "items": {"$ref": "#/$defs/claim"}},
-          "unknowns": {"type": "array", "items": {"$ref": "#/$defs/claim"}},
+          "answer": {"type": "string", "description": "Non-authoritative summary. Every material proposition must also appear in a classified claim; semantic enforcement remains human."},
+          "facts": {"type": "array", "description": "Every fact id must be covered by at least one locator.", "items": {"$ref": "#/$defs/claim"}},
+          "inferences": {"type": "array", "description": "Every inference id must be covered by at least one locator; human review checks source sufficiency.", "items": {"$ref": "#/$defs/claim"}},
+          "assumptions": {"type": "array", "description": "May remain without a locator when explicitly classified as an assumption.", "items": {"$ref": "#/$defs/claim"}},
+          "unknowns": {"type": "array", "description": "May remain without a locator when explicitly classified as unknown.", "items": {"$ref": "#/$defs/claim"}},
           "locators": {"type": "array", "items": {"$ref": "#/$defs/locator"}}
         }
       }
