@@ -1,0 +1,85 @@
+{
+  "schemaVersion": 2,
+  "platformProfile": "training-8.5.1.1150-linux-x86_64",
+  "snapshot": {
+    "manifestSha256": "70972b5e11901ca31c7f7ec67dca03f78986206b024be01aeb34e0e1f3ff6691",
+    "declaredFiles": 5099,
+    "actualFiles": 5099,
+    "missing": [],
+    "extra": [],
+    "mismatch": [],
+    "symlinks": []
+  },
+  "machineProducedArtifacts": {
+    "codeIdentityFile": "candidate-code-identity.json",
+    "codeIdentityFileSha256": "0bb3bac8a8680eecbeac36efd7a25ec481011ee83d588b8476177f5b4108b4fd",
+    "processCleanupChecksFile": "process-cleanup-checks.json",
+    "processCleanupChecksFileSha256": "5576ddac44f12816c16b5f9a5ffadb88f893b37517fcd8cba43791858f972eec",
+    "success": {
+      "resultFile": "success-result.json",
+      "resultFileSha256": "9983ac698543565631600be910c22ef4fdfd20ce11ee37a599b0f3e68895a7a3",
+      "rawResultFile": "success-result.raw.json.gz",
+      "rawResultFileSha256": "cbe80304430bb9c9e6447f3a7cb4eff76b3fb47921cab77f42a9cd7e5e9c50f7",
+      "receiptFile": "success-receipt.native",
+      "receiptFileSha256": "4328d31ca02b67ae13e41f5858f2f39ca2540752c0ce4c576f0706fe89ebca36",
+      "readableReceiptFile": "success-receipt.txt",
+      "readableReceiptFileSha256": "bc28d636fccc7aa93eb9e827e7ead53a7b62cb0b5adb9cfaef49c76804a3d7ba",
+      "createLogFile": "success-create-log.txt",
+      "createResultFile": "success-create-result.native",
+      "loadLogFile": "success-load-log.native",
+      "loadResultFile": "success-load-result.native",
+      "processCheckFile": "success-process-check.native"
+    },
+    "repeat": {
+      "resultFile": "repeat-result.json",
+      "resultFileSha256": "bee1970ce69c4c8add54d43c406966acfeef932b32fcc39965c8771db242ed0a",
+      "rawResultFile": "repeat-result.raw.json.gz",
+      "rawResultFileSha256": "ac8aad7b1d468a1440255be9f08944af902445793191031f252544f360c82dc1",
+      "receiptFile": "repeat-receipt.native",
+      "receiptFileSha256": "65ec08a188ec21323616ed45b7f3ba919f7f68c7d09a5e1a52bcc34bbdf1f1a4",
+      "readableReceiptFile": "repeat-receipt.txt",
+      "readableReceiptFileSha256": "190493e91acbe17f5500091d1250035fc4f68018ae579db037ef7f9a18a4b029",
+      "createLogFile": "repeat-create-log.txt",
+      "createResultFile": "repeat-create-result.native",
+      "loadLogFile": "repeat-load-log.native",
+      "loadResultFile": "repeat-load-result.native",
+      "processCheckFile": "repeat-process-check.native"
+    },
+    "timeout": {
+      "resultFile": "timeout-result.json",
+      "resultFileSha256": "d17abeba571d64234993239481486f5558d85d479298aec895ef0cbe37abf4d1",
+      "rawResultFile": "timeout-result.raw.json.gz",
+      "rawResultFileSha256": "14c03d0635a7746cd68b26963949981fa9305b461b8a4f3f5049eb75f455b53f",
+      "receiptExpected": false,
+      "createLogFile": "timeout-create-log.txt",
+      "createResultFile": "timeout-create-result.native",
+      "loadLogFile": "timeout-load-log.native",
+      "loadResultFile": "timeout-load-result.native",
+      "processCheckFile": "timeout-process-check.native"
+    }
+  },
+  "repeatComparison": {
+    "rows": 320,
+    "uniqueKeys": 319,
+    "exactKeyOrderParity": true,
+    "declaredRunBindingOrPlatformDifferenceKeys": [
+      "nonce",
+      "existing_insufficient_stock.postError"
+    ],
+    "unexpectedBehaviorDifferences": [],
+    "meaningfulObservationParity": true
+  },
+  "semanticBoundary": {
+    "runnerVerdict": "completion contract only",
+    "externalAcceptance": "issue 18 accepted GREEN observation vector",
+    "targetTotalsObserved": [
+      "34",
+      "40"
+    ]
+  },
+  "rawResultSha256Anchors": {
+    "success": "3b84303e3607b1c838f1466aa29e7f28f27b8050a91d60930ca36104b37e5079",
+    "repeat": "64ec288dabd0cf2260137af769a7213333d74b8f58b149394d54d9d717927d6e",
+    "timeout": "c9e6979681edda15d8889514edc40fbdaf45b3ce193c8ce8b7513c3f73ddc7c3"
+  }
+}

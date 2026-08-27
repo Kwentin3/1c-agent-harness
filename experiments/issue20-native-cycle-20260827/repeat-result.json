@@ -1,0 +1,108 @@
+{
+  "schemaVersion": 1,
+  "sourceKind": "deterministically path-sanitized machine-produced result.json",
+  "rawLocalSha256": "64ec288dabd0cf2260137af769a7213333d74b8f58b149394d54d9d717927d6e",
+  "sanitizedResult": {
+    "schemaVersion": 1,
+    "status": "runtime_contract_completed",
+    "durationSeconds": 105.543,
+    "specSha256": "af60a6eab2dd12ad7c438b1f21ff0d78f06225e29edac1bd71b4f3843e37652f",
+    "input": {
+      "files": 5099,
+      "directories": 4847,
+      "bytes": 61802676,
+      "sourceTreeSha256": "2fa4189e99ede61a5dc64848b76185b73a34e668c7a431e421d257d6ad9cdb36",
+      "workCopyTreeSha256": "2fa4189e99ede61a5dc64848b76185b73a34e668c7a431e421d257d6ad9cdb36"
+    },
+    "commands": {
+      "create": [
+        "<REPO_ROOT>/.local/platform/libs/usr/bin/xvfb-run",
+        "-a",
+        "-s",
+        "-screen 0 1280x1024x8 -nolisten tcp",
+        "<REPO_ROOT>/.local/platform/1cv8t/x86_64/8.5.1.1150/1cv8t",
+        "CREATEINFOBASE",
+        "File=<REPO_ROOT>/.local/runs/issue20-native-loop/review11-repeat/ib",
+        "/DisableStartupDialogs",
+        "/DisableStartupMessages",
+        "/Out",
+        "<REPO_ROOT>/.local/runs/issue20-native-loop/review11-repeat/logs/create.log",
+        "/DumpResult",
+        "<REPO_ROOT>/.local/runs/issue20-native-loop/review11-repeat/logs/create.result"
+      ],
+      "load": [
+        "<REPO_ROOT>/.local/platform/libs/usr/bin/xvfb-run",
+        "-a",
+        "-s",
+        "-screen 0 1280x1024x8 -nolisten tcp",
+        "<REPO_ROOT>/.local/platform/1cv8t/x86_64/8.5.1.1150/1cv8t",
+        "DESIGNER",
+        "/F",
+        "<REPO_ROOT>/.local/runs/issue20-native-loop/review11-repeat/ib",
+        "/LoadConfigFromFiles",
+        "<REPO_ROOT>/.local/runs/issue20-native-loop/review11-repeat/work-copy",
+        "/UpdateDBCfg",
+        "/DisableStartupDialogs",
+        "/DisableStartupMessages",
+        "/Out",
+        "<REPO_ROOT>/.local/runs/issue20-native-loop/review11-repeat/logs/load.log",
+        "/DumpResult",
+        "<REPO_ROOT>/.local/runs/issue20-native-loop/review11-repeat/logs/load.result"
+      ],
+      "runtime": [
+        "<REPO_ROOT>/.local/platform/libs/usr/bin/xvfb-run",
+        "-a",
+        "-s",
+        "-screen 0 1280x1024x8 -nolisten tcp",
+        "<REPO_ROOT>/.local/platform/1cv8t/x86_64/8.5.1.1150/1cv8t",
+        "ENTERPRISE",
+        "/F",
+        "<REPO_ROOT>/.local/runs/issue20-native-loop/review11-repeat/ib",
+        "/DisableStartupDialogs",
+        "/DisableStartupMessages",
+        "/Out",
+        "<REPO_ROOT>/.local/runs/issue20-native-loop/review11-repeat/logs/run.log",
+        "/DumpResult",
+        "<REPO_ROOT>/.local/runs/issue20-native-loop/review11-repeat/logs/run.result"
+      ]
+    },
+    "environment": {
+      "HOME": "<REPO_ROOT>/.local/runs/issue20-native-loop/review11-repeat/home",
+      "TMPDIR": "<REPO_ROOT>/.local/runs/issue20-native-loop/review11-repeat/tmp",
+      "XDG_CACHE_HOME": "<REPO_ROOT>/.local/runs/issue20-native-loop/review11-repeat/home/xdg-cache",
+      "XDG_CONFIG_HOME": "<REPO_ROOT>/.local/runs/issue20-native-loop/review11-repeat/home/xdg-config",
+      "XDG_DATA_HOME": "<REPO_ROOT>/.local/runs/issue20-native-loop/review11-repeat/home/xdg-data",
+      "FONTCONFIG_FILE": "<REPO_ROOT>/.local/platform/fonts.conf",
+      "LD_LIBRARY_PATH": "<REPO_ROOT>/.local/platform/1cv8t/x86_64/8.5.1.1150:<REPO_ROOT>/.local/platform/libs/usr/lib/x86_64-linux-gnu",
+      "PATH": "<REPO_ROOT>/.local/platform/libs/usr/bin:<USER_HOME>/.local/bin:<USER_HOME>/.local/bin:/usr/local/bin:/usr/bin:/bin:/usr/local/games:/usr/games"
+    },
+    "create": {
+      "processReturn": 0,
+      "dumpResult": "0",
+      "resultSha256": "e45825471ed10290785b62676dc5f453d228a1e1d933c45a733e9bb239c9e083",
+      "logSha256": "4931f445ecba23a23c31219c3a6c1a6c1a00cfad16e865ae11cccd17007b9df5",
+      "successMarker": "completed successfully"
+    },
+    "load": {
+      "processReturn": 0,
+      "dumpResult": "0",
+      "resultSha256": "e45825471ed10290785b62676dc5f453d228a1e1d933c45a733e9bb239c9e083",
+      "logSha256": "4d841be04b71dd0ee7cfebcfa7af194d74902e2ec1c213987889d7d3940c0f86",
+      "successMarker": "Configuration successfully updated"
+    },
+    "runtime": {
+      "completed": true,
+      "completeMarker": "complete###true",
+      "stableReads": 2,
+      "receiptSha256": "65ec08a188ec21323616ed45b7f3ba919f7f68c7d09a5e1a52bcc34bbdf1f1a4",
+      "receiptBytes": 18577,
+      "processReturn": -15
+    },
+    "inputAfter": {
+      "files": 5099,
+      "directories": 4847,
+      "bytes": 61802676,
+      "sha256": "2fa4189e99ede61a5dc64848b76185b73a34e668c7a431e421d257d6ad9cdb36"
+    }
+  }
+}

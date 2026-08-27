@@ -1,0 +1,647 @@
+#!/usr/bin/env python3
+"""Run one prepared 1C native lifecycle without owning its oracle."""
+
+from __future__ import annotations
+
+import argparse
+import ctypes
+import hashlib
+import json
+import os
+from pathlib import Path
+import shutil
+import signal
+import stat
+import subprocess
+import time
+from types import SimpleNamespace
+from typing import Optional
+
+
+XVFB_SCREEN = "-screen 0 1280x1024x8 -nolisten tcp"
+PR_SET_CHILD_SUBREAPER = 36
+
+
+def _reject_symlink_components(repo_root: Path, candidate: Path, *, field: str) -> None:
+    current = repo_root
+    for part in candidate.parts:
+        current = current / part
+        if current.is_symlink():
+            raise ValueError(f"{field} contains symlink path component: {current}")
+
+
+def _repo_path(repo_root: Path, value: str, *, field: str) -> Path:
+    if not isinstance(value, str) or not value:
+        raise ValueError(f"{field} must be a non-empty repository-relative path")
+    candidate = Path(value)
+    if candidate.is_absolute() or ".." in candidate.parts:
+        raise ValueError(f"{field} must stay within the repository")
+    _reject_symlink_components(repo_root, candidate, field=field)
+    resolved = (repo_root / candidate).resolve()
+    try:
+        resolved.relative_to(repo_root.resolve())
+    except ValueError as exc:
+        raise ValueError(f"{field} escapes the repository") from exc
+    return resolved
+
+
+def _unique_json_object(pairs: list[tuple[str, object]]) -> dict[str, object]:
+    result: dict[str, object] = {}
+    for key, value in pairs:
+        if key in result:
+            raise ValueError(f"duplicate JSON key: {key}")
+        result[key] = value
+    return result
+
+
+def load_plan(spec_path: Path, repo_root: Path) -> SimpleNamespace:
+    data = json.loads(
+        spec_path.read_text(encoding="utf-8"),
+        object_pairs_hook=_unique_json_object,
+    )
+    if not isinstance(data, dict):
+        raise ValueError("spec must be a JSON object")
+    if type(data.get("schemaVersion")) is not int or data["schemaVersion"] != 1:
+        raise ValueError("unsupported schemaVersion")
+
+    allowed_keys = {
+        "schemaVersion", "inputTree", "inputTreeSha256", "runRoot",
+        "receipt", "completeMarker", "timeoutSeconds",
+    }
+    if set(data) != allowed_keys:
+        raise ValueError(f"spec keys mismatch: expected {sorted(allowed_keys)}, got {sorted(data)}")
+    expected_input_tree_sha256 = data.get("inputTreeSha256")
+    if (
+        not isinstance(expected_input_tree_sha256, str)
+        or len(expected_input_tree_sha256) != 64
+        or any(character not in "0123456789abcdef" for character in expected_input_tree_sha256)
+    ):
+        raise ValueError("inputTreeSha256 must be a lowercase SHA-256 hex digest")
+    input_tree = _repo_path(repo_root, data.get("inputTree"), field="inputTree")
+    run_root = _repo_path(repo_root, data.get("runRoot"), field="runRoot")
+    allowed_runs = (repo_root / ".local" / "runs").resolve()
+    try:
+        run_root.relative_to(allowed_runs)
+    except ValueError as exc:
+        raise ValueError("runRoot must be inside .local/runs") from exc
+    if run_root == allowed_runs:
+        raise ValueError("runRoot must be inside .local/runs")
+    platform = repo_root / ".local/platform/1cv8t/x86_64/8.5.1.1150/1cv8t"
+    xvfb_run = repo_root / ".local/platform/libs/usr/bin/xvfb-run"
+    fontconfig = repo_root / ".local/platform/fonts.conf"
+    receipt_relative = Path(data.get("receipt", ""))
+    if (
+        receipt_relative.is_absolute()
+        or len(receipt_relative.parts) < 2
+        or receipt_relative.parts[0] != "evidence"
+        or ".." in receipt_relative.parts
+    ):
+        raise ValueError("receipt must be a file inside runRoot/evidence")
+    receipt = run_root / receipt_relative
+    work_copy = run_root / "work-copy"
+    infobase = run_root / "ib"
+    logs = run_root / "logs"
+
+    ld_paths = [
+        repo_root / ".local/platform/1cv8t/x86_64/8.5.1.1150",
+        repo_root / ".local/platform/libs/usr/lib/x86_64-linux-gnu",
+    ]
+
+    common = [str(xvfb_run), "-a", "-s", XVFB_SCREEN, str(platform)]
+    create_argv = common + [
+        "CREATEINFOBASE", f"File={infobase}",
+        "/DisableStartupDialogs", "/DisableStartupMessages",
+        "/Out", str(logs / "create.log"),
+        "/DumpResult", str(logs / "create.result"),
+    ]
+    load_argv = common + [
+        "DESIGNER", "/F", str(infobase),
+        "/LoadConfigFromFiles", str(work_copy), "/UpdateDBCfg",
+        "/DisableStartupDialogs", "/DisableStartupMessages",
+        "/Out", str(logs / "load.log"),
+        "/DumpResult", str(logs / "load.result"),
+    ]
+    runtime_argv = common + [
+        "ENTERPRISE", "/F", str(infobase),
+        "/DisableStartupDialogs", "/DisableStartupMessages",
+        "/Out", str(logs / "run.log"),
+        "/DumpResult", str(logs / "run.result"),
+    ]
+    environment = {
+        "HOME": str(run_root / "home"),
+        "TMPDIR": str(run_root / "tmp"),
+        "XDG_CACHE_HOME": str(run_root / "home" / "xdg-cache"),
+        "XDG_CONFIG_HOME": str(run_root / "home" / "xdg-config"),
+        "XDG_DATA_HOME": str(run_root / "home" / "xdg-data"),
+        "FONTCONFIG_FILE": str(fontconfig),
+        "LD_LIBRARY_PATH": ":".join(map(str, ld_paths)),
+        "PATH": f"{xvfb_run.parent}:{os.environ.get('PATH', '')}",
+    }
+    complete_marker = data.get("completeMarker")
+    if not isinstance(complete_marker, str) or not complete_marker:
+        raise ValueError("completeMarker must be a non-empty string")
+    timeout_seconds = data.get("timeoutSeconds")
+    if type(timeout_seconds) is not int or not 1 <= timeout_seconds <= 3600:
+        raise ValueError("timeoutSeconds must be an integer from 1 to 3600")
+    batch_timeout_seconds = 600
+    create_success_marker = "completed successfully"
+    load_success_marker = "Configuration successfully updated"
+    return SimpleNamespace(
+        spec=data,
+        input_tree=input_tree,
+        expected_input_tree_sha256=expected_input_tree_sha256,
+        run_root=run_root,
+        work_copy=work_copy,
+        infobase=infobase,
+        receipt=receipt,
+        create_argv=create_argv,
+        load_argv=load_argv,
+        runtime_argv=runtime_argv,
+        environment=environment,
+        complete_marker=complete_marker,
+        timeout_seconds=timeout_seconds,
+        batch_timeout_seconds=batch_timeout_seconds,
+        create_success_marker=create_success_marker,
+        load_success_marker=load_success_marker,
+    )
+
+
+def tree_identity(root: Path) -> dict[str, object]:
+    if root.is_symlink() or not root.is_dir():
+        raise ValueError(f"input tree is not a non-symlink directory: {root}")
+    digest = hashlib.sha256()
+    files = 0
+    directories = 1
+    total_bytes = 0
+
+    def bind_entry(entry_type: bytes, relative: bytes, mode: int) -> None:
+        digest.update(entry_type)
+        digest.update(len(relative).to_bytes(8, "big"))
+        digest.update(relative)
+        digest.update(stat.S_IMODE(mode).to_bytes(4, "big"))
+
+    bind_entry(b"D", b".", root.lstat().st_mode)
+    for path in sorted(root.rglob("*")):
+        if path.is_symlink():
+            raise ValueError(f"symlink is not allowed in input tree: {path}")
+        relative = path.relative_to(root).as_posix().encode("utf-8")
+        path_stat = path.lstat()
+        if path.is_dir():
+            bind_entry(b"D", relative, path_stat.st_mode)
+            directories += 1
+            continue
+        if not path.is_file():
+            raise ValueError(f"non-regular input entry is not allowed: {path}")
+        payload = path.read_bytes()
+        bind_entry(b"F", relative, path_stat.st_mode)
+        digest.update(len(payload).to_bytes(8, "big"))
+        digest.update(payload)
+        files += 1
+        total_bytes += len(payload)
+    return {
+        "files": files,
+        "directories": directories,
+        "bytes": total_bytes,
+        "sha256": digest.hexdigest(),
+    }
+
+
+def _require_read_only_tree(root: Path) -> None:
+    writable = [
+        path
+        for path in (root, *sorted(root.rglob("*")))
+        if path.stat().st_mode & 0o222
+    ]
+    if writable:
+        rendered = ", ".join(str(path) for path in writable[:3])
+        raise ValueError(f"input tree must be read-only; writable path: {rendered}")
+
+
+def prepare_run(plan: SimpleNamespace) -> dict[str, object]:
+    source_identity = tree_identity(plan.input_tree)
+    if source_identity["sha256"] != plan.expected_input_tree_sha256:
+        raise ValueError(
+            f"input tree identity mismatch: expected {plan.expected_input_tree_sha256}, "
+            f"got {source_identity['sha256']}"
+        )
+    _require_read_only_tree(plan.input_tree)
+    try:
+        plan.run_root.mkdir(parents=True, exist_ok=False)
+    except FileExistsError as exc:
+        raise FileExistsError(f"runRoot already exists: {plan.run_root}") from exc
+    shutil.copytree(plan.input_tree, plan.work_copy, copy_function=shutil.copy2)
+    copied_identity = tree_identity(plan.work_copy)
+    if copied_identity != source_identity:
+        raise RuntimeError("work-copy identity differs from immutable input")
+    for path in (plan.work_copy, *plan.work_copy.rglob("*")):
+        if path.is_symlink():
+            raise ValueError(f"copied work tree contains a symlink: {path}")
+        path.chmod(path.stat().st_mode | stat.S_IWUSR)
+    return {
+        "files": source_identity["files"],
+        "directories": source_identity["directories"],
+        "bytes": source_identity["bytes"],
+        "sourceTreeSha256": source_identity["sha256"],
+        "workCopyTreeSha256": copied_identity["sha256"],
+    }
+
+
+def _file_sha256(path: Path) -> str:
+    return hashlib.sha256(path.read_bytes()).hexdigest()
+
+
+def run_batch_step(
+    label: str,
+    argv: list[str],
+    environment: dict[str, str],
+    result_path: Path,
+    log_path: Path,
+    success_marker: str,
+    timeout_seconds: int,
+) -> dict[str, object]:
+    if result_path.exists() or log_path.exists():
+        raise RuntimeError(f"stale {label} result or log exists")
+    baseline_children = _prepare_process_ownership()
+    process = subprocess.Popen(
+        argv,
+        env=environment,
+        stdin=subprocess.DEVNULL,
+        stdout=subprocess.DEVNULL,
+        stderr=subprocess.DEVNULL,
+        start_new_session=True,
+    )
+    try:
+        process_return = process.wait(timeout=timeout_seconds)
+    except subprocess.TimeoutExpired as exc:
+        _stop_process_group(process, baseline_children)
+        raise TimeoutError(f"{label} timed out after {timeout_seconds}s") from exc
+    _stop_process_group(process, baseline_children)
+    if not result_path.is_file() or not log_path.is_file():
+        raise RuntimeError(f"{label} did not produce result and log")
+    dump_result = result_path.read_bytes().decode("utf-8-sig").strip()
+    log_lines = log_path.read_text(encoding="utf-8-sig", errors="strict").splitlines()
+    marker_present = any(
+        line == success_marker
+        or (
+            success_marker == "completed successfully"
+            and line.startswith("Creation of infobase (")
+            and line.endswith(") completed successfully")
+        )
+        for line in log_lines
+    )
+    if process_return != 0 or dump_result != "0" or not marker_present:
+        raise RuntimeError(
+            f"{label} failed: process={process_return}, DumpResult={dump_result!r}, "
+            f"successMarker={marker_present}"
+        )
+    return {
+        "processReturn": process_return,
+        "dumpResult": dump_result,
+        "resultSha256": _file_sha256(result_path),
+        "logSha256": _file_sha256(log_path),
+        "successMarker": success_marker,
+    }
+
+
+def _enable_child_subreaper() -> None:
+    libc = ctypes.CDLL(None, use_errno=True)
+    if libc.prctl(PR_SET_CHILD_SUBREAPER, 1, 0, 0, 0) != 0:
+        error_number = ctypes.get_errno()
+        raise OSError(error_number, os.strerror(error_number))
+
+
+def _direct_children() -> set[int]:
+    children_path = Path(f"/proc/{os.getpid()}/task/{os.getpid()}/children")
+    text = children_path.read_text(encoding="ascii").strip()
+    return {int(value) for value in text.split()} if text else set()
+
+
+def _prepare_process_ownership() -> set[int]:
+    _enable_child_subreaper()
+    return _direct_children()
+
+
+def _reap_owned_children(baseline_children: set[int], grace_seconds: float) -> None:
+    deadline = time.monotonic() + grace_seconds
+    signalled: set[int] = set()
+    while time.monotonic() < deadline:
+        owned = _direct_children() - baseline_children
+        if not owned:
+            return
+        for pid in owned - signalled:
+            try:
+                os.kill(pid, signal.SIGTERM)
+            except ProcessLookupError:
+                pass
+            signalled.add(pid)
+        for pid in tuple(owned):
+            try:
+                os.waitpid(pid, os.WNOHANG)
+            except ChildProcessError:
+                pass
+        time.sleep(0.025)
+    owned = _direct_children() - baseline_children
+    for pid in owned:
+        try:
+            os.kill(pid, signal.SIGKILL)
+        except ProcessLookupError:
+            pass
+    for pid in owned:
+        try:
+            os.waitpid(pid, 0)
+        except ChildProcessError:
+            pass
+
+
+def _process_group_exists(process_group_id: int) -> bool:
+    try:
+        os.killpg(process_group_id, 0)
+    except ProcessLookupError:
+        return False
+    return True
+
+
+def _stop_process_group(
+    process: subprocess.Popen[bytes],
+    baseline_children: set[int],
+    grace_seconds: float = 2.0,
+) -> int:
+    if _process_group_exists(process.pid):
+        os.killpg(process.pid, signal.SIGTERM)
+    deadline = time.monotonic() + grace_seconds
+    while _process_group_exists(process.pid) and time.monotonic() < deadline:
+        time.sleep(0.025)
+    if _process_group_exists(process.pid):
+        os.killpg(process.pid, signal.SIGKILL)
+    if process.poll() is None:
+        try:
+            process.wait(timeout=grace_seconds)
+        except subprocess.TimeoutExpired:
+            pass
+    _reap_owned_children(baseline_children, grace_seconds)
+    return process.returncode
+
+
+def _read_receipt_channel(receipt_root: Path, receipt_path: Path) -> Optional[bytes]:
+    try:
+        relative = receipt_path.relative_to(receipt_root)
+    except ValueError as exc:
+        raise RuntimeError("runtime receipt channel escapes evidence root") from exc
+    if not relative.parts:
+        raise RuntimeError("runtime receipt channel must name a file")
+
+    directory_flags = os.O_RDONLY | os.O_DIRECTORY | os.O_NOFOLLOW | os.O_CLOEXEC
+    file_flags = os.O_RDONLY | os.O_NOFOLLOW | os.O_NONBLOCK | os.O_CLOEXEC
+    descriptors: list[int] = []
+    try:
+        descriptors.append(os.open(receipt_root, directory_flags))
+        for component in relative.parts[:-1]:
+            descriptors.append(os.open(component, directory_flags, dir_fd=descriptors[-1]))
+        file_descriptor = os.open(relative.parts[-1], file_flags, dir_fd=descriptors[-1])
+        descriptors.append(file_descriptor)
+        before = os.fstat(file_descriptor)
+        if not stat.S_ISREG(before.st_mode) or before.st_nlink != 1:
+            raise RuntimeError("runtime receipt channel is not a single-link regular file")
+        with os.fdopen(os.dup(file_descriptor), "rb") as stream:
+            payload = stream.read()
+        after = os.fstat(file_descriptor)
+        if (
+            (before.st_dev, before.st_ino, before.st_size)
+            != (after.st_dev, after.st_ino, after.st_size)
+            or after.st_nlink != 1
+        ):
+            raise RuntimeError("runtime receipt channel changed during read")
+        return payload
+    except FileNotFoundError:
+        return None
+    except OSError as exc:
+        raise RuntimeError("runtime receipt channel contains a symlink or invalid entry") from exc
+    finally:
+        for descriptor in reversed(descriptors):
+            os.close(descriptor)
+
+
+def run_runtime(
+    argv: list[str],
+    environment: dict[str, str],
+    receipt_path: Path,
+    complete_marker: str,
+    *,
+    timeout_seconds: int,
+    receipt_root: Path,
+    poll_seconds: float = 0.25,
+    stable_reads: int = 2,
+) -> dict[str, object]:
+    if os.path.lexists(receipt_path):
+        raise RuntimeError("stale runtime receipt exists")
+    baseline_children = _prepare_process_ownership()
+    process = subprocess.Popen(
+        argv,
+        env=environment,
+        stdin=subprocess.DEVNULL,
+        stdout=subprocess.DEVNULL,
+        stderr=subprocess.DEVNULL,
+        start_new_session=True,
+    )
+    deadline = time.monotonic() + timeout_seconds
+    stable_hash: Optional[str] = None
+    stable_count = 0
+    completed = False
+    failure: Optional[Exception] = None
+    try:
+        while time.monotonic() < deadline:
+            payload = _read_receipt_channel(receipt_root, receipt_path)
+            if payload is not None:
+                current_hash = hashlib.sha256(payload).hexdigest()
+                decoded_lines = payload.decode("utf-8-sig", errors="strict").splitlines()
+                marker_present = bool(decoded_lines) and decoded_lines[-1] == complete_marker
+                if marker_present and current_hash == stable_hash:
+                    stable_count += 1
+                elif marker_present:
+                    stable_hash = current_hash
+                    stable_count = 1
+                else:
+                    stable_hash = None
+                    stable_count = 0
+                if stable_count >= stable_reads:
+                    completed = True
+                    break
+            if process.poll() is not None:
+                failure = RuntimeError(f"runtime exited before completion: {process.returncode}")
+                break
+            time.sleep(poll_seconds)
+        if not completed and failure is None:
+            failure = TimeoutError(f"runtime completion marker not observed within {timeout_seconds}s")
+    finally:
+        process_return = _stop_process_group(process, baseline_children)
+    if failure is not None:
+        raise failure
+    if stable_hash is None:
+        raise RuntimeError("runtime completed without a stable receipt hash")
+    final_payload = _read_receipt_channel(receipt_root, receipt_path)
+    if final_payload is None:
+        raise RuntimeError("runtime receipt channel disappeared during process cleanup")
+    final_lines = final_payload.decode("utf-8-sig", errors="strict").splitlines()
+    final_hash = hashlib.sha256(final_payload).hexdigest()
+    if not final_lines or final_lines[-1] != complete_marker or final_hash != stable_hash:
+        raise RuntimeError("runtime receipt changed after completion during process cleanup")
+    return {
+        "completed": True,
+        "completeMarker": complete_marker,
+        "stableReads": stable_count,
+        "receiptSha256": final_hash,
+        "receiptBytes": len(final_payload),
+        "processReturn": process_return,
+    }
+
+
+def _write_json_atomic(path: Path, value: object) -> None:
+    temporary = path.with_name(f".{path.name}.tmp")
+    temporary.write_text(json.dumps(value, ensure_ascii=False, indent=2) + "\n", encoding="utf-8")
+    temporary.replace(path)
+
+
+def run_cycle(plan: SimpleNamespace, spec_path: Path) -> dict[str, object]:
+    for label, path, kind in (
+        ("inputTree", plan.input_tree, "directory"),
+        ("platform", Path(plan.create_argv[4]), "file"),
+        ("xvfbRun", Path(plan.create_argv[0]), "file"),
+    ):
+        valid = path.is_dir() if kind == "directory" else path.is_file()
+        if not valid:
+            raise ValueError(f"{label} is not an existing {kind}: {path}")
+    if plan.receipt == plan.run_root or plan.run_root not in plan.receipt.parents:
+        raise ValueError("receipt must be inside runRoot")
+    started = time.monotonic()
+    input_identity = prepare_run(plan)
+    for directory in (
+        plan.run_root / "logs",
+        plan.run_root / "evidence",
+        plan.run_root / "home",
+        plan.run_root / "tmp",
+        plan.run_root / "home" / "xdg-cache",
+        plan.run_root / "home" / "xdg-config",
+        plan.run_root / "home" / "xdg-data",
+    ):
+        directory.mkdir(parents=True, exist_ok=True)
+    environment = os.environ.copy()
+    environment.update(plan.environment)
+    logs = plan.run_root / "logs"
+    result: dict[str, object] = {
+        "schemaVersion": 1,
+        "status": "RUNNING",
+        "durationSeconds": 0.0,
+        "specSha256": _file_sha256(spec_path),
+        "input": input_identity,
+        "commands": {
+            "create": plan.create_argv,
+            "load": plan.load_argv,
+            "runtime": plan.runtime_argv,
+        },
+        "environment": plan.environment,
+    }
+    failed_stage = "create"
+    try:
+        result["create"] = run_batch_step(
+            "create", plan.create_argv, environment,
+            logs / "create.result", logs / "create.log",
+            plan.create_success_marker, plan.batch_timeout_seconds,
+        )
+        failed_stage = "load"
+        result["load"] = run_batch_step(
+            "load", plan.load_argv, environment,
+            logs / "load.result", logs / "load.log",
+            plan.load_success_marker, plan.batch_timeout_seconds,
+        )
+        failed_stage = "runtime"
+        result["runtime"] = run_runtime(
+            plan.runtime_argv, environment, plan.receipt, plan.complete_marker,
+            timeout_seconds=plan.timeout_seconds,
+            receipt_root=plan.run_root / "evidence",
+        )
+        failed_stage = "input-reverify"
+        input_after = tree_identity(plan.input_tree)
+        result["inputAfter"] = input_after
+        if input_after["sha256"] != plan.expected_input_tree_sha256:
+            raise RuntimeError("immutable input tree changed during lifecycle")
+    except Exception as exc:
+        if "inputAfter" not in result:
+            try:
+                result["inputAfter"] = tree_identity(plan.input_tree)
+            except Exception as identity_exc:
+                result["inputAfterError"] = f"{type(identity_exc).__name__}: {identity_exc}"
+        if failed_stage == "runtime":
+            failure_status = (
+                "runtime_timeout" if isinstance(exc, TimeoutError)
+                else "runtime_exited_before_completion"
+                if str(exc).startswith("runtime exited before completion")
+                else "internal_error"
+            )
+        elif failed_stage == "input-reverify":
+            failure_status = "input_changed"
+        else:
+            failure_status = f"{failed_stage}_failed"
+        result.update({
+            "status": failure_status,
+            "failedStage": failed_stage,
+            "durationSeconds": round(time.monotonic() - started, 3),
+            "errorType": type(exc).__name__,
+            "error": str(exc),
+        })
+        _write_json_atomic(plan.run_root / "result.json", result)
+        raise
+    result.update({
+        "status": "runtime_contract_completed",
+        "durationSeconds": round(time.monotonic() - started, 3),
+    })
+    _write_json_atomic(plan.run_root / "result.json", result)
+    return result
+
+
+def main(argv: Optional[list[str]] = None) -> int:
+    parser = argparse.ArgumentParser(description=__doc__)
+    subparsers = parser.add_subparsers(dest="command", required=True)
+    run_parser = subparsers.add_parser("run", help="run one frozen native lifecycle spec")
+    run_parser.add_argument("--spec", required=True, type=Path)
+    run_parser.add_argument("--repo-root", type=Path, default=Path.cwd())
+    args = parser.parse_args(argv)
+
+    repo_root = args.repo_root.resolve()
+    spec_path = args.spec if args.spec.is_absolute() else repo_root / args.spec
+    plan: Optional[SimpleNamespace] = None
+    run_root_existed = False
+    started = time.monotonic()
+    try:
+        plan = load_plan(spec_path, repo_root)
+        run_root_existed = plan.run_root.exists()
+        result = run_cycle(plan, spec_path)
+    except Exception as exc:
+        if plan is not None and (plan.run_root / "result.json").is_file():
+            failure = json.loads((plan.run_root / "result.json").read_text(encoding="utf-8"))
+            print(json.dumps(failure, ensure_ascii=False))
+            return 1
+        failure_status = "precheck_failed"
+        if plan is not None and not run_root_existed and plan.run_root.is_dir():
+            failure_status = "copy_failed"
+        failure = {
+            "schemaVersion": 1,
+            "status": failure_status,
+            "durationSeconds": round(time.monotonic() - started, 3),
+            "errorType": type(exc).__name__,
+            "error": str(exc),
+        }
+        if (
+            plan is not None
+            and not run_root_existed
+            and plan.run_root.is_dir()
+            and not (plan.run_root / "result.json").exists()
+        ):
+            _write_json_atomic(plan.run_root / "result.json", failure)
+        print(json.dumps(failure, ensure_ascii=False))
+        return 1
+    print(json.dumps(result, ensure_ascii=False))
+    return 0
+
+
+if __name__ == "__main__":
+    raise SystemExit(main())
