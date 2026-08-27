@@ -27,7 +27,7 @@ The production change is only `production-patch.diff`, targeting `Documents/Inve
 
 ## Native measurement program
 
-The accepted measurement path is not an EPF. The failed EPF/on-start attempts remain local diagnostics only. Accepted runs use a probe-only managed-app entrypoint plus an exported `JetServerCall.Issue14RuntimeProbe` procedure; the sanitized instrumentation is published as `instrumentation.diff`. Per-run native argv, environment placeholders, DumpResult values, log hashes, and success markers are bound in `native-invocations.json`.
+The accepted measurement path is not an EPF. The failed EPF/on-start attempts remain local diagnostics only. Accepted runs use a probe-only managed-app entrypoint plus an exported `JetServerCall.Issue14RuntimeProbe` procedure; the sanitized instrumentation is published as `instrumentation.diff`. Per-run native argv, environment placeholders, run nonce/mode, published receipt hashes, local-only output hashes, applied instrumentation file hashes, DumpResult values, log hashes, and success markers are bound in `native-invocations.json`.
 
 Instrumentation size: `328` added / `0` removed lines across two non-production files. It creates isolated catalog/document data, saves each draft, attempts posting, then records posted state, balances, and recorder movements for `InventoryInWarehouses` and `InventoryCost`. It does not contain expected pass/fail assertions; the assertions live in the Python evidence validator.
 
@@ -54,7 +54,7 @@ Immutable inputs after repeat/canonical runs:
 
 ## Practical cost and reuse
 
-Cost was dominated by finding a reliable data-backed posting entrypoint, then by making the evidence self-checking enough to fail closed. Reused from issue #10: training-edition native command shape, disposable file IB, managed-application probe entrypoint, semantic complete-marker polling, CRLF/BOM receipt handling, and the package-manifest validator pattern. New issue #14-specific work: explicit `Document.Date` before draft/post writes, per-product balance queries, recorder movement queries, and the semantic countermodel matrix for document posting.
+Cost was dominated by finding a reliable data-backed posting entrypoint, then by making the evidence self-checking enough to fail closed. Approximate wall-clock ranges for issue #14 were: rule/source reconnaissance about 20–40 minutes; failed runtime entrypoint diagnostics about 1–2 hours; accepted RED setup/run about 20–40 minutes; minimal patch plus primary GREEN about 15–30 minutes; canonical repeat/binding/package hardening about 1–2 hours. Reused from issue #10: training-edition native command shape, disposable file IB, managed-application probe entrypoint, semantic complete-marker polling, CRLF/BOM receipt handling, and the package-manifest validator pattern. New issue #14-specific work: explicit `Document.Date` before draft/post writes, per-product balance queries, recorder movement queries, and the semantic countermodel matrix for document posting.
 
 Manual steps that remain: starting/accepting independent reviewer runs, publishing GitHub comments/PR text, and interpreting reviewer countermodels. The next similar task will still hurt around native runtime startup cost, 1C error-message opacity, and careful separation of production patch bytes from instrumentation bytes.
 

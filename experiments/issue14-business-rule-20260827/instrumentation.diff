@@ -1,32 +1,23 @@
 --- a/Ext/ManagedApplicationModule.bsl
 +++ b/Ext/ManagedApplicationModule.bsl
-@@ -63,6 +63,12 @@
- #EndIf
- 	// End StandardSubsystems
- 	
+@@ -65,0 +66,6 @@
 +	// Issue #14 probe-only instrumentation. Not production logic.
 +	JetServerCall.Issue14RuntimeProbe(
-+		"<RUN_DIR>/evidence/canonical-green-2-receipt.txt",
-+		"<RUN_DIR>/evidence/canonical-green-2-stage.txt",
++		"<RECEIPT_FILE>",
++		"<STAGE_FILE>",
 +		"<RUN_NONCE>");
-+	
- EndProcedure
- 
- Procedure BeforeExit(Cancel, WarningText)
++
 --- a/CommonModules/JetServerCall/Ext/Module.bsl
 +++ b/CommonModules/JetServerCall/Ext/Module.bsl
-@@ -14,4 +14,326 @@
- 	
- EndFunction
- 
+@@ -16,0 +17,27 @@
 +// Issue #14 probe-only instrumentation. Not production logic.
 +Procedure Issue14RuntimeProbe(ReceiptPath, StagePath, Nonce) Export
-+	
++
 +	Issue14WriteStage(StagePath, Nonce, "server-entered");
 +	Writer = New TextWriter(ReceiptPath, TextEncoding.UTF8);
 +	Try
 +		Issue14WriteLine(Writer, "nonce", Nonce);
-+		Issue14WriteLine(Writer, "mode", "green-production-patch");
++		Issue14WriteLine(Writer, "mode", "<RUN_MODE>");
 +		Issue14WriteLine(Writer, "complete", "false");
 +		Issue14RunCase(Writer, "negative_single", 1);
 +		Issue14RunCase(Writer, "zero_single", 2);
@@ -43,49 +34,49 @@
 +		Issue14WriteStage(StagePath, Nonce, "exception");
 +	EndTry;
 +	Writer.Close();
-+	
++
 +EndProcedure
 +
-+#EndRegion
+@@ -17,0 +45,295 @@
 +
 +#Region Issue14ProbePrivate
 +
 +Procedure Issue14RunCase(Writer, CaseName, CaseIndex)
-+	
++
 +	Issue14WriteCaseLine(Writer, CaseName, "begin", "true");
 +	Unit = Catalogs.Units.CreateItem();
 +	Unit.Description = "Issue14 " + CaseName + " unit";
 +	Unit.Write();
-+	
++
 +	Warehouse = Catalogs.Warehouses.CreateItem();
 +	Warehouse.Description = "Issue14 " + CaseName + " warehouse";
 +	Warehouse.Write();
-+	
++
 +	ProductA = Catalogs.Products.CreateItem();
 +	ProductA.Description = "Issue14 " + CaseName + " product A";
 +	ProductA.ProductType = Enums.ProductTypes.Inventory;
 +	ProductA.Unit = Unit.Ref;
 +	ProductA.Write();
-+	
++
 +	ProductB = Catalogs.Products.CreateItem();
 +	ProductB.Description = "Issue14 " + CaseName + " product B";
 +	ProductB.ProductType = Enums.ProductTypes.Inventory;
 +	ProductB.Unit = Unit.Ref;
 +	ProductB.Write();
-+	
++
 +	BaseDate = CurrentDate() + CaseIndex * 3600;
 +	Issue14SeedInventory(Warehouse.Ref, ProductA.Ref, BaseDate, 10, 1);
 +	Issue14SeedInventory(Warehouse.Ref, ProductB.Ref, BaseDate + 60, 10, 1);
-+	
++
 +	BeforeA = Issue14Balances(ProductA.Ref, Warehouse.Ref);
 +	BeforeB = Issue14Balances(ProductB.Ref, Warehouse.Ref);
-+	
++
 +	DocumentObject = Documents.InventoryWriteOff.CreateDocument();
 +	DocumentObject.Date = BaseDate + 120;
 +	DocumentObject.Warehouse = Warehouse.Ref;
 +	Issue14FillCaseRows(DocumentObject, CaseName, ProductA.Ref, ProductB.Ref);
 +	Issue14WriteCaseLine(Writer, CaseName, "rowCount", DocumentObject.Inventory.Count());
-+	
++
 +	DraftSucceeded = True;
 +	DraftError = "";
 +	Try
@@ -94,7 +85,7 @@
 +		DraftSucceeded = False;
 +		DraftError = ErrorDescription();
 +	EndTry;
-+	
++
 +	PostCallSucceeded = True;
 +	PostError = "";
 +	If DraftSucceeded Then
@@ -105,7 +96,7 @@
 +			PostError = ErrorDescription();
 +		EndTry;
 +	EndIf;
-+	
++
 +	PostedAfter = False;
 +	If DraftSucceeded Then
 +		Try
@@ -115,12 +106,12 @@
 +			PostedAfter = DocumentObject.Posted;
 +		EndTry;
 +	EndIf;
-+	
++
 +	AfterA = Issue14Balances(ProductA.Ref, Warehouse.Ref);
 +	AfterB = Issue14Balances(ProductB.Ref, Warehouse.Ref);
 +	MovementsA = Issue14MovementSummary(DocumentObject.Ref, ProductA.Ref, Warehouse.Ref);
 +	MovementsB = Issue14MovementSummary(DocumentObject.Ref, ProductB.Ref, Warehouse.Ref);
-+	
++
 +	Issue14WriteCaseLine(Writer, CaseName, "draftSucceeded", Issue14BoolText(DraftSucceeded));
 +	Issue14WriteCaseLine(Writer, CaseName, "draftError", DraftError);
 +	Issue14WriteCaseLine(Writer, CaseName, "postCallSucceeded", Issue14BoolText(PostCallSucceeded));
@@ -149,11 +140,11 @@
 +	Issue14WriteCaseLine(Writer, CaseName, "costMovementQuantityB", MovementsB.CostQuantity);
 +	Issue14WriteCaseLine(Writer, CaseName, "costMovementAmountB", MovementsB.CostAmount);
 +	Issue14WriteCaseLine(Writer, CaseName, "end", "true");
-+	
++
 +EndProcedure
 +
 +Procedure Issue14FillCaseRows(DocumentObject, CaseName, ProductA, ProductB)
-+	
++
 +	If CaseName = "negative_single" Then
 +		Issue14AddWriteOffRow(DocumentObject, ProductA, -1);
 +	ElsIf CaseName = "zero_single" Then
@@ -173,19 +164,19 @@
 +		Issue14AddWriteOffRow(DocumentObject, ProductB, 2);
 +		Issue14AddWriteOffRow(DocumentObject, ProductA, 2);
 +	EndIf;
-+	
++
 +EndProcedure
 +
 +Procedure Issue14AddWriteOffRow(DocumentObject, Product, Quantity)
-+	
++
 +	Row = DocumentObject.Inventory.Add();
 +	Row.Product = Product;
 +	Row.Quantity = Quantity;
-+	
++
 +EndProcedure
 +
 +Procedure Issue14SeedInventory(Warehouse, Product, DocumentDate, Quantity, Price)
-+	
++
 +	SeedDocument = Documents.InventoryIncrease.CreateDocument();
 +	SeedDocument.Date = DocumentDate;
 +	SeedDocument.Warehouse = Warehouse;
@@ -195,16 +186,16 @@
 +	Row.Price = Price;
 +	Row.Amount = Quantity * Price;
 +	SeedDocument.Write(DocumentWriteMode.Posting);
-+	
++
 +EndProcedure
 +
 +Function Issue14Balances(Product, Warehouse)
-+	
++
 +	Result = New Structure;
 +	Result.Insert("InventoryQuantity", 0);
 +	Result.Insert("CostQuantity", 0);
 +	Result.Insert("CostAmount", 0);
-+	
++
 +	Query = New Query;
 +	Query.Text =
 +	"SELECT
@@ -218,7 +209,7 @@
 +	While Selection.Next() Do
 +		Result.InventoryQuantity = Result.InventoryQuantity + Selection.Quantity;
 +	EndDo;
-+	
++
 +	Query = New Query;
 +	Query.Text =
 +	"SELECT
@@ -234,20 +225,20 @@
 +		Result.CostQuantity = Result.CostQuantity + Selection.Quantity;
 +		Result.CostAmount = Result.CostAmount + Selection.Amount;
 +	EndDo;
-+	
++
 +	Return Result;
-+	
++
 +EndFunction
 +
 +Function Issue14MovementSummary(Recorder, Product, Warehouse)
-+	
++
 +	Result = New Structure;
 +	Result.Insert("InventoryRows", 0);
 +	Result.Insert("InventoryQuantity", 0);
 +	Result.Insert("CostRows", 0);
 +	Result.Insert("CostQuantity", 0);
 +	Result.Insert("CostAmount", 0);
-+	
++
 +	Query = New Query;
 +	Query.Text =
 +	"SELECT
@@ -266,7 +257,7 @@
 +		Result.InventoryRows = Result.InventoryRows + 1;
 +		Result.InventoryQuantity = Result.InventoryQuantity + Selection.Quantity;
 +	EndDo;
-+	
++
 +	Query = New Query;
 +	Query.Text =
 +	"SELECT
@@ -287,25 +278,25 @@
 +		Result.CostQuantity = Result.CostQuantity + Selection.Quantity;
 +		Result.CostAmount = Result.CostAmount + Selection.Amount;
 +	EndDo;
-+	
++
 +	Return Result;
-+	
++
 +EndFunction
 +
 +Procedure Issue14WriteCaseLine(Writer, CaseName, Key, Value)
-+	
++
 +	Issue14WriteLine(Writer, CaseName + "." + Key, Value);
-+	
++
 +EndProcedure
 +
 +Procedure Issue14WriteLine(Writer, Key, Value)
-+	
++
 +	Writer.Write(Key + "###" + Issue14ValueText(Value) + Chars.LF);
-+	
++
 +EndProcedure
 +
 +Function Issue14ValueText(Value)
-+	
++
 +	If Value = Undefined Then
 +		Return "undefined";
 +	EndIf;
@@ -320,25 +311,25 @@
 +	Result = StrReplace(Result, Chars.LF, " ");
 +	Result = StrReplace(Result, ",", ".");
 +	Return Result;
-+	
++
 +EndFunction
 +
 +Function Issue14BoolText(Value)
-+	
++
 +	If Value Then
 +		Return "true";
 +	Else
 +		Return "false";
 +	EndIf;
-+	
++
 +EndFunction
 +
 +Procedure Issue14WriteStage(StagePath, Nonce, Stage)
-+	
++
 +	Writer = New TextWriter(StagePath, TextEncoding.UTF8);
 +	Writer.Write("nonce###" + Nonce + Chars.LF + "stage###" + Stage + Chars.LF);
 +	Writer.Close();
-+	
++
 +EndProcedure
 +
- #EndRegion
++#EndRegion

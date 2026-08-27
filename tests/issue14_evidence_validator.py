@@ -15,6 +15,152 @@ EXPECTED_BASE_PRODUCTION_FILE_SHA256 = "86f383323de83d4912c99854ec6db7cbf59e2265
 EXPECTED_PATCH_SHA256 = "73d484d337c320f45204fbd0c95940c9d5ead1922f7cb4b88f2229c32e6c43e3"
 EXPECTED_CANONICAL_PATCHED_FILE_SHA256 = "d8124e2942426edf82394673561f96d914c8cf35503ccdc0048eb613e801ea3a"
 EXPECTED_PRIMARY_HISTORICAL_PATCHED_FILE_SHA256 = "aac9b1b60a16c3aa57cab1e5e050e0cf526d9d941cc43c2a079269e72ae4f3ef"
+EXPECTED_INSTRUMENTATION_SHA256 = "42806ff6bafcbd7f4be64fd49c7035a6c3a290a1863b4ba0cd0ae47c37643d6e"
+EXPECTED_NATIVE_RUN_BINDINGS = {'canonical-green-1': {'appliedInstrumentation': {'localOnlyAppliedFileSha256': {'CommonModules/JetServerCall/Ext/Module.bsl': '8a5a29413302bae0dec3fbb446596f4939259a1487cdc615dd547fc9a784f0b3',
+                                                                                 'Ext/ManagedApplicationModule.bsl': '01fe526ab32583814d9ace200321d3bc9027a9422a0b2c30a38e64967b2e326f'},
+                                                  'templateSha256': '42806ff6bafcbd7f4be64fd49c7035a6c3a290a1863b4ba0cd0ae47c37643d6e',
+                                                  'templateSubstitutions': {'<RECEIPT_FILE>': '<RUN_DIR>/evidence/repeat-receipt.txt',
+                                                                            '<RUN_MODE>': 'green-production-patch',
+                                                                            '<RUN_NONCE>': 'repeat-full-b8b623837201433d',
+                                                                            '<STAGE_FILE>': '<RUN_DIR>/evidence/repeat-stage.txt'}},
+                       'mode': 'green-production-patch',
+                       'outputs': {'createDumpResult': '0',
+                                   'createLogSha256': 'ac9c0f6776a26e1afb1283df650b791215a54d71681e0b5ced546ae2c9339965',
+                                   'createResultSha256': 'e45825471ed10290785b62676dc5f453d228a1e1d933c45a733e9bb239c9e083',
+                                   'createSuccessMarker': 'completed successfully',
+                                   'loadDumpResult': '0',
+                                   'loadLogSha256': '4d841be04b71dd0ee7cfebcfa7af194d74902e2ec1c213987889d7d3940c0f86',
+                                   'loadResultSha256': 'e45825471ed10290785b62676dc5f453d228a1e1d933c45a733e9bb239c9e083',
+                                   'loadSuccessMarker': 'Configuration successfully updated',
+                                   'runtimeCompletionObserved': True,
+                                   'runtimeHarnessStatus': 'complete_marker',
+                                   'runtimeLogSha256': '6a36c876e98c4bd8564400657343bacb934673813f1f18f6d89c128b8bd1be52',
+                                   'runtimeProcessReturn': -15,
+                                   'runtimeReceiptCompleteMarker': 'complete###true',
+                                   'runtimeResultJsonSha256': 'aa5c0c0b9e5504222d40bba1ab1350760a31fbd7f56611938cc344fe8ac71f7d'},
+                       'phase': 'repeat-GREEN-clean-run',
+                       'productionBytes': {'actualRunProductionFileSha256': 'd8124e2942426edf82394673561f96d914c8cf35503ccdc0048eb613e801ea3a',
+                                           'baseFileSha256': '86f383323de83d4912c99854ec6db7cbf59e2265d62a97d8143a46eacba07d9c',
+                                           'patchedFileSha256': 'd8124e2942426edf82394673561f96d914c8cf35503ccdc0048eb613e801ea3a',
+                                           'productionPatchSha256': '73d484d337c320f45204fbd0c95940c9d5ead1922f7cb4b88f2229c32e6c43e3',
+                                           'role': 'canonical-published-patch-application-green-1'},
+                       'rawLocalReceiptSha256': 'b9e82b37f7bc3ceb1871bb84793f5a9c5c1fb39c2bda4f902e3e1bf4434642d6',
+                       'receiptFile': 'repeat-green-receipt.txt',
+                       'receiptLocal': '<RUN_DIR>/evidence/repeat-receipt.txt',
+                       'receiptSha256': '7ad3eabca42d387f0c9472f1542bd31ae7a15841cfecd63e6ffc60b952495dad',
+                       'runNonce': 'repeat-full-b8b623837201433d',
+                       'stageLocal': '<RUN_DIR>/evidence/repeat-stage.txt',
+                       'summaryFile': 'repeat-green-summary.json',
+                       'summarySha256': '2fe7403c2263aef068aff0f7fe77b6dbd3f673a890030d53b77e67310fd80427'},
+ 'canonical-green-2': {'appliedInstrumentation': {'localOnlyAppliedFileSha256': {'CommonModules/JetServerCall/Ext/Module.bsl': '8a5a29413302bae0dec3fbb446596f4939259a1487cdc615dd547fc9a784f0b3',
+                                                                                 'Ext/ManagedApplicationModule.bsl': '4b7ba569f6af99d6aa0db6534a6915ea733291b0be84b3a7c5f4ed97401cf6b8'},
+                                                  'templateSha256': '42806ff6bafcbd7f4be64fd49c7035a6c3a290a1863b4ba0cd0ae47c37643d6e',
+                                                  'templateSubstitutions': {'<RECEIPT_FILE>': '<RUN_DIR>/evidence/canonical-green-2-receipt.txt',
+                                                                            '<RUN_MODE>': 'green-production-patch',
+                                                                            '<RUN_NONCE>': 'canonical-green-2-d5db4eaef975447b',
+                                                                            '<STAGE_FILE>': '<RUN_DIR>/evidence/canonical-green-2-stage.txt'}},
+                       'mode': 'green-production-patch',
+                       'outputs': {'createDumpResult': '0',
+                                   'createLogSha256': '9f4d01a1529738c97eddb22446fd13abeeadc54717e5227a914fe8667e5837ac',
+                                   'createResultSha256': 'e45825471ed10290785b62676dc5f453d228a1e1d933c45a733e9bb239c9e083',
+                                   'createSuccessMarker': 'completed successfully',
+                                   'loadDumpResult': '0',
+                                   'loadLogSha256': '4d841be04b71dd0ee7cfebcfa7af194d74902e2ec1c213987889d7d3940c0f86',
+                                   'loadResultSha256': 'e45825471ed10290785b62676dc5f453d228a1e1d933c45a733e9bb239c9e083',
+                                   'loadSuccessMarker': 'Configuration successfully updated',
+                                   'runtimeCompletionObserved': True,
+                                   'runtimeHarnessStatus': 'complete_marker',
+                                   'runtimeLogSha256': '6a36c876e98c4bd8564400657343bacb934673813f1f18f6d89c128b8bd1be52',
+                                   'runtimeProcessReturn': -15,
+                                   'runtimeReceiptCompleteMarker': 'complete###true',
+                                   'runtimeResultJsonSha256': '5294cc96a5fca8754bd442d51517a124023fe488405fef8ff5f3f4782fa0c08d'},
+                       'phase': 'canonical-GREEN-2-clean-run',
+                       'productionBytes': {'actualRunProductionFileSha256': 'd8124e2942426edf82394673561f96d914c8cf35503ccdc0048eb613e801ea3a',
+                                           'baseFileSha256': '86f383323de83d4912c99854ec6db7cbf59e2265d62a97d8143a46eacba07d9c',
+                                           'patchedFileSha256': 'd8124e2942426edf82394673561f96d914c8cf35503ccdc0048eb613e801ea3a',
+                                           'productionPatchSha256': '73d484d337c320f45204fbd0c95940c9d5ead1922f7cb4b88f2229c32e6c43e3',
+                                           'role': 'canonical-published-patch-application-green-2'},
+                       'rawLocalReceiptSha256': '2221d1b82259e95ae27d2bacd02e212cf67e78a1c68d43f77e5567d45c8c2f0d',
+                       'receiptFile': 'canonical-green-2-receipt.txt',
+                       'receiptLocal': '<RUN_DIR>/evidence/canonical-green-2-receipt.txt',
+                       'receiptSha256': '55dfbb2dd6c81a28d0270c2a942bda35d48f39bb30092a43141856f1af4b0120',
+                       'runNonce': 'canonical-green-2-d5db4eaef975447b',
+                       'stageLocal': '<RUN_DIR>/evidence/canonical-green-2-stage.txt',
+                       'summaryFile': 'canonical-green-2-summary.json',
+                       'summarySha256': '2013c6fee66deaa998ed7145e46c23883a4aa913bcc43bc06310a3965d3c2b5e'},
+ 'green-production-historical': {'appliedInstrumentation': {'localOnlyAppliedFileSha256': {'CommonModules/JetServerCall/Ext/Module.bsl': '8a5a29413302bae0dec3fbb446596f4939259a1487cdc615dd547fc9a784f0b3',
+                                                                                           'Ext/ManagedApplicationModule.bsl': '57bca83145426d2ba7054a46f8c7183177ab397abcb09b2391a65a4a4a46a7f4'},
+                                                            'templateSha256': '42806ff6bafcbd7f4be64fd49c7035a6c3a290a1863b4ba0cd0ae47c37643d6e',
+                                                            'templateSubstitutions': {'<RECEIPT_FILE>': '<RUN_DIR>/evidence/green-receipt.txt',
+                                                                                      '<RUN_MODE>': 'green-production-patch',
+                                                                                      '<RUN_NONCE>': 'green-full-7d54ba68acb84d6a',
+                                                                                      '<STAGE_FILE>': '<RUN_DIR>/evidence/green-stage.txt'}},
+                                 'mode': 'green-production-patch',
+                                 'outputs': {'createDumpResult': '0',
+                                             'createLogSha256': '01f5f8bce7deeab5cfcbc503edaeef39b85acd9ae47671d019ad3e5e361ac673',
+                                             'createResultSha256': 'e45825471ed10290785b62676dc5f453d228a1e1d933c45a733e9bb239c9e083',
+                                             'createSuccessMarker': 'completed successfully',
+                                             'loadDumpResult': '0',
+                                             'loadLogSha256': '4d841be04b71dd0ee7cfebcfa7af194d74902e2ec1c213987889d7d3940c0f86',
+                                             'loadResultSha256': 'e45825471ed10290785b62676dc5f453d228a1e1d933c45a733e9bb239c9e083',
+                                             'loadSuccessMarker': 'Configuration successfully updated',
+                                             'runtimeCompletionObserved': True,
+                                             'runtimeHarnessStatus': 'complete_marker',
+                                             'runtimeLogSha256': '6a36c876e98c4bd8564400657343bacb934673813f1f18f6d89c128b8bd1be52',
+                                             'runtimeProcessReturn': -15,
+                                             'runtimeReceiptCompleteMarker': 'complete###true',
+                                             'runtimeResultJsonSha256': 'da92ae5a3f6cbf1ee46bf06c75db64ea64867ffcb504bdb97d3e40e2061707bf'},
+                                 'phase': 'GREEN-production-patch',
+                                 'productionBytes': {'actualRunProductionFileSha256': 'aac9b1b60a16c3aa57cab1e5e050e0cf526d9d941cc43c2a079269e72ae4f3ef',
+                                                     'baseFileSha256': '86f383323de83d4912c99854ec6db7cbf59e2265d62a97d8143a46eacba07d9c',
+                                                     'patchedFileSha256': 'aac9b1b60a16c3aa57cab1e5e050e0cf526d9d941cc43c2a079269e72ae4f3ef',
+                                                     'productionPatchSha256': '73d484d337c320f45204fbd0c95940c9d5ead1922f7cb4b88f2229c32e6c43e3',
+                                                     'role': 'historical-green-patched-by-local-crlf-preserving-edit'},
+                                 'rawLocalReceiptSha256': 'e9a29799bd40a5524a8885fd756c517b43cd41c9b03d65a17d47da6cfa47ce25',
+                                 'receiptFile': 'green-production-receipt.txt',
+                                 'receiptLocal': '<RUN_DIR>/evidence/green-receipt.txt',
+                                 'receiptSha256': '4bc33c9a99ea99b0025dd12c5069664f661f83fad4e4a8beafb28ecf51e0dab1',
+                                 'runNonce': 'green-full-7d54ba68acb84d6a',
+                                 'stageLocal': '<RUN_DIR>/evidence/green-stage.txt',
+                                 'summaryFile': 'green-production-summary.json',
+                                 'summarySha256': '1a7df795c5d4e6e63144669fc8e276456b10bcfbdf91b6151b25c167ee513913'},
+ 'red-source': {'appliedInstrumentation': {'localOnlyAppliedFileSha256': {'CommonModules/JetServerCall/Ext/Module.bsl': 'b7733aaf621da9ccf6b2c0d940885da116d971f9cbfca5a091a17f9c499461c1',
+                                                                          'Ext/ManagedApplicationModule.bsl': '9a700de1745d952ee503f20b624fb862cbb167453648ade0c6d7292ade350997'},
+                                           'templateSha256': '42806ff6bafcbd7f4be64fd49c7035a6c3a290a1863b4ba0cd0ae47c37643d6e',
+                                           'templateSubstitutions': {'<RECEIPT_FILE>': '<RUN_DIR>/evidence/red-receipt.txt',
+                                                                     '<RUN_MODE>': 'red-source-logic',
+                                                                     '<RUN_NONCE>': 'red-full-7e9c5a00437242c2',
+                                                                     '<STAGE_FILE>': '<RUN_DIR>/evidence/red-stage.txt'}},
+                'mode': 'red-source-logic',
+                'outputs': {'createDumpResult': '0',
+                            'createLogSha256': 'ae38624a5f5989040004255aca17277145899dde53675692ee63aa22221eb2bc',
+                            'createResultSha256': 'e45825471ed10290785b62676dc5f453d228a1e1d933c45a733e9bb239c9e083',
+                            'createSuccessMarker': 'completed successfully',
+                            'loadDumpResult': '0',
+                            'loadLogSha256': '4d841be04b71dd0ee7cfebcfa7af194d74902e2ec1c213987889d7d3940c0f86',
+                            'loadResultSha256': 'e45825471ed10290785b62676dc5f453d228a1e1d933c45a733e9bb239c9e083',
+                            'loadSuccessMarker': 'Configuration successfully updated',
+                            'runtimeCompletionObserved': True,
+                            'runtimeHarnessStatus': 'complete_marker_legacy_completeTrue',
+                            'runtimeLogSha256': '6a36c876e98c4bd8564400657343bacb934673813f1f18f6d89c128b8bd1be52',
+                            'runtimeProcessReturn': -15,
+                            'runtimeReceiptCompleteMarker': 'complete###true',
+                            'runtimeResultJsonSha256': '18465742cd288d48a60bebe7cd5b0ec0f69561843f3cf1ba249bc77be6a0708b'},
+                'phase': 'RED-before-production-patch',
+                'productionBytes': {'actualRunProductionFileSha256': '86f383323de83d4912c99854ec6db7cbf59e2265d62a97d8143a46eacba07d9c',
+                                    'baseFileSha256': '86f383323de83d4912c99854ec6db7cbf59e2265d62a97d8143a46eacba07d9c',
+                                    'patchedFileSha256': None,
+                                    'productionPatchSha256': None,
+                                    'role': 'source-unpatched'},
+                'rawLocalReceiptSha256': '24410de9c97a71be96037914634159476631f4641a6c0648ff95d0101348225e',
+                'receiptFile': 'red-source-receipt.txt',
+                'receiptLocal': '<RUN_DIR>/evidence/red-receipt.txt',
+                'receiptSha256': '0960822c0fa4a30df0314d74d545a8f8814faa1131bd1336d499de5492cb77ad',
+                'runNonce': 'red-full-7e9c5a00437242c2',
+                'stageLocal': '<RUN_DIR>/evidence/red-stage.txt',
+                'summaryFile': 'red-source-summary.json',
+                'summarySha256': '3c915833e6a5b559fc17a0b4aa2b676d1a3d8b3c44e862f1e59035c4ca6911fc'}}
+
 
 REQUIRED_ARTIFACTS = {
     "ATTRIBUTION.md",
@@ -441,24 +587,53 @@ def validate_production_patch(package: Path) -> None:
         raise AssertionError("production patch SHA mismatch")
 
 
-def validate_instrumentation_and_native_binding(package: Path) -> None:
+def validate_instrumentation_and_native_binding(package: Path, receipt_rows_by_name: dict[str, dict[str, list[str]]]) -> None:
     inst = (package / "instrumentation.diff").read_text(encoding="utf-8")
+    inst_sha = sha256(package / "instrumentation.diff")
+    if inst_sha != EXPECTED_INSTRUMENTATION_SHA256:
+        raise AssertionError("instrumentation template SHA mismatch")
     if "Documents/InventoryWriteOff/Ext/ObjectModule.bsl" in inst:
         raise AssertionError("instrumentation diff must not include production patch target")
-    if "<RUN_DIR>" not in inst or "<RUN_NONCE>" not in inst:
-        raise AssertionError("instrumentation diff must use sanitized run placeholders")
+    for placeholder in ["<RECEIPT_FILE>", "<STAGE_FILE>", "<RUN_NONCE>", "<RUN_MODE>"]:
+        if placeholder not in inst:
+            raise AssertionError(f"instrumentation diff missing placeholder {placeholder}")
+    if "canonical-green-2-receipt.txt" in inst or '"green-production-patch"' in inst:
+        raise AssertionError("instrumentation diff still contains run-specific receipt or mode")
+    for line_no, line in enumerate(inst.splitlines(), start=1):
+        if line.endswith((" ", "\t")):
+            raise AssertionError(f"instrumentation diff has trailing whitespace on line {line_no}")
     added = [line for line in inst.splitlines() if line.startswith("+") and not line.startswith("+++")]
     removed = [line for line in inst.splitlines() if line.startswith("-") and not line.startswith("---")]
-    if len(added) < 300 or removed:
+    if len(added) != 328 or removed:
         raise AssertionError("instrumentation size/shape mismatch")
+
     native = load_json(package / "native-invocations.json")
-    if native["instrumentation"]["sha256"] != sha256(package / "instrumentation.diff"):
+    if native["instrumentation"]["sha256"] != EXPECTED_INSTRUMENTATION_SHA256:
         raise AssertionError("native binding instrumentation hash mismatch")
-    expected_runs = {"red-source", "green-production-historical", "canonical-green-1", "canonical-green-2"}
+    if native["instrumentation"].get("addedLines") != 328 or native["instrumentation"].get("removedLines") != 0:
+        raise AssertionError("native binding instrumentation stats mismatch")
+    if native["instrumentation"].get("templatePlaceholders") != ["<RECEIPT_FILE>", "<STAGE_FILE>", "<RUN_NONCE>", "<RUN_MODE>"]:
+        raise AssertionError("native binding instrumentation placeholder mismatch")
+    if native["instrumentation"].get("nativeCommandPlaceholders") != ["<RUN_DIR>"]:
+        raise AssertionError("native command placeholder mismatch")
+    expected_runs = set(EXPECTED_NATIVE_RUN_BINDINGS)
     if set(native["runs"]) != expected_runs:
         raise AssertionError("native binding run set mismatch")
-    for label, run in native["runs"].items():
+
+    for label, expected in EXPECTED_NATIVE_RUN_BINDINGS.items():
+        run = native["runs"][label]
+        binding = run.get("binding")
+        if not binding:
+            raise AssertionError(f"{label}: missing binding")
+        if run["phase"] != expected["phase"]:
+            raise AssertionError(f"{label}: phase mismatch")
+        if run.get("receiptLocal") != expected["receiptLocal"]:
+            raise AssertionError(f"{label}: receiptLocal mismatch")
+
         outputs = run["outputs"]
+        for key, expected_value in expected["outputs"].items():
+            if outputs.get(key) != expected_value:
+                raise AssertionError(f"{label}: output identity {key} mismatch")
         if outputs["createDumpResult"] != "0" or outputs["loadDumpResult"] != "0":
             raise AssertionError(f"{label}: native DumpResult mismatch")
         if outputs["loadSuccessMarker"] != "Configuration successfully updated":
@@ -467,6 +642,7 @@ def validate_instrumentation_and_native_binding(package: Path) -> None:
             raise AssertionError(f"{label}: missing runtime complete marker binding")
         if outputs.get("runtimeCompletionObserved") is not True:
             raise AssertionError(f"{label}: runtime completion was not observed")
+
         commands = run["commands"]
         expected_modes = {"create": "CREATEINFOBASE", "load": "DESIGNER", "runtime": "ENTERPRISE"}
         for command_name, expected_mode in expected_modes.items():
@@ -475,11 +651,48 @@ def validate_instrumentation_and_native_binding(package: Path) -> None:
                 raise AssertionError(f"{label}: xvfb prefix mismatch in {command_name}")
             if command[4] != ".local/platform/1cv8t/x86_64/8.5.1.1150/1cv8t" or command[5] != expected_mode:
                 raise AssertionError(f"{label}: native command mode mismatch in {command_name}")
-        for command in commands.values():
             joined = " ".join(command)
             if "<RUN_DIR>" not in joined:
                 raise AssertionError(f"{label}: command lacks run-root placeholder")
 
+        receipt_file = expected["receiptFile"]
+        summary_file = expected["summaryFile"]
+        summary = load_json(package / summary_file)
+        rows = receipt_rows_by_name[receipt_file]
+        if scalar(rows, "nonce") != expected["runNonce"] or scalar(rows, "mode") != expected["mode"]:
+            raise AssertionError(f"{label}: receipt nonce/mode mismatch")
+        if summary["runNonce"] != expected["runNonce"]:
+            raise AssertionError(f"{label}: summary runNonce mismatch")
+        if summary["receiptSha256"] != expected["receiptSha256"] or summary["receiptSha256"] != sha256(package / receipt_file):
+            raise AssertionError(f"{label}: published receipt hash mismatch")
+        if summary["rawLocalReceiptSha256"] != expected["rawLocalReceiptSha256"]:
+            raise AssertionError(f"{label}: raw local receipt hash mismatch")
+
+        if binding["runNonce"] != expected["runNonce"] or binding["mode"] != expected["mode"]:
+            raise AssertionError(f"{label}: binding nonce/mode mismatch")
+        if binding["summary"] != {"path": summary_file, "sha256": expected["summarySha256"]}:
+            raise AssertionError(f"{label}: summary binding mismatch")
+        if binding["publishedReceipt"] != {
+            "path": receipt_file,
+            "sha256": expected["receiptSha256"],
+            "rawLocalSha256": expected["rawLocalReceiptSha256"],
+        }:
+            raise AssertionError(f"{label}: receipt binding mismatch")
+        if binding["productionBytes"] != expected["productionBytes"]:
+            raise AssertionError(f"{label}: production byte binding mismatch")
+        applied = binding["appliedInstrumentation"]
+        expected_applied = expected["appliedInstrumentation"]
+        if applied != expected_applied:
+            raise AssertionError(f"{label}: applied instrumentation binding mismatch")
+        if applied["templateSha256"] != EXPECTED_INSTRUMENTATION_SHA256:
+            raise AssertionError(f"{label}: applied instrumentation template hash mismatch")
+        substitutions = applied["templateSubstitutions"]
+        if substitutions["<RECEIPT_FILE>"] != expected["receiptLocal"]:
+            raise AssertionError(f"{label}: receipt substitution mismatch")
+        if substitutions["<STAGE_FILE>"] != expected["stageLocal"]:
+            raise AssertionError(f"{label}: stage substitution mismatch")
+        if substitutions["<RUN_NONCE>"] != expected["runNonce"] or substitutions["<RUN_MODE>"] != expected["mode"]:
+            raise AssertionError(f"{label}: nonce/mode substitution mismatch")
 
 def observation_vector(rows: dict[str, list[str]]) -> dict[str, str]:
     comparison_keys = [
@@ -528,6 +741,7 @@ def validate_report(package: Path) -> None:
     text = (package / "README.md").read_text(encoding="utf-8")
     required_snippets = [
         "Cost was dominated by finding a reliable data-backed posting entrypoint",
+        "Approximate wall-clock ranges",
         "Reused from issue #10",
         "Manual steps that remain",
         "Instrumentation size:",
@@ -550,6 +764,6 @@ def validate_package(package: Path) -> None:
     }
     for summary_name, receipt_name in SUMMARY_TO_RECEIPT.items():
         validate_summary_observations(package, summary_name, rows_by_receipt[receipt_name])
-    validate_instrumentation_and_native_binding(package)
+    validate_instrumentation_and_native_binding(package, rows_by_receipt)
     validate_canonical_green(package, rows_by_receipt)
     validate_report(package)

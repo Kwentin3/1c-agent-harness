@@ -47,6 +47,18 @@ class Issue14EvidencePackageTests(unittest.TestCase):
             with self.assertRaises(AssertionError):
                 validate_package(dst)
 
+    def test_negative_native_output_hash_mutation_rejected_even_with_refreshed_manifest(self) -> None:
+        with tempfile.TemporaryDirectory() as td:
+            dst = Path(td) / "pkg"
+            shutil.copytree(PACKAGE, dst)
+            native_path = dst / "native-invocations.json"
+            native = json.loads(native_path.read_text(encoding="utf-8"))
+            native["runs"]["canonical-green-2"]["outputs"]["runtimeResultJsonSha256"] = "0" * 64
+            native_path.write_text(json.dumps(native, indent=2, ensure_ascii=False) + "\n", encoding="utf-8")
+            rewrite_manifest(dst)
+            with self.assertRaises(AssertionError):
+                validate_package(dst)
+
     def test_negative_extra_receipt_line_rejected_even_with_refreshed_manifest(self) -> None:
         with tempfile.TemporaryDirectory() as td:
             dst = Path(td) / "pkg"
