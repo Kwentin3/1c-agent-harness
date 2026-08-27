@@ -6,13 +6,15 @@ This package freezes the reviewable evidence for issue #12. It compares standard
 
 **Retain the direct-source baseline. Add no parser, index, graph, RAG, daemon, MCP service, or dependency.**
 
-Both approaches answered the frozen SDMS task completely (9/9 oracle items, no dangerous claims or invalid locators). The Jet baseline produced the complete minimal metadata change and both Jet arms passed native platform acceptance, but candidate added unrequested `FullTextSearch=Use` and therefore failed the semantic hard gate. It also failed the stricter efficiency rule frozen before results:
+Both approaches answered the frozen SDMS task completely (9/9 oracle items, no dangerous claims or invalid locators). Both Jet arms satisfy the public semantic contract and passed native platform acceptance. The raw oracle records that candidate used `FullTextSearch=Use` while baseline used `DontUse`, but the public task did not constrain that serialization field, so the difference is non-blocking. Candidate is rejected on observed efficiency:
 
 - SDMS: +21.96% context bytes, +14.29% navigation operations, only −11.40% wall clock;
-- Jet: −27.51% wall clock, but +160.07% selected source context and lower semantic coverage;
+- Jet: −27.51% wall clock, but +160.07% selected source context and no comparable operation telemetry;
 - the amended Pareto rule allowed at most 10% regression in another observed efficiency metric.
 
-`decision.json` is the machine-readable verdict. `adjudication/*.md` gives the independent ledger and caveats.
+`decision.json` is the machine-readable verdict. `adjudication/*.md` gives the untouched independent raw ledger and caveats.
+
+The package does **not** independently prove that design/amendment preceded results: design and results entered Git in one commit, and the SDMS adjudication records that the pre-results manifest is not byte-closed over the current canonical experiment. Local artifacts state that order, but Git/timestamps do not establish it. No retroactive freeze is claimed. The conservative decision survives because candidate still fails the observed efficiency gates; issue #14 is the first task requiring externally provable contract-before-results ordering.
 
 ## Frozen tasks
 
@@ -32,12 +34,13 @@ The first real historical Jet candidate was rejected before arms: it changed 18 
 - `answers/`, `contexts/`, `metrics/` — exact frozen arm outputs;
 - `diffs/` — exact no-index arm diffs;
 - `patches/` — equivalent repo-root-independent patches for reproduction;
-- `evidence/` — sanitised native 1C receipts for both Jet arms;
+- `evidence/` — native 1C receipts plus Base64-transported, host-path-sanitized execution receipts, source manifest/owner bytes, logs, and DumpResult bytes for both Jet arms;
 - `adjudication/` — independent per-task scoring and methodology review;
+- `remediation/native-v2.md` — post-review closure of the initial native input-provenance caveat, without rewriting the independent adjudication;
 - `decision.json` — final bounded decision and negative scenarios;
 - `package-manifest.json` — exact closed-set artifact hashes.
 
-Heavy work copies, disposable infobases, full 1C logs, immutable snapshots, and private selection oracle remain under ignored `.local/`; they are not committed. Receipts bind their hashes and closure counts without publishing machine-specific paths.
+Full work copies, disposable infobases, and immutable snapshots remain under ignored `.local/`; they are not committed. The v2 evidence closes the reproduced native-input gap without publishing those heavy trees: before invocation each receipt binds the public task ID, snapshot content ID, SHA-256 of the published patch and adjudicated diff, the sole declared diff-header path normalization, changed owner bytes, and the complete 5,099-file work-copy manifest. It preserves argv/environment structure with one `${REPO}` placeholder, sanitized logs and exact DumpResult bytes in explicit Base64 transport. Fixed SHA-256 anchors for those exact sanitized receipt/output bytes live outside the refreshable package manifest in `tests/test_issue12_evidence.py`, so a coordinated package rewrite plus manifest refresh fails closed. Tests validate single-file/single-hunk framing and hunk counts, require real `git apply --check`, and mechanically verify `adjudicated diff records → header-path normalization → applicable patch → changed owner/work-copy identity → exact receipt/output anchors`. The unpublished raw receipt is not independently authenticated and is not claimed as public evidence.
 
 ## Native result
 
@@ -48,21 +51,24 @@ Both Jet patches were applied in physically separate writable copies of the 5,09
 3. require process exit 0, exact `DumpResult = 0`, and `Configuration successfully updated` in the load log;
 4. revalidate the immutable snapshot as 5,099 listed/actual files with zero missing, extra, mismatch, or symlink entries.
 
-The receipts in `evidence/` record success for both arms. This proves platform acceptance/schema consistency only. No Enterprise runtime behavior is claimed because the task intentionally adds metadata without enforcement logic.
+The receipts in `evidence/` record success for both exact published changes. This proves platform acceptance/schema consistency only. No Enterprise runtime behavior is claimed because the task intentionally adds metadata without enforcement logic.
 
-## Oracle caveat
+## Oracle caveats
 
 The frozen private Jet oracle required one exact UUIDv5 even though the public blind task explicitly hid both its algorithm and expected value. That arbitrary identity is not inferable and cannot fairly distinguish blind arms. The oracle was not silently changed: the defect is preserved in the adjudication. Both arms used unique valid UUIDs and both loaded/updated natively, so semantic grading accepts both.
+
+Likewise, the public task requires a Boolean, false default and `ForItem`, but does not require `FullTextSearch=DontUse`. The frozen raw adjudication remains unchanged and records the baseline/candidate difference; the final public-contract interpretation treats both arms as semantic PASS and the difference as non-blocking.
 
 ## Fail-closed negatives
 
 `tests/test_issue12_evidence.py` mutates disposable in-memory/copy data and requires rejection for:
 
 - a stale/foreign snapshot content ID;
-- removal of the essential SDMS request-manager context;
-- selection of same-term distractor `Reports/ЗадачиПоЗаявкам.xml` as creation-path evidence;
-- expansion of the Jet metadata task into a form/BSL source;
-- changed, missing, or unlisted package artifacts through exact manifest closure.
+- removal of the required SDMS request-manager packet entry;
+- selection of the concrete same-term distractor `Reports/ЗадачиПоЗаявкам.xml` as creation-path evidence;
+- expansion of the Jet metadata packet into a form/BSL source;
+- changed, missing, or unlisted package artifacts through exact manifest closure;
+- changed patch, adjudicated diff, changed owner/work-copy identity, or receipt binding even after the package manifest entry is recomputed.
 
 ## Reproduction
 

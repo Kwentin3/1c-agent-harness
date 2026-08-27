@@ -12,9 +12,9 @@ Candidate не включал parser, индекс, graph, RAG, daemon, MCP, liv
 
 Prior evidence issue #10 переиспользовано для класса локальной BSL/write-задачи без повторного прогона: [`docs/issue-10-write-cycle.md`](issue-10-write-cycle.md).
 
-## 2. Дизайн до результатов
+## 2. Заявленный дизайн и ограничение порядка фиксации
 
-До открытия arm outputs были заморожены дизайн, output contract, task identities, candidate и threshold. Независимое Antigravity-review вернуло `FAIL` исходной методике до результатов. Поправка зафиксировала:
+Локальные артефакты заявляют, что до открытия arm outputs были заморожены дизайн, output contract, task identities, candidate и threshold. Независимое Antigravity-review вернуло `FAIL` исходной методике, после чего локальная поправка зафиксировала:
 
 - только signed reduction считается улучшением;
 - ≥25% reduction засчитывается, только если каждая другая наблюдаемая efficiency-метрика ухудшается не более чем на 10%;
@@ -22,7 +22,7 @@ Prior evidence issue #10 переиспользовано для класса л
 - добавляется same-term distractor negative;
 - `/LoadConfigFromFiles /UpdateDBCfg` доказывает acceptance/schema consistency, не runtime semantics.
 
-Хэши frozen design приведены в [`design.json`](../experiments/issue12-narrow-context-20260826/design.json).
+Хэши заявленного design приведены в [`design.json`](../experiments/issue12-narrow-context-20260826/design.json). Однако design и результаты опубликованы одним Git-коммитом, а SDMS adjudication фиксирует, что pre-results manifest не byte-closed над текущим canonical experiment. Поэтому Git/timestamp независимо не доказывают порядок «design/amendment раньше результатов»; задним числом новая freeze не объявляется. Вывод остаётся консервативным: candidate всё равно не проходит наблюдаемые efficiency gates. Строгий внешне доказуемый порядок впервые требуется в issue #14.
 
 ## 3. Задачи
 
@@ -60,13 +60,13 @@ Candidate не дал новой oracle-essential связи и не дости�
 
 | Метрика | Baseline | Candidate | Candidate к baseline |
 |---|---:|---:|---:|
-| Correct semantic fields | 11/11 | 10/11 (`FullTextSearch=Use`) | candidate hard-gate fail |
+| Public semantic contract | PASS | PASS | tie |
 | Native create/load/update | PASS | PASS | tie |
 | Selected source files / fragments | 2 / 3 | 3 / 5 | regression |
 | Selected source lines / bytes | 90 / 2,860 | 218 / 7,438 | **+160.07% bytes** |
 | Observed wall clock | 480 s | 347.93 s | **−27.51%** |
 
-Candidate включил полнотекстовый поиск для нового реквизита, хотя задача просила минимальный metadata-флаг и baseline использовал `DontUse`. Нативный load подтверждает допустимость XML для платформы, но не устраняет лишнюю семантику. Поэтому candidate проигрывает исходный hard coverage gate. Дополнительно поправка, замороженная до результатов, отклоняет efficiency signal: source-context regression 160.07% значительно превышает Pareto ceiling 10%, а сравнимый operation count candidate не был сохранён.
+Candidate включил `FullTextSearch=Use`, а baseline — `DontUse`, но публичная задача требовала Boolean, false default и `ForItem` и не задавала `FullTextSearch`. Поэтому оба arm допустимы по публичному semantic contract; raw oracle-различие сохранено в frozen adjudication как неблокирующая оговорка. Candidate всё равно отклонён по измеренной эффективности: source-context regression 160.07% значительно превышает заявленный Pareto ceiling 10%, а сравнимый operation count candidate не был сохранён.
 
 Обе нативные проверки использовали физически разные work copies и disposable ИБ на 1C training 8.5.1.1150. `CREATEINFOBASE` и `DESIGNER /LoadConfigFromFiles /UpdateDBCfg` дали process exit 0, exact DumpResult 0 и success marker; snapshot до/после: 5,099 listed/actual, missing/extra/mismatch/symlink = 0. Санитизированные receipts: [`evidence/`](../experiments/issue12-narrow-context-20260826/evidence/).
 
@@ -82,7 +82,8 @@ Fail-closed тесты реально отклоняют:
 2. **insufficient context** — удалён essential fragment request manager из SDMS packet;
 3. **same-term distractor** — report `ЗадачиПоЗаявкам` подставлен как evidence HTTP creation chain;
 4. **scope expansion** — Jet context включает form/BSL или serialization registration;
-5. **package contamination** — missing, changed или unlisted artifact.
+5. **package contamination** — missing, changed или unlisted artifact;
+6. **native binding mutation** — после пересчёта package manifest замена patch, adjudicated diff, changed owner bytes/work-copy identity либо receipt binding всё равно завершается fail-closed.
 
 Проверки находятся в [`tests/test_issue12_evidence.py`](../tests/test_issue12_evidence.py).
 
@@ -102,6 +103,6 @@ python3 -m unittest discover -s tests -v
 git diff --check
 ```
 
-Native replay требует лаборатории из [`docs/lab.md`](lab.md) / [`docs/lab-bootstrap.md`](lab-bootstrap.md), нового уникального run root, writable copy snapshot и disposable file ИБ. Подробная последовательность и patches находятся в package README. Исходные CF, snapshots, manifests и живые ИБ не изменяются.
+Native replay требует лаборатории из [`docs/lab.md`](lab.md) / [`docs/lab-bootstrap.md`](lab-bootstrap.md), нового уникального run root, writable copy snapshot и disposable file ИБ. Подробная последовательность и byte-exact patches находятся в package README. Повторный receipt v2 до вызова 1С связывает task/content IDs, SHA-256 patch и adjudicated diff, единственную нормализацию header paths, owner XML и полный 5,099-файловый work-copy manifest; затем сохраняет exact argv/environment. Публичный пакет содержит Base64-transported sanitized receipt/logs, source manifest, original/changed owner bytes и exact DumpResult. Фиксированные SHA-256 этих exact receipt/output bytes находятся вне пересчитываемого package manifest в тестовом модуле и поэтому отклоняют согласованную post-hoc перезапись package. Тест валидирует строгую single-file/single-hunk структуру и counts, требует реальный `git apply --check`, применяет patch byte-for-byte и доказывает `diff records → header-path normalization → applicable patch → changed owner/work-copy identity → exact sanitized receipt/output anchors`. Неопубликованный raw receipt отдельно не аутентифицируется и не заявляется публичным доказательством. Исходные CF, snapshots, manifests и живые ИБ не изменяются.
 
 Не доказаны: статистическое преимущество подхода, переносимость на другие metadata kinds/конфигурации/платформы, runtime enforcement нового Jet-реквизита, production write support или поддержка произвольных изменений. Read-only остаётся режимом по умолчанию.
