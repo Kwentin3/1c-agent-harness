@@ -1,0 +1,92 @@
+{
+  "schemaVersion": 1,
+  "issue": 14,
+  "status": "frozen-semantic-closure-amendment-2-before-production",
+  "amendsWithoutRewriting": {
+    "priorContractCommit": "2434e83e3566fc8e7306a49d1c94cae73588d6a5",
+    "priorContractTree": "77acc3173d8030e9fca66ed1988dd642dd75761c",
+    "priorArtifact": "experiments/issue14-business-rule-20260827/task-contract-amendment-1.json",
+    "reviewVerdict": "FAIL",
+    "materialCountermodel": "Reject every InventoryWriteOff whose Inventory row count is not exactly one; for one row reject Quantity <= 0.",
+    "reason": "That implementation passed all six prior cases because the only positive documents were one-row and the only multi-row document was invalid. This amendment adds one justified all-positive multi-row observation and changes no prior case.",
+    "preProductionAssertion": "There is still no production patch, complete native RED, or GREEN result."
+  },
+  "businessRuleUnchanged": "An InventoryWriteOff document is allowed by the new rule to post if and only if every row in its Inventory tabular section has Quantity > 0.",
+  "addedCountermodels": [
+    {
+      "id": "CM-OVERSTRICT-ROW-CARDINALITY",
+      "wrongRule": "Reject every document whose Inventory row count is not exactly one, then validate Quantity <= 0 only for one-row documents.",
+      "materialReason": "The rule constrains each row value, not document row cardinality.",
+      "killedBy": ["preserve-positive-multirow-mixed-products"]
+    },
+    {
+      "id": "CM-OVERSTRICT-PRODUCT-SHAPE",
+      "wrongRule": "Reject an otherwise valid document because it contains duplicate-product rows or more than one distinct product.",
+      "materialReason": "Jet aggregates same-product rows for movements, but the business rule neither requires unique products nor limits a document to one product.",
+      "killedBy": ["preserve-positive-multirow-mixed-products"]
+    }
+  ],
+  "addedCase": {
+    "id": "preserve-positive-multirow-mixed-products",
+    "semanticClauses": [
+      "universal-row-quantifier-preserves-all-positive-multirow",
+      "no-row-cardinality-restriction",
+      "no-duplicate-product-restriction",
+      "no-single-product-restriction"
+    ],
+    "products": {
+      "productA": {
+        "opening": {"warehouseQuantity": "10.000", "costQuantity": "10.000", "costAmount": "10.00"},
+        "rows": ["2.000", "2.000"],
+        "expectedAfterPost": {"warehouseQuantity": "6.000", "costQuantity": "6.000", "costAmount": "6.00"}
+      },
+      "productB": {
+        "opening": {"warehouseQuantity": "10.000", "costQuantity": "10.000", "costAmount": "10.00"},
+        "rows": ["2.000"],
+        "expectedAfterPost": {"warehouseQuantity": "8.000", "costQuantity": "8.000", "costAmount": "8.00"}
+      }
+    },
+    "orderedDocumentRows": [
+      {"product": "productA", "quantity": "2.000"},
+      {"product": "productB", "quantity": "2.000"},
+      {"product": "productA", "quantity": "2.000"}
+    ],
+    "redAfterPost": {
+      "posted": true,
+      "warehouseRecorderCount": 2,
+      "costRecorderCount": 2,
+      "perProductBalances": "equal products expectations above"
+    },
+    "greenAfterPost": {
+      "posted": true,
+      "warehouseRecorderCount": 2,
+      "costRecorderCount": 2,
+      "perProductBalances": "equal products expectations above"
+    },
+    "distinguishingPower": "Three positive rows force a valid multi-row post; non-adjacent duplicate productA rows prove row aggregation remains supported, while productB proves more than one distinct product remains supported. One observation therefore kills the exact reviewer countermodel and its two nearest Jet-specific shape restrictions without adding unrelated combinations."
+  },
+  "scenarioDelta": {
+    "caseCountAfterAmendment": 7,
+    "productCount": "One product per original case except this added case, which uses two independently seeded products.",
+    "commonObservationsExtended": [
+      "For the added case the receipt records each ordered row's product identity and Quantity.",
+      "After draft write and after posting it records per-product balances for both products and exact recorder rows keyed by Product.",
+      "The two recorder rows must correspond exactly to productA aggregate 4.000 and productB aggregate 2.000."
+    ],
+    "mutationCriterion": "Removing only the production patch must restore every invalid RED from amendment 1; all four preservation/control expectations from amendments 1 and 2, including the positive multi-row mixed-product case, must remain unchanged."
+  },
+  "semanticClosureSelfCheck": {
+    "question": "Which materially wrong implementation can still pass the combined seven cases?",
+    "answer": "No identified plausible implementation within initial server-side posting scope survives the combined observations. The added three-row/two-product all-positive document distinguishes the rule from blanket multi-row rejection, duplicate-product rejection, and single-product-only restrictions. Prior cases distinguish boundary, aggregate-only and endpoint-only validation, draft scope, atomicity, overstrict positive threshold, UI-only enforcement, and stale/tautological evidence.",
+    "residualsNotClaimed": [
+      "Empty documents, UI behavior/messages, imports, undo-posting, and reposting remain outside scope.",
+      "Arbitrary malicious implementations are not exhaustively proven; the challenge covers materially plausible countermodels derived from Jet semantics.",
+      "All exact RED movement and rounding expectations remain frozen predictions until native RED; mismatch requires stopping."
+    ]
+  },
+  "reviewGate": {
+    "requiredBefore": ["complete native RED", "production patch", "GREEN"],
+    "reviewTarget": "Exact commit/tree containing this second amendment, prior immutable amendments, and no production patch.",
+    "challenge": "Try to construct a materially wrong implementation that passes the combined seven cases and all observations, with special attention to valid multi-row/product shape."
+  }
+}

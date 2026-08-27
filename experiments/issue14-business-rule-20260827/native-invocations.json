@@ -1,0 +1,507 @@
+{
+  "schemaVersion": 1,
+  "issue": 14,
+  "sanitization": {
+    "repositoryRoot": "<REPO_ROOT>",
+    "runRoot": "<RUN_DIR>",
+    "privatePathsPublished": false
+  },
+  "instrumentation": {
+    "path": "experiments/issue14-business-rule-20260827/instrumentation.diff",
+    "sha256": "42806ff6bafcbd7f4be64fd49c7035a6c3a290a1863b4ba0cd0ae47c37643d6e",
+    "files": [
+      "Ext/ManagedApplicationModule.bsl",
+      "CommonModules/JetServerCall/Ext/Module.bsl"
+    ],
+    "note": "accepted runs use this sanitized zero-context diff/template; placeholders are substituted per run before native load, and per-run applied file hashes are bound below",
+    "templatePlaceholders": [
+      "<RECEIPT_FILE>",
+      "<STAGE_FILE>",
+      "<RUN_NONCE>",
+      "<RUN_MODE>"
+    ],
+    "nativeCommandPlaceholders": [
+      "<RUN_DIR>"
+    ],
+    "addedLines": 328,
+    "removedLines": 0
+  },
+  "runs": {
+    "red-source": {
+      "phase": "RED-before-production-patch",
+      "localRunRoot": ".local/runs/issue14-business-rule-primary/red-full-7e9c5a00437242c2",
+      "workCopy": ".local/runs/issue14-business-rule-primary/red-full-7e9c5a00437242c2/work-copy",
+      "infobase": "<RUN_DIR>/red-ib",
+      "receiptLocal": "<RUN_DIR>/evidence/red-receipt.txt",
+      "environment": {
+        "PATH_PREFIX": ".local/platform/libs/usr/bin",
+        "LD_LIBRARY_PATH": ".local/platform/1cv8t/x86_64/8.5.1.1150:.local/platform/libs/usr/lib/x86_64-linux-gnu",
+        "FONTCONFIG_FILE": ".local/platform/fonts.conf",
+        "HOME": "<RUN_DIR>/home",
+        "TMPDIR": "<RUN_DIR>/tmp",
+        "XDG_CACHE_HOME": "<RUN_DIR>/home/xdg-cache",
+        "XDG_CONFIG_HOME": "<RUN_DIR>/home/xdg-config",
+        "XDG_DATA_HOME": "<RUN_DIR>/home/xdg-data"
+      },
+      "commands": {
+        "create": [
+          "xvfb-run",
+          "-a",
+          "-s",
+          "-screen 0 1280x1024x8 -nolisten tcp",
+          ".local/platform/1cv8t/x86_64/8.5.1.1150/1cv8t",
+          "CREATEINFOBASE",
+          "File=<RUN_DIR>/red-ib",
+          "/DisableStartupDialogs",
+          "/DisableStartupMessages",
+          "/Out",
+          "<RUN_DIR>/logs/create.log",
+          "/DumpResult",
+          "<RUN_DIR>/logs/create.result"
+        ],
+        "load": [
+          "xvfb-run",
+          "-a",
+          "-s",
+          "-screen 0 1280x1024x8 -nolisten tcp",
+          ".local/platform/1cv8t/x86_64/8.5.1.1150/1cv8t",
+          "DESIGNER",
+          "/F",
+          "<RUN_DIR>/red-ib",
+          "/LoadConfigFromFiles",
+          "<RUN_DIR>/work-copy",
+          "/UpdateDBCfg",
+          "/DisableStartupDialogs",
+          "/DisableStartupMessages",
+          "/Out",
+          "<RUN_DIR>/logs/load.log",
+          "/DumpResult",
+          "<RUN_DIR>/logs/load.result"
+        ],
+        "runtime": [
+          "xvfb-run",
+          "-a",
+          "-s",
+          "-screen 0 1280x1024x8 -nolisten tcp",
+          ".local/platform/1cv8t/x86_64/8.5.1.1150/1cv8t",
+          "ENTERPRISE",
+          "/F",
+          "<RUN_DIR>/red-ib",
+          "/DisableStartupDialogs",
+          "/DisableStartupMessages",
+          "/Out",
+          "<RUN_DIR>/logs/run.log",
+          "/DumpResult",
+          "<RUN_DIR>/logs/run.result"
+        ]
+      },
+      "outputs": {
+        "createDumpResult": "0",
+        "createResultSha256": "e45825471ed10290785b62676dc5f453d228a1e1d933c45a733e9bb239c9e083",
+        "createLogSha256": "ae38624a5f5989040004255aca17277145899dde53675692ee63aa22221eb2bc",
+        "createSuccessMarker": "completed successfully",
+        "loadDumpResult": "0",
+        "loadResultSha256": "e45825471ed10290785b62676dc5f453d228a1e1d933c45a733e9bb239c9e083",
+        "loadLogSha256": "4d841be04b71dd0ee7cfebcfa7af194d74902e2ec1c213987889d7d3940c0f86",
+        "loadSuccessMarker": "Configuration successfully updated",
+        "runtimeHarnessStatus": "complete_marker_legacy_completeTrue",
+        "runtimeProcessReturn": -15,
+        "runtimeReceiptCompleteMarker": "complete###true",
+        "runtimeLogSha256": "6a36c876e98c4bd8564400657343bacb934673813f1f18f6d89c128b8bd1be52",
+        "runtimeResultJsonSha256": "18465742cd288d48a60bebe7cd5b0ec0f69561843f3cf1ba249bc77be6a0708b",
+        "runtimeCompletionObserved": true
+      },
+      "binding": {
+        "runNonce": "red-full-7e9c5a00437242c2",
+        "mode": "red-source-logic",
+        "summary": {
+          "path": "red-source-summary.json",
+          "sha256": "3c915833e6a5b559fc17a0b4aa2b676d1a3d8b3c44e862f1e59035c4ca6911fc"
+        },
+        "publishedReceipt": {
+          "path": "red-source-receipt.txt",
+          "sha256": "0960822c0fa4a30df0314d74d545a8f8814faa1131bd1336d499de5492cb77ad",
+          "rawLocalSha256": "24410de9c97a71be96037914634159476631f4641a6c0648ff95d0101348225e"
+        },
+        "productionBytes": {
+          "role": "source-unpatched",
+          "baseFileSha256": "86f383323de83d4912c99854ec6db7cbf59e2265d62a97d8143a46eacba07d9c",
+          "productionPatchSha256": null,
+          "patchedFileSha256": null,
+          "actualRunProductionFileSha256": "86f383323de83d4912c99854ec6db7cbf59e2265d62a97d8143a46eacba07d9c"
+        },
+        "appliedInstrumentation": {
+          "templateSha256": "42806ff6bafcbd7f4be64fd49c7035a6c3a290a1863b4ba0cd0ae47c37643d6e",
+          "templateSubstitutions": {
+            "<RECEIPT_FILE>": "<RUN_DIR>/evidence/red-receipt.txt",
+            "<STAGE_FILE>": "<RUN_DIR>/evidence/red-stage.txt",
+            "<RUN_NONCE>": "red-full-7e9c5a00437242c2",
+            "<RUN_MODE>": "red-source-logic"
+          },
+          "localOnlyAppliedFileSha256": {
+            "Ext/ManagedApplicationModule.bsl": "9a700de1745d952ee503f20b624fb862cbb167453648ade0c6d7292ade350997",
+            "CommonModules/JetServerCall/Ext/Module.bsl": "b7733aaf621da9ccf6b2c0d940885da116d971f9cbfca5a091a17f9c499461c1"
+          }
+        },
+        "outputHashesScope": "local-only compact hashes; raw logs/result json are intentionally not published"
+      }
+    },
+    "green-production-historical": {
+      "phase": "GREEN-production-patch",
+      "localRunRoot": ".local/runs/issue14-business-rule-primary/green-full-7d54ba68acb84d6a",
+      "workCopy": ".local/runs/issue14-business-rule-primary/green-full-7d54ba68acb84d6a/work-copy",
+      "infobase": "<RUN_DIR>/green-ib",
+      "receiptLocal": "<RUN_DIR>/evidence/green-receipt.txt",
+      "environment": {
+        "PATH_PREFIX": ".local/platform/libs/usr/bin",
+        "LD_LIBRARY_PATH": ".local/platform/1cv8t/x86_64/8.5.1.1150:.local/platform/libs/usr/lib/x86_64-linux-gnu",
+        "FONTCONFIG_FILE": ".local/platform/fonts.conf",
+        "HOME": "<RUN_DIR>/home",
+        "TMPDIR": "<RUN_DIR>/tmp",
+        "XDG_CACHE_HOME": "<RUN_DIR>/home/xdg-cache",
+        "XDG_CONFIG_HOME": "<RUN_DIR>/home/xdg-config",
+        "XDG_DATA_HOME": "<RUN_DIR>/home/xdg-data"
+      },
+      "commands": {
+        "create": [
+          "xvfb-run",
+          "-a",
+          "-s",
+          "-screen 0 1280x1024x8 -nolisten tcp",
+          ".local/platform/1cv8t/x86_64/8.5.1.1150/1cv8t",
+          "CREATEINFOBASE",
+          "File=<RUN_DIR>/green-ib",
+          "/DisableStartupDialogs",
+          "/DisableStartupMessages",
+          "/Out",
+          "<RUN_DIR>/logs/create.log",
+          "/DumpResult",
+          "<RUN_DIR>/logs/create.result"
+        ],
+        "load": [
+          "xvfb-run",
+          "-a",
+          "-s",
+          "-screen 0 1280x1024x8 -nolisten tcp",
+          ".local/platform/1cv8t/x86_64/8.5.1.1150/1cv8t",
+          "DESIGNER",
+          "/F",
+          "<RUN_DIR>/green-ib",
+          "/LoadConfigFromFiles",
+          "<RUN_DIR>/work-copy",
+          "/UpdateDBCfg",
+          "/DisableStartupDialogs",
+          "/DisableStartupMessages",
+          "/Out",
+          "<RUN_DIR>/logs/load.log",
+          "/DumpResult",
+          "<RUN_DIR>/logs/load.result"
+        ],
+        "runtime": [
+          "xvfb-run",
+          "-a",
+          "-s",
+          "-screen 0 1280x1024x8 -nolisten tcp",
+          ".local/platform/1cv8t/x86_64/8.5.1.1150/1cv8t",
+          "ENTERPRISE",
+          "/F",
+          "<RUN_DIR>/green-ib",
+          "/DisableStartupDialogs",
+          "/DisableStartupMessages",
+          "/Out",
+          "<RUN_DIR>/logs/run.log",
+          "/DumpResult",
+          "<RUN_DIR>/logs/run.result"
+        ]
+      },
+      "outputs": {
+        "createDumpResult": "0",
+        "createResultSha256": "e45825471ed10290785b62676dc5f453d228a1e1d933c45a733e9bb239c9e083",
+        "createLogSha256": "01f5f8bce7deeab5cfcbc503edaeef39b85acd9ae47671d019ad3e5e361ac673",
+        "createSuccessMarker": "completed successfully",
+        "loadDumpResult": "0",
+        "loadResultSha256": "e45825471ed10290785b62676dc5f453d228a1e1d933c45a733e9bb239c9e083",
+        "loadLogSha256": "4d841be04b71dd0ee7cfebcfa7af194d74902e2ec1c213987889d7d3940c0f86",
+        "loadSuccessMarker": "Configuration successfully updated",
+        "runtimeHarnessStatus": "complete_marker",
+        "runtimeProcessReturn": -15,
+        "runtimeReceiptCompleteMarker": "complete###true",
+        "runtimeLogSha256": "6a36c876e98c4bd8564400657343bacb934673813f1f18f6d89c128b8bd1be52",
+        "runtimeResultJsonSha256": "da92ae5a3f6cbf1ee46bf06c75db64ea64867ffcb504bdb97d3e40e2061707bf",
+        "runtimeCompletionObserved": true
+      },
+      "binding": {
+        "runNonce": "green-full-7d54ba68acb84d6a",
+        "mode": "green-production-patch",
+        "summary": {
+          "path": "green-production-summary.json",
+          "sha256": "1a7df795c5d4e6e63144669fc8e276456b10bcfbdf91b6151b25c167ee513913"
+        },
+        "publishedReceipt": {
+          "path": "green-production-receipt.txt",
+          "sha256": "4bc33c9a99ea99b0025dd12c5069664f661f83fad4e4a8beafb28ecf51e0dab1",
+          "rawLocalSha256": "e9a29799bd40a5524a8885fd756c517b43cd41c9b03d65a17d47da6cfa47ce25"
+        },
+        "productionBytes": {
+          "role": "historical-green-patched-by-local-crlf-preserving-edit",
+          "baseFileSha256": "86f383323de83d4912c99854ec6db7cbf59e2265d62a97d8143a46eacba07d9c",
+          "productionPatchSha256": "73d484d337c320f45204fbd0c95940c9d5ead1922f7cb4b88f2229c32e6c43e3",
+          "patchedFileSha256": "aac9b1b60a16c3aa57cab1e5e050e0cf526d9d941cc43c2a079269e72ae4f3ef",
+          "actualRunProductionFileSha256": "aac9b1b60a16c3aa57cab1e5e050e0cf526d9d941cc43c2a079269e72ae4f3ef"
+        },
+        "appliedInstrumentation": {
+          "templateSha256": "42806ff6bafcbd7f4be64fd49c7035a6c3a290a1863b4ba0cd0ae47c37643d6e",
+          "templateSubstitutions": {
+            "<RECEIPT_FILE>": "<RUN_DIR>/evidence/green-receipt.txt",
+            "<STAGE_FILE>": "<RUN_DIR>/evidence/green-stage.txt",
+            "<RUN_NONCE>": "green-full-7d54ba68acb84d6a",
+            "<RUN_MODE>": "green-production-patch"
+          },
+          "localOnlyAppliedFileSha256": {
+            "Ext/ManagedApplicationModule.bsl": "57bca83145426d2ba7054a46f8c7183177ab397abcb09b2391a65a4a4a46a7f4",
+            "CommonModules/JetServerCall/Ext/Module.bsl": "8a5a29413302bae0dec3fbb446596f4939259a1487cdc615dd547fc9a784f0b3"
+          }
+        },
+        "outputHashesScope": "local-only compact hashes; raw logs/result json are intentionally not published"
+      }
+    },
+    "canonical-green-1": {
+      "phase": "repeat-GREEN-clean-run",
+      "localRunRoot": ".local/runs/issue14-business-rule-repeat/repeat-full-b8b623837201433d",
+      "workCopy": ".local/runs/issue14-business-rule-repeat/repeat-full-b8b623837201433d/work-copy",
+      "infobase": "<RUN_DIR>/repeat-ib",
+      "receiptLocal": "<RUN_DIR>/evidence/repeat-receipt.txt",
+      "environment": {
+        "PATH_PREFIX": ".local/platform/libs/usr/bin",
+        "LD_LIBRARY_PATH": ".local/platform/1cv8t/x86_64/8.5.1.1150:.local/platform/libs/usr/lib/x86_64-linux-gnu",
+        "FONTCONFIG_FILE": ".local/platform/fonts.conf",
+        "HOME": "<RUN_DIR>/home",
+        "TMPDIR": "<RUN_DIR>/tmp",
+        "XDG_CACHE_HOME": "<RUN_DIR>/home/xdg-cache",
+        "XDG_CONFIG_HOME": "<RUN_DIR>/home/xdg-config",
+        "XDG_DATA_HOME": "<RUN_DIR>/home/xdg-data"
+      },
+      "commands": {
+        "create": [
+          "xvfb-run",
+          "-a",
+          "-s",
+          "-screen 0 1280x1024x8 -nolisten tcp",
+          ".local/platform/1cv8t/x86_64/8.5.1.1150/1cv8t",
+          "CREATEINFOBASE",
+          "File=<RUN_DIR>/repeat-ib",
+          "/DisableStartupDialogs",
+          "/DisableStartupMessages",
+          "/Out",
+          "<RUN_DIR>/logs/create.log",
+          "/DumpResult",
+          "<RUN_DIR>/logs/create.result"
+        ],
+        "load": [
+          "xvfb-run",
+          "-a",
+          "-s",
+          "-screen 0 1280x1024x8 -nolisten tcp",
+          ".local/platform/1cv8t/x86_64/8.5.1.1150/1cv8t",
+          "DESIGNER",
+          "/F",
+          "<RUN_DIR>/repeat-ib",
+          "/LoadConfigFromFiles",
+          "<RUN_DIR>/work-copy",
+          "/UpdateDBCfg",
+          "/DisableStartupDialogs",
+          "/DisableStartupMessages",
+          "/Out",
+          "<RUN_DIR>/logs/load.log",
+          "/DumpResult",
+          "<RUN_DIR>/logs/load.result"
+        ],
+        "runtime": [
+          "xvfb-run",
+          "-a",
+          "-s",
+          "-screen 0 1280x1024x8 -nolisten tcp",
+          ".local/platform/1cv8t/x86_64/8.5.1.1150/1cv8t",
+          "ENTERPRISE",
+          "/F",
+          "<RUN_DIR>/repeat-ib",
+          "/DisableStartupDialogs",
+          "/DisableStartupMessages",
+          "/Out",
+          "<RUN_DIR>/logs/run.log",
+          "/DumpResult",
+          "<RUN_DIR>/logs/run.result"
+        ]
+      },
+      "outputs": {
+        "createDumpResult": "0",
+        "createResultSha256": "e45825471ed10290785b62676dc5f453d228a1e1d933c45a733e9bb239c9e083",
+        "createLogSha256": "ac9c0f6776a26e1afb1283df650b791215a54d71681e0b5ced546ae2c9339965",
+        "createSuccessMarker": "completed successfully",
+        "loadDumpResult": "0",
+        "loadResultSha256": "e45825471ed10290785b62676dc5f453d228a1e1d933c45a733e9bb239c9e083",
+        "loadLogSha256": "4d841be04b71dd0ee7cfebcfa7af194d74902e2ec1c213987889d7d3940c0f86",
+        "loadSuccessMarker": "Configuration successfully updated",
+        "runtimeHarnessStatus": "complete_marker",
+        "runtimeProcessReturn": -15,
+        "runtimeReceiptCompleteMarker": "complete###true",
+        "runtimeLogSha256": "6a36c876e98c4bd8564400657343bacb934673813f1f18f6d89c128b8bd1be52",
+        "runtimeResultJsonSha256": "aa5c0c0b9e5504222d40bba1ab1350760a31fbd7f56611938cc344fe8ac71f7d",
+        "runtimeCompletionObserved": true
+      },
+      "binding": {
+        "runNonce": "repeat-full-b8b623837201433d",
+        "mode": "green-production-patch",
+        "summary": {
+          "path": "repeat-green-summary.json",
+          "sha256": "2fe7403c2263aef068aff0f7fe77b6dbd3f673a890030d53b77e67310fd80427"
+        },
+        "publishedReceipt": {
+          "path": "repeat-green-receipt.txt",
+          "sha256": "7ad3eabca42d387f0c9472f1542bd31ae7a15841cfecd63e6ffc60b952495dad",
+          "rawLocalSha256": "b9e82b37f7bc3ceb1871bb84793f5a9c5c1fb39c2bda4f902e3e1bf4434642d6"
+        },
+        "productionBytes": {
+          "role": "canonical-published-patch-application-green-1",
+          "baseFileSha256": "86f383323de83d4912c99854ec6db7cbf59e2265d62a97d8143a46eacba07d9c",
+          "productionPatchSha256": "73d484d337c320f45204fbd0c95940c9d5ead1922f7cb4b88f2229c32e6c43e3",
+          "patchedFileSha256": "d8124e2942426edf82394673561f96d914c8cf35503ccdc0048eb613e801ea3a",
+          "actualRunProductionFileSha256": "d8124e2942426edf82394673561f96d914c8cf35503ccdc0048eb613e801ea3a"
+        },
+        "appliedInstrumentation": {
+          "templateSha256": "42806ff6bafcbd7f4be64fd49c7035a6c3a290a1863b4ba0cd0ae47c37643d6e",
+          "templateSubstitutions": {
+            "<RECEIPT_FILE>": "<RUN_DIR>/evidence/repeat-receipt.txt",
+            "<STAGE_FILE>": "<RUN_DIR>/evidence/repeat-stage.txt",
+            "<RUN_NONCE>": "repeat-full-b8b623837201433d",
+            "<RUN_MODE>": "green-production-patch"
+          },
+          "localOnlyAppliedFileSha256": {
+            "Ext/ManagedApplicationModule.bsl": "01fe526ab32583814d9ace200321d3bc9027a9422a0b2c30a38e64967b2e326f",
+            "CommonModules/JetServerCall/Ext/Module.bsl": "8a5a29413302bae0dec3fbb446596f4939259a1487cdc615dd547fc9a784f0b3"
+          }
+        },
+        "outputHashesScope": "local-only compact hashes; raw logs/result json are intentionally not published"
+      }
+    },
+    "canonical-green-2": {
+      "phase": "canonical-GREEN-2-clean-run",
+      "localRunRoot": ".local/runs/issue14-business-rule-repeat/canonical-green-2-d5db4eaef975447b",
+      "workCopy": ".local/runs/issue14-business-rule-repeat/canonical-green-2-d5db4eaef975447b/work-copy",
+      "infobase": "<RUN_DIR>/canonical-green-2-ib",
+      "receiptLocal": "<RUN_DIR>/evidence/canonical-green-2-receipt.txt",
+      "environment": {
+        "PATH_PREFIX": ".local/platform/libs/usr/bin",
+        "LD_LIBRARY_PATH": ".local/platform/1cv8t/x86_64/8.5.1.1150:.local/platform/libs/usr/lib/x86_64-linux-gnu",
+        "FONTCONFIG_FILE": ".local/platform/fonts.conf",
+        "HOME": "<RUN_DIR>/home",
+        "TMPDIR": "<RUN_DIR>/tmp",
+        "XDG_CACHE_HOME": "<RUN_DIR>/home/xdg-cache",
+        "XDG_CONFIG_HOME": "<RUN_DIR>/home/xdg-config",
+        "XDG_DATA_HOME": "<RUN_DIR>/home/xdg-data"
+      },
+      "commands": {
+        "create": [
+          "xvfb-run",
+          "-a",
+          "-s",
+          "-screen 0 1280x1024x8 -nolisten tcp",
+          ".local/platform/1cv8t/x86_64/8.5.1.1150/1cv8t",
+          "CREATEINFOBASE",
+          "File=<RUN_DIR>/canonical-green-2-ib",
+          "/DisableStartupDialogs",
+          "/DisableStartupMessages",
+          "/Out",
+          "<RUN_DIR>/logs/create.log",
+          "/DumpResult",
+          "<RUN_DIR>/logs/create.result"
+        ],
+        "load": [
+          "xvfb-run",
+          "-a",
+          "-s",
+          "-screen 0 1280x1024x8 -nolisten tcp",
+          ".local/platform/1cv8t/x86_64/8.5.1.1150/1cv8t",
+          "DESIGNER",
+          "/F",
+          "<RUN_DIR>/canonical-green-2-ib",
+          "/LoadConfigFromFiles",
+          "<RUN_DIR>/work-copy",
+          "/UpdateDBCfg",
+          "/DisableStartupDialogs",
+          "/DisableStartupMessages",
+          "/Out",
+          "<RUN_DIR>/logs/load.log",
+          "/DumpResult",
+          "<RUN_DIR>/logs/load.result"
+        ],
+        "runtime": [
+          "xvfb-run",
+          "-a",
+          "-s",
+          "-screen 0 1280x1024x8 -nolisten tcp",
+          ".local/platform/1cv8t/x86_64/8.5.1.1150/1cv8t",
+          "ENTERPRISE",
+          "/F",
+          "<RUN_DIR>/canonical-green-2-ib",
+          "/DisableStartupDialogs",
+          "/DisableStartupMessages",
+          "/Out",
+          "<RUN_DIR>/logs/run.log",
+          "/DumpResult",
+          "<RUN_DIR>/logs/run.result"
+        ]
+      },
+      "outputs": {
+        "createDumpResult": "0",
+        "createResultSha256": "e45825471ed10290785b62676dc5f453d228a1e1d933c45a733e9bb239c9e083",
+        "createLogSha256": "9f4d01a1529738c97eddb22446fd13abeeadc54717e5227a914fe8667e5837ac",
+        "createSuccessMarker": "completed successfully",
+        "loadDumpResult": "0",
+        "loadResultSha256": "e45825471ed10290785b62676dc5f453d228a1e1d933c45a733e9bb239c9e083",
+        "loadLogSha256": "4d841be04b71dd0ee7cfebcfa7af194d74902e2ec1c213987889d7d3940c0f86",
+        "loadSuccessMarker": "Configuration successfully updated",
+        "runtimeHarnessStatus": "complete_marker",
+        "runtimeProcessReturn": -15,
+        "runtimeReceiptCompleteMarker": "complete###true",
+        "runtimeLogSha256": "6a36c876e98c4bd8564400657343bacb934673813f1f18f6d89c128b8bd1be52",
+        "runtimeResultJsonSha256": "5294cc96a5fca8754bd442d51517a124023fe488405fef8ff5f3f4782fa0c08d",
+        "runtimeCompletionObserved": true
+      },
+      "binding": {
+        "runNonce": "canonical-green-2-d5db4eaef975447b",
+        "mode": "green-production-patch",
+        "summary": {
+          "path": "canonical-green-2-summary.json",
+          "sha256": "2013c6fee66deaa998ed7145e46c23883a4aa913bcc43bc06310a3965d3c2b5e"
+        },
+        "publishedReceipt": {
+          "path": "canonical-green-2-receipt.txt",
+          "sha256": "55dfbb2dd6c81a28d0270c2a942bda35d48f39bb30092a43141856f1af4b0120",
+          "rawLocalSha256": "2221d1b82259e95ae27d2bacd02e212cf67e78a1c68d43f77e5567d45c8c2f0d"
+        },
+        "productionBytes": {
+          "role": "canonical-published-patch-application-green-2",
+          "baseFileSha256": "86f383323de83d4912c99854ec6db7cbf59e2265d62a97d8143a46eacba07d9c",
+          "productionPatchSha256": "73d484d337c320f45204fbd0c95940c9d5ead1922f7cb4b88f2229c32e6c43e3",
+          "patchedFileSha256": "d8124e2942426edf82394673561f96d914c8cf35503ccdc0048eb613e801ea3a",
+          "actualRunProductionFileSha256": "d8124e2942426edf82394673561f96d914c8cf35503ccdc0048eb613e801ea3a"
+        },
+        "appliedInstrumentation": {
+          "templateSha256": "42806ff6bafcbd7f4be64fd49c7035a6c3a290a1863b4ba0cd0ae47c37643d6e",
+          "templateSubstitutions": {
+            "<RECEIPT_FILE>": "<RUN_DIR>/evidence/canonical-green-2-receipt.txt",
+            "<STAGE_FILE>": "<RUN_DIR>/evidence/canonical-green-2-stage.txt",
+            "<RUN_NONCE>": "canonical-green-2-d5db4eaef975447b",
+            "<RUN_MODE>": "green-production-patch"
+          },
+          "localOnlyAppliedFileSha256": {
+            "Ext/ManagedApplicationModule.bsl": "4b7ba569f6af99d6aa0db6534a6915ea733291b0be84b3a7c5f4ed97401cf6b8",
+            "CommonModules/JetServerCall/Ext/Module.bsl": "8a5a29413302bae0dec3fbb446596f4939259a1487cdc615dd547fc9a784f0b3"
+          }
+        },
+        "outputHashesScope": "local-only compact hashes; raw logs/result json are intentionally not published"
+      }
+    }
+  }
+}

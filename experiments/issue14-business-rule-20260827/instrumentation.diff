@@ -1,0 +1,335 @@
+--- a/Ext/ManagedApplicationModule.bsl
++++ b/Ext/ManagedApplicationModule.bsl
+@@ -65,0 +66,6 @@
++	// Issue #14 probe-only instrumentation. Not production logic.
++	JetServerCall.Issue14RuntimeProbe(
++		"<RECEIPT_FILE>",
++		"<STAGE_FILE>",
++		"<RUN_NONCE>");
++
+--- a/CommonModules/JetServerCall/Ext/Module.bsl
++++ b/CommonModules/JetServerCall/Ext/Module.bsl
+@@ -16,0 +17,27 @@
++// Issue #14 probe-only instrumentation. Not production logic.
++Procedure Issue14RuntimeProbe(ReceiptPath, StagePath, Nonce) Export
++
++	Issue14WriteStage(StagePath, Nonce, "server-entered");
++	Writer = New TextWriter(ReceiptPath, TextEncoding.UTF8);
++	Try
++		Issue14WriteLine(Writer, "nonce", Nonce);
++		Issue14WriteLine(Writer, "mode", "<RUN_MODE>");
++		Issue14WriteLine(Writer, "complete", "false");
++		Issue14RunCase(Writer, "negative_single", 1);
++		Issue14RunCase(Writer, "zero_single", 2);
++		Issue14RunCase(Writer, "mixed_same_product", 3);
++		Issue14RunCase(Writer, "insufficient_stock_positive", 4);
++		Issue14RunCase(Writer, "normal_positive", 5);
++		Issue14RunCase(Writer, "minimum_positive", 6);
++		Issue14RunCase(Writer, "all_positive_multi_duplicate", 7);
++		Issue14WriteLine(Writer, "complete", "true");
++		Issue14WriteStage(StagePath, Nonce, "complete");
++	Except
++		Issue14WriteLine(Writer, "probeException", ErrorDescription());
++		Issue14WriteLine(Writer, "complete", "exception");
++		Issue14WriteStage(StagePath, Nonce, "exception");
++	EndTry;
++	Writer.Close();
++
++EndProcedure
++
+@@ -17,0 +45,295 @@
++
++#Region Issue14ProbePrivate
++
++Procedure Issue14RunCase(Writer, CaseName, CaseIndex)
++
++	Issue14WriteCaseLine(Writer, CaseName, "begin", "true");
++	Unit = Catalogs.Units.CreateItem();
++	Unit.Description = "Issue14 " + CaseName + " unit";
++	Unit.Write();
++
++	Warehouse = Catalogs.Warehouses.CreateItem();
++	Warehouse.Description = "Issue14 " + CaseName + " warehouse";
++	Warehouse.Write();
++
++	ProductA = Catalogs.Products.CreateItem();
++	ProductA.Description = "Issue14 " + CaseName + " product A";
++	ProductA.ProductType = Enums.ProductTypes.Inventory;
++	ProductA.Unit = Unit.Ref;
++	ProductA.Write();
++
++	ProductB = Catalogs.Products.CreateItem();
++	ProductB.Description = "Issue14 " + CaseName + " product B";
++	ProductB.ProductType = Enums.ProductTypes.Inventory;
++	ProductB.Unit = Unit.Ref;
++	ProductB.Write();
++
++	BaseDate = CurrentDate() + CaseIndex * 3600;
++	Issue14SeedInventory(Warehouse.Ref, ProductA.Ref, BaseDate, 10, 1);
++	Issue14SeedInventory(Warehouse.Ref, ProductB.Ref, BaseDate + 60, 10, 1);
++
++	BeforeA = Issue14Balances(ProductA.Ref, Warehouse.Ref);
++	BeforeB = Issue14Balances(ProductB.Ref, Warehouse.Ref);
++
++	DocumentObject = Documents.InventoryWriteOff.CreateDocument();
++	DocumentObject.Date = BaseDate + 120;
++	DocumentObject.Warehouse = Warehouse.Ref;
++	Issue14FillCaseRows(DocumentObject, CaseName, ProductA.Ref, ProductB.Ref);
++	Issue14WriteCaseLine(Writer, CaseName, "rowCount", DocumentObject.Inventory.Count());
++
++	DraftSucceeded = True;
++	DraftError = "";
++	Try
++		DocumentObject.Write();
++	Except
++		DraftSucceeded = False;
++		DraftError = ErrorDescription();
++	EndTry;
++
++	PostCallSucceeded = True;
++	PostError = "";
++	If DraftSucceeded Then
++		Try
++			DocumentObject.Write(DocumentWriteMode.Posting);
++		Except
++			PostCallSucceeded = False;
++			PostError = ErrorDescription();
++		EndTry;
++	EndIf;
++
++	PostedAfter = False;
++	If DraftSucceeded Then
++		Try
++			ReloadedObject = DocumentObject.Ref.GetObject();
++			PostedAfter = ReloadedObject.Posted;
++		Except
++			PostedAfter = DocumentObject.Posted;
++		EndTry;
++	EndIf;
++
++	AfterA = Issue14Balances(ProductA.Ref, Warehouse.Ref);
++	AfterB = Issue14Balances(ProductB.Ref, Warehouse.Ref);
++	MovementsA = Issue14MovementSummary(DocumentObject.Ref, ProductA.Ref, Warehouse.Ref);
++	MovementsB = Issue14MovementSummary(DocumentObject.Ref, ProductB.Ref, Warehouse.Ref);
++
++	Issue14WriteCaseLine(Writer, CaseName, "draftSucceeded", Issue14BoolText(DraftSucceeded));
++	Issue14WriteCaseLine(Writer, CaseName, "draftError", DraftError);
++	Issue14WriteCaseLine(Writer, CaseName, "postCallSucceeded", Issue14BoolText(PostCallSucceeded));
++	Issue14WriteCaseLine(Writer, CaseName, "postError", PostError);
++	Issue14WriteCaseLine(Writer, CaseName, "postedAfter", Issue14BoolText(PostedAfter));
++	Issue14WriteCaseLine(Writer, CaseName, "inventoryBeforeA", BeforeA.InventoryQuantity);
++	Issue14WriteCaseLine(Writer, CaseName, "inventoryAfterA", AfterA.InventoryQuantity);
++	Issue14WriteCaseLine(Writer, CaseName, "costQuantityBeforeA", BeforeA.CostQuantity);
++	Issue14WriteCaseLine(Writer, CaseName, "costQuantityAfterA", AfterA.CostQuantity);
++	Issue14WriteCaseLine(Writer, CaseName, "costAmountBeforeA", BeforeA.CostAmount);
++	Issue14WriteCaseLine(Writer, CaseName, "costAmountAfterA", AfterA.CostAmount);
++	Issue14WriteCaseLine(Writer, CaseName, "inventoryBeforeB", BeforeB.InventoryQuantity);
++	Issue14WriteCaseLine(Writer, CaseName, "inventoryAfterB", AfterB.InventoryQuantity);
++	Issue14WriteCaseLine(Writer, CaseName, "costQuantityBeforeB", BeforeB.CostQuantity);
++	Issue14WriteCaseLine(Writer, CaseName, "costQuantityAfterB", AfterB.CostQuantity);
++	Issue14WriteCaseLine(Writer, CaseName, "costAmountBeforeB", BeforeB.CostAmount);
++	Issue14WriteCaseLine(Writer, CaseName, "costAmountAfterB", AfterB.CostAmount);
++	Issue14WriteCaseLine(Writer, CaseName, "inventoryMovementRowsA", MovementsA.InventoryRows);
++	Issue14WriteCaseLine(Writer, CaseName, "inventoryMovementQuantityA", MovementsA.InventoryQuantity);
++	Issue14WriteCaseLine(Writer, CaseName, "costMovementRowsA", MovementsA.CostRows);
++	Issue14WriteCaseLine(Writer, CaseName, "costMovementQuantityA", MovementsA.CostQuantity);
++	Issue14WriteCaseLine(Writer, CaseName, "costMovementAmountA", MovementsA.CostAmount);
++	Issue14WriteCaseLine(Writer, CaseName, "inventoryMovementRowsB", MovementsB.InventoryRows);
++	Issue14WriteCaseLine(Writer, CaseName, "inventoryMovementQuantityB", MovementsB.InventoryQuantity);
++	Issue14WriteCaseLine(Writer, CaseName, "costMovementRowsB", MovementsB.CostRows);
++	Issue14WriteCaseLine(Writer, CaseName, "costMovementQuantityB", MovementsB.CostQuantity);
++	Issue14WriteCaseLine(Writer, CaseName, "costMovementAmountB", MovementsB.CostAmount);
++	Issue14WriteCaseLine(Writer, CaseName, "end", "true");
++
++EndProcedure
++
++Procedure Issue14FillCaseRows(DocumentObject, CaseName, ProductA, ProductB)
++
++	If CaseName = "negative_single" Then
++		Issue14AddWriteOffRow(DocumentObject, ProductA, -1);
++	ElsIf CaseName = "zero_single" Then
++		Issue14AddWriteOffRow(DocumentObject, ProductA, 0);
++	ElsIf CaseName = "mixed_same_product" Then
++		Issue14AddWriteOffRow(DocumentObject, ProductA, 2);
++		Issue14AddWriteOffRow(DocumentObject, ProductA, -1);
++		Issue14AddWriteOffRow(DocumentObject, ProductA, 2);
++	ElsIf CaseName = "insufficient_stock_positive" Then
++		Issue14AddWriteOffRow(DocumentObject, ProductA, 11);
++	ElsIf CaseName = "normal_positive" Then
++		Issue14AddWriteOffRow(DocumentObject, ProductA, 4);
++	ElsIf CaseName = "minimum_positive" Then
++		Issue14AddWriteOffRow(DocumentObject, ProductA, 0.001);
++	ElsIf CaseName = "all_positive_multi_duplicate" Then
++		Issue14AddWriteOffRow(DocumentObject, ProductA, 2);
++		Issue14AddWriteOffRow(DocumentObject, ProductB, 2);
++		Issue14AddWriteOffRow(DocumentObject, ProductA, 2);
++	EndIf;
++
++EndProcedure
++
++Procedure Issue14AddWriteOffRow(DocumentObject, Product, Quantity)
++
++	Row = DocumentObject.Inventory.Add();
++	Row.Product = Product;
++	Row.Quantity = Quantity;
++
++EndProcedure
++
++Procedure Issue14SeedInventory(Warehouse, Product, DocumentDate, Quantity, Price)
++
++	SeedDocument = Documents.InventoryIncrease.CreateDocument();
++	SeedDocument.Date = DocumentDate;
++	SeedDocument.Warehouse = Warehouse;
++	Row = SeedDocument.Inventory.Add();
++	Row.Product = Product;
++	Row.Quantity = Quantity;
++	Row.Price = Price;
++	Row.Amount = Quantity * Price;
++	SeedDocument.Write(DocumentWriteMode.Posting);
++
++EndProcedure
++
++Function Issue14Balances(Product, Warehouse)
++
++	Result = New Structure;
++	Result.Insert("InventoryQuantity", 0);
++	Result.Insert("CostQuantity", 0);
++	Result.Insert("CostAmount", 0);
++
++	Query = New Query;
++	Query.Text =
++	"SELECT
++	|	InventoryBalance.QuantityBalance AS Quantity
++	|FROM
++	|	AccumulationRegister.InventoryInWarehouses.Balance(,
++	|		Product = &Product AND Warehouse = &Warehouse) AS InventoryBalance";
++	Query.SetParameter("Product", Product);
++	Query.SetParameter("Warehouse", Warehouse);
++	Selection = Query.Execute().Select();
++	While Selection.Next() Do
++		Result.InventoryQuantity = Result.InventoryQuantity + Selection.Quantity;
++	EndDo;
++
++	Query = New Query;
++	Query.Text =
++	"SELECT
++	|	CostBalance.QuantityBalance AS Quantity,
++	|	CostBalance.AmountBalance AS Amount
++	|FROM
++	|	AccumulationRegister.InventoryCost.Balance(,
++	|		Product = &Product AND Warehouse = &Warehouse) AS CostBalance";
++	Query.SetParameter("Product", Product);
++	Query.SetParameter("Warehouse", Warehouse);
++	Selection = Query.Execute().Select();
++	While Selection.Next() Do
++		Result.CostQuantity = Result.CostQuantity + Selection.Quantity;
++		Result.CostAmount = Result.CostAmount + Selection.Amount;
++	EndDo;
++
++	Return Result;
++
++EndFunction
++
++Function Issue14MovementSummary(Recorder, Product, Warehouse)
++
++	Result = New Structure;
++	Result.Insert("InventoryRows", 0);
++	Result.Insert("InventoryQuantity", 0);
++	Result.Insert("CostRows", 0);
++	Result.Insert("CostQuantity", 0);
++	Result.Insert("CostAmount", 0);
++
++	Query = New Query;
++	Query.Text =
++	"SELECT
++	|	InventoryRecords.Quantity AS Quantity
++	|FROM
++	|	AccumulationRegister.InventoryInWarehouses AS InventoryRecords
++	|WHERE
++	|	InventoryRecords.Recorder = &Recorder
++	|	AND InventoryRecords.Product = &Product
++	|	AND InventoryRecords.Warehouse = &Warehouse";
++	Query.SetParameter("Recorder", Recorder);
++	Query.SetParameter("Product", Product);
++	Query.SetParameter("Warehouse", Warehouse);
++	Selection = Query.Execute().Select();
++	While Selection.Next() Do
++		Result.InventoryRows = Result.InventoryRows + 1;
++		Result.InventoryQuantity = Result.InventoryQuantity + Selection.Quantity;
++	EndDo;
++
++	Query = New Query;
++	Query.Text =
++	"SELECT
++	|	CostRecords.Quantity AS Quantity,
++	|	CostRecords.Amount AS Amount
++	|FROM
++	|	AccumulationRegister.InventoryCost AS CostRecords
++	|WHERE
++	|	CostRecords.Recorder = &Recorder
++	|	AND CostRecords.Product = &Product
++	|	AND CostRecords.Warehouse = &Warehouse";
++	Query.SetParameter("Recorder", Recorder);
++	Query.SetParameter("Product", Product);
++	Query.SetParameter("Warehouse", Warehouse);
++	Selection = Query.Execute().Select();
++	While Selection.Next() Do
++		Result.CostRows = Result.CostRows + 1;
++		Result.CostQuantity = Result.CostQuantity + Selection.Quantity;
++		Result.CostAmount = Result.CostAmount + Selection.Amount;
++	EndDo;
++
++	Return Result;
++
++EndFunction
++
++Procedure Issue14WriteCaseLine(Writer, CaseName, Key, Value)
++
++	Issue14WriteLine(Writer, CaseName + "." + Key, Value);
++
++EndProcedure
++
++Procedure Issue14WriteLine(Writer, Key, Value)
++
++	Writer.Write(Key + "###" + Issue14ValueText(Value) + Chars.LF);
++
++EndProcedure
++
++Function Issue14ValueText(Value)
++
++	If Value = Undefined Then
++		Return "undefined";
++	EndIf;
++	If Value = Null Then
++		Return "null";
++	EndIf;
++	If TypeOf(Value) = Type("Boolean") Then
++		Return Issue14BoolText(Value);
++	EndIf;
++	Result = String(Value);
++	Result = StrReplace(Result, Chars.CR, " ");
++	Result = StrReplace(Result, Chars.LF, " ");
++	Result = StrReplace(Result, ",", ".");
++	Return Result;
++
++EndFunction
++
++Function Issue14BoolText(Value)
++
++	If Value Then
++		Return "true";
++	Else
++		Return "false";
++	EndIf;
++
++EndFunction
++
++Procedure Issue14WriteStage(StagePath, Nonce, Stage)
++
++	Writer = New TextWriter(StagePath, TextEncoding.UTF8);
++	Writer.Write("nonce###" + Nonce + Chars.LF + "stage###" + Stage + Chars.LF);
++	Writer.Close();
++
++EndProcedure
++
++#EndRegion

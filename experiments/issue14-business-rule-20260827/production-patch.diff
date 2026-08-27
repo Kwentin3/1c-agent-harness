@@ -1,0 +1,9 @@
+--- a/Documents/InventoryWriteOff/Ext/ObjectModule.bsl
++++ b/Documents/InventoryWriteOff/Ext/ObjectModule.bsl
+@@ -11,0 +12,6 @@
++	For Each InventoryRow In Inventory Do
++		If InventoryRow.Quantity <= 0 Then
++			Cancel = True;
++			Return;
++		EndIf;
++	EndDo;

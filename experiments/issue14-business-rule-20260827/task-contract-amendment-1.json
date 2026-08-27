@@ -1,0 +1,207 @@
+{
+  "schemaVersion": 1,
+  "issue": 14,
+  "status": "frozen-semantic-closure-before-production",
+  "amendsWithoutRewriting": {
+    "originalContractCommit": "f070a128a51bfd2a12d5fe4ff4fd28308f7d6016",
+    "originalContractTree": "e068b717ec05ea3d8fac373bc565891dc9d7126f",
+    "originalArtifact": "experiments/issue14-business-rule-20260827/task-contract.json",
+    "reason": "Pre-production owner review found that the original one-row cases did not close the universal row quantifier or the zero boundary. This amendment supersedes its scenario cases and mutation criterion while preserving the original Git history.",
+    "preProductionAssertion": "At this amendment freeze there is no production patch, no complete RED receipt, and no GREEN result. Existing native attempts only established an instrumentation entrypoint gap."
+  },
+  "sourceIdentity": {
+    "repositoryBaseCommit": "333ddd876a4cc748cf5cd3c04b60eeea303b229c",
+    "repositoryBaseTree": "8092ea07ae0325597c2aff4b938c2328c4547f63",
+    "sourceCfSha256": "5694f9e4bdf9a0857185118ba816d562d8ee8de2b8da3f60792397a399ca128a",
+    "snapshotManifestSha256": "70972b5e11901ca31c7f7ec67dca03f78986206b024be01aeb34e0e1f3ff6691",
+    "snapshotFileCount": 5099
+  },
+  "businessRule": "An InventoryWriteOff document is allowed by the new rule to post if and only if every row in its Inventory tabular section has Quantity > 0.",
+  "semanticModel": {
+    "subjectDomain": "Every persisted row of Document.InventoryWriteOff.Inventory evaluated by server-side posting.",
+    "quantifier": "Universal over rows: for all row in document.Inventory.",
+    "predicate": "row.Quantity > 0",
+    "boundary": {
+      "metadataType": "signed decimal(15,3)",
+      "invalid": "Quantity <= 0",
+      "minimumRepresentablePositiveUsedByTheContract": "0.001"
+    },
+    "operationScope": {
+      "covered": [
+        "Saving an unposted draft through the server-side object API.",
+        "Initial server-side posting of that persisted document."
+      ],
+      "rule": "The new rule rejects posting, not draft persistence. An invalid draft must remain writable and observable with Posted=false before the posting attempt."
+    },
+    "failureSemantics": "A posting attempt containing any invalid row completes as a rejected post: the stored document has Posted=false.",
+    "atomicityAndSideEffects": [
+      "No records for the attempted document recorder remain in AccumulationRegister.InventoryInWarehouses.",
+      "No records for the attempted document recorder remain in AccumulationRegister.InventoryCost.",
+      "Quantity balance in InventoryInWarehouses is unchanged from the pre-attempt value.",
+      "Quantity and amount balances in InventoryCost are unchanged from the pre-attempt values."
+    ],
+    "preservedBehavior": [
+      "A supported strictly-positive Quantity is not rejected by the new rule.",
+      "A normal positive write-off continues to post and move both registers.",
+      "Existing insufficient-stock rejection for a positive quantity continues to reject atomically.",
+      "Invalid unposted drafts remain saveable."
+    ],
+    "unknownAndOutOfScope": [
+      "The business statement does not define whether an empty document should post.",
+      "It does not define UI validation, interactive message wording, bulk import UX, or client-side behavior.",
+      "It does not add rules for ProductType, warehouse selection, amount rounding, undo-posting, or reposting an already posted document.",
+      "Those behaviors must not be invented or claimed by this experiment."
+    ]
+  },
+  "sourceSemantics": [
+    {
+      "locator": "Documents/InventoryWriteOff/Ext/ManagerModule.bsl:38-63,111-140",
+      "fact": "Source aggregates rows by warehouse/product and emits the aggregate Quantity as Expense movements in InventoryInWarehouses and InventoryCost."
+    },
+    {
+      "locator": "Documents/InventoryWriteOff/Ext/ObjectModule.bsl:11-34",
+      "fact": "Server-side Posting writes both record sets before invoking existing negative-balance control."
+    },
+    {
+      "locator": "AccumulationRegisters/InventoryInWarehouses/Ext/ManagerModule.bsl:12-61",
+      "fact": "Existing control rejects only resulting quantity balance below zero."
+    },
+    {
+      "locator": "Documents/InventoryWriteOff.xml:490-522",
+      "fact": "Row Quantity is signed decimal(15,3), permits zero/negative values, and has no fill check."
+    },
+    {
+      "locator": "AccumulationRegisters/InventoryInWarehouses.xml:193-225; AccumulationRegisters/InventoryCost.xml:193-268",
+      "fact": "Observable register resources include Quantity decimal(15,3), and InventoryCost also has Amount decimal(15,2)."
+    }
+  ],
+  "countermodels": [
+    {
+      "id": "CM-BOUNDARY-NEGATIVE-ONLY",
+      "wrongRule": "Reject Quantity < 0 but allow Quantity = 0.",
+      "materialReason": "It changes the required closed boundary and lets a non-positive write-off post.",
+      "killedBy": ["invalid-zero-single"]
+    },
+    {
+      "id": "CM-AGGREGATE-NOT-ROWS",
+      "wrongRule": "Validate only the per-product/document aggregate instead of every row.",
+      "materialReason": "Jet aggregates same-product rows before movement creation, so a positive aggregate can conceal an invalid row.",
+      "killedBy": ["invalid-middle-row-positive-aggregate"]
+    },
+    {
+      "id": "CM-FIRST-LAST-ONLY",
+      "wrongRule": "Validate only the first row, only the last row, or both endpoints.",
+      "materialReason": "A middle invalid row violates the universal quantifier but survives endpoint-only checks.",
+      "killedBy": ["invalid-middle-row-positive-aggregate"]
+    },
+    {
+      "id": "CM-DRAFT-PROHIBITED",
+      "wrongRule": "Reject writing an invalid unposted draft instead of rejecting only posting.",
+      "materialReason": "This narrows operation scope beyond the business statement.",
+      "killedBy": ["invalid-negative-single:draft-observation"]
+    },
+    {
+      "id": "CM-CANCEL-WITH-RESIDUAL-EFFECTS",
+      "wrongRule": "Set Cancel/Posted=false after some register effects remain.",
+      "materialReason": "Posted=false alone does not prove atomic rejection.",
+      "killedBy": ["all-invalid-cases:post-attempt-observation"]
+    },
+    {
+      "id": "CM-OVERSTRICT-POSITIVE",
+      "wrongRule": "Reject a supported positive value by imposing Quantity >= 1, integer-only, or another stronger boundary.",
+      "materialReason": "The metadata supports three fractional digits and the rule permits every value greater than zero.",
+      "killedBy": ["preserve-minimum-positive"]
+    },
+    {
+      "id": "CM-UI-ONLY",
+      "wrongRule": "Enforce the rule only in a form/client path while server-side posting bypasses it.",
+      "materialReason": "The required business rule applies to posting itself.",
+      "killedBy": ["all-invalid-cases:server-side-epf-entrypoint"]
+    },
+    {
+      "id": "CM-PROBE-TAUTOLOGY-OR-STALE",
+      "wrongRule": "Return expected constants/stale receipt or let the probe pass when the production patch is absent.",
+      "materialReason": "This would not demonstrate changed 1C behavior.",
+      "killedBy": ["current-run-object-identities", "production-patch-removal-mutation"]
+    }
+  ],
+  "scenario": {
+    "identity": "issue14-inventory-writeoff-quantity-v2",
+    "sameImplementationAndInputsForRedAndGreen": true,
+    "entrypoint": "A bounded external EPF executed by 1C:Enterprise calls server-side object APIs; it is instrumentation only, not a production/runtime component.",
+    "perCaseIsolation": "Each case uses its own product seeded by a posted InventoryIncrease of Quantity=10.000 and Amount=10.00 in the same fresh disposable infobase.",
+    "commonObservations": [
+      "Current-run nonce and identities of created Unit, Warehouse, Product, InventoryIncrease and InventoryWriteOff objects.",
+      "After unposted Document.Write(): reference exists, stored Posted=false, row list and quantities equal input, both recorder movement counts are zero, and both register balances equal opening values.",
+      "After server-side posting attempt: stored Posted, exact recorder counts in both registers, InventoryInWarehouses quantity balance, InventoryCost quantity balance, and InventoryCost amount balance."
+    ],
+    "cases": [
+      {
+        "id": "invalid-negative-single",
+        "semanticClauses": ["predicate", "operation-scope", "atomicity"],
+        "rows": ["-1.000"],
+        "opening": {"warehouseQuantity": "10.000", "costQuantity": "10.000", "costAmount": "10.00"},
+        "redAfterPost": {"posted": true, "warehouseRecorderCount": 1, "costRecorderCount": 1, "warehouseQuantity": "11.000", "costQuantity": "11.000", "costAmount": "11.00"},
+        "greenAfterPost": {"posted": false, "warehouseRecorderCount": 0, "costRecorderCount": 0, "warehouseQuantity": "10.000", "costQuantity": "10.000", "costAmount": "10.00"}
+      },
+      {
+        "id": "invalid-zero-single",
+        "semanticClauses": ["boundary", "atomicity"],
+        "rows": ["0.000"],
+        "opening": {"warehouseQuantity": "10.000", "costQuantity": "10.000", "costAmount": "10.00"},
+        "redAfterPost": {"posted": true, "warehouseRecorderCount": 1, "costRecorderCount": 1, "warehouseQuantity": "10.000", "costQuantity": "10.000", "costAmount": "10.00"},
+        "greenAfterPost": {"posted": false, "warehouseRecorderCount": 0, "costRecorderCount": 0, "warehouseQuantity": "10.000", "costQuantity": "10.000", "costAmount": "10.00"}
+      },
+      {
+        "id": "invalid-middle-row-positive-aggregate",
+        "semanticClauses": ["universal-row-quantifier", "atomicity"],
+        "rows": ["2.000", "-1.000", "2.000"],
+        "rowProduct": "same product for all three rows",
+        "opening": {"warehouseQuantity": "10.000", "costQuantity": "10.000", "costAmount": "10.00"},
+        "redAfterPost": {"posted": true, "warehouseRecorderCount": 1, "costRecorderCount": 1, "warehouseQuantity": "7.000", "costQuantity": "7.000", "costAmount": "7.00"},
+        "greenAfterPost": {"posted": false, "warehouseRecorderCount": 0, "costRecorderCount": 0, "warehouseQuantity": "10.000", "costQuantity": "10.000", "costAmount": "10.00"}
+      },
+      {
+        "id": "negative-insufficient-stock",
+        "semanticClauses": ["preserve-existing-negative-balance-control", "atomicity"],
+        "rows": ["11.000"],
+        "opening": {"warehouseQuantity": "10.000", "costQuantity": "10.000", "costAmount": "10.00"},
+        "redAfterPost": {"posted": false, "warehouseRecorderCount": 0, "costRecorderCount": 0, "warehouseQuantity": "10.000", "costQuantity": "10.000", "costAmount": "10.00"},
+        "greenAfterPost": {"posted": false, "warehouseRecorderCount": 0, "costRecorderCount": 0, "warehouseQuantity": "10.000", "costQuantity": "10.000", "costAmount": "10.00"}
+      },
+      {
+        "id": "preserve-normal-positive",
+        "semanticClauses": ["preserve-normal-positive"],
+        "rows": ["4.000"],
+        "opening": {"warehouseQuantity": "10.000", "costQuantity": "10.000", "costAmount": "10.00"},
+        "redAfterPost": {"posted": true, "warehouseRecorderCount": 1, "costRecorderCount": 1, "warehouseQuantity": "6.000", "costQuantity": "6.000", "costAmount": "6.00"},
+        "greenAfterPost": {"posted": true, "warehouseRecorderCount": 1, "costRecorderCount": 1, "warehouseQuantity": "6.000", "costQuantity": "6.000", "costAmount": "6.00"}
+      },
+      {
+        "id": "preserve-minimum-positive",
+        "semanticClauses": ["exact-positive-boundary"],
+        "rows": ["0.001"],
+        "opening": {"warehouseQuantity": "10.000", "costQuantity": "10.000", "costAmount": "10.00"},
+        "redAfterPost": {"posted": true, "warehouseRecorderCount": 1, "costRecorderCount": 1, "warehouseQuantity": "9.999", "costQuantity": "9.999", "costAmount": "10.00"},
+        "greenAfterPost": {"posted": true, "warehouseRecorderCount": 1, "costRecorderCount": 1, "warehouseQuantity": "9.999", "costQuantity": "9.999", "costAmount": "10.00"},
+        "roundingNote": "Jet casts calculated cost movement Amount to decimal(15,2); the frozen expectation is 0.00 expense amount and unchanged 10.00 amount balance. If native RED differs, stop rather than amend after GREEN."
+      }
+    ],
+    "invalidDraftExpectation": {"writeSucceeds": true, "posted": false, "warehouseRecorderCount": 0, "costRecorderCount": 0, "allBalancesUnchanged": true},
+    "mutationCriterion": "On fresh disposable data, removing only the production patch must restore the complete frozen RED observations for every invalid case (negative, zero, invalid middle row) while both positive preservation cases and insufficient-stock control retain their RED expectations. Any success without that reversal fails closed."
+  },
+  "semanticClosureSelfCheck": {
+    "question": "What materially wrong implementation can still pass all frozen cases?",
+    "answer": "Within the declared initial server-side posting scope, no identified material countermodel above survives: zero closes the exact boundary; the three-row same-product case closes aggregate and endpoint-only quantifiers; draft and post-attempt phases distinguish operation scope and atomicity; 0.001 closes overstrict positive bounds; EPF server posting closes UI-only enforcement; recorder identities/counts plus balances and patch-removal mutation close stale/tautological success.",
+    "residualsNotClaimed": [
+      "The matrix does not prove empty-document behavior, UI behavior, message text, undo-posting, or reposting.",
+      "It does not exhaust arbitrary malicious implementations; closure is against materially plausible countermodels derived from this Jet model.",
+      "Frozen RED movement counts and 0.001 cost rounding remain predictions until native RED. Any mismatch is a stop condition, not permission to rewrite after GREEN."
+    ]
+  },
+  "reviewGate": {
+    "requiredBefore": ["complete native RED", "production patch", "GREEN"],
+    "reviewTarget": "Exact commit/tree containing this amendment and no production patch.",
+    "challenge": "Independently restate the rule and find a materially wrong implementation that passes every frozen case; separately check quantifier, boundary, operation scope, atomicity, preservation, and scope exclusions."
+  }
+}
