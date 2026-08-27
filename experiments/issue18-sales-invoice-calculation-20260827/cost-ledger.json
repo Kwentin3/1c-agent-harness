@@ -1,0 +1,79 @@
+{
+  "schemaVersion": 1,
+  "issue": 18,
+  "status": "in-progress-pre-patch",
+  "boundaries": {
+    "coreLoopEndsAt": "first complete native GREEN",
+    "milestoneStartsAfter": "first complete native GREEN"
+  },
+  "timestampsUtc": {
+    "reconnaissanceStart": "2026-08-27T16:40:50Z",
+    "productionSeamProven": "2026-08-27T16:50:29Z",
+    "contractFrozen": "2026-08-27T16:52:23Z",
+    "firstHonestRed": null,
+    "productionPatchStarted": null,
+    "firstCompleteGreen": null,
+    "repeatStarted": null,
+    "repeatCompleted": null,
+    "finalReviewCompleted": null
+  },
+  "phaseMetrics": {
+    "reconnaissanceToSeamSeconds": 579,
+    "seamToFrozenContractSeconds": 114,
+    "frozenContractToFirstRedSeconds": null,
+    "redToFirstGreenSeconds": null,
+    "milestoneOverheadSeconds": null
+  },
+  "nativeAttempts": {
+    "beforeRed": 0,
+    "redAcceptedAttempt": null,
+    "beforeGreen": 0,
+    "greenAcceptedAttempt": null,
+    "repeat": 0
+  },
+  "taskSpecificInstrumentation": {
+    "files": null,
+    "addedLines": null,
+    "removedLines": null,
+    "bytes": null
+  },
+  "productionDiff": {
+    "files": null,
+    "addedLines": null,
+    "removedLines": null
+  },
+  "manualWork": {
+    "commandBlocks": 8,
+    "pathSubstitutions": 0,
+    "manifestUpdates": 0,
+    "publishedComments": 1,
+    "note": "Counts are updated at phase boundaries; exploratory read-only tool batches count as command blocks, individual file reads do not."
+  },
+  "reuseUnchanged": [
+    "direct-source snapshot reconnaissance",
+    "semantic-contract-testing sequence",
+    "managed application OnStart to JetServerCall probe entrypoint",
+    "CREATEINFOBASE and DESIGNER LoadConfigFromFiles/UpdateDBCfg argv shape",
+    "ENTERPRISE complete-marker polling and process-group cleanup semantics",
+    "fresh HOME/TMPDIR/XDG run isolation",
+    "document Date population and persisted register/balance observations"
+  ],
+  "deviations": [
+    {
+      "id": "DISK-SPACE-PRE-NATIVE",
+      "status": "open",
+      "locator": "df -h . at 2026-08-27T16:40Z reported 351 MiB available while historical primary/repeat roots are about 326 MiB each",
+      "effect": "No write/native attempt will start until sufficient room for physically separate fresh roots is established without unauthorized cleanup."
+    }
+  ],
+  "baselineIssue14": {
+    "reconnaissance": "20-40 min",
+    "entrypointDiagnostics": "1-2 h",
+    "acceptedRed": "20-40 min",
+    "patchPlusPrimaryGreen": "15-30 min",
+    "instrumentationAddedLines": 328,
+    "productionAddedLines": 6
+  },
+  "verdict": null,
+  "priorityToolCandidate": null
+}
