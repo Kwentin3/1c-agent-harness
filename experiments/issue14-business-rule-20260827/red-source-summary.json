@@ -1,0 +1,68 @@
+{
+  "schemaVersion": 1,
+  "issue": 14,
+  "phase": "RED-before-production-patch",
+  "preRedCommit": "9d8229b2868736154658c93227e9d148ba2edb96",
+  "preRedTree": "77fe41ecbb01f7c5983f30ce8430c9639b3cbd98",
+  "runNonce": "red-full-7e9c5a00437242c2",
+  "localRunRoot": ".local/runs/issue14-business-rule-primary/red-full-7e9c5a00437242c2",
+  "receiptSha256": "0960822c0fa4a30df0314d74d545a8f8814faa1131bd1336d499de5492cb77ad",
+  "sourceLogicFile": "Documents/InventoryWriteOff/Ext/ObjectModule.bsl",
+  "sourceLogicSha256": "86f383323de83d4912c99854ec6db7cbf59e2265d62a97d8143a46eacba07d9c",
+  "sourceLogicUnchangedAgainstSnapshot": true,
+  "native": {
+    "platform": ".local/platform/1cv8t/x86_64/8.5.1.1150/1cv8t",
+    "createDumpResult": "0",
+    "loadDumpResult": "0",
+    "loadLogContains": "Configuration successfully updated",
+    "runtimeCompletion": "receipt complete###true observed; client process group then terminated by harness"
+  },
+  "observations": {
+    "redFailures": {
+      "negative_single": {
+        "draftSucceeded": "true",
+        "postedAfter": "true",
+        "inventoryAfterA": "11",
+        "costQuantityAfterA": "11"
+      },
+      "zero_single": {
+        "draftSucceeded": "true",
+        "postedAfter": "true",
+        "inventoryMovementRowsA": "1"
+      },
+      "mixed_same_product": {
+        "draftSucceeded": "true",
+        "postedAfter": "true",
+        "inventoryAfterA": "7"
+      }
+    },
+    "negativeControl": {
+      "case": "insufficient_stock_positive",
+      "postedAfter": "false",
+      "inventoryAfterA": "10",
+      "costAmountAfterA": "10"
+    },
+    "validPreservation": {
+      "normal_positive": {
+        "postedAfter": "true",
+        "inventoryAfterA": "6"
+      },
+      "minimum_positive": {
+        "postedAfter": "true",
+        "inventoryAfterA": "9.999",
+        "costAmountAfterA": "10"
+      },
+      "all_positive_multi_duplicate": {
+        "postedAfter": "true",
+        "rowCount": "3",
+        "inventoryAfterA": "6",
+        "inventoryAfterB": "8",
+        "inventoryMovementRowsA": "1",
+        "inventoryMovementRowsB": "1"
+      }
+    }
+  },
+  "rawLocalReceiptSha256": "24410de9c97a71be96037914634159476631f4641a6c0648ff95d0101348225e",
+  "publishedReceiptLineEndings": "LF-normalized for git diff --check",
+  "rawLocalReceiptLineEndings": "platform TextWriter CRLF with UTF-8 BOM"
+}
