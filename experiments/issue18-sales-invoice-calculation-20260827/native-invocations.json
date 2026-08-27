@@ -131,6 +131,71 @@
         ".local/runs/issue18-sales-invoice-primary/green-4d091690b7ec4fef/logs/run.result"
       ],
       "mode": "green-production-patch"
+    },
+    {
+      "phase": "clean-repeat-production-patch",
+      "runRoot": ".local/runs/issue18-sales-invoice-repeat/repeat-b3e17ea5554f4ae5",
+      "environment": {
+        "PATH_PREFIX": ".local/platform/libs/usr/bin",
+        "LD_LIBRARY_PATH": ".local/platform/1cv8t/x86_64/8.5.1.1150:.local/platform/libs/usr/lib/x86_64-linux-gnu",
+        "FONTCONFIG_FILE": ".local/platform/fonts.conf",
+        "HOME": ".local/runs/issue18-sales-invoice-repeat/repeat-b3e17ea5554f4ae5/home",
+        "TMPDIR": ".local/runs/issue18-sales-invoice-repeat/repeat-b3e17ea5554f4ae5/tmp",
+        "XDG_CACHE_HOME": ".local/runs/issue18-sales-invoice-repeat/repeat-b3e17ea5554f4ae5/home/xdg-cache",
+        "XDG_CONFIG_HOME": ".local/runs/issue18-sales-invoice-repeat/repeat-b3e17ea5554f4ae5/home/xdg-config",
+        "XDG_DATA_HOME": ".local/runs/issue18-sales-invoice-repeat/repeat-b3e17ea5554f4ae5/home/xdg-data"
+      },
+      "create": [
+        "xvfb-run",
+        "-a",
+        "-s",
+        "-screen 0 1280x1024x8 -nolisten tcp",
+        ".local/platform/1cv8t/x86_64/8.5.1.1150/1cv8t",
+        "CREATEINFOBASE",
+        "File=.local/runs/issue18-sales-invoice-repeat/repeat-b3e17ea5554f4ae5/repeat-ib",
+        "/DisableStartupDialogs",
+        "/DisableStartupMessages",
+        "/Out",
+        ".local/runs/issue18-sales-invoice-repeat/repeat-b3e17ea5554f4ae5/logs/create.log",
+        "/DumpResult",
+        ".local/runs/issue18-sales-invoice-repeat/repeat-b3e17ea5554f4ae5/logs/create.result"
+      ],
+      "load": [
+        "xvfb-run",
+        "-a",
+        "-s",
+        "-screen 0 1280x1024x8 -nolisten tcp",
+        ".local/platform/1cv8t/x86_64/8.5.1.1150/1cv8t",
+        "DESIGNER",
+        "/F",
+        ".local/runs/issue18-sales-invoice-repeat/repeat-b3e17ea5554f4ae5/repeat-ib",
+        "/LoadConfigFromFiles",
+        ".local/runs/issue18-sales-invoice-repeat/repeat-b3e17ea5554f4ae5/work-copy",
+        "/UpdateDBCfg",
+        "/DisableStartupDialogs",
+        "/DisableStartupMessages",
+        "/Out",
+        ".local/runs/issue18-sales-invoice-repeat/repeat-b3e17ea5554f4ae5/logs/load.log",
+        "/DumpResult",
+        ".local/runs/issue18-sales-invoice-repeat/repeat-b3e17ea5554f4ae5/logs/load.result"
+      ],
+      "runtime": [
+        "xvfb-run",
+        "-a",
+        "-s",
+        "-screen 0 1280x1024x8 -nolisten tcp",
+        ".local/platform/1cv8t/x86_64/8.5.1.1150/1cv8t",
+        "ENTERPRISE",
+        "/F",
+        ".local/runs/issue18-sales-invoice-repeat/repeat-b3e17ea5554f4ae5/repeat-ib",
+        "/DisableStartupDialogs",
+        "/DisableStartupMessages",
+        "/Out",
+        ".local/runs/issue18-sales-invoice-repeat/repeat-b3e17ea5554f4ae5/logs/run.log",
+        "/DumpResult",
+        ".local/runs/issue18-sales-invoice-repeat/repeat-b3e17ea5554f4ae5/logs/run.result"
+      ],
+      "mode": "repeat-production-patch"
     }
   ],
   "processHandling": "Hermes tracked background process; receipt complete marker observed stable on two reads; tracked session killed; no blind timeout success."

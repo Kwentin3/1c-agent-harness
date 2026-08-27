@@ -1,7 +1,7 @@
 {
   "schemaVersion": 1,
   "issue": 18,
-  "status": "core-loop-green-complete-review-pending",
+  "status": "milestone-repeat-complete-final-review-pending",
   "boundaries": {
     "coreLoopEndsAt": "first complete native GREEN",
     "milestoneStartsAfter": "first complete native GREEN"
@@ -13,8 +13,8 @@
     "firstHonestRed": "2026-08-27T18:00:19Z",
     "productionPatchStarted": "2026-08-27T18:01:22Z",
     "firstCompleteGreen": "2026-08-27T18:05:08Z",
-    "repeatStarted": null,
-    "repeatCompleted": null,
+    "repeatStarted": "2026-08-27T18:17:27Z",
+    "repeatCompleted": "2026-08-27T18:21:16Z",
     "finalReviewCompleted": null
   },
   "phaseMetrics": {
@@ -24,14 +24,15 @@
     "redToFirstGreenSeconds": 289,
     "milestoneOverheadSeconds": null,
     "redToProductionPatchSeconds": 63,
-    "productionPatchToFirstGreenSeconds": 226
+    "productionPatchToFirstGreenSeconds": 226,
+    "repeatSeconds": 229
   },
   "nativeAttempts": {
     "beforeRed": 0,
     "redAcceptedAttempt": 1,
     "beforeGreen": 0,
     "greenAcceptedAttempt": 1,
-    "repeat": 0
+    "repeat": 1
   },
   "taskSpecificInstrumentation": {
     "files": 2,
@@ -47,8 +48,8 @@
     "path": "Documents/SalesInvoice/Ext/ObjectModule.bsl"
   },
   "manualWork": {
-    "commandBlocks": 23,
-    "pathSubstitutions": 8,
+    "commandBlocks": 29,
+    "pathSubstitutions": 12,
     "manifestUpdates": 0,
     "publishedComments": 6,
     "note": "Counts are updated at phase boundaries; exploratory read-only tool batches count as command blocks, individual file reads do not."
@@ -96,7 +97,7 @@
     "instrumentationAddedLines": 328,
     "productionAddedLines": 6
   },
-  "verdict": "honest native RED observed stale 123/73; native GREEN observed normalized 34/40 with controls preserved; exact candidate review pending",
+  "verdict": "SECOND TASK PASS / COST NOT YET LOW — native capability repeated, but frozen-contract-to-RED churn exceeded issue #14 baseline despite a 289-second RED-to-GREEN phase",
   "priorityToolCandidate": {
     "candidate": "disposable native IB lifecycle plus complete-marker polling/process cleanup",
     "decision": "still the first narrow automation candidate, but not implemented in issue #18; direct native commands reused successfully and owner prohibited a new tool/framework in this bounded cycle"
