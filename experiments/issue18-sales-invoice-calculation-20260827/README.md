@@ -6,7 +6,7 @@ Status: semantic contract frozen before production patch and before native RED.
 
 The second task is a cross-field calculation rule, semantically different from issue #14 row-quantity eligibility. The existing Jet client form calculates each `SalesInvoice.Inventory` row as `Amount = Quantity * Price`, then VAT and `Total`; server `BeforeWrite` currently only sums the already stored row totals. Posting consumes those stored values for Sales and CustomerBalance movements.
 
-Authoritative pre-patch contract: [`task-contract.json`](task-contract.json).
+The original pre-patch contract is [`task-contract.json`](task-contract.json). Independent review found a surviving last-row-only countermodel and under-specified exchange/cost observations. The original remains immutable; [`task-contract-amendment-1.json`](task-contract-amendment-1.json) transparently supersedes only the deficient target matrix/oracle and adds a static existing-helper call criterion. No production patch or native attempt existed before the amendment.
 
 Cost measurement: [`cost-ledger.json`](cost-ledger.json). Core-loop time ends at first complete native GREEN; clean repeat/package/final review are recorded separately as milestone overhead.
 
