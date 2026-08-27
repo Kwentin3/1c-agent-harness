@@ -1,0 +1,292 @@
+diff --git a/CommonModules/JetServerCall/Ext/Module.bsl b/CommonModules/JetServerCall/Ext/Module.bsl
+index 5f600ff..f900c3e 100644
+--- a/CommonModules/JetServerCall/Ext/Module.bsl
++++ b/CommonModules/JetServerCall/Ext/Module.bsl
+@@ -14,4 +14,271 @@ Function GetVATRateValue(VATRate) Export
+ 	
+ EndFunction
+ 
+-#EndRegion
+\ No newline at end of file
++#EndRegion
++// Issue #18 probe-only instrumentation. Not production logic.
++Procedure Issue18RuntimeProbe(ReceiptPath, StagePath, Nonce, Mode) Export
++	Issue18WriteStage(StagePath, Nonce, "server-entered");
++	Writer = New TextWriter(ReceiptPath, TextEncoding.UTF8);
++	Try
++		Issue18WriteLine(Writer, "nonce", Nonce);
++		Issue18WriteLine(Writer, "mode", Mode);
++		Issue18WriteLine(Writer, "complete", "false");
++		Issue18RunCase(Writer, "target_mixed_four_middle_stale", 1);
++		Issue18RunCase(Writer, "target_mixed_five_reordered_edge_stale", 2);
++		Issue18RunCase(Writer, "preserve_consistent_vat20", 3);
++		Issue18RunCase(Writer, "existing_insufficient_stock", 4);
++		Issue18WriteLine(Writer, "complete", "true");
++		Issue18WriteStage(StagePath, Nonce, "complete");
++	Except
++		Issue18WriteLine(Writer, "probeException", ErrorDescription());
++		Issue18WriteLine(Writer, "complete", "exception");
++		Issue18WriteStage(StagePath, Nonce, "exception");
++	EndTry;
++	Writer.Close();
++EndProcedure
++
++Procedure Issue18RunCase(Writer, CaseName, CaseIndex)
++	Issue18WriteCaseLine(Writer, CaseName, "begin", "true");
++	Unit = Catalogs.Units.CreateItem();
++	Unit.Description = "Issue18 " + CaseName + " unit";
++	Unit.Write();
++	Warehouse = Catalogs.Warehouses.CreateItem();
++	Warehouse.Description = "Issue18 " + CaseName + " warehouse";
++	Warehouse.Write();
++	Customer = Catalogs.Counterparties.CreateItem();
++	Customer.Description = "Issue18 " + CaseName + " customer";
++	Customer.Customer = True;
++	Customer.Write();
++	Currency = Catalogs.Currencies.CreateItem();
++	Currency.Description = "Issue18 " + CaseName + " currency";
++	Currency.Write();
++	VAT0 = Catalogs.VATRates.CreateItem();
++	VAT0.Description = "Issue18 " + CaseName + " VAT 0";
++	VAT0.Rate = 0;
++	VAT0.Write();
++	VAT20 = Catalogs.VATRates.CreateItem();
++	VAT20.Description = "Issue18 " + CaseName + " VAT 20";
++	VAT20.Rate = 20;
++	VAT20.Write();
++	Products = New Array;
++	ProductCount = ?(CaseName = "target_mixed_four_middle_stale", 4,
++		?(CaseName = "target_mixed_five_reordered_edge_stale", 5, 1));
++	For ProductIndex = 1 To ProductCount Do
++		Product = Catalogs.Products.CreateItem();
++		Product.Description = "Issue18 " + CaseName + " product " + String(ProductIndex);
++		Product.ProductType = Enums.ProductTypes.Inventory;
++		Product.Unit = Unit.Ref;
++		Product.Write();
++		Products.Add(Product.Ref);
++	EndDo;
++	BaseDate = CurrentDate() + CaseIndex * 3600;
++	For ProductIndex = 0 To Products.Count() - 1 Do
++		Issue18SeedInventory(Warehouse.Ref, Products[ProductIndex], BaseDate + ProductIndex * 60, 10, 1);
++	EndDo;
++	DocumentObject = Documents.SalesInvoice.CreateDocument();
++	DocumentObject.Date = BaseDate + 600;
++	DocumentObject.Customer = Customer.Ref;
++	DocumentObject.Warehouse = Warehouse.Ref;
++	DocumentObject.Currency = Currency.Ref;
++	DocumentObject.ExchangeRate = 1;
++	DocumentObject.Multiplier = 1;
++	DocumentObject.VATWithholding = False;
++	DocumentObject.ExemptFromVAT = False;
++	Issue18FillRows(DocumentObject, CaseName, Products, VAT0.Ref, VAT20.Ref);
++	DraftSucceeded = True;
++	DraftError = "";
++	Try
++		DocumentObject.Write();
++	Except
++		DraftSucceeded = False;
++		DraftError = ErrorDescription();
++	EndTry;
++	Issue18WriteCaseLine(Writer, CaseName, "draftSucceeded", Issue18BoolText(DraftSucceeded));
++	Issue18WriteCaseLine(Writer, CaseName, "draftError", DraftError);
++	If DraftSucceeded Then
++		DraftObject = DocumentObject.Ref.GetObject();
++		Issue18WriteDocumentState(Writer, CaseName, "draft", DraftObject);
++	EndIf;
++	PostCallSucceeded = True;
++	PostError = "";
++	If DraftSucceeded Then
++		Try
++			DocumentObject.Write(DocumentWriteMode.Posting);
++		Except
++			PostCallSucceeded = False;
++			PostError = ErrorDescription();
++		EndTry;
++	Else
++		PostCallSucceeded = False;
++	EndIf;
++	Issue18WriteCaseLine(Writer, CaseName, "postCallSucceeded", Issue18BoolText(PostCallSucceeded));
++	Issue18WriteCaseLine(Writer, CaseName, "postError", PostError);
++	PostedAfter = False;
++	If DraftSucceeded Then
++		ReloadedObject = DocumentObject.Ref.GetObject();
++		PostedAfter = ReloadedObject.Posted;
++		Issue18WriteDocumentState(Writer, CaseName, "post", ReloadedObject);
++	EndIf;
++	Issue18WriteCaseLine(Writer, CaseName, "postedAfter", Issue18BoolText(PostedAfter));
++	CustomerMovement = Issue18CustomerMovement(DocumentObject.Ref);
++	Issue18WriteCaseLine(Writer, CaseName, "customerRows", CustomerMovement.Rows);
++	Issue18WriteCaseLine(Writer, CaseName, "customerAmount", CustomerMovement.Amount);
++	For ProductIndex = 0 To Products.Count() - 1 Do
++		ProductKey = "product" + String(ProductIndex + 1);
++		Balances = Issue18Balances(Products[ProductIndex], Warehouse.Ref);
++		Movements = Issue18Movements(DocumentObject.Ref, Products[ProductIndex], Warehouse.Ref);
++		Issue18WriteCaseLine(Writer, CaseName, ProductKey + ".inventoryAfter", Balances.InventoryQuantity);
++		Issue18WriteCaseLine(Writer, CaseName, ProductKey + ".costQuantityAfter", Balances.CostQuantity);
++		Issue18WriteCaseLine(Writer, CaseName, ProductKey + ".costAmountAfter", Balances.CostAmount);
++		Issue18WriteCaseLine(Writer, CaseName, ProductKey + ".salesRows", Movements.SalesRows);
++		Issue18WriteCaseLine(Writer, CaseName, ProductKey + ".salesQuantity", Movements.SalesQuantity);
++		Issue18WriteCaseLine(Writer, CaseName, ProductKey + ".salesAmount", Movements.SalesAmount);
++		Issue18WriteCaseLine(Writer, CaseName, ProductKey + ".salesVATAmount", Movements.SalesVATAmount);
++		Issue18WriteCaseLine(Writer, CaseName, ProductKey + ".inventoryRows", Movements.InventoryRows);
++		Issue18WriteCaseLine(Writer, CaseName, ProductKey + ".inventoryQuantity", Movements.InventoryQuantity);
++		Issue18WriteCaseLine(Writer, CaseName, ProductKey + ".costRows", Movements.CostRows);
++		Issue18WriteCaseLine(Writer, CaseName, ProductKey + ".costQuantity", Movements.CostQuantity);
++		Issue18WriteCaseLine(Writer, CaseName, ProductKey + ".costAmount", Movements.CostAmount);
++	EndDo;
++	Issue18WriteCaseLine(Writer, CaseName, "end", "true");
++EndProcedure
++
++Procedure Issue18FillRows(DocumentObject, CaseName, Products, VAT0, VAT20)
++	If CaseName = "target_mixed_four_middle_stale" Then
++		Issue18AddRow(DocumentObject, Products[0], 1, 4, VAT0, 4, 0, 4);
++		Issue18AddRow(DocumentObject, Products[1], 2, 5, VAT20, 99, 7, 106);
++		Issue18AddRow(DocumentObject, Products[2], 3, 2, VAT0, 1, 0, 1);
++		Issue18AddRow(DocumentObject, Products[3], 1, 10, VAT20, 10, 2, 12);
++	ElsIf CaseName = "target_mixed_five_reordered_edge_stale" Then
++		Issue18AddRow(DocumentObject, Products[0], 1, 10, VAT20, 1, 0, 1);
++		Issue18AddRow(DocumentObject, Products[1], 3, 2, VAT0, 6, 0, 6);
++		Issue18AddRow(DocumentObject, Products[2], 1, 4, VAT0, 4, 0, 4);
++		Issue18AddRow(DocumentObject, Products[3], 2, 5, VAT20, 10, 2, 12);
++		Issue18AddRow(DocumentObject, Products[4], 2, 3, VAT0, 50, 0, 50);
++	ElsIf CaseName = "preserve_consistent_vat20" Then
++		Issue18AddRow(DocumentObject, Products[0], 2, 5, VAT20, 10, 2, 12);
++	ElsIf CaseName = "existing_insufficient_stock" Then
++		Issue18AddRow(DocumentObject, Products[0], 11, 1, VAT0, 11, 0, 11);
++	EndIf;
++EndProcedure
++
++Procedure Issue18AddRow(DocumentObject, Product, Quantity, Price, VATRate, Amount, VATAmount, Total)
++	Row = DocumentObject.Inventory.Add();
++	Row.Product = Product;
++	Row.Quantity = Quantity;
++	Row.Price = Price;
++	Row.VATRate = VATRate;
++	Row.Amount = Amount;
++	Row.VATAmount = VATAmount;
++	Row.Total = Total;
++EndProcedure
++
++Procedure Issue18WriteDocumentState(Writer, CaseName, Prefix, DocumentObject)
++	Issue18WriteCaseLine(Writer, CaseName, Prefix + ".headerTotal", DocumentObject.Total);
++	Issue18WriteCaseLine(Writer, CaseName, Prefix + ".rowCount", DocumentObject.Inventory.Count());
++	RowIndex = 0;
++	For Each Row In DocumentObject.Inventory Do
++		RowIndex = RowIndex + 1;
++		RowKey = Prefix + ".row" + String(RowIndex);
++		Issue18WriteCaseLine(Writer, CaseName, RowKey + ".quantity", Row.Quantity);
++		Issue18WriteCaseLine(Writer, CaseName, RowKey + ".price", Row.Price);
++		Issue18WriteCaseLine(Writer, CaseName, RowKey + ".vatRate", JetCached.GetVATRateValue(Row.VATRate));
++		Issue18WriteCaseLine(Writer, CaseName, RowKey + ".amount", Row.Amount);
++		Issue18WriteCaseLine(Writer, CaseName, RowKey + ".vatAmount", Row.VATAmount);
++		Issue18WriteCaseLine(Writer, CaseName, RowKey + ".total", Row.Total);
++	EndDo;
++EndProcedure
++
++Procedure Issue18SeedInventory(Warehouse, Product, DocumentDate, Quantity, Price)
++	SeedDocument = Documents.InventoryIncrease.CreateDocument();
++	SeedDocument.Date = DocumentDate;
++	SeedDocument.Warehouse = Warehouse;
++	Row = SeedDocument.Inventory.Add();
++	Row.Product = Product;
++	Row.Quantity = Quantity;
++	Row.Price = Price;
++	Row.Amount = Quantity * Price;
++	SeedDocument.Write(DocumentWriteMode.Posting);
++EndProcedure
++
++Function Issue18Balances(Product, Warehouse)
++	Result = New Structure("InventoryQuantity,CostQuantity,CostAmount", 0, 0, 0);
++	Query = New Query;
++	Query.Text = "SELECT InventoryBalance.QuantityBalance AS Quantity FROM AccumulationRegister.InventoryInWarehouses.Balance(, Product = &Product AND Warehouse = &Warehouse) AS InventoryBalance";
++	Query.SetParameter("Product", Product);
++	Query.SetParameter("Warehouse", Warehouse);
++	Selection = Query.Execute().Select();
++	While Selection.Next() Do Result.InventoryQuantity = Result.InventoryQuantity + Selection.Quantity; EndDo;
++	Query = New Query;
++	Query.Text = "SELECT CostBalance.QuantityBalance AS Quantity, CostBalance.AmountBalance AS Amount FROM AccumulationRegister.InventoryCost.Balance(, Product = &Product AND Warehouse = &Warehouse) AS CostBalance";
++	Query.SetParameter("Product", Product);
++	Query.SetParameter("Warehouse", Warehouse);
++	Selection = Query.Execute().Select();
++	While Selection.Next() Do
++		Result.CostQuantity = Result.CostQuantity + Selection.Quantity;
++		Result.CostAmount = Result.CostAmount + Selection.Amount;
++	EndDo;
++	Return Result;
++EndFunction
++
++Function Issue18Movements(Recorder, Product, Warehouse)
++	Result = New Structure("SalesRows,SalesQuantity,SalesAmount,SalesVATAmount,InventoryRows,InventoryQuantity,CostRows,CostQuantity,CostAmount", 0, 0, 0, 0, 0, 0, 0, 0, 0);
++	Query = New Query;
++	Query.Text = "SELECT SalesRecords.Quantity AS Quantity, SalesRecords.Amount AS Amount, SalesRecords.VATAmount AS VATAmount FROM AccumulationRegister.Sales AS SalesRecords WHERE SalesRecords.Recorder = &Recorder AND SalesRecords.Product = &Product";
++	Query.SetParameter("Recorder", Recorder); Query.SetParameter("Product", Product);
++	Selection = Query.Execute().Select();
++	While Selection.Next() Do
++		Result.SalesRows = Result.SalesRows + 1; Result.SalesQuantity = Result.SalesQuantity + Selection.Quantity;
++		Result.SalesAmount = Result.SalesAmount + Selection.Amount; Result.SalesVATAmount = Result.SalesVATAmount + Selection.VATAmount;
++	EndDo;
++	Query = New Query;
++	Query.Text = "SELECT InventoryRecords.Quantity AS Quantity FROM AccumulationRegister.InventoryInWarehouses AS InventoryRecords WHERE InventoryRecords.Recorder = &Recorder AND InventoryRecords.Product = &Product AND InventoryRecords.Warehouse = &Warehouse";
++	Query.SetParameter("Recorder", Recorder); Query.SetParameter("Product", Product); Query.SetParameter("Warehouse", Warehouse);
++	Selection = Query.Execute().Select();
++	While Selection.Next() Do Result.InventoryRows = Result.InventoryRows + 1; Result.InventoryQuantity = Result.InventoryQuantity + Selection.Quantity; EndDo;
++	Query = New Query;
++	Query.Text = "SELECT CostRecords.Quantity AS Quantity, CostRecords.Amount AS Amount FROM AccumulationRegister.InventoryCost AS CostRecords WHERE CostRecords.Recorder = &Recorder AND CostRecords.Product = &Product AND CostRecords.Warehouse = &Warehouse";
++	Query.SetParameter("Recorder", Recorder); Query.SetParameter("Product", Product); Query.SetParameter("Warehouse", Warehouse);
++	Selection = Query.Execute().Select();
++	While Selection.Next() Do
++		Result.CostRows = Result.CostRows + 1; Result.CostQuantity = Result.CostQuantity + Selection.Quantity; Result.CostAmount = Result.CostAmount + Selection.Amount;
++	EndDo;
++	Return Result;
++EndFunction
++
++Function Issue18CustomerMovement(Recorder)
++	Result = New Structure("Rows,Amount", 0, 0);
++	Query = New Query;
++	Query.Text = "SELECT CustomerRecords.Amount AS Amount FROM AccumulationRegister.CustomerBalance AS CustomerRecords WHERE CustomerRecords.Recorder = &Recorder";
++	Query.SetParameter("Recorder", Recorder);
++	Selection = Query.Execute().Select();
++	While Selection.Next() Do Result.Rows = Result.Rows + 1; Result.Amount = Result.Amount + Selection.Amount; EndDo;
++	Return Result;
++EndFunction
++
++Procedure Issue18WriteCaseLine(Writer, CaseName, Key, Value)
++	Issue18WriteLine(Writer, CaseName + "." + Key, Value);
++EndProcedure
++
++Procedure Issue18WriteLine(Writer, Key, Value)
++	Writer.Write(Key + "###" + Issue18ValueText(Value) + Chars.LF);
++EndProcedure
++
++Function Issue18ValueText(Value)
++	If Value = Undefined Then Return "undefined"; EndIf;
++	If Value = Null Then Return "null"; EndIf;
++	If TypeOf(Value) = Type("Boolean") Then Return Issue18BoolText(Value); EndIf;
++	Result = String(Value);
++	Result = StrReplace(Result, Chars.CR, " "); Result = StrReplace(Result, Chars.LF, " "); Result = StrReplace(Result, ",", ".");
++	Return Result;
++EndFunction
++
++Function Issue18BoolText(Value)
++	Return ?(Value, "true", "false");
++EndFunction
++
++Procedure Issue18WriteStage(StagePath, Nonce, Stage)
++	Writer = New TextWriter(StagePath, TextEncoding.UTF8);
++	Writer.Write("nonce###" + Nonce + Chars.LF + "stage###" + Stage + Chars.LF);
++	Writer.Close();
++EndProcedure
+diff --git a/Ext/ManagedApplicationModule.bsl b/Ext/ManagedApplicationModule.bsl
+index 3a51496..01f33c3 100644
+--- a/Ext/ManagedApplicationModule.bsl
++++ b/Ext/ManagedApplicationModule.bsl
+@@ -63,6 +63,9 @@ Procedure OnStart()
+ #EndIf
+ 	// End StandardSubsystems
+ 	
++	// Issue #18 probe-only instrumentation. Not production logic.
++	JetServerCall.Issue18RuntimeProbe("<RECEIPT_FILE>", "<STAGE_FILE>", "<RUN_NONCE>", "<RUN_MODE>");
++	
+ EndProcedure
+ 
+ Procedure BeforeExit(Cancel, WarningText)

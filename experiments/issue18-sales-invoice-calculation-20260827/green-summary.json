@@ -1,0 +1,36 @@
+{
+  "schemaVersion": 1,
+  "issue": 18,
+  "phase": "GREEN-production-patch",
+  "runNonce": "green-4d091690b7ec4fef",
+  "baseProductionSha256": "535bbbee743a15a92d536c824dd2b69418f6e1d0429b31d9f0b9ca2084a65611",
+  "patchedProductionSha256": "e617889ff121b4952528fb8f485282e4e1b666d4bbd494fa3f55a0ecab949420",
+  "productionPatchSha256": "af64e9264c016036e6644733103c6b3d8ba6640adb5fffb6154905c5b743903c",
+  "receiptSha256Raw": "dd08c6d9b4a490d3c343cb908250f59edfe25c9f2d375b824c98f3ef4c9f45b1",
+  "receiptSha256Published": "bc7d3f5c31de4bd291b6939d1a24ce206b8fd65d045ca2fb6797e53ff42fa77a",
+  "validation": {
+    "receiptSha256": "dd08c6d9b4a490d3c343cb908250f59edfe25c9f2d375b824c98f3ef4c9f45b1",
+    "mode": "green-production-patch",
+    "target4": {
+      "redHeader": "123",
+      "greenHeader": "34",
+      "customer": "34"
+    },
+    "target5": {
+      "redHeader": "73",
+      "greenHeader": "40",
+      "customer": "40"
+    },
+    "consistent": "PASS",
+    "insufficientAtomic": "PASS",
+    "observationKeyParity": "PASS",
+    "changedObservationCount": 32,
+    "greenVerdict": "PASS"
+  },
+  "native": {
+    "createDumpResult": "0",
+    "loadDumpResult": "0",
+    "loadLogContains": "Configuration successfully updated",
+    "runtimeCompletion": "stable complete###true; tracked process session then terminated"
+  }
+}

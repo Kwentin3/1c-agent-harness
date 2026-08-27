@@ -1,0 +1,32 @@
+{
+  "schemaVersion": 1,
+  "issue": 18,
+  "artifact": "instrumentation.diff",
+  "artifactSha256": "10bdd6f67b1bec71bf15ed18e890c3af9ea4aa1c9953a3f37c43d376d5dfbb04",
+  "source": {
+    "root": ".local/runs/training-jet-review-final/snapshot",
+    "normalization": "strip UTF-8 BOM if present; CRLF/CR to LF; preserve final-newline state"
+  },
+  "bindings": {
+    "Ext/ManagedApplicationModule.bsl": [
+      "<RECEIPT_FILE>",
+      "<STAGE_FILE>",
+      "<RUN_NONCE>",
+      "<RUN_MODE>"
+    ],
+    "CommonModules/JetServerCall/Ext/Module.bsl": []
+  },
+  "reconstruction": {
+    "gitApplyCheck": "PASS",
+    "appliedFiles": [
+      "CommonModules/JetServerCall/Ext/Module.bsl",
+      "Ext/ManagedApplicationModule.bsl"
+    ],
+    "sanitizedTargetSha256": {
+      "CommonModules/JetServerCall/Ext/Module.bsl": "a2d37886791454ed68f3f7eb2e01600d7b5e7a828b130fef143653c8a93f55ff",
+      "Ext/ManagedApplicationModule.bsl": "97897d426d361dde2e849f16e1d4b7aaae79c87d0e385afec57afc1aa1a4ece7"
+    },
+    "redGreenRepeatSanitizedTargetParity": "PASS"
+  },
+  "scope": "Probe-only instrumentation; not production logic"
+}

@@ -1,0 +1,105 @@
+{
+  "schemaVersion": 1,
+  "issue": 18,
+  "status": "milestone-repeat-complete-final-review-pending",
+  "boundaries": {
+    "coreLoopEndsAt": "first complete native GREEN",
+    "milestoneStartsAfter": "first complete native GREEN"
+  },
+  "timestampsUtc": {
+    "reconnaissanceStart": "2026-08-27T16:40:50Z",
+    "productionSeamProven": "2026-08-27T16:50:29Z",
+    "contractFrozen": "2026-08-27T16:52:23Z",
+    "firstHonestRed": "2026-08-27T18:00:19Z",
+    "productionPatchStarted": "2026-08-27T18:01:22Z",
+    "firstCompleteGreen": "2026-08-27T18:05:08Z",
+    "repeatStarted": "2026-08-27T18:17:27Z",
+    "repeatCompleted": "2026-08-27T18:21:16Z",
+    "finalReviewCompleted": null
+  },
+  "phaseMetrics": {
+    "reconnaissanceToSeamSeconds": 579,
+    "seamToFrozenContractSeconds": 114,
+    "frozenContractToFirstRedSeconds": 4076,
+    "redToFirstGreenSeconds": 289,
+    "milestoneOverheadSeconds": null,
+    "redToProductionPatchSeconds": 63,
+    "productionPatchToFirstGreenSeconds": 226,
+    "repeatSeconds": 229
+  },
+  "nativeAttempts": {
+    "beforeRed": 0,
+    "redAcceptedAttempt": 1,
+    "beforeGreen": 0,
+    "greenAcceptedAttempt": 1,
+    "repeat": 1
+  },
+  "taskSpecificInstrumentation": {
+    "files": 2,
+    "addedLines": 270,
+    "removedLines": 0,
+    "bytes": 14079,
+    "note": "probe-only ManagedApplication OnStart call plus JetServerCall observation code; same semantic template in RED/GREEN with run-binding substitutions"
+  },
+  "productionDiff": {
+    "files": 1,
+    "addedLines": 4,
+    "removedLines": 0,
+    "path": "Documents/SalesInvoice/Ext/ObjectModule.bsl"
+  },
+  "manualWork": {
+    "commandBlocks": 29,
+    "pathSubstitutions": 12,
+    "manifestUpdates": 0,
+    "publishedComments": 6,
+    "note": "Counts are updated at phase boundaries; exploratory read-only tool batches count as command blocks, individual file reads do not."
+  },
+  "reuseUnchanged": [
+    "direct-source snapshot reconnaissance",
+    "semantic-contract-testing sequence",
+    "managed application OnStart to JetServerCall probe entrypoint",
+    "CREATEINFOBASE and DESIGNER LoadConfigFromFiles/UpdateDBCfg argv shape",
+    "ENTERPRISE complete-marker polling and process-group cleanup semantics",
+    "fresh HOME/TMPDIR/XDG run isolation",
+    "document Date population and persisted register/balance observations"
+  ],
+  "deviations": [
+    {
+      "id": "DISK-SPACE-PRE-NATIVE",
+      "status": "closed-by-exact-owner-authorized-cleanup",
+      "locator": "owner comment 5443057227; removed only .local/runs/bootstrap-runtime-verify and .local/runs/bootstrap-order-verify",
+      "effect": "Available bytes increased from 317677568 to 979791872 (delta 662114304). Prior 1153528748 estimate followed symlinks; deletion measured 654499529 regular-file bytes without following symlinks. Deleted bytes are not directly recoverable; roots are reproducible from tracked issue-2 recipe."
+    },
+    {
+      "id": "PREPATCH-REVIEW-1",
+      "status": "closed-by-amendment",
+      "locator": "independent review of commit 94a2eb37 found last-row-only, fixed-position/VAT20-only, exchange/cost-oracle gaps",
+      "effect": "Transparent amendment required before production patch; native attempts remain zero."
+    },
+    {
+      "id": "PREPATCH-REVIEW-2",
+      "status": "closed-by-amendment-2",
+      "locator": "independent review of commit 58262bac found a correct helper loop plus unauthorized Inventory.Count() > 3 rejection survives",
+      "effect": "Amendment 2 constrains the executable production delta; production patch and native attempts remain zero."
+    },
+    {
+      "id": "OWNER-HOLD-1",
+      "status": "closed-by-amendment-3-pass-and-owner-acceptance-5443057227",
+      "locator": "issue comment 5442550859",
+      "effect": "History was pushed/read back; amendment 3 separates runtime semantics from patch policy, adds mixed 4/5-row shapes, narrows VAT runtime claim, and classifies inventory/cost as preservation controls. Production/native remain blocked."
+    }
+  ],
+  "baselineIssue14": {
+    "reconnaissance": "20-40 min",
+    "entrypointDiagnostics": "1-2 h",
+    "acceptedRed": "20-40 min",
+    "patchPlusPrimaryGreen": "15-30 min",
+    "instrumentationAddedLines": 328,
+    "productionAddedLines": 6
+  },
+  "verdict": "SECOND TASK PASS / COST NOT YET LOW — native capability repeated, but frozen-contract-to-RED churn exceeded issue #14 baseline despite a 289-second RED-to-GREEN phase",
+  "priorityToolCandidate": {
+    "candidate": "disposable native IB lifecycle plus complete-marker polling/process cleanup",
+    "decision": "still the first narrow automation candidate, but not implemented in issue #18; direct native commands reused successfully and owner prohibited a new tool/framework in this bounded cycle"
+  }
+}

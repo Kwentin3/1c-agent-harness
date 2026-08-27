@@ -1,0 +1,22 @@
+{
+  "schemaVersion": 1,
+  "issue": 18,
+  "phase": "clean-repeat-production-patch",
+  "runNonce": "repeat-b3e17ea5554f4ae5",
+  "receiptSha256Raw": "f326f44622f4dea7571eee9739b9e8a976d06b53bda16b9ca51fd5a8602dbc0f",
+  "productionSha256": "e617889ff121b4952528fb8f485282e4e1b666d4bbd494fa3f55a0ecab949420",
+  "observationKeyParityWithPrimaryGreen": "PASS",
+  "allNonBindingObservationValuesEqual": "PASS",
+  "target4Header": "34",
+  "target5Header": "40",
+  "consistent": "PASS",
+  "insufficientAtomic": "PASS",
+  "repeatVerdict": "PASS",
+  "receiptSha256Published": "fa955d50e1af7d51185a8724aa044664fab70cdd5fed18c78c6f49e0d670460f",
+  "native": {
+    "createDumpResult": "0",
+    "loadDumpResult": "0",
+    "loadLogContains": "Configuration successfully updated",
+    "runtimeCompletion": "stable complete###true; tracked process session then terminated"
+  }
+}

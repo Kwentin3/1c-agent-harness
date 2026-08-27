@@ -1,0 +1,191 @@
+{
+  "schemaVersion": 1,
+  "issue": 18,
+  "status": "frozen-semantic-amendment-1-before-production-patch-and-native-red",
+  "amendsWithoutRewriting": {
+    "priorContractCommit": "94a2eb37aeec76b5e6e93c5c452103f543da9b40",
+    "priorContractTree": "c455808bac43768bc46e8e3f47e0febabfee4f17",
+    "priorArtifact": "experiments/issue18-sales-invoice-calculation-20260827/task-contract.json",
+    "reviewVerdict": "FAIL",
+    "survivingCountermodel": "Normalize only Inventory[Inventory.Count()] (the last row), then sum header Total normally.",
+    "additionalGaps": [
+      "Fixed-position or VAT20-only normalization remained possible.",
+      "Using the existing calculation helper was only a preferred implementation shape, not a static acceptance criterion.",
+      "ExchangeRate/Multiplier, opening cost, movement and balance vectors were not frozen exactly."
+    ],
+    "preProductionAssertion": "No production patch, complete native RED, or GREEN exists. Native attempt count remains zero."
+  },
+  "businessRuleUnchanged": "On every ordinary non-DataExchange.Load SalesInvoice write, every Inventory row is normalized through the existing InventoryTabularSectionClientServer.CalculateAmount calculation path before header Total is summed.",
+  "staticAcceptanceCriteria": [
+    "The production diff changes only Documents/SalesInvoice/Ext/ObjectModule.bsl.",
+    "Within the normal non-DataExchange BeforeWrite path, the implementation iterates every Inventory row and calls InventoryTabularSectionClientServer.CalculateAmount(row, VATWithholding) before Total = Inventory.Total(\"Total\").",
+    "No inline replacement VAT formula or case-specific branch is accepted as equivalent for this claim."
+  ],
+  "addedCountermodels": [
+    {
+      "id": "CM-LAST-ROW-ONLY",
+      "wrongRule": "Normalize only the last row.",
+      "killedBy": ["target_three_inconsistent_mixed_vat"]
+    },
+    {
+      "id": "CM-FIXED-POSITION",
+      "wrongRule": "Normalize only one fixed row position.",
+      "killedBy": ["target_three_inconsistent_mixed_vat"]
+    },
+    {
+      "id": "CM-VAT20-ONLY",
+      "wrongRule": "Normalize only rows whose VAT rate is 20 percent.",
+      "killedBy": ["target_three_inconsistent_mixed_vat"]
+    },
+    {
+      "id": "CM-INLINE-KNOWN-RATES",
+      "wrongRule": "Hard-code VAT0/VAT20 arithmetic instead of invoking the existing helper.",
+      "killedBy": ["static helper-call acceptance criterion"]
+    }
+  ],
+  "replacementTargetCase": {
+    "supersedesCase": "target_second_row_vat20",
+    "id": "target_three_inconsistent_mixed_vat",
+    "documentSettings": {
+      "ExchangeRate": "1",
+      "Multiplier": "1",
+      "VATWithholding": false,
+      "ExemptFromVAT": false
+    },
+    "seed": {
+      "method": "For each product, post an InventoryIncrease through normal platform objects before the SalesInvoice.",
+      "perProductOpening": {
+        "inventoryQuantity": "10.000",
+        "costQuantity": "10.000",
+        "costAmount": "10.00"
+      },
+      "sourceSupport": [
+        "snapshot/Documents/InventoryIncrease/Ext/ManagerModule.bsl:28-39,42-71",
+        "snapshot/Documents/InventoryIncrease/Ext/ObjectModule.bsl:11-34"
+      ]
+    },
+    "orderedRows": [
+      {
+        "product": "A",
+        "Quantity": "1.000",
+        "Price": "4.00",
+        "VATRatePercent": "0",
+        "stale": {"Amount": "40.00", "VATAmount": "0.00", "Total": "40.00"},
+        "normalized": {"Amount": "4.00", "VATAmount": "0.00", "Total": "4.00"}
+      },
+      {
+        "product": "B",
+        "Quantity": "2.000",
+        "Price": "5.00",
+        "VATRatePercent": "20",
+        "stale": {"Amount": "99.00", "VATAmount": "7.00", "Total": "106.00"},
+        "normalized": {"Amount": "10.00", "VATAmount": "2.00", "Total": "12.00"}
+      },
+      {
+        "product": "C",
+        "Quantity": "3.000",
+        "Price": "2.00",
+        "VATRatePercent": "0",
+        "stale": {"Amount": "1.00", "VATAmount": "0.00", "Total": "1.00"},
+        "normalized": {"Amount": "6.00", "VATAmount": "0.00", "Total": "6.00"}
+      }
+    ],
+    "redPrediction": {
+      "draft": {
+        "succeeds": true,
+        "persistedRows": "equal stale vectors above",
+        "headerTotal": "147.00"
+      },
+      "posting": {
+        "succeeds": true,
+        "salesByProduct": {
+          "A": {"Quantity": "1.000", "Amount": "40.00", "VATAmount": "0.00"},
+          "B": {"Quantity": "2.000", "Amount": "99.00", "VATAmount": "7.00"},
+          "C": {"Quantity": "3.000", "Amount": "1.00", "VATAmount": "0.00"}
+        },
+        "customerBalanceAmount": "147.00"
+      }
+    },
+    "greenPrediction": {
+      "draft": {
+        "succeeds": true,
+        "persistedRows": "equal normalized vectors above",
+        "headerTotal": "22.00"
+      },
+      "posting": {
+        "succeeds": true,
+        "salesByProduct": {
+          "A": {"Quantity": "1.000", "Amount": "4.00", "VATAmount": "0.00"},
+          "B": {"Quantity": "2.000", "Amount": "10.00", "VATAmount": "2.00"},
+          "C": {"Quantity": "3.000", "Amount": "6.00", "VATAmount": "0.00"}
+        },
+        "customerBalanceAmount": "22.00"
+      }
+    },
+    "unchangedQuantityAndCostOracleRedAndGreen": {
+      "inventoryAfter": {"A": "9.000", "B": "8.000", "C": "7.000"},
+      "costQuantityAfter": {"A": "9.000", "B": "8.000", "C": "7.000"},
+      "costAmountAfter": {"A": "9.00", "B": "8.00", "C": "7.00"},
+      "inventoryRecorderRows": 3,
+      "costRecorderRows": 3,
+      "inventoryMovementQuantity": {"A": "1.000", "B": "2.000", "C": "3.000"},
+      "costMovementQuantity": {"A": "1.000", "B": "2.000", "C": "3.000"},
+      "costMovementAmount": {"A": "1.00", "B": "2.00", "C": "3.00"}
+    },
+    "distinguishingPower": "All first/middle/last rows are inconsistent, two VAT0 rows flank one VAT20 row, and exact persisted plus posting values are observed. Therefore first-only, last-only, fixed-position, VAT20-only, header-only and Amount-only variants fail."
+  },
+  "amendedExistingCases": {
+    "preserve_consistent_vat20": {
+      "documentSettings": {"ExchangeRate": "1", "Multiplier": "1", "VATWithholding": false, "ExemptFromVAT": false},
+      "seedOpening": {"inventoryQuantity": "10.000", "costQuantity": "10.000", "costAmount": "10.00"},
+      "exactUnchangedVector": {
+        "persistedRow": {"Quantity": "2.000", "Price": "5.00", "Amount": "10.00", "VATAmount": "2.00", "Total": "12.00"},
+        "headerTotal": "12.00",
+        "sales": {"Quantity": "2.000", "Amount": "10.00", "VATAmount": "2.00"},
+        "customerBalanceAmount": "12.00",
+        "inventoryAfter": "8.000",
+        "costQuantityAfter": "8.000",
+        "costAmountAfter": "8.00",
+        "inventoryMovementQuantity": "2.000",
+        "costMovementQuantity": "2.000",
+        "costMovementAmount": "2.00"
+      }
+    },
+    "existing_insufficient_stock": {
+      "documentSettings": {"ExchangeRate": "1", "Multiplier": "1", "VATWithholding": false, "ExemptFromVAT": false},
+      "seedOpening": {"inventoryQuantity": "10.000", "costQuantity": "10.000", "costAmount": "10.00"},
+      "row": {"Quantity": "11.000", "Price": "1.00", "VATRatePercent": "0", "Amount": "11.00", "VATAmount": "0.00", "Total": "11.00"},
+      "exactUnchangedVector": {
+        "draftSucceeded": true,
+        "postCallSucceeded": false,
+        "postedAfter": false,
+        "headerTotal": "11.00",
+        "inventoryAfter": "10.000",
+        "costQuantityAfter": "10.000",
+        "costAmountAfter": "10.00",
+        "salesRecorderRows": 0,
+        "customerBalanceRecorderRows": 0,
+        "inventoryRecorderRows": 0,
+        "costRecorderRows": 0
+      }
+    }
+  },
+  "postingOracleSupport": [
+    "snapshot/Documents/SalesInvoice/Ext/ManagerModule.bsl:41-56,137-180 freezes ExchangeRate/Multiplier application and Sales/CustomerBalance sources.",
+    "snapshot/Documents/SalesInvoice/Ext/ManagerModule.bsl:217-245 freezes cost movement as opening average cost times outgoing quantity and binds result tables.",
+    "snapshot/Documents/InventoryIncrease/Ext/ManagerModule.bsl:28-39,42-71 freezes seed quantity and amount movements."
+  ],
+  "semanticClosureSelfCheck": {
+    "question": "Which materially plausible wrong implementation can still pass the amended matrix and static criteria?",
+    "answer": "No retained countermodel survives. Three inconsistent mixed-VAT positions require every row; exact draft/posting vectors close field/order and exchange/cost ambiguity; the static diff criterion requires reuse of the existing calculation helper. Existing preservation and stock controls close overcorrection and side-effect bypass.",
+    "residualUnknownsUnchanged": [
+      "DataExchange.Load, VATWithholding=true/tax-exemption combinations, UI manual amount editing, advance clearing, EDI, undo/reposting/imports, SupplierInvoice and other documents remain outside scope.",
+      "Native RED can invalidate a frozen prediction; any mismatch requires stop and transparent amendment before production patch."
+    ]
+  },
+  "reviewGate": {
+    "requiredBefore": ["production patch", "complete native RED", "native GREEN"],
+    "reviewTarget": "Exact commit/tree containing original contract plus this amendment and no production patch.",
+    "challenge": "Try to construct a materially wrong implementation that passes the amended three-case matrix and static helper-call criterion."
+  }
+}

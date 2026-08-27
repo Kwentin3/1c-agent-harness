@@ -1,0 +1,228 @@
+{
+  "schemaVersion": 1,
+  "issue": 18,
+  "status": "owner-hold-amendment-3-before-production-patch-and-native-red",
+  "amendsWithoutRewriting": {
+    "priorCommit": "e2202de84b1ecbc0825a7797d318834c7511c420",
+    "priorTree": "6d5382f2c1293c07d0cfd61069267c29babb5bdc",
+    "priorArtifactsRemainImmutable": [
+      "task-contract.json",
+      "task-contract-amendment-1.json",
+      "task-contract-amendment-2.json"
+    ],
+    "trigger": "Owner HOLD comment 5442550859 remains authoritative even though the third independent review returned PASS.",
+    "preProductionAssertion": "No production BSL patch, native RED, native GREEN, or native attempt exists."
+  },
+  "layerSeparation": {
+    "runtimeSemanticClaim": "For ordinary non-DataExchange.Load SalesInvoice writes with VATWithholding=false and ExemptFromVAT=false, every persisted Inventory row has Amount, VATAmount, and Total consistent with the existing calculation semantics; header Total is the sum of those persisted normalized row totals; posting consumes the normalized values.",
+    "boundedPatchPolicy": "The candidate source change must traverse the complete Inventory collection and reuse InventoryTabularSectionClientServer.CalculateAmount(row, VATWithholding) before the existing header summation. It must not hard-code positions, VAT cases, cardinalities, or add unrelated control flow.",
+    "nonEquivalenceStatement": "Runtime observations and source policy are separate evidence. Exact For Each syntax is not a semantic observation and is not required for behavioral equivalence. An equivalent complete-collection iteration can satisfy behavior; source review separately establishes complete traversal and helper reuse.",
+    "vatScope": {
+      "experimentallyClaimed": "VATWithholding=false and ExemptFromVAT=false only, with VAT rates 0 and 20 in the frozen cases.",
+      "notExperimentallyClaimed": "VATWithholding=true, ExemptFromVAT=true, and other VAT combinations.",
+      "safetyConstraintBeyondClaim": "The candidate still passes the document VATWithholding value into the existing helper and adds no VAT-specific branch, but this source property is not presented as runtime proof for untested VAT modes."
+    }
+  },
+  "runtimeMatrixAmendment": {
+    "supersedesDynamicTarget": "target_three_inconsistent_mixed_vat from amendment 1",
+    "reason": "A three-row all-stale target did not preserve correct rows inside a mixed shape and could not distinguish a hard-coded first/middle/last positional shortcut.",
+    "cases": [
+      {
+        "id": "target_mixed_four_middle_stale",
+        "documentSettings": {
+          "ExchangeRate": "1",
+          "Multiplier": "1",
+          "VATWithholding": false,
+          "ExemptFromVAT": false
+        },
+        "seedPerProduct": {
+          "inventoryQuantity": "10.000",
+          "costQuantity": "10.000",
+          "costAmount": "10.00"
+        },
+        "orderedRows": [
+          {
+            "position": 1,
+            "product": "A",
+            "inputRole": "consistent-control-inside-target",
+            "Quantity": "1.000",
+            "Price": "4.00",
+            "VATRatePercent": "0",
+            "before": {"Amount": "4.00", "VATAmount": "0.00", "Total": "4.00"},
+            "after": {"Amount": "4.00", "VATAmount": "0.00", "Total": "4.00"}
+          },
+          {
+            "position": 2,
+            "product": "B",
+            "inputRole": "stale",
+            "Quantity": "2.000",
+            "Price": "5.00",
+            "VATRatePercent": "20",
+            "before": {"Amount": "99.00", "VATAmount": "7.00", "Total": "106.00"},
+            "after": {"Amount": "10.00", "VATAmount": "2.00", "Total": "12.00"}
+          },
+          {
+            "position": 3,
+            "product": "C",
+            "inputRole": "stale",
+            "Quantity": "3.000",
+            "Price": "2.00",
+            "VATRatePercent": "0",
+            "before": {"Amount": "1.00", "VATAmount": "0.00", "Total": "1.00"},
+            "after": {"Amount": "6.00", "VATAmount": "0.00", "Total": "6.00"}
+          },
+          {
+            "position": 4,
+            "product": "D",
+            "inputRole": "consistent-control-inside-target",
+            "Quantity": "1.000",
+            "Price": "10.00",
+            "VATRatePercent": "20",
+            "before": {"Amount": "10.00", "VATAmount": "2.00", "Total": "12.00"},
+            "after": {"Amount": "10.00", "VATAmount": "2.00", "Total": "12.00"}
+          }
+        ],
+        "redHeaderTotal": "123.00",
+        "greenHeaderAndCustomerBalanceTotal": "34.00",
+        "greenSalesByProduct": {
+          "A": {"Quantity": "1.000", "Amount": "4.00", "VATAmount": "0.00"},
+          "B": {"Quantity": "2.000", "Amount": "10.00", "VATAmount": "2.00"},
+          "C": {"Quantity": "3.000", "Amount": "6.00", "VATAmount": "0.00"},
+          "D": {"Quantity": "1.000", "Amount": "10.00", "VATAmount": "2.00"}
+        },
+        "preservationControlsRedAndGreen": {
+          "inventoryAfter": {"A": "9.000", "B": "8.000", "C": "7.000", "D": "9.000"},
+          "costQuantityAfter": {"A": "9.000", "B": "8.000", "C": "7.000", "D": "9.000"},
+          "costAmountAfter": {"A": "9.00", "B": "8.00", "C": "7.00", "D": "9.00"},
+          "movementQuantities": {"A": "1.000", "B": "2.000", "C": "3.000", "D": "1.000"},
+          "costMovementAmounts": {"A": "1.00", "B": "2.00", "C": "3.00", "D": "1.00"}
+        }
+      },
+      {
+        "id": "target_mixed_five_reordered_edge_stale",
+        "documentSettings": {
+          "ExchangeRate": "1",
+          "Multiplier": "1",
+          "VATWithholding": false,
+          "ExemptFromVAT": false
+        },
+        "seedPerProduct": {
+          "inventoryQuantity": "10.000",
+          "costQuantity": "10.000",
+          "costAmount": "10.00"
+        },
+        "orderedRows": [
+          {
+            "position": 1,
+            "product": "D",
+            "inputRole": "stale",
+            "Quantity": "1.000",
+            "Price": "10.00",
+            "VATRatePercent": "20",
+            "before": {"Amount": "1.00", "VATAmount": "0.00", "Total": "1.00"},
+            "after": {"Amount": "10.00", "VATAmount": "2.00", "Total": "12.00"}
+          },
+          {
+            "position": 2,
+            "product": "C",
+            "inputRole": "consistent-control-inside-target",
+            "Quantity": "3.000",
+            "Price": "2.00",
+            "VATRatePercent": "0",
+            "before": {"Amount": "6.00", "VATAmount": "0.00", "Total": "6.00"},
+            "after": {"Amount": "6.00", "VATAmount": "0.00", "Total": "6.00"}
+          },
+          {
+            "position": 3,
+            "product": "A",
+            "inputRole": "consistent-control-inside-target",
+            "Quantity": "1.000",
+            "Price": "4.00",
+            "VATRatePercent": "0",
+            "before": {"Amount": "4.00", "VATAmount": "0.00", "Total": "4.00"},
+            "after": {"Amount": "4.00", "VATAmount": "0.00", "Total": "4.00"}
+          },
+          {
+            "position": 4,
+            "product": "B",
+            "inputRole": "consistent-control-inside-target",
+            "Quantity": "2.000",
+            "Price": "5.00",
+            "VATRatePercent": "20",
+            "before": {"Amount": "10.00", "VATAmount": "2.00", "Total": "12.00"},
+            "after": {"Amount": "10.00", "VATAmount": "2.00", "Total": "12.00"}
+          },
+          {
+            "position": 5,
+            "product": "E",
+            "inputRole": "stale",
+            "Quantity": "2.000",
+            "Price": "3.00",
+            "VATRatePercent": "0",
+            "before": {"Amount": "50.00", "VATAmount": "0.00", "Total": "50.00"},
+            "after": {"Amount": "6.00", "VATAmount": "0.00", "Total": "6.00"}
+          }
+        ],
+        "redHeaderTotal": "73.00",
+        "greenHeaderAndCustomerBalanceTotal": "40.00",
+        "greenSalesByProduct": {
+          "D": {"Quantity": "1.000", "Amount": "10.00", "VATAmount": "2.00"},
+          "C": {"Quantity": "3.000", "Amount": "6.00", "VATAmount": "0.00"},
+          "A": {"Quantity": "1.000", "Amount": "4.00", "VATAmount": "0.00"},
+          "B": {"Quantity": "2.000", "Amount": "10.00", "VATAmount": "2.00"},
+          "E": {"Quantity": "2.000", "Amount": "6.00", "VATAmount": "0.00"}
+        },
+        "preservationControlsRedAndGreen": {
+          "inventoryAfter": {"D": "9.000", "C": "7.000", "A": "9.000", "B": "8.000", "E": "8.000"},
+          "costQuantityAfter": {"D": "9.000", "C": "7.000", "A": "9.000", "B": "8.000", "E": "8.000"},
+          "costAmountAfter": {"D": "9.00", "C": "7.00", "A": "9.00", "B": "8.00", "E": "8.00"},
+          "movementQuantities": {"D": "1.000", "C": "3.000", "A": "1.000", "B": "2.000", "E": "2.000"},
+          "costMovementAmounts": {"D": "1.00", "C": "3.00", "A": "1.00", "B": "2.00", "E": "2.00"}
+        }
+      }
+    ],
+    "retainedControls": [
+      "preserve_consistent_vat20 from amendment 1",
+      "existing_insufficient_stock from amendment 1"
+    ],
+    "evidenceInterpretation": {
+      "businessConsequences": [
+        "persisted row Amount/VATAmount/Total",
+        "persisted header Total",
+        "Sales recorder Quantity/Amount/VATAmount",
+        "CustomerBalance recorder Amount"
+      ],
+      "preservationOnly": [
+        "InventoryInWarehouses movements and balances",
+        "InventoryCost movements and balances",
+        "existing insufficient-stock rejection and atomicity"
+      ],
+      "warning": "Inventory/cost algorithms are existing unrelated behavior. Their exact vectors detect regression but are not part of the new derived-amount business oracle."
+    },
+    "claimLimit": "The two cardinalities/orders materially distinguish named positional shortcuts and prove correct-row preservation inside mixed shapes. They do not mathematically enumerate all cardinalities; collection-wide coverage is additionally established by source review of complete traversal."
+  },
+  "sourceReviewPolicySupersedingAmendment2Syntax": {
+    "allowedTrackedProductionFile": "Documents/SalesInvoice/Ext/ObjectModule.bsl",
+    "required": [
+      "The normal non-DataExchange BeforeWrite path traverses the complete Inventory collection exactly once for normalization.",
+      "Each visited row is passed to InventoryTabularSectionClientServer.CalculateAmount(row, VATWithholding) before the existing header Total summation.",
+      "No hard-coded row index/position, VAT-rate branch, cardinality restriction, inline replacement formula, or alternate normalization entry point is added.",
+      "No unrelated rejection, Cancel assignment, exception, early return, filtering, sorting, row add/delete, post-helper overwrite, posting change, stock-control change, metadata change, sibling-document change, or DataExchange.Load change is added."
+    ],
+    "notRequiredAsSemanticProof": [
+      "Exact For Each token spelling",
+      "A textual helper-call grep without control-flow review",
+      "Any claim that finite runtime cases alone prove all collection cardinalities"
+    ],
+    "preferredCandidateShape": "For KISS and auditability, a direct unconditional For Each row loop calling the existing helper immediately before the existing Total summation remains preferred, but preference is patch design rather than runtime semantics."
+  },
+  "reviewGate": {
+    "status": "owner-hold",
+    "requiredBeforeProductionOrNativeRed": [
+      "Independent adversarial PASS on the exact commit/tree containing amendment 3",
+      "Explicit owner acceptance after that PASS",
+      "Sufficient disk space or explicit cleanup authorization for exact inventoried paths"
+    ],
+    "challenge": "Independently test runtime semantic closure, mixed-shape preservation, honest VAT scope, preservation-vs-oracle separation, and source-policy sufficiency without treating exact syntax as runtime evidence."
+  }
+}
