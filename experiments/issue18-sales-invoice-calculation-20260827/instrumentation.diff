@@ -1,22 +1,14 @@
---- a/Ext/ManagedApplicationModule.bsl
-+++ b/Ext/ManagedApplicationModule.bsl
-@@ -63,6 +63,9 @@
- #EndIf
- 	// End StandardSubsystems
- 	
-+	// Issue #18 probe-only instrumentation. Not production logic.
-+	JetServerCall.Issue18RuntimeProbe("<RECEIPT_FILE>", "<STAGE_FILE>", "<RUN_NONCE>", "<RUN_MODE>");
-+	
- EndProcedure
- 
- Procedure BeforeExit(Cancel, WarningText)
+diff --git a/CommonModules/JetServerCall/Ext/Module.bsl b/CommonModules/JetServerCall/Ext/Module.bsl
+index 5f600ff..f900c3e 100644
 --- a/CommonModules/JetServerCall/Ext/Module.bsl
 +++ b/CommonModules/JetServerCall/Ext/Module.bsl
-@@ -14,4 +14,271 @@
+@@ -14,4 +14,271 @@ Function GetVATRateValue(VATRate) Export
  	
  EndFunction
  
--#EndRegion+#EndRegion
+-#EndRegion
+\ No newline at end of file
++#EndRegion
 +// Issue #18 probe-only instrumentation. Not production logic.
 +Procedure Issue18RuntimeProbe(ReceiptPath, StagePath, Nonce, Mode) Export
 +	Issue18WriteStage(StagePath, Nonce, "server-entered");
@@ -284,3 +276,17 @@
 +	Writer.Write("nonce###" + Nonce + Chars.LF + "stage###" + Stage + Chars.LF);
 +	Writer.Close();
 +EndProcedure
+diff --git a/Ext/ManagedApplicationModule.bsl b/Ext/ManagedApplicationModule.bsl
+index 3a51496..01f33c3 100644
+--- a/Ext/ManagedApplicationModule.bsl
++++ b/Ext/ManagedApplicationModule.bsl
+@@ -63,6 +63,9 @@ Procedure OnStart()
+ #EndIf
+ 	// End StandardSubsystems
+ 	
++	// Issue #18 probe-only instrumentation. Not production logic.
++	JetServerCall.Issue18RuntimeProbe("<RECEIPT_FILE>", "<STAGE_FILE>", "<RUN_NONCE>", "<RUN_MODE>");
++	
+ EndProcedure
+ 
+ Procedure BeforeExit(Cancel, WarningText)

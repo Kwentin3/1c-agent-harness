@@ -34,12 +34,15 @@ Review artifacts:
 
 - [`production-patch.diff`](production-patch.diff)
 - [`instrumentation.diff`](instrumentation.diff)
+- [`instrumentation-summary.json`](instrumentation-summary.json)
 - [`native-invocations.json`](native-invocations.json)
 - [`red-receipt.txt`](red-receipt.txt) and [`red-summary.json`](red-summary.json)
 - [`green-receipt.txt`](green-receipt.txt) and [`green-summary.json`](green-summary.json)
 - [`repeat-receipt.txt`](repeat-receipt.txt) and [`repeat-summary.json`](repeat-summary.json)
 
 The required milestone repeat started from a new physical work copy and disposable IB reconstructed directly from the immutable snapshot. It used the same production bytes (`e617889f…`) and expectation-free probe template (`18b04dcb…`), and matched primary GREEN on every non-binding observation value. No driver, framework, skill change, or speculative evidence hardening was added.
+
+The instrumentation diff is a reconstructable LF-normalized template, not merely readable text. It preserves the immutable source file's missing-final-newline marker, passes `git apply --check`, and reconstructs the sanitized RED/GREEN/repeat probe bytes exactly. [`instrumentation-summary.json`](instrumentation-summary.json) binds the patch hash, declared run bindings, and both reconstructed target hashes.
 
 Measured verdict: **SECOND TASK PASS / COST NOT YET LOW**. RED→first GREEN took 289 seconds and the task-specific probe was smaller than #14 (270 vs 328 added lines), but frozen-contract→RED took 4,076 seconds because two independent countermodels, owner HOLD, remote-reviewability work and the disk gate were real churn. The full core-loop cost therefore did not demonstrate a reliable reduction.
 
