@@ -43,7 +43,7 @@
     "removedLines": null
   },
   "manualWork": {
-    "commandBlocks": 10,
+    "commandBlocks": 11,
     "pathSubstitutions": 0,
     "manifestUpdates": 0,
     "publishedComments": 2,
@@ -70,6 +70,12 @@
       "status": "closed-by-amendment",
       "locator": "independent review of commit 94a2eb37 found last-row-only, fixed-position/VAT20-only, exchange/cost-oracle gaps",
       "effect": "Transparent amendment required before production patch; native attempts remain zero."
+    },
+    {
+      "id": "PREPATCH-REVIEW-2",
+      "status": "closed-by-amendment-2",
+      "locator": "independent review of commit 58262bac found a correct helper loop plus unauthorized Inventory.Count() > 3 rejection survives",
+      "effect": "Amendment 2 constrains the executable production delta; production patch and native attempts remain zero."
     }
   ],
   "baselineIssue14": {

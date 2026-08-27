@@ -1,0 +1,80 @@
+{
+  "schemaVersion": 1,
+  "issue": 18,
+  "status": "frozen-semantic-amendment-2-before-production-patch-and-native-red",
+  "amendsWithoutRewriting": {
+    "priorContractCommit": "58262bac1d4f8b15ffbb7b6c862f9308fb16fd35",
+    "priorContractTree": "151114f79aeaf95e0eec28233c9e8b36a6019f52",
+    "priorArtifact": "experiments/issue18-sales-invoice-calculation-20260827/task-contract-amendment-1.json",
+    "reviewVerdict": "FAIL",
+    "survivingCountermodel": "Normalize every Inventory row with the required helper, then reject documents where Inventory.Count() > 3 before summing Total.",
+    "reason": "The dynamic matrix contains one-row controls and one three-row target. Amendment 1 required the helper loop but did not exclude an ancillary row-count rejection or post-helper overwrite.",
+    "preProductionAssertion": "No production patch, complete native RED, or GREEN exists. Native attempt count remains zero."
+  },
+  "businessRuleUnchanged": "On every ordinary non-DataExchange.Load SalesInvoice write, every Inventory row is normalized through the existing InventoryTabularSectionClientServer.CalculateAmount calculation path before header Total is summed; this change introduces no new acceptance or rejection rule.",
+  "addedCountermodels": [
+    {
+      "id": "CM-SHAPE-OVERRESTRICTION",
+      "wrongRule": "Normalize correctly but reject a valid document based on row count or row shape.",
+      "killedBy": ["exact bounded production-delta criterion"]
+    },
+    {
+      "id": "CM-HELPER-THEN-OVERWRITE",
+      "wrongRule": "Call the helper for every row but overwrite a row/header derived value afterward.",
+      "killedBy": ["exact bounded production-delta criterion"]
+    },
+    {
+      "id": "CM-HELPER-PLUS-ANCILLARY-CONTROL-FLOW",
+      "wrongRule": "Call the helper correctly but add filtering, sorting, cancellation, rejection, early return, or another branch that changes ordinary-write behavior.",
+      "killedBy": ["exact bounded production-delta criterion"]
+    }
+  ],
+  "exactBoundedProductionDelta": {
+    "allowedTrackedProductionFile": "Documents/SalesInvoice/Ext/ObjectModule.bsl",
+    "baseSeam": "In the existing normal BeforeWrite path, after the DataExchange.Load early return and immediately before Total = Inventory.Total(\"Total\").",
+    "requiredSemanticAddition": [
+      "One unconditional For Each loop over the complete Inventory tabular section.",
+      "The loop body contains exactly one production statement: InventoryTabularSectionClientServer.CalculateAmount(CurrentInventoryRow, VATWithholding).",
+      "The existing Total = Inventory.Total(\"Total\") statement remains immediately after the loop."
+    ],
+    "forbiddenProductionAdditions": [
+      "Any new condition, branch, rejection, Cancel assignment, exception, assertion, early return, filter, sort, row-count/cardinality check, row deletion/addition, or alternate entry-point behavior.",
+      "Any new assignment to Inventory row fields or document fields other than the existing header Total assignment already present in the base file.",
+      "Any post-helper overwrite or second calculation path.",
+      "Any change to Posting, ManagerModule, metadata, sibling documents, common helper implementation, or DataExchange.Load behavior."
+    ],
+    "allowedNonSemanticDiff": [
+      "Indentation and line-ending normalization required to represent the minimal patch.",
+      "A concise explanatory comment adjacent to the loop, provided it changes no behavior."
+    ],
+    "acceptanceCheck": "Review the production diff against the immutable base bytes. After excluding allowed whitespace/comment-only changes, the only added executable behavior must be the unconditional complete-row helper loop described above; existing executable statements must not be removed, reordered, or changed.",
+    "whyNoUnboundedShapeMatrix": "The issue authorizes one exact normalization change and no new eligibility rule. Constraining the executable delta closes arbitrary row-count and shape restrictions without pretending a finite set of document sizes proves all cardinalities."
+  },
+  "dynamicContractUnchanged": {
+    "authoritativeArtifacts": [
+      "experiments/issue18-sales-invoice-calculation-20260827/task-contract.json",
+      "experiments/issue18-sales-invoice-calculation-20260827/task-contract-amendment-1.json"
+    ],
+    "target": "target_three_inconsistent_mixed_vat",
+    "preservation": "preserve_consistent_vat20",
+    "existingNegativeControl": "existing_insufficient_stock",
+    "note": "All exact stale/normalized draft, posting, exchange, inventory and cost vectors from amendment 1 remain frozen without change."
+  },
+  "semanticClosureSelfCheck": {
+    "question": "Which materially plausible wrong implementation can still pass the dynamic matrix and exact bounded production-delta criterion?",
+    "answer": "No retained countermodel survives. The dynamic matrix distinguishes row/field/order effects and existing side effects; the exact executable-delta criterion excludes added cardinality or shape rejection, post-helper overwrite, filtering, alternate control flow, and stock-bypass logic.",
+    "residualUnknownsUnchanged": [
+      "DataExchange.Load, VATWithholding=true/tax-exemption combinations, UI manual amount editing, advance clearing, EDI, undo/reposting/imports, SupplierInvoice and other documents remain outside scope.",
+      "Native RED can invalidate a frozen prediction; any mismatch requires stop and a transparent amendment before production patch."
+    ]
+  },
+  "reviewGate": {
+    "requiredBefore": [
+      "production patch",
+      "complete native RED",
+      "native GREEN"
+    ],
+    "reviewTarget": "Exact commit/tree containing the original contract and both transparent amendments, with no production patch.",
+    "challenge": "Try to construct a materially wrong implementation that passes the unchanged dynamic observations and also obeys the exact bounded executable-delta criterion."
+  }
+}
