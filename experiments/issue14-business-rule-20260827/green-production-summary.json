@@ -1,0 +1,94 @@
+{
+  "schemaVersion": 1,
+  "issue": 14,
+  "phase": "GREEN-production-patch",
+  "runNonce": "green-full-7d54ba68acb84d6a",
+  "localRunRoot": ".local/runs/issue14-business-rule-primary/green-full-7d54ba68acb84d6a",
+  "receiptSha256": "4bc33c9a99ea99b0025dd12c5069664f661f83fad4e4a8beafb28ecf51e0dab1",
+  "publishedReceiptLineEndings": "LF-normalized for git diff --check",
+  "rawLocalReceiptSha256": "e9a29799bd40a5524a8885fd756c517b43cd41c9b03d65a17d47da6cfa47ce25",
+  "rawLocalReceiptLineEndings": "platform TextWriter CRLF with UTF-8 BOM",
+  "productionPatch": {
+    "path": "experiments/issue14-business-rule-20260827/production-patch.diff",
+    "sha256": "73d484d337c320f45204fbd0c95940c9d5ead1922f7cb4b88f2229c32e6c43e3",
+    "changedFile": "Documents/InventoryWriteOff/Ext/ObjectModule.bsl",
+    "baseFileSha256": "86f383323de83d4912c99854ec6db7cbf59e2265d62a97d8143a46eacba07d9c",
+    "patchedFileSha256": "aac9b1b60a16c3aa57cab1e5e050e0cf526d9d941cc43c2a079269e72ae4f3ef",
+    "diffStats": {
+      "+": 6,
+      "-": 0,
+      "files": 1
+    },
+    "applyCheck": "git apply --ignore-space-change --unidiff-zero against disposable copy of CRLF snapshot succeeded; byte hash differs because patch application normalizes touched file line endings"
+  },
+  "native": {
+    "platform": ".local/platform/1cv8t/x86_64/8.5.1.1150/1cv8t",
+    "createDumpResult": "0",
+    "loadDumpResult": "0",
+    "loadLogContains": "Configuration successfully updated",
+    "runtimeCompletion": "receipt complete###true observed; client process group then terminated by harness"
+  },
+  "observations": {
+    "invalidCasesRejectedAtomically": {
+      "negative_single": {
+        "draftSucceeded": "true",
+        "postCallSucceeded": "false",
+        "postedAfter": "false",
+        "inventoryAfterA": "10",
+        "inventoryAfterB": "10",
+        "costQuantityAfterA": "10",
+        "costAmountAfterA": "10",
+        "inventoryMovementRowsA": "0",
+        "costMovementRowsA": "0"
+      },
+      "zero_single": {
+        "draftSucceeded": "true",
+        "postCallSucceeded": "false",
+        "postedAfter": "false",
+        "inventoryAfterA": "10",
+        "inventoryAfterB": "10",
+        "costQuantityAfterA": "10",
+        "costAmountAfterA": "10",
+        "inventoryMovementRowsA": "0",
+        "costMovementRowsA": "0"
+      },
+      "mixed_same_product": {
+        "draftSucceeded": "true",
+        "postCallSucceeded": "false",
+        "postedAfter": "false",
+        "inventoryAfterA": "10",
+        "inventoryAfterB": "10",
+        "costQuantityAfterA": "10",
+        "costAmountAfterA": "10",
+        "inventoryMovementRowsA": "0",
+        "costMovementRowsA": "0"
+      }
+    },
+    "existingNegativeControl": {
+      "case": "insufficient_stock_positive",
+      "postCallSucceeded": "false",
+      "postedAfter": "false",
+      "inventoryAfterA": "10"
+    },
+    "validPreservation": {
+      "normal_positive": {
+        "postedAfter": "true",
+        "inventoryAfterA": "6",
+        "costAmountAfterA": "6"
+      },
+      "minimum_positive": {
+        "postedAfter": "true",
+        "inventoryAfterA": "9.999",
+        "costQuantityAfterA": "9.999",
+        "costAmountAfterA": "10"
+      },
+      "all_positive_multi_duplicate": {
+        "postedAfter": "true",
+        "inventoryAfterA": "6",
+        "inventoryAfterB": "8",
+        "inventoryMovementRowsA": "1",
+        "inventoryMovementRowsB": "1"
+      }
+    }
+  }
+}
