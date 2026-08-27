@@ -1,6 +1,6 @@
 # Issue #18 — SalesInvoice server-side derived amount normalization
 
-Status: owner HOLD before production patch/native RED; amendment 3 awaits final independent review and explicit owner acceptance.
+Status: owner-accepted amendment 3 completed an honest native RED/GREEN core loop; exact candidate review is pending.
 
 ## Candidate
 
@@ -20,4 +20,22 @@ The raw CF and snapshot remain local and untracked. Repository artifacts use sta
 
 ## Current stop boundary
 
-No production patch or native attempt exists. The final independent pre-patch review must challenge amendment 3 at its exact published identity, and explicit owner acceptance is still required even after a PASS. Native work is also blocked until sufficient local disk space is available or cleanup is authorized for exact inventoried disposable roots; no root has been deleted.
+Owner comment `5443057227` accepted amendment 3, authorized deletion of exactly two issue-2 disposable reconstruction roots, and authorized production/native RED/GREEN. Only those two roots were removed. Available space increased from 317,677,568 to 979,791,872 bytes; deleted bytes are not directly recoverable, while the roots remain reproducible from the tracked issue-2 recipe. Protected source/snapshot/manifests, issue #14 roots, platform and dist remained present and their checked identities were unchanged.
+
+The same expectation-free probe then produced:
+
+- honest RED on unmodified production bytes (`535bbbee…`): mixed targets persisted and posted stale totals `123` and `73`;
+- GREEN on the one-file four-line production patch (`e617889f…`): the same targets persisted and posted normalized totals `34` and `40`;
+- exact observation-key parity between RED and GREEN, with 32 behavior keys changed;
+- unchanged consistent VAT20 behavior and unchanged atomic insufficient-stock rejection;
+- unchanged inventory/cost preservation vectors.
+
+Review artifacts:
+
+- [`production-patch.diff`](production-patch.diff)
+- [`instrumentation.diff`](instrumentation.diff)
+- [`native-invocations.json`](native-invocations.json)
+- [`red-receipt.txt`](red-receipt.txt) and [`red-summary.json`](red-summary.json)
+- [`green-receipt.txt`](green-receipt.txt) and [`green-summary.json`](green-summary.json)
+
+No driver, framework, skill change, clean repeat, or additional evidence hardening was added. The next gate is exact source/evidence review of the tracked candidate; merge and issue closure remain owner decisions.

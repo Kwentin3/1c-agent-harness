@@ -1,0 +1,45 @@
+{
+  "schemaVersion": 1,
+  "issue": 18,
+  "phase": "RED-before-production-patch",
+  "runNonce": "red-2a33da1cbc19464d",
+  "productionFileSha256": "535bbbee743a15a92d536c824dd2b69418f6e1d0429b31d9f0b9ca2084a65611",
+  "receiptSha256Raw": "f9519a365097d552a89fc1b3fdbac1d8706868e639c46107df7ce70b23502cb6",
+  "receiptSha256Published": "77434fa18c6e810ff54266fa02533303050bf440755e30a2ced41d45ee2c2367",
+  "validation": {
+    "receiptSha256": "f9519a365097d552a89fc1b3fdbac1d8706868e639c46107df7ce70b23502cb6",
+    "mode": "red-source-logic",
+    "target4": {
+      "draftHeader": "123",
+      "postHeader": "123",
+      "customer": "123"
+    },
+    "target5": {
+      "draftHeader": "73",
+      "postHeader": "73",
+      "customer": "73"
+    },
+    "consistent": {
+      "draftHeader": "12",
+      "posted": "true"
+    },
+    "insufficient": {
+      "postCallSucceeded": "false",
+      "posted": "false",
+      "inventoryAfter": "10",
+      "movementRows": [
+        "0",
+        "0",
+        "0",
+        "0"
+      ]
+    },
+    "redVerdict": "EXPECTED_FAIL_PRODUCTION_BEHAVIOR_MISSING"
+  },
+  "native": {
+    "createDumpResult": "0",
+    "loadDumpResult": "0",
+    "loadLogContains": "Configuration successfully updated",
+    "runtimeCompletion": "stable complete###true; tracked process session then terminated"
+  }
+}

@@ -1,0 +1,13 @@
+--- a/Documents/SalesInvoice/Ext/ObjectModule.bsl
++++ b/Documents/SalesInvoice/Ext/ObjectModule.bsl
+@@ -77,6 +77,10 @@
+ 		Return;
+ 	EndIf;
+ 	
++	For Each InventoryRow In Inventory Do
++		InventoryTabularSectionClientServer.CalculateAmount(InventoryRow, VATWithholding);
++	EndDo;
++	
+ 	Total = Inventory.Total("Total");
+ 	
+ EndProcedure

@@ -1,7 +1,7 @@
 {
   "schemaVersion": 1,
   "issue": 18,
-  "status": "owner-hold-pre-patch-amendment-3",
+  "status": "core-loop-green-complete-review-pending",
   "boundaries": {
     "coreLoopEndsAt": "first complete native GREEN",
     "milestoneStartsAfter": "first complete native GREEN"
@@ -10,9 +10,9 @@
     "reconnaissanceStart": "2026-08-27T16:40:50Z",
     "productionSeamProven": "2026-08-27T16:50:29Z",
     "contractFrozen": "2026-08-27T16:52:23Z",
-    "firstHonestRed": null,
-    "productionPatchStarted": null,
-    "firstCompleteGreen": null,
+    "firstHonestRed": "2026-08-27T18:00:19Z",
+    "productionPatchStarted": "2026-08-27T18:01:22Z",
+    "firstCompleteGreen": "2026-08-27T18:05:08Z",
     "repeatStarted": null,
     "repeatCompleted": null,
     "finalReviewCompleted": null
@@ -20,31 +20,35 @@
   "phaseMetrics": {
     "reconnaissanceToSeamSeconds": 579,
     "seamToFrozenContractSeconds": 114,
-    "frozenContractToFirstRedSeconds": null,
-    "redToFirstGreenSeconds": null,
-    "milestoneOverheadSeconds": null
+    "frozenContractToFirstRedSeconds": 4076,
+    "redToFirstGreenSeconds": 289,
+    "milestoneOverheadSeconds": null,
+    "redToProductionPatchSeconds": 63,
+    "productionPatchToFirstGreenSeconds": 226
   },
   "nativeAttempts": {
     "beforeRed": 0,
-    "redAcceptedAttempt": null,
+    "redAcceptedAttempt": 1,
     "beforeGreen": 0,
-    "greenAcceptedAttempt": null,
+    "greenAcceptedAttempt": 1,
     "repeat": 0
   },
   "taskSpecificInstrumentation": {
-    "files": null,
-    "addedLines": null,
-    "removedLines": null,
-    "bytes": null
+    "files": 2,
+    "addedLines": 270,
+    "removedLines": 0,
+    "bytes": 14079,
+    "note": "probe-only ManagedApplication OnStart call plus JetServerCall observation code; same semantic template in RED/GREEN with run-binding substitutions"
   },
   "productionDiff": {
-    "files": null,
-    "addedLines": null,
-    "removedLines": null
+    "files": 1,
+    "addedLines": 4,
+    "removedLines": 0,
+    "path": "Documents/SalesInvoice/Ext/ObjectModule.bsl"
   },
   "manualWork": {
-    "commandBlocks": 15,
-    "pathSubstitutions": 0,
+    "commandBlocks": 23,
+    "pathSubstitutions": 8,
     "manifestUpdates": 0,
     "publishedComments": 6,
     "note": "Counts are updated at phase boundaries; exploratory read-only tool batches count as command blocks, individual file reads do not."
@@ -61,9 +65,9 @@
   "deviations": [
     {
       "id": "DISK-SPACE-PRE-NATIVE",
-      "status": "open",
-      "locator": "df -h . at 2026-08-27T16:40Z reported 351 MiB available while historical primary/repeat roots are about 326 MiB each",
-      "effect": "No write/native attempt will start until sufficient room for physically separate fresh roots is established without unauthorized cleanup."
+      "status": "closed-by-exact-owner-authorized-cleanup",
+      "locator": "owner comment 5443057227; removed only .local/runs/bootstrap-runtime-verify and .local/runs/bootstrap-order-verify",
+      "effect": "Available bytes increased from 317677568 to 979791872 (delta 662114304). Prior 1153528748 estimate followed symlinks; deletion measured 654499529 regular-file bytes without following symlinks. Deleted bytes are not directly recoverable; roots are reproducible from tracked issue-2 recipe."
     },
     {
       "id": "PREPATCH-REVIEW-1",
@@ -79,7 +83,7 @@
     },
     {
       "id": "OWNER-HOLD-1",
-      "status": "amendment-3-pending-review-and-owner-acceptance",
+      "status": "closed-by-amendment-3-pass-and-owner-acceptance-5443057227",
       "locator": "issue comment 5442550859",
       "effect": "History was pushed/read back; amendment 3 separates runtime semantics from patch policy, adds mixed 4/5-row shapes, narrows VAT runtime claim, and classifies inventory/cost as preservation controls. Production/native remain blocked."
     }
@@ -92,6 +96,9 @@
     "instrumentationAddedLines": 328,
     "productionAddedLines": 6
   },
-  "verdict": "pre-patch reviewer PASS at e2202de, superseded as an owner gate by amendment 3; final review and owner acceptance pending",
-  "priorityToolCandidate": null
+  "verdict": "honest native RED observed stale 123/73; native GREEN observed normalized 34/40 with controls preserved; exact candidate review pending",
+  "priorityToolCandidate": {
+    "candidate": "disposable native IB lifecycle plus complete-marker polling/process cleanup",
+    "decision": "still the first narrow automation candidate, but not implemented in issue #18; direct native commands reused successfully and owner prohibited a new tool/framework in this bounded cycle"
+  }
 }
