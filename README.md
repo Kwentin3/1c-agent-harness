@@ -24,6 +24,14 @@
 > следующее write-изменение требует отдельной issue, отделённой work copy и disposable test ИБ
 > (см. AGENTS.md).
 
+> Дополнительно (issue #14 / PR #15): выполнен один прикладной data-backed write-cycle
+> на Jet `InventoryWriteOff` — semantic contract до production patch, native RED,
+> минимальный production patch, native GREEN и clean repeat того же правила. Это доказывает
+> один реальный бизнес-правило-срез, но ещё не доказывает дешёвую повторяемость на другой
+> задаче, универсальную write-среду, metadata changes, GUI/E2E или production deployment.
+> Knowledge handoff и следующий gate зафиксированы в
+> [`docs/write-cycle-knowledge-handoff.md`](docs/write-cycle-knowledge-handoff.md).
+
 ## Цель MVP
 
 Кодовый агент в Linux-окружении получает снимок конфигурации 1С и может:
@@ -66,6 +74,7 @@ MVP считается полезным не потому, что агент н�
 - [Публичный SDMS review package](experiments/sdms-product-eval-20260825-review/README.md)
 - [Подтверждённая граница совместимости](docs/compatibility.md)
 - [Готовность агентных клиентов](docs/client-readiness.md)
+- [Knowledge handoff write-cycle экспериментов](docs/write-cycle-knowledge-handoff.md)
 - [Правила работы кодового агента](AGENTS.md)
 
 ## Evidence harness

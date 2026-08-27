@@ -1,0 +1,136 @@
+{
+  "canonical_ref": "Git commit containing this manifest",
+  "canonical_repository": "https://github.com/Kwentin3/1c-agent-harness",
+  "install_base": "$HERMES_HOME",
+  "packages": [
+    {
+      "install_root": "skills/1c/1c-enterprise-linux",
+      "name": "1c-enterprise-linux",
+      "resource_manifest_sha256": "960ad98f4dad17e0f016c233fdea188696ecae41732d92b759b03a87263e2fa9",
+      "resources": [
+        {
+          "bytes": 19181,
+          "path": "SKILL.md",
+          "sha256": "98aee79359da9a651c76ee00d574acb6c8b311b0586848acfba3d4862be05a9e"
+        },
+        {
+          "bytes": 4329,
+          "path": "references/acquisition-and-tooling.md",
+          "sha256": "6fc2cc3ed09879632d00e97d031f693be373f12a9c49ffdbf2975ae7e6ad0e53"
+        },
+        {
+          "bytes": 3826,
+          "path": "references/blind-metadata-arm-freeze.md",
+          "sha256": "740d3f382e088e92500d5fd205760b635d2f0f032d25a7ecedc3106c538ea355"
+        },
+        {
+          "bytes": 3904,
+          "path": "references/bounded-frontier-metadata-candidate.md",
+          "sha256": "46636a78f8c07145fbe1a36be108b371a8e4ab472fa0c74e25b8905c84b81275"
+        },
+        {
+          "bytes": 4139,
+          "path": "references/data-backed-document-write-probes.md",
+          "sha256": "52ba0c02bbc378d0585136f4b01dd6275c4dd2a6679c7950dcbc98653d74e3eb"
+        },
+        {
+          "bytes": 3357,
+          "path": "references/external-agent-evidence-runs.md",
+          "sha256": "5cdf0bdec3423b43f07f4840e62a12ddb678ba29aefec5aed2927f839d412757"
+        },
+        {
+          "bytes": 5865,
+          "path": "references/final-bounded-evidence-review.md",
+          "sha256": "d7c32e62be7fa58fa749aa89cd17395ab4d25dae4a4d8530bbaa31ffbc21670d"
+        },
+        {
+          "bytes": 6143,
+          "path": "references/frozen-evidence-package.md",
+          "sha256": "e5e6e36adfbad0999ac98f4babdffd4add1090b5b0a18f04ce2870c3bfbbcc6e"
+        },
+        {
+          "bytes": 2407,
+          "path": "references/github-closure-handoff.md",
+          "sha256": "c017b5d0ac55944ddaf3b224d9b0bbb6c3cfbbbc165a8c44b4b2d2703b414091"
+        },
+        {
+          "bytes": 5964,
+          "path": "references/gui-deps-8.5.md",
+          "sha256": "0dab84b5b63d764d5e006809a12001bcda6efa982974fcaafb073f336d7e516d"
+        },
+        {
+          "bytes": 3870,
+          "path": "references/independent-frozen-snapshot-acceptance.md",
+          "sha256": "d47f9851576d633b875c7d901f36a456eccbf0d195fa893e74727e49699ddd97"
+        },
+        {
+          "bytes": 10743,
+          "path": "references/lab-spec-compliance-review.md",
+          "sha256": "c0789bd4088fbcc593c2594b40c6f87d5af5e1375d0d1a5d4f7b568084717420"
+        },
+        {
+          "bytes": 3728,
+          "path": "references/minimal-synthetic-metadata-task-freeze.md",
+          "sha256": "98fd6d79ce5bdfda9710030f45c6cf826cd9980e342da2743b921ef2b2cb2345"
+        },
+        {
+          "bytes": 13165,
+          "path": "references/native-write-cycle-runtime.md",
+          "sha256": "3b8780504b27a9c9f2da33b8d1df96e4a2d9ee28b57f34c0504e983332be71e3"
+        },
+        {
+          "bytes": 5861,
+          "path": "references/representative-config-selection.md",
+          "sha256": "541cdcbffa5b37b0d8bd2124b800dbb1e0adeaa4208b9308b3b0336a78eb5096"
+        },
+        {
+          "bytes": 4272,
+          "path": "references/reproducible-debian-runtime.md",
+          "sha256": "9ebd31f879a0cf8e3d237a4ff00e7192141fa6285e8e87e73dbac74d7d83326c"
+        },
+        {
+          "bytes": 4167,
+          "path": "references/static-snapshot-index-audits.md",
+          "sha256": "d341a9a8f0d9363f1fd09912010269105ff0ed0364910df0ad5ee5bb87d5920a"
+        },
+        {
+          "bytes": 8268,
+          "path": "references/training-edition-lab.md",
+          "sha256": "96bd89ce3c913f1656dcb96d165020c52115f5b7329fe457f887b47357c41892"
+        },
+        {
+          "bytes": 8700,
+          "path": "references/write-cycle-driver-automation.md",
+          "sha256": "52c4cc3970daa88442760d0fe722ee07d82f38edce7b71965d58753cc6caa08c"
+        },
+        {
+          "bytes": 5864,
+          "path": "references/write-cycle-proof-audit.md",
+          "sha256": "706ce1785ac55d6b00d87e47e22ebf64e03292519a485de30e79a2d59eac5cac"
+        }
+      ],
+      "source_root": "skills/1c/1c-enterprise-linux",
+      "version": "1.2.0"
+    },
+    {
+      "install_root": "skills/software-development/semantic-contract-testing",
+      "name": "semantic-contract-testing",
+      "resource_manifest_sha256": "8eada9451258b9c7c392073842c7b5532ba38ca674a849f353863bd336781bcf",
+      "resources": [
+        {
+          "bytes": 4678,
+          "path": "SKILL.md",
+          "sha256": "52ab62f828c2c5686dcd7cc9861d4f68c502ee8be01c8d0fe56e3b4932542986"
+        },
+        {
+          "bytes": 6493,
+          "path": "references/semantic-business-rule-contracts.md",
+          "sha256": "88b57c1fdf678ac7bac2d177c50476403e822dd943d182aee3ab0dfa2bb57178"
+        }
+      ],
+      "source_root": "skills/software-development/semantic-contract-testing",
+      "version": "0.1.0"
+    }
+  ],
+  "schema_version": 1
+}

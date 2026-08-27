@@ -81,6 +81,20 @@ artifact; standalone альтернативные CLI не установлен�
 режимом по умолчанию; расширение на metadata-объекты, другие конфигурации, старые платформы
 и другие агентные клиенты остаётся отдельной работой со своей моделью безопасности.
 
+**Прикладной data-backed write-cycle принят (issue #14, PR #15 смержен).** На учебной
+конфигурации Jet выполнен один полный прикладной цикл для `InventoryWriteOff`: бизнес-правило
+сначала сведено к semantic contract, затем проверено adversarial review до production patch,
+получен native RED на исходной логике, внесён минимальный production patch одного BSL-модуля,
+получены native GREEN и clean repeat того же правила. См.
+[`experiments/issue14-business-rule-20260827/`](experiments/issue14-business-rule-20260827/README.md).
+
+Этот результат доказывает один реальный data-backed business-rule slice, но не доказывает
+дешёвую повторяемость на другой задаче, универсальную write-среду, metadata changes,
+GUI/E2E, production deployment или широкую поддержку конфигураций. Knowledge handoff issue #16
+фиксирует правильные слои знаний, baseline стоимости #10/#14, tool candidates без реализации
+и следующий gate — вторую отличающуюся прикладную задачу с измерением предельной стоимости.
+См. [`docs/write-cycle-knowledge-handoff.md`](docs/write-cycle-knowledge-handoff.md).
+
 **Минимальный контекст проверен (issue #12).** На одинаковых frozen задачах direct-source
 baseline сравнен с bounded context-frontier protocol без parser/index/RAG/MCP. Оба подхода
 полностью закрыли SDMS-задачу и создали нативно принимаемую Jet metadata-правку. Оба Jet arm
