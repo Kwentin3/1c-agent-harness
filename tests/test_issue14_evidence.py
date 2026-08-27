@@ -59,6 +59,31 @@ class Issue14EvidencePackageTests(unittest.TestCase):
             with self.assertRaises(AssertionError):
                 validate_package(dst)
 
+    def test_negative_native_argv_mutations_rejected_even_with_refreshed_manifest(self) -> None:
+        mutators = {
+            "remove_update_db_cfg": lambda native: native["runs"]["canonical-green-2"]["commands"]["load"].remove("/UpdateDBCfg"),
+            "redirect_runtime_out": lambda native: native["runs"]["canonical-green-2"]["commands"]["runtime"].__setitem__(
+                native["runs"]["canonical-green-2"]["commands"]["runtime"].index("<RUN_DIR>/logs/run.log"),
+                "<RUN_DIR>/logs/other.log",
+            ),
+            "insert_unexpected_runtime_flag": lambda native: native["runs"]["canonical-green-2"]["commands"]["runtime"].insert(
+                native["runs"]["canonical-green-2"]["commands"]["runtime"].index("ENTERPRISE") + 1,
+                "/UnexpectedFlag",
+            ),
+        }
+        for name, mutate in mutators.items():
+            with self.subTest(name=name):
+                with tempfile.TemporaryDirectory() as td:
+                    dst = Path(td) / "pkg"
+                    shutil.copytree(PACKAGE, dst)
+                    native_path = dst / "native-invocations.json"
+                    native = json.loads(native_path.read_text(encoding="utf-8"))
+                    mutate(native)
+                    native_path.write_text(json.dumps(native, indent=2, ensure_ascii=False) + "\n", encoding="utf-8")
+                    rewrite_manifest(dst)
+                    with self.assertRaises(AssertionError):
+                        validate_package(dst)
+
     def test_negative_extra_receipt_line_rejected_even_with_refreshed_manifest(self) -> None:
         with tempfile.TemporaryDirectory() as td:
             dst = Path(td) / "pkg"

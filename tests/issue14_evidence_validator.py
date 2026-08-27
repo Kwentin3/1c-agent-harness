@@ -379,6 +379,58 @@ SUMMARY_TO_RECEIPT = {
     "red-source-summary.json": "red-source-receipt.txt",
 }
 
+NATIVE_BINARY = ".local/platform/1cv8t/x86_64/8.5.1.1150/1cv8t"
+XVFB_PREFIX = ["xvfb-run", "-a", "-s", "-screen 0 1280x1024x8 -nolisten tcp", NATIVE_BINARY]
+EXPECTED_INFOBASES = {
+    "red-source": "<RUN_DIR>/red-ib",
+    "green-production-historical": "<RUN_DIR>/green-ib",
+    "canonical-green-1": "<RUN_DIR>/repeat-ib",
+    "canonical-green-2": "<RUN_DIR>/canonical-green-2-ib",
+}
+
+
+def expected_native_commands(infobase: str) -> dict[str, list[str]]:
+    return {
+        "create": XVFB_PREFIX
+        + [
+            "CREATEINFOBASE",
+            f"File={infobase}",
+            "/DisableStartupDialogs",
+            "/DisableStartupMessages",
+            "/Out",
+            "<RUN_DIR>/logs/create.log",
+            "/DumpResult",
+            "<RUN_DIR>/logs/create.result",
+        ],
+        "load": XVFB_PREFIX
+        + [
+            "DESIGNER",
+            "/F",
+            infobase,
+            "/LoadConfigFromFiles",
+            "<RUN_DIR>/work-copy",
+            "/UpdateDBCfg",
+            "/DisableStartupDialogs",
+            "/DisableStartupMessages",
+            "/Out",
+            "<RUN_DIR>/logs/load.log",
+            "/DumpResult",
+            "<RUN_DIR>/logs/load.result",
+        ],
+        "runtime": XVFB_PREFIX
+        + [
+            "ENTERPRISE",
+            "/F",
+            infobase,
+            "/DisableStartupDialogs",
+            "/DisableStartupMessages",
+            "/Out",
+            "<RUN_DIR>/logs/run.log",
+            "/DumpResult",
+            "<RUN_DIR>/logs/run.result",
+        ],
+    }
+
 
 def sha256(path: Path) -> str:
     return hashlib.sha256(path.read_bytes()).hexdigest()
@@ -643,17 +695,13 @@ def validate_instrumentation_and_native_binding(package: Path, receipt_rows_by_n
         if outputs.get("runtimeCompletionObserved") is not True:
             raise AssertionError(f"{label}: runtime completion was not observed")
 
+        expected_infobase = EXPECTED_INFOBASES[label]
+        if run.get("infobase") != expected_infobase:
+            raise AssertionError(f"{label}: infobase binding mismatch")
         commands = run["commands"]
-        expected_modes = {"create": "CREATEINFOBASE", "load": "DESIGNER", "runtime": "ENTERPRISE"}
-        for command_name, expected_mode in expected_modes.items():
-            command = commands[command_name]
-            if command[:4] != ["xvfb-run", "-a", "-s", "-screen 0 1280x1024x8 -nolisten tcp"]:
-                raise AssertionError(f"{label}: xvfb prefix mismatch in {command_name}")
-            if command[4] != ".local/platform/1cv8t/x86_64/8.5.1.1150/1cv8t" or command[5] != expected_mode:
-                raise AssertionError(f"{label}: native command mode mismatch in {command_name}")
-            joined = " ".join(command)
-            if "<RUN_DIR>" not in joined:
-                raise AssertionError(f"{label}: command lacks run-root placeholder")
+        expected_commands = expected_native_commands(expected_infobase)
+        if commands != expected_commands:
+            raise AssertionError(f"{label}: native command argv mismatch")
 
         receipt_file = expected["receiptFile"]
         summary_file = expected["summaryFile"]
