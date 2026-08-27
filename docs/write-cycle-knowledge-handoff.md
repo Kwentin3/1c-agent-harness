@@ -13,7 +13,8 @@
 | [`experiments/issue10-write-cycle-20260826/`](../experiments/issue10-write-cycle-20260826/README.md) | Frozen evidence issue #10: task contract, diffs, receipts, manifest. |
 | [Issue #14](https://github.com/Kwentin3/1c-agent-harness/issues/14), [PR #15](https://github.com/Kwentin3/1c-agent-harness/pull/15) | Принятый прикладной data-backed write-cycle: `InventoryWriteOff` quantity rule, final independent PASS, merge с сохранением Git-истории. |
 | [`experiments/issue14-business-rule-20260827/`](../experiments/issue14-business-rule-20260827/README.md) | Frozen evidence issue #14: semantic contracts, reviews, RED/GREEN/repeat receipts, native bindings, validators. |
-| Skill `1c-enterprise-linux` | Переносимые operational/semantic instructions. Не хранит run-specific identities. |
+| [`skills/1c/1c-enterprise-linux/`](../skills/1c/1c-enterprise-linux/SKILL.md) | Versioned canonical source platform-specific skill: native 1C/Linux lifecycle, isolated work copy/ИБ и 1C-specific observations. |
+| [`skills/software-development/semantic-contract-testing/`](../skills/software-development/semantic-contract-testing/SKILL.md) | Versioned canonical source generic skill: semantic contract, counterimplementations, distinguishing observations, anti-tautology и evidence-tier policy. |
 
 ## Классификация знаний
 
@@ -21,12 +22,13 @@
 
 | Вывод | Основной слой | Почему |
 |---|---|---|
-| Физическое разделение immutable snapshot/manifest/CF, writable work copy, disposable file ИБ и evidence/logs | Skill | Это reusable safety discipline для будущих write-cycle задач. |
-| Native lifecycle `CREATEINFOBASE` → `DESIGNER /LoadConfigFromFiles /UpdateDBCfg` → `ENTERPRISE` runtime receipt | Skill | Командная форма и stop conditions повторяются; exact argv конкретного run остаётся evidence. |
-| Успешная загрузка конфигурации не доказывает бизнес-поведение | Skill | Это reusable stop condition: platform acceptance ≠ runtime behavior. |
-| Receipt должен быть машинно-проверяемым: terminal marker, уникальные labels/keys, value+type или domain observations, stable hash | Skill | Это переносимый критерий полного run; конкретные hashes не переносимы. |
-| Data-backed posting probe должен наблюдать draft/posting state, `Posted`, recorder movements и balances по affected registers | Skill | Это reusable pattern для document posting semantics. |
-| Semantic-contract sequence: business rule → formal predicate → plausible counterimplementations → distinguishing observations → minimal target/control/preservation cases → adversarial review before patch → RED/GREEN | Skill | Главный переносимый результат issue #14. Это не “добавить ещё один multi-row test”, а порядок построения oracle. |
+| Физическое разделение immutable snapshot/manifest/CF, writable work copy, disposable file ИБ и evidence/logs | `1c-enterprise-linux` | Это platform-specific safety boundary будущих native write-cycle задач. |
+| Native lifecycle `CREATEINFOBASE` → `DESIGNER /LoadConfigFromFiles /UpdateDBCfg` → `ENTERPRISE` runtime receipt | `1c-enterprise-linux` | Командная форма и stop conditions повторяются; exact argv конкретного run остаётся evidence. |
+| Успешная загрузка конфигурации не доказывает бизнес-поведение | `1c-enterprise-linux` | Это 1C runtime stop condition: platform acceptance ≠ runtime behavior. |
+| Terminal marker, receipt completeness/stability и process cleanup | `1c-enterprise-linux` | Это native execution mechanics; конкретные receipt hashes не переносимы. |
+| Draft/posting state, `Date`, `Posted`, recorder movements и balances по affected registers | `1c-enterprise-linux` | Это 1C-specific adaptation наблюдений document posting. |
+| Business statement/predicate → plausible counterimplementations → distinguishing observations → minimal target/control/preservation cases → anti-tautology/pre-patch challenge | `semantic-contract-testing` | Это generic test-design discipline, не принадлежащая 1C/Linux domain. |
+| Cheap core loop vs milestone/R&D acceptance overhead | `semantic-contract-testing` | Generic engineering policy: routine work не наследует canonical repeat/full package/final review без требования issue или concrete risk. |
 | Capability ladder, non-claims и следующий gate | Project memory / docs | Это продуктовый статус, который должен жить в versioned документации. |
 | Exact commits, trees, receipt hashes, nonces, native argv arrays, local run roots, reviewer chronology | Experiment/GitHub evidence | Эти факты проверяют конкретные claims, но не являются универсальными инструкциями. |
 | Повторяющаяся механика native lifecycle, runtime polling, receipt parsing и identity checks | Tool candidates | Эти операции детерминированы и могут стать tools только после повторения боли на второй отличающейся задаче. |
@@ -112,7 +114,7 @@ Read-only остаётся режимом по умолчанию. Каждое 
 
 Следующая отдельная issue должна выбрать другое содержательное бизнес-правило и пройти тот же путь:
 
-1. frozen semantic contract;
+1. frozen semantic contract через generic `semantic-contract-testing` и 1C-specific observations через `1c-enterprise-linux`;
 2. native RED;
 3. minimal production patch;
 4. native GREEN;
@@ -135,6 +137,6 @@ Read-only остаётся режимом по умолчанию. Каждое 
 
 ## Текущий ответ на главный вопрос
 
-- **Что теперь умеем повторять:** безопасное разделение source/work/IB/evidence, native create/load/update/runtime receipt lifecycle, fail-closed evidence packaging, semantic-contract review discipline.
+- **Что теперь умеем повторять:** 1C-specific разделение source/work/IB/evidence и native create/load/update/runtime receipt lifecycle; generic semantic-contract discipline хранится отдельно и применяется через свой skill domain.
 - **Что пока умеем только один раз:** end-to-end изменение реального data-backed бизнес-правила на Jet; есть repeat того же правила, но нет второй отличающейся задачи.
 - **Какая повторная боль первой заслуживает tool:** native lifecycle + runtime receipt polling/cleanup, если во второй задаче снова съест сопоставимое время. Пока это candidate, не implementation permission.
