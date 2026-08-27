@@ -1,0 +1,150 @@
+{
+  "protocol": "bounded-frontier-v1",
+  "blind_arm": "jet-candidate",
+  "status": "DONE",
+  "binding": {
+    "task_id": "issue12-jet-metadata-v3-warehouse-negative-balance",
+    "task_path": ".local/experiments/issue12/selection-jet-metadata-v3/public-task.json",
+    "task_sha256": "0d2f03591317ad98f9bce1fd4f34834817c00de137a381f0ae6462d3e2b9984a",
+    "snapshot_root": ".local/runs/training-jet-review-final/snapshot",
+    "content_id": "sha256-manifest:70972b5e11901ca31c7f7ec67dca03f78986206b024be01aeb34e0e1f3ff6691",
+    "manifest_path": ".local/runs/training-jet-review-final/snapshot.manifest",
+    "manifest_sha256": "70972b5e11901ca31c7f7ec67dca03f78986206b024be01aeb34e0e1f3ff6691",
+    "manifest_entries": 5099
+  },
+  "blindness": {
+    "authoritative_sources": [
+      "public-task.json",
+      "identified immutable snapshot",
+      "sibling snapshot.manifest"
+    ],
+    "forbidden_sources_read": [],
+    "network_used": false,
+    "upstream_history_used": false,
+    "source_discovery_parser_used": false,
+    "index_or_rag_or_mcp_used": false,
+    "note": "Python ElementTree was used only for final XML well-formedness validation, not discovery or retrieval."
+  },
+  "derived_terms": [
+    "warehouse",
+    "Warehouses",
+    "Boolean",
+    "xs:boolean",
+    "ForItem",
+    "FillValue"
+  ],
+  "search_log": [
+    {
+      "term": "warehouse",
+      "scope": "snapshot XML content",
+      "hits": 0,
+      "selected": []
+    },
+    {
+      "term": "*Warehouse*",
+      "scope": "snapshot file names",
+      "hits": 10,
+      "selected": [
+        "Catalogs/Warehouses.xml"
+      ],
+      "rationale": "The task asks for existing warehouse master data; this hit is the Catalog owner rather than a register, command, role, picture, or subsystem."
+    },
+    {
+      "term": "Warehouses",
+      "scope": "Catalogs/Warehouses child paths",
+      "hits": 9,
+      "selected": [],
+      "rationale": "All hits were forms or form modules, explicitly outside serialization scope."
+    },
+    {
+      "term": "xs:boolean in Catalog root XML",
+      "scope": "snapshot/Catalogs/*.xml",
+      "hits": 52,
+      "selected": [
+        "Catalogs/Companies.xml",
+        "Catalogs/EmailAccounts.xml"
+      ],
+      "rationale": "Companies supplies a peer top-level item attribute shape; EmailAccounts supplies explicit false Boolean fill serialization."
+    },
+    {
+      "term": "FillValue xsi:type=xs:boolean",
+      "scope": "snapshot/Catalogs/*.xml",
+      "hits": 20,
+      "selected": [
+        "Catalogs/EmailAccounts.xml:528-580"
+      ],
+      "rationale": "Direct sibling metadata evidence for an explicit false default and ForItem use."
+    }
+  ],
+  "used_fragments": [
+    {
+      "path": ".local/experiments/issue12/selection-jet-metadata-v3/public-task.json",
+      "lines": "2-16",
+      "bytes": "2-1450",
+      "sha256_fragment": "753542e4d64608b774accb72d50b8c9f5e1220f2e16f95e77eaad87283da00dc",
+      "claim": "Task identity, snapshot identity, requested owner semantics, property semantics, exclusions, and native-validation boundary."
+    },
+    {
+      "path": ".local/runs/training-jet-review-final/snapshot/Catalogs/Warehouses.xml",
+      "lines": "3-37",
+      "bytes": "968-2476",
+      "sha256_fragment": "a096560fc14107297677452489d48c29a87af2541c4e4516b24151f05f6177ab",
+      "claim": "The owning metadata object is Catalog.Warehouses and its English synonym is Warehouses."
+    },
+    {
+      "path": ".local/runs/training-jet-review-final/snapshot/Catalogs/Warehouses.xml",
+      "lines": "329-365",
+      "bytes": "14288-15682",
+      "sha256_fragment": "d0e45f63ea7806061358f361f67ea293f8bcce1b931232e2a7abf7445ed162e6",
+      "claim": "The warehouse object has item/list/choice forms and its ChildObjects begins with a TabularSection; insertion at the owning ChildObjects frontier avoids form files and preserves native sibling ordering."
+    },
+    {
+      "path": ".local/runs/training-jet-review-final/snapshot/Catalogs/Companies.xml",
+      "lines": "355-403",
+      "bytes": "14453-15959",
+      "sha256_fragment": "e2223b4ffdf87722973d66252d40e5ffceae6688d4918593dc2a3717e98c4586",
+      "claim": "A peer Catalog serializes top-level business attributes directly under ChildObjects with ForItem use."
+    },
+    {
+      "path": ".local/runs/training-jet-review-final/snapshot/Catalogs/Companies.xml",
+      "lines": "496-539",
+      "bytes": "18827-20164",
+      "sha256_fragment": "44674db02afd6338041ad44c16762e406c4ca3762a5ccd0e9e39892e1df33fc0",
+      "claim": "A peer top-level Catalog Boolean attribute uses xs:boolean and ForItem."
+    },
+    {
+      "path": ".local/runs/training-jet-review-final/snapshot/Catalogs/EmailAccounts.xml",
+      "lines": "528-580",
+      "bytes": "19938-21626",
+      "sha256_fragment": "afd13a2725d45cc1afec11056597ef33817e1e100409d8299fbce4fa580e565d",
+      "claim": "A peer top-level Catalog Boolean attribute serializes explicit false as FillValue xsi:type=xs:boolean and uses ForItem."
+    }
+  ],
+  "sufficiency_checklist": {
+    "correct_owner": {
+      "result": "PASS",
+      "evidence": "Catalogs/Warehouses.xml identifies Catalog.Warehouses and English presentation Warehouses."
+    },
+    "requested_property_semantics": {
+      "result": "PASS",
+      "evidence": "One Boolean attribute has the exact English presentation, explicit false fill value, and ForItem use."
+    },
+    "serialization_scope": {
+      "result": "PASS",
+      "evidence": "Only the owning root Catalog XML is changed; the attribute is a direct ChildObjects member."
+    },
+    "collateral_edit_exclusion": {
+      "result": "PASS",
+      "evidence": "Byte comparison across all 5,099 files found exactly Catalogs/Warehouses.xml changed."
+    },
+    "native_target": {
+      "result": "PASS_DEFERRED_GATE",
+      "evidence": "Native Designer acceptance is explicitly an evaluator gate; candidate XML is well-formed and follows observed native sibling serialization."
+    }
+  },
+  "frontier_stop": {
+    "supported": true,
+    "next_layer_requested": false,
+    "reason": "Owner identity, top-level attribute placement, Boolean type, explicit false default, and item-level use were all supported by authoritative source fragments; no additional layer was needed."
+  }
+}

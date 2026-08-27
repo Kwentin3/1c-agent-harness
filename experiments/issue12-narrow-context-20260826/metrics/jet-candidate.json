@@ -1,0 +1,32 @@
+{
+  "contract_version": "arm-output-contract-v1",
+  "task_id": "issue12-jet-metadata-v3-warehouse-negative-balance",
+  "status": "DONE",
+  "observed": {
+    "snapshot_manifest_entries": 5099,
+    "snapshot_actual_files_before": 5099,
+    "snapshot_digest_mismatches_before": 0,
+    "snapshot_extra_files_before": 0,
+    "snapshot_actual_files_after": 5099,
+    "snapshot_digest_mismatches_after": 0,
+    "snapshot_extra_files_after": 0,
+    "git_tracked_changes_after": 0,
+    "work_copy_files": 5099,
+    "work_copy_bytes": 61790405,
+    "changed_files": 1,
+    "added_business_attributes": 1,
+    "source_searches_logged": 5,
+    "used_fragments": 6,
+    "candidate_xml_parse_errors": 0,
+    "native_1c_runs": 0,
+    "change_diff_bytes": 2056
+  },
+  "hashes": {
+    "source_Catalogs/Warehouses.xml": "bf6888cb1de90fe8f030b163a01326c1b75f84d11204edcee5ba6198d11f2ae2",
+    "work_copy_Catalogs/Warehouses.xml": "392438bb7466d46f46d6c00cd162e436139281d22ed6cc40c3e0118f32724579",
+    "change.diff": "5c2e7098b8e6a94c1ac0a839a8a6996a4cf54b003711f8668d086efdee138a8f"
+  },
+  "change_closure": [
+    "Catalogs/Warehouses.xml"
+  ]
+}

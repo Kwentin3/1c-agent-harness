@@ -68,7 +68,7 @@ artifact; standalone альтернативные CLI не установлен�
 
 Эти направления не являются автоматически одобренными функциями roadmap. Для каждого требуется отдельная продуктовая цель и модель безопасности.
 
-**Узкий vertical slice выполнен (issue #10, финальная приёмка не завершена).** На учебной
+**Узкий vertical slice принят (issue #10, PR #11 смержен).** На учебной
 конфигурации Jet выполнен и воспроизводимо задокументирован один контролируемый цикл:
 минимальная BSL-правка одной функции → нативная загрузка в одноразовую ИБ
 (`DESIGNER /LoadConfigFromFiles /UpdateDBCfg`, `DumpResult = 0`) → runtime `ENTERPRISE`
@@ -80,3 +80,15 @@ artifact; standalone альтернативные CLI не установлен�
 конфигураций: доказан один BSL-сценарий на одной учебной конфигурации. Read-only остаётся
 режимом по умолчанию; расширение на metadata-объекты, другие конфигурации, старые платформы
 и другие агентные клиенты остаётся отдельной работой со своей моделью безопасности.
+
+**Минимальный контекст проверен (issue #12).** На одинаковых frozen задачах direct-source
+baseline сравнен с bounded context-frontier protocol без parser/index/RAG/MCP. Оба подхода
+полностью закрыли SDMS-задачу и создали нативно принимаемую Jet metadata-правку. Оба Jet arm
+допустимы по публичному semantic contract; различие `FullTextSearch` осталось неблокирующей
+raw-oracle оговоркой. Candidate не прошёл Pareto/non-regression threshold по наблюдаемой
+эффективности: в SDMS выросли context и navigation, а в Jet selected source context при
+ускорении вырос на 160.07%. Git независимо не доказывает заявленный pre-results порядок
+issue #12; строгая внешне доказуемая freeze впервые требуется в issue #14. Решение —
+оставить direct source и не добавлять компонент. См.
+[`docs/issue-12-narrow-context.md`](docs/issue-12-narrow-context.md) и
+[`experiments/issue12-narrow-context-20260826/`](experiments/issue12-narrow-context-20260826/README.md).

@@ -1,0 +1,216 @@
+{
+  "schemaVersion": 1,
+  "issue": 12,
+  "taskId": "issue12-jet-metadata-v3-warehouse-negative-balance",
+  "status": "DONE",
+  "reviewerIndependence": "Independent evaluator; frozen arms, oracle, snapshot, and native runs were read but not edited.",
+  "scope": "Jet metadata baseline versus bounded-frontier candidate, including static semantics, native platform acceptance, evidence metrics, and oracle construct validity.",
+  "frozenIdentity": {
+    "snapshotManifestSha256": "70972b5e11901ca31c7f7ec67dca03f78986206b024be01aeb34e0e1f3ff6691",
+    "manifestEntries": 5099,
+    "actualSnapshotFiles": 5099,
+    "missingFiles": 0,
+    "extraFiles": 0,
+    "digestMismatches": 0,
+    "publicTaskSha256": "0d2f03591317ad98f9bce1fd4f34834817c00de137a381f0ae6462d3e2b9984a",
+    "oracleSha256": "b5a06850db2c2c2e09aafd0bb04d3e01ba5e31535f0b02ba9fb2d871e69cbddb",
+    "selectionPackageChecksumsMatch": true,
+    "snapshotPreserved": true
+  },
+  "oracleDefect": {
+    "kind": "undisclosed arbitrary identifier used as an exact blind-arm discriminator",
+    "publicTaskEvidence": "public-task.json lines 19-26 explicitly forbid expected UUIDs and disclose neither a UUID algorithm nor canonical name.",
+    "frozenOracleRequirement": "oracle.json lines 27-33 requires UUIDv5(namespace URL, hidden canonical name) equal to 5b235010-8aa8-5017-8a74-55ec6641b7ed.",
+    "assessment": "Exact UUIDv5 equality cannot fairly distinguish blind arms because infinitely many unique, syntactically valid metadata UUIDs satisfy the public task and native platform acceptance. Determinism is useful for an oracle fixture but was not a model-visible task requirement.",
+    "treatment": "The frozen oracle is untouched. Raw exact-UUID results are reported, but fairness-adjusted semantic grading accepts a unique syntactically valid non-colliding UUID when native load/update succeeds.",
+    "rawExactUuidResult": {
+      "baseline": "fail: f92b82ae-db54-4d3f-9444-5f855a093ed7",
+      "candidate": "fail: 55f45916-d8b8-4914-912f-2b8dbf9e83d6"
+    },
+    "fairnessAdjustedUuidResult": {
+      "baseline": "pass: valid UUID, unique in candidate, absent from frozen snapshot, native accepted",
+      "candidate": "pass: valid UUID, unique in candidate, absent from frozen snapshot, native accepted"
+    }
+  },
+  "semanticChecklist": [
+    {"field": "metadata object", "expected": "Catalog.Warehouses", "baseline": "pass", "candidate": "pass"},
+    {"field": "source/change closure", "expected": "only Catalogs/Warehouses.xml; no added/deleted files", "baseline": "pass", "candidate": "pass"},
+    {"field": "direct child kind", "expected": "one direct Attribute", "baseline": "pass", "candidate": "pass"},
+    {"field": "internal name", "expected": "AllowNegativeInventoryBalance", "baseline": "pass", "candidate": "pass"},
+    {"field": "English synonym", "expected": "Allow negative inventory balance", "baseline": "pass", "candidate": "pass"},
+    {"field": "type", "expected": "xs:boolean", "baseline": "pass", "candidate": "pass"},
+    {"field": "default/fill", "expected": "false", "baseline": "pass", "candidate": "pass"},
+    {"field": "use", "expected": "ForItem", "baseline": "pass", "candidate": "pass"},
+    {"field": "indexing", "expected": "DontIndex", "baseline": "pass", "candidate": "pass"},
+    {"field": "full-text search", "expected": "DontUse", "baseline": "pass", "candidate": "fail: candidate serializes FullTextSearch=Use"},
+    {"field": "UUID, fairness adjusted", "expected": "valid, unique, non-colliding and native accepted", "baseline": "pass", "candidate": "pass"}
+  ],
+  "armResults": {
+    "baseline": {
+      "status": "SEMANTIC_SUCCESS_NATIVE_PASS",
+      "fairnessAdjustedFieldsCorrect": 11,
+      "fairnessAdjustedFieldsTotal": 11,
+      "rawFrozenOracleUuidExact": false,
+      "changedFiles": ["Catalogs/Warehouses.xml"],
+      "workCopyFiles": 5099,
+      "xmlWellFormed": true,
+      "serializationPreserved": {"crlf": true, "bomStateMatchesSource": true},
+      "dangerousDistractorChanges": [],
+      "dangerousUnsupportedClaimCount": 0,
+      "diffSha256": "d5e9343250f67f1d3f5f71af27e6cdd7479c2c74fa9aecf1335a0b4146494356",
+      "diffExactlyRegenerated": true
+    },
+    "candidate": {
+      "status": "PARTIAL_SEMANTIC_FAILURE_NATIVE_PASS",
+      "fairnessAdjustedFieldsCorrect": 10,
+      "fairnessAdjustedFieldsTotal": 11,
+      "rawFrozenOracleUuidExact": false,
+      "changedFiles": ["Catalogs/Warehouses.xml"],
+      "workCopyFiles": 5099,
+      "xmlWellFormed": true,
+      "serializationPreserved": {"crlf": true, "bomStateMatchesSource": true},
+      "semanticFailure": "FullTextSearch is Use, but frozen oracle requires DontUse.",
+      "dangerousDistractorChanges": [],
+      "dangerousUnsupportedClaimCount": 0,
+      "diffSha256": "5c2e7098b8e6a94c1ac0a839a8a6996a4cf54b003711f8668d086efdee138a8f",
+      "diffExactlyRegenerated": true
+    }
+  },
+  "excludedDangerousScopes": {
+    "baseline": {
+      "forms": true,
+      "bsl": true,
+      "configurationXml": true,
+      "configDumpInfoXml": true,
+      "registerMetadata": true,
+      "unrelatedMetadata": true
+    },
+    "candidate": {
+      "forms": true,
+      "bsl": true,
+      "configurationXml": true,
+      "configDumpInfoXml": true,
+      "registerMetadata": true,
+      "unrelatedMetadata": true
+    },
+    "basis": "Independent 5,099-file source/work-copy SHA-256 comparison found exactly Catalogs/Warehouses.xml changed in each arm."
+  },
+  "distractorAnalysis": {
+    "distractor": "AccumulationRegisters/InventoryInWarehouses.xml",
+    "whyPlausible": "Its filename contains both inventory and warehouses and appeared in the frozen filename search, but it is an accumulation register rather than the warehouse master-data owner and changing it would cross the explicit register/runtime boundary.",
+    "baseline": "excluded: filename search returned it, but the arm selected Catalogs/Warehouses.xml and cited no register source",
+    "candidate": "excluded explicitly by the search rationale that selected the Catalog owner rather than a register, command, role, picture, or subsystem",
+    "result": "pass for both arms"
+  },
+  "locatorAndContextValidation": {
+    "baseline": {
+      "fragments": 3,
+      "lines": 90,
+      "sourceContextBytesFresh": 2860,
+      "allPathsAndRangesValid": true,
+      "allFileHashesValid": true,
+      "allDeclaredByteCountsValid": true
+    },
+    "candidate": {
+      "sourceFragments": 5,
+      "sourceLines": 218,
+      "sourceContextBytesFresh": 7438,
+      "sharedTaskFragmentBytes": 1449,
+      "allLoggedFragmentBytesIncludingTask": 8887,
+      "allPathsAndRangesValid": true,
+      "allFragmentHashesValid": true,
+      "allByteCoordinatesValid": true
+    },
+    "comparisonRule": "Compare source fragments only because the public task is shared and baseline does not duplicate it in context.json.",
+    "candidateContextByteReductionPct": -160.06993006993008,
+    "interpretation": "Candidate used 160.07% more selected source context bytes."
+  },
+  "nativeAcceptance": {
+    "scope": "Platform acceptance/schema consistency only; no Enterprise runtime receipt was run or required for this metadata-only, no-runtime-behavior task.",
+    "baseline": {
+      "receiptSha256": "4fe3e01528892b392ccc87bf4de3c05e1c7b87f60f72ca5497a2a4f3be26a2f2",
+      "status": "pass",
+      "createProcessExit": 0,
+      "loadUpdateProcessExit": 0,
+      "dumpResultsZero": true,
+      "createLogSha256Verified": true,
+      "loadLogSha256Verified": true,
+      "successEvidence": ["Creation completed successfully", "Configuration successfully updated"],
+      "preAndPostSnapshotClosure": "5099 listed/actual, zero missing/extra/mismatch/symlink"
+    },
+    "candidate": {
+      "receiptSha256": "83cc2acbdc2950236c8b02ed9597a92ba62b5da6d147ec28f9b8516d4d01a2dd",
+      "status": "pass",
+      "createProcessExit": 0,
+      "loadUpdateProcessExit": 0,
+      "dumpResultsZero": true,
+      "createLogSha256Verified": true,
+      "loadLogSha256Verified": true,
+      "successEvidence": ["Creation completed successfully", "Configuration successfully updated"],
+      "preAndPostSnapshotClosure": "5099 listed/actual, zero missing/extra/mismatch/symlink"
+    },
+    "provenanceCaveat": "Receipts name the arm work-copy paths but do not record a work-copy content hash or exact command line. The retained result/log hashes and success text support acceptance, but exact input binding is weaker than a content-hashed invocation receipt."
+  },
+  "recomputedMetrics": {
+    "baseline": {
+      "wallClockSeconds": 480,
+      "durationSource": "frozen baseline metrics.json",
+      "selectedSourceContextBytes": 2860,
+      "reportedSearchOperations": 15,
+      "reportedReadOperations": 8,
+      "reportedOtherNavigationOperations": 9
+    },
+    "candidate": {
+      "wallClockSeconds": 347.93,
+      "durationSource": "retained transcript final duration",
+      "selectedSourceContextBytes": 7438,
+      "searchNavigationOperations": null,
+      "operationCountReason": "Candidate metrics records five searches logged and six used fragments, but not a comparable transcript navigation-operation total; no unavailable count is invented.",
+      "preparationSeconds": null
+    },
+    "candidateRelativeToBaseline": {
+      "wallClockReductionPct": 27.514583333333334,
+      "contextByteReductionPct": -160.06993006993008,
+      "operationReductionPct": null
+    }
+  },
+  "hardGates": {
+    "candidateCoverageNotLower": "fail: candidate misses FullTextSearch=DontUse while baseline satisfies it",
+    "candidateZeroDangerousClaims": "pass",
+    "candidateSubstantiveLocatorsValid": "pass",
+    "nativeAtLeastAsStrong": "pass: both platform-acceptance receipts pass",
+    "insufficientContextNegative": "not demonstrated: no retained removal/substitution probe",
+    "staleBindingNegative": "not demonstrated: binding is recorded but no retained modified-manifest failure probe exists",
+    "distractorNegativeFromAmendment": "pass for this concrete distractor",
+    "costCeiling": "not demonstrated: candidate total duration is 347.93 seconds and preparationSeconds is unavailable"
+  },
+  "usefulnessDecisions": {
+    "originalPreregisteredDesign": {
+      "decision": "NOT_USEFUL_KEEP_BASELINE",
+      "positiveSignals": {
+        "essentialRelation": "fail: candidate has lower, not higher, semantic coverage",
+        "contextBytes": "fail: 160.07% increase",
+        "operations": "unavailable",
+        "wallClock": "27.51% reduction, but the required no-increase-in-operations condition is unproven"
+      },
+      "rationale": "The original rule requires all hard gates plus at least one complete positive signal and the cost ceiling. Coverage and two preregistered negative gates fail or remain unproven; no positive signal is fully established; cost is unproven."
+    },
+    "stricterPreResultsDesignAmendment": {
+      "decision": "NOT_USEFUL_KEEP_BASELINE",
+      "signedReductionBranch": "fail: wall clock improves 27.51%, but selected source context regresses 160.07%, violating the 10% Pareto non-regression bound; comparable operation count is unavailable",
+      "essentialRelationBranch": "fail: candidate coverage is lower",
+      "rationale": "Neither amended branch passes, independently of the original decision."
+    }
+  },
+  "artifactHashes": {
+    "preregisteredDesign": "f071e67d7d365660f6a8ccd92d7d8529eb28d39a00ad8ec1aa639ee8fd91cf66",
+    "preResultsAmendment": "a3844715972c19e9e7f055c97b171c50cf395bd5a60df66bb387b67143874c2a",
+    "baselineAnswer": "4cd432805f57b94fbfe74842fce19595517a0dcb4cf67a3f725f58a6af066390",
+    "baselineContext": "3db314c0b59556110c7ef6977fab61e35242b211010aa2d83e7d57c740e71d28",
+    "baselineMetrics": "264fba38aee7739600f8a7d376e332939f5a3310c70fe03d64f67ff215e8cbf7",
+    "candidateAnswer": "0541ad4ed6c9720da02c25feab28f51a4c89b68e4bbfd16b5baddd04556c184d",
+    "candidateContext": "b81776900eef82d435f34db2c747ca5025b7d3bad0f5ec1d0a434772d0e14daa",
+    "candidateMetrics": "36df84bf1b8c9e526f4c0a1c87eac35fba5908fba4b0f46745310f1e4208cd8a"
+  },
+  "verdict": "Baseline is the selected semantic success and both arms pass native platform acceptance. The candidate is not useful under either frozen rule because it sets FullTextSearch=Use, uses substantially more source context, lacks comparable operation telemetry and retained negative probes, and fails the amendment Pareto rule. The hidden deterministic UUID equality is an oracle defect and is not used to distinguish the blind arms."
+}

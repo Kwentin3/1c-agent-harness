@@ -1,0 +1,51 @@
+{
+  "contract_version": "arm-output-contract-v1",
+  "task_id": "issue12-jet-metadata-v3-warehouse-negative-balance",
+  "status": "DONE",
+  "answer": {
+    "summary": "Added one item-level Boolean attribute to Catalog.Warehouses with English presentation 'Allow negative inventory balance' and explicit false fill value.",
+    "attribute": {
+      "owner": "Catalog.Warehouses",
+      "name": "AllowNegativeInventoryBalance",
+      "presentation": {
+        "language": "en",
+        "value": "Allow negative inventory balance"
+      },
+      "type": "xs:boolean",
+      "default": false,
+      "use": "ForItem",
+      "uuid": "55f45916-d8b8-4914-912f-2b8dbf9e83d6"
+    },
+    "changed_files": [
+      "Catalogs/Warehouses.xml"
+    ],
+    "excluded_changes": [
+      "forms",
+      "BSL modules",
+      "posting logic",
+      "runtime behavior",
+      "serialization settings",
+      "unrelated metadata"
+    ]
+  },
+  "artifacts": {
+    "work_copy": "work-copy/",
+    "change_diff": "change.diff",
+    "context": "context.json",
+    "metrics": "metrics.json",
+    "handoff": "HANDOFF.md"
+  },
+  "validation": {
+    "immutable_snapshot_manifest_verified_before": true,
+    "immutable_snapshot_manifest_verified_after": true,
+    "immutable_snapshot_closed_set_verified_after": true,
+    "work_copy_file_set_closed": true,
+    "changed_file_closure": [
+      "Catalogs/Warehouses.xml"
+    ],
+    "xml_well_formed": true,
+    "git_tracked_clean_before": true,
+    "native_1c_run": false,
+    "native_1c_reason": "Explicitly excluded by the task; native Designer validation is an evaluation gate."
+  }
+}

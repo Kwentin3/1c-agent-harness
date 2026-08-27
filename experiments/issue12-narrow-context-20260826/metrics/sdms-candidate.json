@@ -1,0 +1,18 @@
+{
+  "schemaVersion": 1,
+  "taskId": "issue12-sdms-cross-object-business-01",
+  "startedUtc": "2026-08-26T21:38:02Z",
+  "finishedUtc": "2026-08-26T21:43:44Z",
+  "wallClockSeconds": 342,
+  "searchOperations": 27,
+  "readOperations": 19,
+  "otherNavigationOperations": 10,
+  "selectedFileCount": 7,
+  "selectedFragmentCount": 13,
+  "selectedLineCount": 462,
+  "selectedContextBytes": 30448,
+  "preparationSeconds": null,
+  "derivedDiskBytes": 0,
+  "manualSetup": false,
+  "notes": "Observed direct-filesystem navigation counts through the evidence freeze: 27 search operations (21 search_files calls plus 6 bounded in-file Python scans), 19 read_file operations (including one failed allowed-path read), and 10 other navigation/calculation operations (timestamps, hashes, manifest checks, exact-byte accounting). Tool/skill/todo/write/validation operations are not relabeled as navigation. preparationSeconds was not separately timestamped and is therefore null. derivedDiskBytes is 0 because no index, parser catalog, graph, RAG cache, or other derived navigation artifact was created; required arm outputs are excluded. Initial sha256sum -c manifest closure passed for all 2581 entries; final closure is recorded in HANDOFF.md."
+}

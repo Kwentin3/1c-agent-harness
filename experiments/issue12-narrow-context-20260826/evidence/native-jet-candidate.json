@@ -1,0 +1,92 @@
+{
+  "schemaVersion": 2,
+  "arm": "jet-candidate",
+  "platform": "1C training 8.5.1.1150",
+  "status": "ok",
+  "snapshotManifestSha256": "70972b5e11901ca31c7f7ec67dca03f78986206b024be01aeb34e0e1f3ff6691",
+  "sourceBindingBeforeInvocation": {
+    "algorithm": "sha256 of UTF-8 rows '<file-sha256>  <relative-posix-path>\\n', sorted by path",
+    "fileCount": 5099,
+    "manifestSha256": "52ae34c824b87d3f09460b49908f9ad22f3cd72eff43aef3ac797470cf8de721",
+    "changedFiles": [
+      "Catalogs/Warehouses.xml"
+    ],
+    "changedFileSha256": "392438bb7466d46f46d6c00cd162e436139281d22ed6cc40c3e0118f32724579",
+    "originalChangedFileSha256": "bf6888cb1de90fe8f030b163a01326c1b75f84d11204edcee5ba6198d11f2ae2",
+    "missing": [],
+    "extra": [],
+    "symlinks": []
+  },
+  "publishedChangeBindingBeforeInvocation": {
+    "taskId": "issue12-jet-metadata-v3-warehouse-negative-balance",
+    "snapshotContentId": "sha256:70972b5e11901ca31c7f7ec67dca03f78986206b024be01aeb34e0e1f3ff6691",
+    "publishedPatch": "patches/jet-candidate.patch",
+    "publishedPatchSha256": "a8bcf0eab5e2a6f2a7490a616ac946709188cde7e7106e7d93c8a6d7ce0b424f",
+    "adjudicatedDiff": "diffs/jet-candidate.diff",
+    "adjudicatedDiffSha256": "68bef622ddccdc140c6bb9d1cdaa230f2c6f9540fdb758be337a84363e7b2da2",
+    "diffNormalization": "parse unified-diff logical records, replace only the frozen source/work-copy path prefixes in headers with repository-independent a/ and b/ paths, and compare every resulting record to the published patch",
+    "normalizedDiffSha256": "12a7dc6e7de9f4ad505dd32abf5541b80dc574bd7368b65f11f831e39f761016",
+    "changedFile": "Catalogs/Warehouses.xml",
+    "changedFileSha256": "392438bb7466d46f46d6c00cd162e436139281d22ed6cc40c3e0118f32724579",
+    "workCopyManifestSha256": "52ae34c824b87d3f09460b49908f9ad22f3cd72eff43aef3ac797470cf8de721"
+  },
+  "sourceArtifacts": {
+    "original": "evidence/native-v2/original-warehouses.xml.b64",
+    "changed": "evidence/native-v2/candidate-warehouses.xml.b64",
+    "patch": "patches/jet-candidate.patch",
+    "diff": "diffs/jet-candidate.diff",
+    "snapshotManifest": "evidence/native-v2/snapshot.manifest.b64"
+  },
+  "retainedOutputs": {
+    "createLog": "evidence/native-v2/candidate-create.log.b64",
+    "loadLog": "evidence/native-v2/load.log.b64",
+    "dumpResult": "evidence/native-v2/zero.result.b64"
+  },
+  "preSnapshot": {
+    "listed": 5099,
+    "actual": 5099,
+    "missing": 0,
+    "extra": 0,
+    "mismatch": 0,
+    "symlinks": 0
+  },
+  "postSnapshot": {
+    "listed": 5099,
+    "actual": 5099,
+    "missing": 0,
+    "extra": 0,
+    "mismatch": 0,
+    "symlinks": 0
+  },
+  "steps": [
+    {
+      "step": "create",
+      "processExit": 0,
+      "dumpResultZero": true,
+      "dumpResultSha256": "e45825471ed10290785b62676dc5f453d228a1e1d933c45a733e9bb239c9e083",
+      "logSha256": "b3313dd7bb728e36103bc2f6a58c627a5831e588dbfbcc0270e4450e2b5f3e1b",
+      "successMarker": "completed successfully",
+      "stderrBytes": 0,
+      "stdoutBytes": 0
+    },
+    {
+      "step": "load",
+      "processExit": 0,
+      "dumpResultZero": true,
+      "dumpResultSha256": "e45825471ed10290785b62676dc5f453d228a1e1d933c45a733e9bb239c9e083",
+      "logSha256": "4d841be04b71dd0ee7cfebcfa7af194d74902e2ec1c213987889d7d3940c0f86",
+      "successMarker": "Configuration successfully updated",
+      "stderrBytes": 0,
+      "stdoutBytes": 0
+    }
+  ],
+  "provenanceStatement": "Before 1C invocation the local receipt bound the public task/content identities, exact published patch/diff hashes, the sole declared header-path normalization, changed owner bytes, and complete 5,099-file work-copy manifest. The public package preserves the sanitized receipt, logs and exact DumpResult bytes. Their fixed SHA-256 anchors live outside the refreshable package manifest in tests/test_issue12_evidence.py and reject coordinated package rewrites. The unpublished raw receipt is not independently authenticated or claimed as public evidence.",
+  "encodedSanitizedExecutionReceipt": "evidence/native-v2/candidate-receipt.json.b64",
+  "publishedSanitizedReceiptSha256": "79a5a4de238aeb28484285b18f29d381c20212767fc381cb51cef22367620084",
+  "receiptSanitization": {
+    "placeholder": "${REPO}",
+    "replacement": "All occurrences of the local repository absolute prefix were replaced in the published receipt and logs; hashes in the published receipt bind sanitized log bytes.",
+    "rawReceiptRetained": false,
+    "rawReceiptAuthenticityClaimed": false
+  }
+}

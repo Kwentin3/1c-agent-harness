@@ -1,0 +1,46 @@
+{
+  "schemaVersion": 1,
+  "taskId": "issue12-jet-metadata-v3-warehouse-negative-balance",
+  "snapshotContentId": "sha256:70972b5e11901ca31c7f7ec67dca03f78986206b024be01aeb34e0e1f3ff6691",
+  "fragments": [
+    {
+      "path": "Catalogs/Warehouses.xml",
+      "startLine": 26,
+      "endLine": 40,
+      "fileSha256": "bf6888cb1de90fe8f030b163a01326c1b75f84d11204edcee5ba6198d11f2ae2",
+      "reason": "Identifies the existing Warehouses catalog and its item/folder metadata properties.",
+      "supports": [
+        "F1"
+      ],
+      "byteCount": 387
+    },
+    {
+      "path": "Catalogs/Warehouses.xml",
+      "startLine": 344,
+      "endLine": 365,
+      "fileSha256": "bf6888cb1de90fe8f030b163a01326c1b75f84d11204edcee5ba6198d11f2ae2",
+      "reason": "Confirms the English object presentation Warehouse and the direct ChildObjects insertion boundary.",
+      "supports": [
+        "F1",
+        "F2"
+      ],
+      "byteCount": 784
+    },
+    {
+      "path": "Catalogs/EmailAccounts.xml",
+      "startLine": 528,
+      "endLine": 580,
+      "fileSha256": "0aeba209d9c5625a400e516f560b834768f3cfb1fcea0242ba640df1c17c4b1a",
+      "reason": "Existing direct catalog Boolean attribute serialization used as the local metadata pattern, including explicit false fill and ForItem use.",
+      "supports": [
+        "F3",
+        "I1"
+      ],
+      "byteCount": 1689
+    }
+  ],
+  "sufficiency": {
+    "decision": "sufficient",
+    "rationale": "The Warehouses catalog is the metadata entry point; the local Boolean-attribute pattern covers value type, explicit false fill, and ForItem use. No cross-object link is required. Side effects are bounded to one direct catalog attribute; the negative boundary is enforced by an exact one-file diff with no forms, BSL, runtime logic, or serialization-settings changes. Native Designer load/update remains the stated downstream evaluation target and was not run."
+  }
+}

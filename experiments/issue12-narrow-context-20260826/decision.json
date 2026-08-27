@@ -1,0 +1,61 @@
+{
+  "schemaVersion": 1,
+  "issue": 12,
+  "selectedApproach": "direct-source-baseline",
+  "candidateDecision": "rejected",
+  "newRuntimeComponents": [],
+  "scope": "one SDMS task and one Jet metadata task, with issue #10 reused as prior local BSL/write evidence",
+  "taskResults": {
+    "sdms": {
+      "quality": "tie: 9/9 oracle items, zero dangerous claims, zero invalid locators, sufficient context for both arms",
+      "baseline": {"contextBytes": 24966, "navigationOperations": 49, "wallClockSeconds": 386},
+      "candidate": {"contextBytes": 30448, "navigationOperations": 56, "wallClockSeconds": 342},
+      "signedCandidateChangePercent": {"contextBytesReduction": -21.9579, "navigationReduction": -14.2857, "wallClockReduction": 11.3990},
+      "originalRule": "not useful",
+      "amendedRule": "not useful",
+      "reason": "No >=25% reduction or candidate-only essential relation; context and navigation regress beyond the amended 10% ceiling."
+    },
+    "jet": {
+      "quality": "both arms satisfy the public semantic contract and pass native acceptance; the raw oracle-only FullTextSearch difference is non-blocking",
+      "baseline": {"selectedSourceFiles": 2, "sourceFragments": 3, "sourceContextBytes": 2860, "selectedSourceLines": 90, "wallClockSeconds": 480},
+      "candidate": {"selectedSourceFiles": 3, "sourceFragments": 5, "sourceContextBytes": 7438, "selectedSourceLines": 218, "wallClockSeconds": 347.93},
+      "signedCandidateChangePercent": {"sourceContextBytesReduction": -160.0699, "wallClockReduction": 27.5146, "navigationReduction": null},
+      "originalRule": "not useful",
+      "amendedRule": "not useful",
+      "reason": "Candidate is not rejected on public semantic coverage. Its wall-clock reduction exceeds 25%, but comparable navigation telemetry is absent and source context regresses by 160.07%, far beyond the amended 10% Pareto ceiling."
+    }
+  },
+  "nativeEvidence": {
+    "status": "content-bound v2 replay passed for both Jet arms",
+    "inputBinding": "complete 5,099-file work-copy manifest hash computed before 1C invocation; exactly Catalogs/Warehouses.xml differs from immutable snapshot manifest",
+    "publishedVerification": "each pre-invocation receipt binds task ID, snapshot content ID, published patch/diff SHA-256, the sole header-path normalization, changed owner SHA-256 and complete work-copy manifest; strict diff counts and real git apply are checked; fixed SHA-256 anchors outside the refreshable package manifest bind exact sanitized receipt/log/DumpResult bytes",
+    "rawReceiptLimitation": "unsanitized raw receipts are not published or independently authenticated and are not claimed as public evidence",
+    "scope": "platform acceptance/schema consistency only; no Enterprise runtime semantics claimed"
+  },
+  "publicSemanticContract": {
+    "baseline": "pass",
+    "candidate": "pass",
+    "required": "Boolean attribute, false default, ForItem use, requested English presentation, one existing warehouse metadata owner, no forms/BSL/runtime behavior",
+    "notRequired": "FullTextSearch=DontUse"
+  },
+  "fullTextSearchOracleDifference": {
+    "rawAdjudication": "baseline DontUse; candidate Use; frozen adjudication records 11/11 versus 10/11 and remains untouched",
+    "publicContractAssessment": "both pass because the model-visible task does not constrain FullTextSearch",
+    "effectOnDecision": "non-blocking"
+  },
+  "freezeEvidenceLimitation": {
+    "gitProof": "not established: design and results were published in one commit",
+    "byteClosure": "SDMS adjudication records that the pre-results manifest is not byte-closed over the current canonical experiment",
+    "treatment": "local ordering claims are retained but no retroactive freeze is asserted; the conservative decision survives the observed efficiency gates; strict provable ordering first applies in issue #14"
+  },
+  "oracleDefect": "The private Jet oracle required one exact UUIDv5 while the public blind task explicitly hid the UUID algorithm and expected value. That arbitrary exact-identifier criterion is not a fair arm discriminator. Both unique valid UUIDs are graded semantically and accepted by native 1C; the frozen oracle remains unchanged and the defect is reported rather than silently repaired.",
+  "negativeScenarioScope": "Bounded packet-integrity and scope probes only; they are not a general semantic locator verifier. Claim-to-locator meaning and sufficiency are human-adjudicated.",
+  "negativeScenarios": {
+    "staleBinding": "exact content-ID mismatch is rejected",
+    "insufficientPacket": "removal of the required SDMS request-manager packet entry is rejected",
+    "concreteSameTermDistractor": "Reports/ЗадачиПоЗаявкам.xml is rejected for this frozen creation-path packet; no broader false-relationship denominator is claimed",
+    "metadataPacketScopeExpansion": "Jet form/BSL/Configuration/ConfigDumpInfo packet expansion is rejected",
+    "nativeBindingMutation": "changed patch, adjudicated diff, changed owner/work-copy identity or receipt binding is rejected even after refreshing the package manifest entry"
+  },
+  "conclusion": "Standard direct-source tools remain sufficient for these frozen runs. The bounded-frontier protocol may be retained as human guidance, but its measured cost does not justify adding a product component, dependency, index, parser, daemon, MCP service, or persistent derived state."
+}

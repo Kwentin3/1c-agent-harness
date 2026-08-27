@@ -1,0 +1,51 @@
+diff --git a/.local/runs/training-jet-review-final/snapshot/Catalogs/Warehouses.xml b/.local/experiments/issue12/arms/jet-baseline/work-copy/Catalogs/Warehouses.xml
+index f385bfa..5fb3c96 100644
+--- a/.local/runs/training-jet-review-final/snapshot/Catalogs/Warehouses.xml
++++ b/.local/experiments/issue12/arms/jet-baseline/work-copy/Catalogs/Warehouses.xml
+@@ -362,6 +362,46 @@
+ 			<ExecuteAfterWriteDataHistoryVersionProcessing>false</ExecuteAfterWriteDataHistoryVersionProcessing>
+ 		</Properties>
+ 		<ChildObjects>
++			<Attribute uuid="f92b82ae-db54-4d3f-9444-5f855a093ed7">
++				<Properties>
++					<Name>AllowNegativeInventoryBalance</Name>
++					<Synonym>
++						<v8:item>
++							<v8:lang>en</v8:lang>
++							<v8:content>Allow negative inventory balance</v8:content>
++						</v8:item>
++					</Synonym>
++					<Comment/>
++					<Type>
++						<v8:Type>xs:boolean</v8:Type>
++					</Type>
++					<PasswordMode>false</PasswordMode>
++					<Format/>
++					<EditFormat/>
++					<ToolTip/>
++					<MarkNegatives>false</MarkNegatives>
++					<Mask/>
++					<MultiLine>false</MultiLine>
++					<ExtendedEdit>false</ExtendedEdit>
++					<MinValue xsi:nil="true"/>
++					<MaxValue xsi:nil="true"/>
++					<FillFromFillingValue>false</FillFromFillingValue>
++					<FillValue xsi:type="xs:boolean">false</FillValue>
++					<FillChecking>DontCheck</FillChecking>
++					<ChoiceFoldersAndItems>Items</ChoiceFoldersAndItems>
++					<ChoiceParameterLinks/>
++					<ChoiceParameters/>
++					<QuickChoice>Auto</QuickChoice>
++					<CreateOnInput>Auto</CreateOnInput>
++					<ChoiceForm/>
++					<LinkByType/>
++					<ChoiceHistoryOnInput>Auto</ChoiceHistoryOnInput>
++					<Use>ForItem</Use>
++					<Indexing>DontIndex</Indexing>
++					<FullTextSearch>DontUse</FullTextSearch>
++					<DataHistory>Use</DataHistory>
++				</Properties>
++			</Attribute>
+ 			<TabularSection uuid="e249f9dc-6c90-4549-bca2-c8f9779d262d">
+ 				<InternalInfo>
+ 					<xr:GeneratedType name="CatalogTabularSection.Warehouses.AdditionalAttributes" category="TabularSection">

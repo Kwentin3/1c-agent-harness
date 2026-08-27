@@ -1,0 +1,18 @@
+{
+  "schemaVersion": 1,
+  "taskId": "issue12-jet-metadata-v3-warehouse-negative-balance",
+  "startedUtc": "2026-08-26T21:53:44Z",
+  "finishedUtc": "2026-08-26T22:01:44Z",
+  "wallClockSeconds": 480,
+  "searchOperations": 15,
+  "readOperations": 8,
+  "otherNavigationOperations": 9,
+  "selectedFileCount": 2,
+  "selectedFragmentCount": 3,
+  "selectedLineCount": 90,
+  "selectedContextBytes": 2860,
+  "preparationSeconds": null,
+  "derivedDiskBytes": 61800721,
+  "manualSetup": false,
+  "notes": "Operation counts are observed tool events: search/read counts include direct source discovery and selected-fragment reads; other navigation includes read-only status/time/hash/parser/stat probes, including three blocked/failed probe attempts. preparationSeconds was not separately instrumented. derivedDiskBytes is the exact work-copy plus change.diff, answer.json, context.json, and HANDOFF.md size at freeze time; it excludes self-referential metrics.json and temporary helper scripts. No token count was invented."
+}

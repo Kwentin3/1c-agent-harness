@@ -1,0 +1,315 @@
+{
+  "schemaVersion": 1,
+  "issue": 12,
+  "taskId": "issue12-sdms-cross-object-business-01",
+  "status": "DONE",
+  "reviewerIndependence": "Independent evaluator; neither arm was executed or edited by this adjudication.",
+  "scope": "Frozen SDMS baseline versus bounded-frontier candidate only.",
+  "frozenIdentity": {
+    "snapshotContentId": "sha256:3357ee63204ff863aac116417927240930084dce0eb7613126ad88cff68a424d",
+    "snapshotManifestSha256": "3357ee63204ff863aac116417927240930084dce0eb7613126ad88cff68a424d",
+    "snapshotManifestEntries": 2581,
+    "snapshotManifestVerification": {
+      "sha256sumExitCode": 0,
+      "entriesChecked": 2581
+    },
+    "oracleBindingVerified": true,
+    "canonicalBindings": {
+      "sourceQuestionQ3": "b9b2403ab6fb18651f947427f446eb3f81222ef20c4a9e05b7c5383dbe21d496",
+      "oracleQ3": "c8ee5ceb44b08f7f67d46a74b2a0c2217f05cce0cadc0d73da983481d366669e",
+      "priorAdjudicationQ3": "09f3671f1a4d320bfa42ab39773e35063625955edff5e833df189c7c00e00714"
+    },
+    "candidateNormalization": {
+      "rawAnswerSha256": "eb25400c36d89f2ad332a0212ca35f16647a182491480e3afe35233b09036547",
+      "normalizedAnswerSha256": "814e471300124b1e86a035837fa07d7879f0101efe7e1c50ca5f8f2292e99976",
+      "onlyChangedField": "experimentId",
+      "before": "issue12-sdms-context",
+      "after": "issue12-sdms-cross-object-business-01",
+      "semanticPayloadEqualAfterSubstitutingCanonicalExperimentId": true
+    },
+    "preResultsIdentityCaveat": {
+      "preResultsManifestRecordedExperimentSha256": "8eb790642111ee7d3b00226b1ad6e95ed5f4ddadf39470eced29542ee69ad26f",
+      "currentCanonicalExperimentSha256": "fd0c913ca824d324243c9d4e88e8975995f727a8a10e7c6753e48f991b894c85",
+      "assessment": "The pre-results manifest is not byte-closed over the current canonical experiment. Retained preflight artifacts show the earlier issue12-sdms-context ID and the later canonical ID. The normalization record and direct comparison establish unchanged candidate semantic content, so this does not alter semantic scoring but remains a chronology/identity caveat."
+    }
+  },
+  "methodology": {
+    "oracleSource": ".local/experiments/sdms-product-eval-20260825/oracle.json#/answers/Q3/expected",
+    "itemCount": 9,
+    "weighting": "uniform",
+    "partialCreditWithinItem": false,
+    "sourceRule": "Complete expected item must be accurately stated and supported by cited immutable-snapshot locators.",
+    "extraClaimsRule": "Incorrect or unsupported extras are recorded separately; dangerous false claims are separately counted."
+  },
+  "oracleItems": [
+    {
+      "index": 1,
+      "expected": "POST handler chooses method=tasks",
+      "baseline": {
+        "correct": true,
+        "rationale": "States that POST /api/devrequests/{id}/{method} lowercases method and dispatches tasks; metadata binds POST to devRequestsIdPOST and handler lines show НРег plus the tasks branch.",
+        "citedLocators": ["HTTPServices/API.xml:459-526", "HTTPServices/API/Ext/Module.bsl:262-281"]
+      },
+      "candidate": {
+        "correct": true,
+        "rationale": "States the POST route, lowercase normalization and tasks-only task-creation dispatch; both metadata and handler ranges directly support it.",
+        "citedLocators": ["HTTPServices/API.xml:3-14", "HTTPServices/API.xml:459-526", "HTTPServices/API/Ext/Module.bsl:262-281"]
+      }
+    },
+    {
+      "index": 2,
+      "expected": "Calls API.СоздатьЗадачуОтЗаявки",
+      "baseline": {
+        "correct": true,
+        "rationale": "Explicitly states the call with request id and query parameters; handler line 271 contains the exact call.",
+        "citedLocators": ["HTTPServices/API/Ext/Module.bsl:262-281"]
+      },
+      "candidate": {
+        "correct": true,
+        "rationale": "Fact F2 states the exact API.СоздатьЗадачуОтЗаявки dispatch and cites the exact handler range.",
+        "citedLocators": ["HTTPServices/API/Ext/Module.bsl:262-281"]
+      }
+    },
+    {
+      "index": 3,
+      "expected": "Rejects service user",
+      "baseline": {
+        "correct": true,
+        "rationale": "States the service-user rejection; API lines 995-999 return error response 18 for that condition.",
+        "citedLocators": ["CommonModules/API/Ext/Module.bsl:995-1020"]
+      },
+      "candidate": {
+        "correct": true,
+        "rationale": "Fact F3 states this rejection and the cited API range directly contains it.",
+        "citedLocators": ["CommonModules/API/Ext/Module.bsl:995-1020"]
+      }
+    },
+    {
+      "index": 4,
+      "expected": "Resolves request reference and parameters",
+      "baseline": {
+        "correct": true,
+        "rationale": "States rejection of an unresolvable request id and invalid parameters and separately maps system/due/customer; API lines 1001-1010 and 5085-5088 support the complete item.",
+        "citedLocators": ["CommonModules/API/Ext/Module.bsl:995-1020", "CommonModules/API/Ext/Module.bsl:5085-5088"]
+      },
+      "candidate": {
+        "correct": true,
+        "rationale": "Facts F3-F4 state reference/parameter resolution, mandatory system and optional due/customer; cited ranges directly support all components.",
+        "citedLocators": ["CommonModules/API/Ext/Module.bsl:995-1020", "CommonModules/API/Ext/Module.bsl:5085-5088"]
+      }
+    },
+    {
+      "index": 5,
+      "expected": "Calls document manager СоздатьЗадачуПоСистеме",
+      "baseline": {
+        "correct": true,
+        "rationale": "The answer describes delegation to creation by system; API line 1013 contains the exact manager call and the manager implementation starts at line 376.",
+        "citedLocators": ["CommonModules/API/Ext/Module.bsl:995-1020", "Documents/ЗаявкаНаРазработку/Ext/ManagerModule.bsl:376-475"]
+      },
+      "candidate": {
+        "correct": true,
+        "rationale": "Fact F3 states the manager delegation and the cited API and manager ranges close caller to callee.",
+        "citedLocators": ["CommonModules/API/Ext/Module.bsl:995-1020", "Documents/ЗаявкаНаРазработку/Ext/ManagerModule.bsl:376-434"]
+      }
+    },
+    {
+      "index": 6,
+      "expected": "Author must belong to IT",
+      "baseline": {
+        "correct": true,
+        "rationale": "States that current author must be in IT; manager lines 381-398 obtain the current user, calculate IT membership and reject otherwise.",
+        "citedLocators": ["Documents/ЗаявкаНаРазработку/Ext/ManagerModule.bsl:376-475"]
+      },
+      "candidate": {
+        "correct": true,
+        "rationale": "Fact F5 states the IT-structure/IT-department condition and cites the exact guard range.",
+        "citedLocators": ["Documents/ЗаявкаНаРазработку/Ext/ManagerModule.bsl:376-434"]
+      }
+    },
+    {
+      "index": 7,
+      "expected": "Rejects draft or rejected-system request",
+      "baseline": {
+        "correct": true,
+        "rationale": "States both draft and selected-system rejected conditions; manager lines 409-417 implement both, while 813-869 binds status to the selected system.",
+        "citedLocators": ["Documents/ЗаявкаНаРазработку/Ext/ManagerModule.bsl:376-475", "Documents/ЗаявкаНаРазработку/Ext/ManagerModule.bsl:813-869"]
+      },
+      "candidate": {
+        "correct": true,
+        "rationale": "Fact F6 states both conditions and the cited manager/query ranges directly support the conjunction.",
+        "citedLocators": ["Documents/ЗаявкаНаРазработку/Ext/ManagerModule.bsl:376-434", "Documents/ЗаявкаНаРазработку/Ext/ManagerModule.bsl:813-869"]
+      }
+    },
+    {
+      "index": 8,
+      "expected": "Due date must be later than current day",
+      "baseline": {
+        "correct": true,
+        "rationale": "States that a filled due date must be strictly later than start of current day; manager lines 419-425 implement the exact predicate.",
+        "citedLocators": ["Documents/ЗаявкаНаРазработку/Ext/ManagerModule.bsl:376-475"]
+      },
+      "candidate": {
+        "correct": true,
+        "rationale": "Fact F6 states rejection when due is no later than start of current day; cited lines 419-425 are exact.",
+        "citedLocators": ["Documents/ЗаявкаНаРазработку/Ext/ManagerModule.bsl:376-434"]
+      }
+    },
+    {
+      "index": 9,
+      "expected": "Creates and writes Документ.Задача with New status, base request and core fields",
+      "baseline": {
+        "correct": true,
+        "rationale": "Completely states creation/write of Документ.Задача, New status, base request and inherited/core fields; manager lines 436-471 instantiate, populate, write and return the task reference.",
+        "citedLocators": ["Documents/ЗаявкаНаРазработку/Ext/ManagerModule.bsl:376-475", "Documents/ЗаявкаНаРазработку/Ext/ManagerModule.bsl:813-869"]
+      },
+      "candidate": {
+        "correct": true,
+        "rationale": "Facts F8-F9 completely state creation/write, New status, base request and core/defaulted fields; manager lines 436-473 and data-query lines 813-869 directly support the complete conjunctive item.",
+        "citedLocators": ["Documents/ЗаявкаНаРазработку/Ext/ManagerModule.bsl:436-473", "Documents/ЗаявкаНаРазработку/Ext/ManagerModule.bsl:813-869"]
+      }
+    }
+  ],
+  "armResults": {
+    "baseline": {
+      "factsCorrect": 9,
+      "factsTotal": 9,
+      "factAccuracy": 1.0,
+      "dangerousFalseClaims": [],
+      "dangerousFalseClaimCount": 0,
+      "invalidLocators": [],
+      "invalidLocatorCount": 0,
+      "contextSufficiency": {
+        "decision": "sufficient",
+        "rationale": "Covers route/handler, API guards and parameter mapping, manager-level business conditions, selected-system query, task creation/write and response projection; runtime publication, live data and durable commit remain explicit unknowns."
+      },
+      "extraClaims": [
+        {
+          "claim": "General base-object guard also rejects rejected final state and requests whose resolved/rejected status is older than five days.",
+          "assessment": "supported, non-dangerous",
+          "locators": ["Documents/Задача/Ext/ManagerModule.bsl:78-114", "InformationRegisters/МинимальныеСтатусыЗаявок/Ext/ManagerModule.bsl:200-232"]
+        }
+      ]
+    },
+    "candidate": {
+      "factsCorrect": 9,
+      "factsTotal": 9,
+      "factAccuracy": 1.0,
+      "dangerousFalseClaims": [],
+      "dangerousFalseClaimCount": 0,
+      "invalidLocators": [],
+      "invalidLocatorCount": 0,
+      "contextSufficiency": {
+        "decision": "sufficient",
+        "rationale": "Covers all baseline-essential static evidence plus HTTP root metadata, object-level revalidation and statically reachable post-write side effects; runtime publication, concrete data, atomicity and actual side-effect completion remain explicit unknowns."
+      },
+      "extraClaims": [
+        {
+          "claim": "Object lifecycle revalidates before write and statically exposes process/deadline/relationship/queue effects.",
+          "assessment": "supported as static reachability, non-dangerous; not an additional oracle item",
+          "locators": ["Documents/Задача/Ext/ObjectModule.bsl:51-63", "Documents/Задача/Ext/ObjectModule.bsl:281-335"]
+        }
+      ]
+    }
+  },
+  "locatorValidation": {
+    "baseline": {
+      "locatorCount": 9,
+      "allPathsExist": true,
+      "allRangesWithinFiles": true,
+      "allFullFileHashesMatchContext": true,
+      "allFragmentByteCountsMatch": true
+    },
+    "candidate": {
+      "locatorCount": 13,
+      "allPathsExist": true,
+      "allRangesWithinFiles": true,
+      "allFullFileHashesMatchContext": true,
+      "allFragmentByteCountsMatch": true
+    }
+  },
+  "distractorAnalysis": {
+    "distractor": {
+      "locator": "Reports/ЗадачиПоЗаявкам.xml:3-26",
+      "description": "Plausible same-term hit named 'Задачи по заявкам'; it defines an analytical Report and its composition schema, not the HTTP request-to-task creation chain."
+    },
+    "baseline": {
+      "avoidedTreatingAsEvidence": true,
+      "basis": "The report is absent from the baseline context and answer locators; the packet relies on owning HTTP/API/document-manager sources."
+    },
+    "candidate": {
+      "avoidedTreatingAsEvidence": true,
+      "basis": "The report is absent from candidate context and answer locators; candidate searchLog explicitly records that unrelated reports/forms were not used."
+    }
+  },
+  "recomputedMetrics": {
+    "baseline": {
+      "selectedFiles": 6,
+      "selectedFragments": 9,
+      "selectedLines": 393,
+      "selectedContextBytes": 24966,
+      "wallClockSeconds": 386,
+      "searchOperations": 25,
+      "readOperations": 13,
+      "otherNavigationOperations": 11,
+      "totalNavigationOperations": 49
+    },
+    "candidate": {
+      "selectedFiles": 7,
+      "selectedFragments": 13,
+      "selectedLines": 462,
+      "selectedContextBytes": 30448,
+      "wallClockSeconds": 342,
+      "searchOperations": 27,
+      "readOperations": 19,
+      "otherNavigationOperations": 10,
+      "totalNavigationOperations": 56,
+      "preparationSeconds": null,
+      "derivedDiskBytes": 0
+    },
+    "candidateRelativeToBaseline": {
+      "contextByteReductionPct": -21.957862693262836,
+      "wallClockReductionPct": 11.398963730569948,
+      "navigationOperationReductionPct": -14.285714285714285,
+      "interpretation": "Candidate used 21.96% more context and 14.29% more navigation operations while finishing 11.40% faster."
+    },
+    "independentRecomputation": "Context files were reparsed and every inclusive CRLF-preserving source range was reread from the snapshot; totals were not accepted from arm self-report alone. Wall time and operation counts were recomputed arithmetically from metrics timestamps/count fields."
+  },
+  "usefulnessDecisions": {
+    "originalPreregisteredDesign": {
+      "designPath": ".local/experiments/issue12/preregistered-design.json",
+      "designSha256": "f071e67d7d365660f6a8ccd92d7d8529eb28d39a00ad8ec1aa639ee8fd91cf66",
+      "decision": "NOT_USEFUL_KEEP_BASELINE",
+      "correctnessGatesForThisTask": "pass",
+      "positiveSignal": "fail",
+      "rationale": "Coverage is tied at 9/9, candidate has no dangerous claims and no invalid locators, but it adds no oracle-essential relation missed by baseline and achieves no signed >=25% reduction: bytes and operations increase, while wall clock falls only 11.40%. Therefore the original all-gates-plus-positive-signal rule fails regardless of unresolved issue-wide gates.",
+      "costCeiling": "not independently demonstrated because candidate preparationSeconds is null; no derived navigation data was created"
+    },
+    "stricterPreResultsDesignAmendment": {
+      "designPath": ".local/experiments/issue12/pre-results-design-amendment.json",
+      "designSha256": "a3844715972c19e9e7f055c97b171c50cf395bd5a60df66bb387b67143874c2a",
+      "decision": "NOT_USEFUL_KEEP_BASELINE",
+      "signedReductionBranch": "fail: no efficiency metric has a >=25% reduction",
+      "paretoRule": "fail: context bytes regress 21.96% and navigation operations regress 14.29%, both more than the allowed 10% non-regression bound; wall clock improves 11.40% but is below 25%",
+      "essentialRelationBranch": "fail: candidate and baseline both score 9/9, so candidate has no higher oracle coverage",
+      "rationale": "Neither amended decision branch passes. The bounded-frontier packet is correct and somewhat richer, but not useful under the frozen selection rule."
+    }
+  },
+  "artifactHashes": {
+    "preregisteredDesign": "f071e67d7d365660f6a8ccd92d7d8529eb28d39a00ad8ec1aa639ee8fd91cf66",
+    "preResultsDesignAmendment": "a3844715972c19e9e7f055c97b171c50cf395bd5a60df66bb387b67143874c2a",
+    "oracleBinding": "c48c3f8cf2e24dfe542f591098d950f3617cec7efd3894eb58e52d1101fd2ac4",
+    "publicTask": "6989d4b315f268846a367758b1ed86a5329f4479200caa2c8c4ffcfbbe8415ab",
+    "sourceOracle": "761cb235b9fd2d984a4c4817104f26b58760062bc9d863f03600aec53b0f674f",
+    "sourceAdjudication": "e8406bb12605bae9a2bbf95bba1a05ff6cc995a033f247a5a66e9e9bac58754c",
+    "canonicalQuestions": "80ea873a00c1c97f003b07a7304852fc9baed6983762bdcf6ae2d44eeaf279a5",
+    "canonicalExperiment": "fd0c913ca824d324243c9d4e88e8975995f727a8a10e7c6753e48f991b894c85",
+    "baselineAnswer": "701a61507efd1c08dfea17097a5b0873b2221a0cf1ea3ac722358e0b92ad7632",
+    "baselineContext": "e6ce3f05afdfd9d93e7b551dbfea655b497cf5091e99d6d1cfa8696a5fdfa35d",
+    "baselineMetrics": "dba897fc96bb78ec4c129e5a2711f4ad4515ce5f72be38398204e4e5da4f77c8",
+    "candidateRawAnswer": "eb25400c36d89f2ad332a0212ca35f16647a182491480e3afe35233b09036547",
+    "candidateNormalizedAnswer": "814e471300124b1e86a035837fa07d7879f0101efe7e1c50ca5f8f2292e99976",
+    "candidateContext": "37802de20cf9992585ed1262ee29fab8479da8478571ee10a16e4fb1ca370754",
+    "candidateMetrics": "08a6ea359efae0bea8764de42ba6c1adf76293c7b9bff1b3da621d0e1e0036a0"
+  },
+  "verdict": "Both arms are fully correct (9/9), safe (0 dangerous false claims), locator-valid (0 invalid locators), and context-sufficient. Candidate is not useful under either frozen design: retain the direct-source baseline and add no component."
+}

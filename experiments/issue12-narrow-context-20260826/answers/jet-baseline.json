@@ -1,0 +1,109 @@
+{
+  "schemaVersion": 1,
+  "experimentId": "issue12-jet-metadata-v3-warehouse-negative-balance",
+  "snapshotContentId": "sha256:70972b5e11901ca31c7f7ec67dca03f78986206b024be01aeb34e0e1f3ff6691",
+  "questionSetSha256": "0d2f03591317ad98f9bce1fd4f34834817c00de137a381f0ae6462d3e2b9984a",
+  "client": {
+    "name": "Hermes Agent",
+    "version": "gpt-5.6-sol"
+  },
+  "answers": [
+    {
+      "questionId": "issue12-jet-metadata-v3-warehouse-negative-balance",
+      "answer": "Change plan executed: add one item-level Boolean attribute named AllowNegativeInventoryBalance to Catalog.Warehouses, present it in English as “Allow negative inventory balance,” and give it an explicit false fill value. The frozen diff changes only Catalogs/Warehouses.xml; native Designer validation remains unknown.",
+      "facts": [
+        {
+          "id": "F1",
+          "text": "The baseline metadata defines Catalog.Warehouses with the English object presentation “Warehouse”."
+        },
+        {
+          "id": "F2",
+          "text": "The catalog’s direct ChildObjects collection is the metadata insertion point used by the change."
+        },
+        {
+          "id": "F3",
+          "text": "A baseline direct catalog Boolean-attribute pattern serializes xs:boolean type, an explicit false FillValue, and Use=ForItem."
+        },
+        {
+          "id": "F4",
+          "text": "The work copy adds exactly one direct attribute, AllowNegativeInventoryBalance, with English presentation “Allow negative inventory balance”, xs:boolean type, explicit false fill, and Use=ForItem."
+        },
+        {
+          "id": "F5",
+          "text": "The binary-safe no-index diff contains only Catalogs/Warehouses.xml."
+        }
+      ],
+      "inferences": [
+        {
+          "id": "I1",
+          "text": "Applying the existing direct catalog Boolean pattern at the Warehouses ChildObjects boundary is the minimal metadata-only change plan for the requested setting."
+        },
+        {
+          "id": "I2",
+          "text": "Because the exact changed-file set is limited to Catalogs/Warehouses.xml, the candidate introduces no form, BSL, posting, or other runtime-source change."
+        }
+      ],
+      "assumptions": [
+        {
+          "id": "A1",
+          "text": "AllowNegativeInventoryBalance is used as the internal English metadata identifier because the public task constrains the presentation but does not prescribe an internal identifier."
+        }
+      ],
+      "unknowns": [
+        {
+          "id": "U1",
+          "text": "Native Designer /LoadConfigFromFiles and /UpdateDBCfg acceptance is unknown because 1C was intentionally not run for this frozen package."
+        }
+      ],
+      "locators": [
+        {
+          "path": "Catalogs/Warehouses.xml",
+          "startLine": 26,
+          "endLine": 40,
+          "claimIds": [
+            "F1"
+          ]
+        },
+        {
+          "path": "Catalogs/Warehouses.xml",
+          "startLine": 344,
+          "endLine": 365,
+          "claimIds": [
+            "F1",
+            "F2"
+          ]
+        },
+        {
+          "path": "Catalogs/EmailAccounts.xml",
+          "startLine": 528,
+          "endLine": 580,
+          "claimIds": [
+            "F3",
+            "I1"
+          ]
+        },
+        {
+          "path": "work-copy/Catalogs/Warehouses.xml",
+          "startLine": 365,
+          "endLine": 404,
+          "claimIds": [
+            "F4",
+            "I1"
+          ]
+        },
+        {
+          "path": "change.diff",
+          "startLine": 1,
+          "endLine": 51,
+          "claimIds": [
+            "F5",
+            "I2"
+          ]
+        }
+      ]
+    }
+  ],
+  "metrics": {
+    "metricsFile": "metrics.json"
+  }
+}

@@ -1,0 +1,27 @@
+{
+  "schemaVersion": 1,
+  "kind": "sdms-task-identity-derivation",
+  "frozenSelection": {
+    "encodedOriginalArtifact": "tasks/sdms-frozen-original.json.b64",
+    "encoding": "RFC 4648 Base64 with line wrapping; decode before hashing or JSON review",
+    "publicTaskSha256": "6989d4b315f268846a367758b1ed86a5329f4479200caa2c8c4ffcfbbe8415ab",
+    "publishedSanitizedTask": "tasks/sdms.json",
+    "publishedSanitizedTaskSha256": "42b8d0e1817c15f1d145dd404e57d20b42eb983c85513f40bd7b745924092009",
+    "sanitization": "Only snapshot.root and snapshot.manifest changed from host-absolute project paths to repository-relative paths. Business text, task ID, snapshot content ID, file count, upstream commit, requirements, blindness, freeze time, and status are byte-equivalent JSON values."
+  },
+  "canonicalQuestionSet": {
+    "artifact": "tasks/sdms-questions.json",
+    "sha256": "80ea873a00c1c97f003b07a7304852fc9baed6983762bdcf6ae2d44eeaf279a5",
+    "questionId": "Q1",
+    "questionTextEqualsPublishedTaskText": true,
+    "taskTextUtf8Sha256": "db00ff652e33306ee496343fa5a58d046b91f81f805841b7446b4bb5a6b5e405"
+  },
+  "armBinding": {
+    "baselineAnswer": "answers/sdms-baseline.json",
+    "candidateAnswer": "answers/sdms-candidate.json",
+    "requiredQuestionSetSha256": "80ea873a00c1c97f003b07a7304852fc9baed6983762bdcf6ae2d44eeaf279a5",
+    "bothExperimentIds": "issue12-sdms-cross-object-business-01",
+    "bothSnapshotContentIds": "sha256:3357ee63204ff863aac116417927240930084dce0eb7613126ad88cff68a424d"
+  },
+  "identityChain": "Frozen selection digest -> path-only sanitized public task -> identical business text in canonical question set -> exact questionSetSha256 in both frozen answers."
+}
