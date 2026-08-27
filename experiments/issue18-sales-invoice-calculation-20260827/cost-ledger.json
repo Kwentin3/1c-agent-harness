@@ -1,7 +1,7 @@
 {
   "schemaVersion": 1,
   "issue": 18,
-  "status": "in-progress-pre-patch",
+  "status": "owner-hold-pre-patch-amendment-3",
   "boundaries": {
     "coreLoopEndsAt": "first complete native GREEN",
     "milestoneStartsAfter": "first complete native GREEN"
@@ -43,10 +43,10 @@
     "removedLines": null
   },
   "manualWork": {
-    "commandBlocks": 11,
+    "commandBlocks": 15,
     "pathSubstitutions": 0,
     "manifestUpdates": 0,
-    "publishedComments": 2,
+    "publishedComments": 6,
     "note": "Counts are updated at phase boundaries; exploratory read-only tool batches count as command blocks, individual file reads do not."
   },
   "reuseUnchanged": [
@@ -76,6 +76,12 @@
       "status": "closed-by-amendment-2",
       "locator": "independent review of commit 58262bac found a correct helper loop plus unauthorized Inventory.Count() > 3 rejection survives",
       "effect": "Amendment 2 constrains the executable production delta; production patch and native attempts remain zero."
+    },
+    {
+      "id": "OWNER-HOLD-1",
+      "status": "amendment-3-pending-review-and-owner-acceptance",
+      "locator": "issue comment 5442550859",
+      "effect": "History was pushed/read back; amendment 3 separates runtime semantics from patch policy, adds mixed 4/5-row shapes, narrows VAT runtime claim, and classifies inventory/cost as preservation controls. Production/native remain blocked."
     }
   ],
   "baselineIssue14": {
@@ -86,6 +92,6 @@
     "instrumentationAddedLines": 328,
     "productionAddedLines": 6
   },
-  "verdict": null,
+  "verdict": "pre-patch reviewer PASS at e2202de, superseded as an owner gate by amendment 3; final review and owner acceptance pending",
   "priorityToolCandidate": null
 }
