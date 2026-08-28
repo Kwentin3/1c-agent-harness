@@ -755,7 +755,7 @@ def _compact_prepared_invocation(
         "retainedPaths": ["spec.json", "run/evidence", "run/logs", "run/result.json"],
     }
     _write_json_atomic(result_path, result)
-    peak_bytes = _logical_file_bytes(invocation.invocation_root)
+    pre_compaction_bytes = _logical_file_bytes(invocation.invocation_root)
     removed_bytes = sum(_logical_file_bytes(path) for path in disposable)
     try:
         for path in disposable:
@@ -765,8 +765,8 @@ def _compact_prepared_invocation(
         assert isinstance(storage, dict)
         storage.update({
             "status": "failed",
-            "peakLogicalBytes": peak_bytes,
-            "removedLogicalBytes": peak_bytes - _logical_file_bytes(invocation.invocation_root),
+            "preCompactionLogicalBytes": pre_compaction_bytes,
+            "removedLogicalBytes": pre_compaction_bytes - _logical_file_bytes(invocation.invocation_root),
             "errorType": type(exc).__name__,
             "error": str(exc),
         })
@@ -788,20 +788,15 @@ def _compact_prepared_invocation(
     assert isinstance(storage, dict)
     storage.update({
         "status": "completed",
-        "peakLogicalBytes": peak_bytes,
+        "preCompactionLogicalBytes": pre_compaction_bytes,
         "removedLogicalBytes": removed_bytes,
+        "retainedLogicalBytesExcludingResult": (
+            _logical_file_bytes(invocation.invocation_root) - result_path.lstat().st_size
+        ),
     })
-    for _ in range(4):
-        retained_bytes = _logical_file_bytes(invocation.invocation_root)
-        storage["peakLogicalBytes"] = max(peak_bytes, retained_bytes)
-        storage["retainedLogicalBytes"] = retained_bytes
-        storage["durationSeconds"] = round(time.monotonic() - storage_started, 3)
-        result["totalDurationSeconds"] = round(time.monotonic() - started, 3)
-        _write_json_atomic(result_path, result)
-        if _logical_file_bytes(invocation.invocation_root) == retained_bytes:
-            break
-    else:
-        raise RuntimeError("retained storage measurement did not stabilize")
+    storage["durationSeconds"] = round(time.monotonic() - storage_started, 3)
+    result["totalDurationSeconds"] = round(time.monotonic() - started, 3)
+    _write_json_atomic(result_path, result)
 
 
 def run_cycle(plan: SimpleNamespace, spec_path: Path) -> dict[str, object]:

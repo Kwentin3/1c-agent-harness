@@ -112,7 +112,7 @@ run/evidence/
 run/logs/
 ```
 
-The final result reports policy, status, exact removed/retained path classes, observed `peakLogicalBytes`, `removedLogicalBytes`, stable `retainedLogicalBytes`, compaction duration and `manualCleanupActions=0`. Cleanup runs after the prepared source terminal recheck on success and failure paths. A cleanup error cannot remain `runtime_contract_completed`; it is persisted as `artifact_cleanup_failed`. Existing lifecycle failures keep their primary failure status and add explicit failed-compaction diagnostics.
+The final result reports policy, status, exact removed/retained path classes, exact `preCompactionLogicalBytes`, `removedLogicalBytes`, `retainedLogicalBytesExcludingResult`, compaction duration and `manualCleanupActions=0`. The result file is excluded from the retained byte field to avoid a self-referential size loop; the evidence cost ledger measures actual post-command retained total and a sampled lifecycle peak externally. Cleanup runs after the prepared source terminal recheck on success and failure paths. A cleanup error cannot remain `runtime_contract_completed`; it is persisted as `artifact_cleanup_failed`. Existing lifecycle failures keep their primary failure status and add explicit failed-compaction diagnostics.
 
 This contract deliberately does not delete another invocation, an older issue root, prepared input, source snapshot, manifest, platform or external path. Cross-run retention and general filesystem cleanup remain outside the product surface because current-invocation compaction removes the reproduced unbounded-growth cause without adding a cleaner abstraction.
 

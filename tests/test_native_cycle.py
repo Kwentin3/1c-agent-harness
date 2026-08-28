@@ -1327,7 +1327,10 @@ class NativeCycleContractTests(unittest.TestCase):
                 storage = persisted["storageCompaction"]
                 self.assertEqual(storage["status"], "completed")
                 self.assertEqual(storage["policy"], "compact-current-invocation-v1")
-                self.assertGreaterEqual(storage["peakLogicalBytes"], storage["retainedLogicalBytes"])
+                self.assertGreater(
+                    storage["preCompactionLogicalBytes"],
+                    storage["retainedLogicalBytesExcludingResult"],
+                )
                 self.assertGreater(storage["removedLogicalBytes"], 0)
                 self.assertEqual(storage["manualCleanupActions"], 0)
 
