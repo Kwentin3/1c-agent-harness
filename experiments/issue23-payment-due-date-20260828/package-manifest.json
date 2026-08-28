@@ -13,6 +13,6 @@
     "production-patch.diff.gz": "5394fb382e7aa21115f1d92fe2050b34f4524dd1a7bf5cc7713acdd706625ac6",
     "source-baseline-receipt.txt": "ff2913017c8f772cda621a7a06419a3cf1da7df6b17e8375eaa13b235976f43e",
     "source-identity.json": "31a887fefb3b9f3e98359968a62380b0e8a6a10bcda2e3d20e37385837627ca4",
-    "validate.py": "7e537a5b3d5a67ea9132f4fc3b62697d14c3cecec27d1dcfe9fbe7e460b2ab49"
+    "validate.py": "ee04bd57a008bc6bd509a3d60b3b3fbcb3bf3616f83fd0f3ccc4ba1eb4a75268"
   }
 }

@@ -7,6 +7,9 @@ import json
 import re
 from pathlib import Path
 
+if not __debug__:
+    raise RuntimeError('optimized Python disables evidence assertions; rerun without -O')
+
 PACKAGE = Path(__file__).resolve().parent
 EXPECTED_FILES = {
     'README.md',
