@@ -221,6 +221,42 @@ def validate_package(package: Path) -> None:
     assert native["schemaVersion"] == 1 and native["issue"] == 20
     assert native["candidateCodeIdentityFileSha256"] == sha256(package / "candidate-code-identity.json")
     assert native["snapshotVerificationFileSha256"] == sha256(package / "snapshot-verification.json")
+
+    primary_files = {
+        "result": ("result.raw.json.gz", "result.json"),
+        "receipt": ("receipt.raw.gz", "receipt.txt"),
+        "spec": ("spec.raw.json.gz", "spec.json"),
+    }
+    expected_machine_artifacts = {}
+    for label, result in results.items():
+        primary = {
+            key: {
+                "rawFile": f"{label}-{raw_suffix}",
+                "rawSha256": RAW_SHA256[label][key],
+                "sanitizedFile": f"{label}-{sanitized_suffix}",
+                "sanitizedSha256": sha256(package / f"{label}-{sanitized_suffix}"),
+            }
+            for key, (raw_suffix, sanitized_suffix) in primary_files.items()
+        }
+        expected_machine_artifacts[label] = {
+            "invocationLabel": Path(
+                result["preparedInvocation"]["invocationRoot"]
+            ).name,
+            **primary,
+            "acceptanceFile": f"{label}-acceptance.json",
+            "acceptanceSha256": sha256(package / f"{label}-acceptance.json"),
+            "artifacts": {
+                key: {
+                    "rawFile": f"{label}-{RAW_SUFFIX[key]}",
+                    "rawSha256": RAW_SHA256[label][key],
+                    "sanitizedFile": f"{label}-{key}.txt",
+                    "sanitizedSha256": sha256(package / f"{label}-{key}.txt"),
+                }
+                for key in ("createLog", "createResult", "loadLog", "loadResult", "runLog")
+            },
+        }
+    assert native["machineProducedArtifacts"] == expected_machine_artifacts
+
     comparison = native["repeatComparison"]
     assert all(comparison[key] is True for key in (
         "differentInvocationRoots", "differentSpecSha256", "differentBindingArgvSha256",

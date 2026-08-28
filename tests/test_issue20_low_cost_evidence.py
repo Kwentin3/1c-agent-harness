@@ -80,6 +80,20 @@ class Issue20LowCostEvidenceTests(unittest.TestCase):
             with self.assertRaises(AssertionError):
                 validate_package(package)
 
+    def test_machine_artifact_linkage_forgery_is_rejected_after_manifest_refresh(self) -> None:
+        with tempfile.TemporaryDirectory() as tmp:
+            package = Path(tmp) / "package"
+            shutil.copytree(PACKAGE, package)
+            native_path = package / "native-results.json"
+            native = json.loads(native_path.read_text(encoding="utf-8"))
+            receipt = native["machineProducedArtifacts"]["success"]["receipt"]
+            receipt["rawFile"] = "nonexistent-forged.raw.gz"
+            receipt["rawSha256"] = "0" * 64
+            native_path.write_text(json.dumps(native, indent=2) + "\n", encoding="utf-8")
+            rewrite_manifest(package)
+            with self.assertRaises(AssertionError):
+                validate_package(package)
+
     def test_process_cleanup_forgery_is_rejected_after_manifest_refresh(self) -> None:
         with tempfile.TemporaryDirectory() as tmp:
             package = Path(tmp) / "package"
