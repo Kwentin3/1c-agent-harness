@@ -1,6 +1,6 @@
 # Issue #20 — low-cost prepared-tree native loop
 
-Status: implementation candidate `4ef4bf3b6e3ce1cd74316d3a35a3ab69476ad330` / tree `47fa6aa5e2f89bd70373f9e42e5e44567fb0a3e7` passed independent pre-native review. Fresh success/repeat evidence is captured in `experiments/issue20-low-cost-native-cycle-20260828/`; final exact-tree review and publication are pending.
+Status: implementation candidate `4ef4bf3b6e3ce1cd74316d3a35a3ab69476ad330` / tree `47fa6aa5e2f89bd70373f9e42e5e44567fb0a3e7` passed independent pre-native review. Fresh success/repeat evidence is captured in `experiments/issue20-low-cost-native-cycle-20260828/`; exact-tree review and separate open/unmerged PR are mandatory release gates.
 
 ## User boundary
 
