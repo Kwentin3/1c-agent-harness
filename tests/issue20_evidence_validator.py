@@ -60,6 +60,10 @@ CREATE_LOG_SHA256 = {
     "timeout": "9d861e72e19fe2189fe601cf3bf5609e093ce9789728cf47c9432f96a670883d",
 }
 PROCESS_CHECKS_SHA256 = "3c52361bc98454b9f3848995042d8f6e749956c7ad92402a4582c5513c9ed78d"
+CANDIDATE_CODE_IDENTITY = {
+    "scripts/native_cycle.py": "e8671770ff6941088c11d173b6303b8997ffaa672b672dcb532abbe3a3eac998",
+    "tests/test_native_cycle.py": "e998cff2f9d5d81af2393b279085a5601fee3848d78a74316374bb5960a890c2",
+}
 REPO_ROOT = Path(__file__).resolve().parents[1]
 
 
@@ -126,10 +130,7 @@ def validate_package(package: Path) -> None:
     code_identity = json.loads((package / "candidate-code-identity.json").read_text(encoding="utf-8"))
     assert code_identity["schemaVersion"] == 1
     assert code_identity["nativeRunsExecutedAfterTheseBytesWereFrozen"] is True
-    assert code_identity["codeIdentity"] == {
-        "scripts/native_cycle.py": sha256(REPO_ROOT / "scripts/native_cycle.py"),
-        "tests/test_native_cycle.py": sha256(REPO_ROOT / "tests/test_native_cycle.py"),
-    }
+    assert code_identity["codeIdentity"] == CANDIDATE_CODE_IDENTITY
 
     native = json.loads((package / "native-results.json").read_text(encoding="utf-8"))
     assert native["schemaVersion"] == 2

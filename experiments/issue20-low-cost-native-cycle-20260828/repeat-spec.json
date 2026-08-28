@@ -1,0 +1,12 @@
+{
+  "rawSha256": "1e3b331395df311db43dd6795447fd08767dfc0f006a8a1b490e0743c8d6f61b",
+  "sanitizedSpec": {
+    "schemaVersion": 1,
+    "inputTree": ".local/runs/native-cycle/run-nybv09_x/frozen-input",
+    "inputTreeSha256": "043e2f950e393c0615a72989bed78ab6e417cec87859e2bf8795effa2f429fbc",
+    "runRoot": ".local/runs/native-cycle/run-nybv09_x/run",
+    "receipt": "evidence/receipt.txt",
+    "completeMarker": "complete###true",
+    "timeoutSeconds": 240
+  }
+}

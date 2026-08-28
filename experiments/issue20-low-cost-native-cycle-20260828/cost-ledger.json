@@ -1,0 +1,102 @@
+{
+  "schemaVersion": 1,
+  "issue": 20,
+  "measurementBoundary": {
+    "included": "one run-prepared command from an already task-authored prepared tree through freeze, fingerprint, generated binding, native lifecycle, terminal source recheck, current-invocation compaction and final result publication",
+    "excluded": "task reconnaissance, BSL patch/probe authoring, semantic oracle authoring, evidence publication and review"
+  },
+  "supportedPreparedTreeEntrypoint": true,
+  "callerCommandBlocksPerRun": 1,
+  "manualBindingActionsPerRun": 0,
+  "manualPathSubstitutionsPerRun": 0,
+  "manualCleanupActionsPerRun": 0,
+  "sameCommandUsedForRepeat": true,
+  "nativeAttempts": {
+    "success": 1,
+    "repeat": 1
+  },
+  "fullWallSeconds": {
+    "success": 193.312,
+    "repeat": 198.916
+  },
+  "executorSeconds": {
+    "success": 157.726,
+    "repeat": 166.658
+  },
+  "externalWallSeconds": {
+    "success": 193.626,
+    "repeat": 199.155
+  },
+  "sampledPeakLogicalBytes": {
+    "success": 224800941,
+    "repeat": 224800941
+  },
+  "preCompactionLogicalBytes": {
+    "success": 224800941,
+    "repeat": 224800941
+  },
+  "removedLogicalBytes": {
+    "success": 224757378,
+    "repeat": 224757378
+  },
+  "postCommandRetainedLogicalBytes": {
+    "success": 43792,
+    "repeat": 43792
+  },
+  "compactionSeconds": {
+    "success": 6.628,
+    "repeat": 6.652
+  },
+  "codeCostBoundary": {
+    "baselineCommit": "c4e40ff96a36c709cab46df651ee0564647f3146",
+    "candidateCommit": "a4e1509d44147229b4a515c7cd0013efba34762b",
+    "candidateTree": "070ac2fe8e93fce22a8771989e56dad8e9531457",
+    "measuredPaths": [
+      "scripts/native_cycle.py",
+      "tests/test_native_cycle.py"
+    ],
+    "rationale": "The full PR delta is measured from the issue #20 low-cost goal-loop base through the exact native runner bytes used for fresh success/repeat. Later evidence-only publication commits do not change either measured path."
+  },
+  "fullPrCommonCodeDiff": {
+    "scripts/native_cycle.py": {
+      "added": 530,
+      "removed": 8,
+      "baselineLines": 744,
+      "candidateLines": 1266
+    },
+    "tests/test_native_cycle.py": {
+      "added": 681,
+      "removed": 0,
+      "baselineLines": 873,
+      "candidateLines": 1554
+    }
+  },
+  "boundedStorageCorrectionDiff": {
+    "baselineCommit": "a3527412118f2c5dc608b0c549a5f4ff0c308d8b",
+    "candidateCommit": "a4e1509d44147229b4a515c7cd0013efba34762b",
+    "scripts/native_cycle.py": {
+      "added": 157,
+      "removed": 5
+    },
+    "tests/test_native_cycle.py": {
+      "added": 271,
+      "removed": 0
+    }
+  },
+  "kissAssessment": {
+    "answer": "The full +530/-8 common runner delta is larger than the original three manual binding actions but is justified by reproduced lifecycle gaps rather than speculative framework surface.",
+    "justifiedBy": [
+      "one supported run-prepared boundary replacing manual freeze, fingerprint, spec, run-root and receipt binding",
+      "persisted resultPath and terminal source recheck across preparation, native and failure paths",
+      "receipt observation races and detached native descendant cleanup reproduced during exact-tree review",
+      "bounded current-invocation storage after owner reproduced unbounded retained artifacts and disk exhaustion",
+      "fail-closed partial cleanup, result finalization and native Unix-socket cleanup reproduced by tests or fresh native execution"
+    ],
+    "scopeControls": [
+      "run_cycle remains the only native lifecycle implementation",
+      "legacy run --spec behavior is unchanged",
+      "no task-specific BSL, semantic oracle, arbitrary command, general cleaner, cross-run retention scan, GUI, RAG, MCP or deployment surface was added"
+    ]
+  },
+  "verdict": "LOW-COST PREPARED-TREE LIFECYCLE PASS; TASK-SPECIFIC PREPARATION AND SEMANTIC ORACLE REMAIN OUTSIDE THE CAPABILITY"
+}

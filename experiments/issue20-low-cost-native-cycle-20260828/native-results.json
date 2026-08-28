@@ -1,0 +1,148 @@
+{
+  "schemaVersion": 1,
+  "issue": 20,
+  "candidateCodeIdentityFile": "candidate-code-identity.json",
+  "candidateCodeIdentityFileSha256": "277b2969d292f4bc55651901955f9908ee69ce5b6faa6833aa0305a62f2c635e",
+  "snapshotVerificationFile": "snapshot-verification.json",
+  "snapshotVerificationFileSha256": "48a55bd98bb82d5cfb6728b8985d8f43df53938a1d91cdbb34cd5f444784dd6f",
+  "preparedInputIdentity": {
+    "files": 5099,
+    "directories": 4847,
+    "bytes": 61802510,
+    "sha256": "d7628a2191d03a0dea3343ee1de19228dace3b4dc382c2fc1bd3058dcd2aaf27"
+  },
+  "machineProducedArtifacts": {
+    "success": {
+      "invocationLabel": "run-f_heomkc",
+      "result": {
+        "rawFile": "success-result.raw.json.gz",
+        "rawSha256": "eced70bff9a249f4ca86c3a187b7deb9a88fd3fa6a50d010563bffc29d91bb7b",
+        "sanitizedFile": "success-result.json",
+        "sanitizedSha256": "c5bbd7768bee0e09265f5182fcb81ad98d8fdc3a4d1917a46fe0fd7b9d021403"
+      },
+      "receipt": {
+        "rawFile": "success-receipt.raw.gz",
+        "rawSha256": "0ee86024bac073c92b7d63f3d5a0d07ebcf9ece8d879a9da3d03bca5818fa9b1",
+        "sanitizedFile": "success-receipt.txt",
+        "sanitizedSha256": "72ebc9b9a790c6f895e4899a85b88f9122dce4932a0ef19bcfc75f5677cf41d6"
+      },
+      "spec": {
+        "rawFile": "success-spec.raw.json.gz",
+        "rawSha256": "e981201bce74c0571cbae5457ecad4a11fdd6ca60918dae966078506c4be2371",
+        "sanitizedFile": "success-spec.json",
+        "sanitizedSha256": "19f5a21db79a0ed0e171d679d434c5d33edbc862688c74d014eeaa52b92a04dd"
+      },
+      "storageMeasurement": {
+        "rawFile": "success-storage-measurement.raw.json.gz",
+        "rawSha256": "26712a2afc77cff1fd942def6af59dc8c85dca904419ef8d993c88ab5995722d",
+        "sanitizedFile": "success-storage-measurement.json",
+        "sanitizedSha256": "78dc343bb717b941282af9eb019adf12814b913364b106fef216e985ca0689f0"
+      },
+      "acceptanceFile": "success-acceptance.json",
+      "acceptanceSha256": "1831a288e6864803d75f5a4b7a835bda23bc25897be60536ee7f6d4e25e7d8e2",
+      "artifacts": {
+        "createLog": {
+          "rawFile": "success-createLog.raw.gz",
+          "rawSha256": "f590e66b1c633fb87c790cbc2d1a1eb40249aff5539e76620546c3ef95a09350",
+          "sanitizedFile": "success-createLog.txt",
+          "sanitizedSha256": "d38ed8e6207cdf9d42077f5b56b2a46db76a6d735cc4201de0677832713aa056"
+        },
+        "createResult": {
+          "rawFile": "success-createResult.raw.gz",
+          "rawSha256": "e45825471ed10290785b62676dc5f453d228a1e1d933c45a733e9bb239c9e083",
+          "sanitizedFile": "success-createResult.txt",
+          "sanitizedSha256": "5feceb66ffc86f38d952786c6d696c79c2dbc239dd4e91b46729d73a27fb57e9"
+        },
+        "loadLog": {
+          "rawFile": "success-loadLog.raw.gz",
+          "rawSha256": "4d841be04b71dd0ee7cfebcfa7af194d74902e2ec1c213987889d7d3940c0f86",
+          "sanitizedFile": "success-loadLog.txt",
+          "sanitizedSha256": "245a76a1d622a71a02a4d412d6506dce28dfbcdfdc8899354b6d1ef8fa18faef"
+        },
+        "loadResult": {
+          "rawFile": "success-loadResult.raw.gz",
+          "rawSha256": "e45825471ed10290785b62676dc5f453d228a1e1d933c45a733e9bb239c9e083",
+          "sanitizedFile": "success-loadResult.txt",
+          "sanitizedSha256": "5feceb66ffc86f38d952786c6d696c79c2dbc239dd4e91b46729d73a27fb57e9"
+        },
+        "runLog": {
+          "rawFile": "success-runLog.raw.gz",
+          "rawSha256": "e8d8977dd4eafc3aed5271e9fd63591f0f3bd23cdb157a9bfe6e581bd3a9c149",
+          "sanitizedFile": "success-runLog.txt",
+          "sanitizedSha256": "932e6334293aa4fa56ba088947e46542679e99d49c411a1a139877406189d62d"
+        }
+      }
+    },
+    "repeat": {
+      "invocationLabel": "run-nybv09_x",
+      "result": {
+        "rawFile": "repeat-result.raw.json.gz",
+        "rawSha256": "a2e82a6636b643184d23521fd45739449f00dcf00697678ad8312fa44b207a06",
+        "sanitizedFile": "repeat-result.json",
+        "sanitizedSha256": "0b570d2c955baf870373d94db84c1b91bcb1ad428286d3455912619368f23e7f"
+      },
+      "receipt": {
+        "rawFile": "repeat-receipt.raw.gz",
+        "rawSha256": "f32dfbd3c686da074152aeb6b161976f3433a5e4e8c1fe1a4f03650ba3888b3a",
+        "sanitizedFile": "repeat-receipt.txt",
+        "sanitizedSha256": "8beecbd213efd3b34611df36a9c5bd92f0addb6e84282a701125a193ea205951"
+      },
+      "spec": {
+        "rawFile": "repeat-spec.raw.json.gz",
+        "rawSha256": "1e3b331395df311db43dd6795447fd08767dfc0f006a8a1b490e0743c8d6f61b",
+        "sanitizedFile": "repeat-spec.json",
+        "sanitizedSha256": "f166358cf04408ea0d55dbe593a13a62f10745f49b180f7266d3bc7600dccb01"
+      },
+      "storageMeasurement": {
+        "rawFile": "repeat-storage-measurement.raw.json.gz",
+        "rawSha256": "bcf274c088581e0034d349b7683955927f289554b7630901c661587561b8cfd3",
+        "sanitizedFile": "repeat-storage-measurement.json",
+        "sanitizedSha256": "32db017794ccc63bcd0248313fed5cf2494c7197cc5378cd8715e628d3e42e35"
+      },
+      "acceptanceFile": "repeat-acceptance.json",
+      "acceptanceSha256": "3aa7cc62473b4c46f1d0a1c6bb94b780c9325bccd374b86c20319806fc686424",
+      "artifacts": {
+        "createLog": {
+          "rawFile": "repeat-createLog.raw.gz",
+          "rawSha256": "30f76cf5260527cc3dd69e9e317f1d9f3ca09fc875a4b2c7b7120182a04780a2",
+          "sanitizedFile": "repeat-createLog.txt",
+          "sanitizedSha256": "c27856f3b34d423bc8b1fd165c326d1987f5e4625fe362db19dad0afea53c305"
+        },
+        "createResult": {
+          "rawFile": "repeat-createResult.raw.gz",
+          "rawSha256": "e45825471ed10290785b62676dc5f453d228a1e1d933c45a733e9bb239c9e083",
+          "sanitizedFile": "repeat-createResult.txt",
+          "sanitizedSha256": "5feceb66ffc86f38d952786c6d696c79c2dbc239dd4e91b46729d73a27fb57e9"
+        },
+        "loadLog": {
+          "rawFile": "repeat-loadLog.raw.gz",
+          "rawSha256": "4d841be04b71dd0ee7cfebcfa7af194d74902e2ec1c213987889d7d3940c0f86",
+          "sanitizedFile": "repeat-loadLog.txt",
+          "sanitizedSha256": "245a76a1d622a71a02a4d412d6506dce28dfbcdfdc8899354b6d1ef8fa18faef"
+        },
+        "loadResult": {
+          "rawFile": "repeat-loadResult.raw.gz",
+          "rawSha256": "e45825471ed10290785b62676dc5f453d228a1e1d933c45a733e9bb239c9e083",
+          "sanitizedFile": "repeat-loadResult.txt",
+          "sanitizedSha256": "5feceb66ffc86f38d952786c6d696c79c2dbc239dd4e91b46729d73a27fb57e9"
+        },
+        "runLog": {
+          "rawFile": "repeat-runLog.raw.gz",
+          "rawSha256": "e8d8977dd4eafc3aed5271e9fd63591f0f3bd23cdb157a9bfe6e581bd3a9c149",
+          "sanitizedFile": "repeat-runLog.txt",
+          "sanitizedSha256": "932e6334293aa4fa56ba088947e46542679e99d49c411a1a139877406189d62d"
+        }
+      }
+    }
+  },
+  "sameCallerCommand": "python3 scripts/native_cycle.py run-prepared --input-tree .local/prepared/issue20-low-cost-jet --complete-marker 'complete###true' --timeout-seconds 240",
+  "repeatComparison": {
+    "differentInvocationRoots": true,
+    "differentSpecSha256": true,
+    "differentBindingArgvSha256": true,
+    "samePreparedSourceIdentity": true,
+    "sameFrozenInputIdentity": true,
+    "semanticKeyOrderParity": true,
+    "unexpectedBehaviorDifferences": []
+  }
+}

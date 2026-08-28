@@ -5,11 +5,14 @@ import json
 import os
 from pathlib import Path
 import stat
+import socket
 import subprocess
+import sys
 import tempfile
 import time
 from types import SimpleNamespace
 import unittest
+from unittest import mock
 
 ROOT = Path(__file__).resolve().parents[1]
 CLI = ROOT / "scripts" / "native_cycle.py"
@@ -58,6 +61,490 @@ def create_fixed_profile(repo: Path, platform_body: str = "binary") -> tuple[Pat
 
 
 class NativeCycleContractTests(unittest.TestCase):
+    def test_prepare_invocation_freezes_generated_copy_and_binds_receipt_without_mutating_source(self) -> None:
+        native_cycle = load_module("native_cycle_prepare_invocation")
+        with tempfile.TemporaryDirectory() as tmp:
+            repo = Path(tmp)
+            source = repo / ".local" / "prepared" / "case-a"
+            (source / "empty").mkdir(parents=True)
+            module = source / "Ext" / "ManagedApplicationModule.bsl"
+            module.parent.mkdir()
+            module.write_text("probe uses LaunchParameter\n", encoding="utf-8")
+            source_before = native_cycle.tree_identity(source)
+            source_modes_before = {
+                path.relative_to(source).as_posix(): stat.S_IMODE(path.lstat().st_mode)
+                for path in (source, *source.rglob("*"))
+            }
+
+            invocation = native_cycle.prepare_invocation(
+                repo,
+                ".local/prepared/case-a",
+                "complete###true",
+                30,
+            )
+
+            self.assertEqual(native_cycle.tree_identity(source), source_before)
+            self.assertEqual(
+                {
+                    path.relative_to(source).as_posix(): stat.S_IMODE(path.lstat().st_mode)
+                    for path in (source, *source.rglob("*"))
+                },
+                source_modes_before,
+            )
+            self.assertTrue(invocation.invocation_root.is_relative_to(repo / ".local/runs/native-cycle"))
+            self.assertTrue(invocation.spec_path.is_file())
+            self.assertEqual(invocation.source_identity, source_before)
+            self.assertEqual(
+                invocation.frozen_identity,
+                native_cycle.tree_identity(invocation.frozen_input),
+            )
+            self.assertNotEqual(invocation.source_identity["sha256"], invocation.frozen_identity["sha256"])
+            self.assertTrue(all(
+                not (path.lstat().st_mode & 0o222)
+                for path in (invocation.frozen_input, *invocation.frozen_input.rglob("*"))
+            ))
+            plan = native_cycle.load_plan(
+                invocation.spec_path,
+                repo,
+                bind_receipt_launch_parameter=True,
+            )
+            self.assertEqual(plan.input_tree, invocation.frozen_input)
+            self.assertFalse(plan.run_root.exists())
+            self.assertEqual(plan.runtime_argv.count("/C"), 1)
+            launch_index = plan.runtime_argv.index("/C")
+            self.assertEqual(plan.runtime_argv[launch_index + 1], str(plan.receipt))
+
+    def test_prepare_invocation_rejects_multiline_completion_marker(self) -> None:
+        native_cycle = load_module("native_cycle_multiline_marker")
+        with tempfile.TemporaryDirectory() as tmp:
+            repo = Path(tmp)
+            source = repo / ".local" / "prepared" / "case-a"
+            source.mkdir(parents=True)
+            (source / "Configuration.xml").write_text("<Configuration/>\n", encoding="utf-8")
+            with self.assertRaisesRegex(ValueError, "single line"):
+                native_cycle.prepare_invocation(repo, ".local/prepared/case-a", "complete###true\nextra", 5)
+
+    def test_prepare_invocation_distinguishes_second_read_only_input_shape(self) -> None:
+        native_cycle = load_module("native_cycle_second_shape")
+        with tempfile.TemporaryDirectory() as tmp:
+            repo = Path(tmp)
+            first = repo / ".local" / "prepared" / "first"
+            second = repo / ".local" / "prepared" / "second"
+            first.mkdir(parents=True)
+            (first / "Configuration.xml").write_text("<Configuration/>\n", encoding="utf-8")
+            (second / "empty-a" / "empty-b").mkdir(parents=True)
+            (second / "Configuration.xml").write_text("<Configuration name='second'/>\n", encoding="utf-8")
+            (second / "extra.txt").write_bytes(b"second-shape\n")
+            freeze_tree(second)
+            second_before = native_cycle.tree_identity(second)
+
+            first_invocation = native_cycle.prepare_invocation(
+                repo, ".local/prepared/first", "done", 30,
+            )
+            second_invocation = native_cycle.prepare_invocation(
+                repo, ".local/prepared/second", "done", 30,
+            )
+
+            self.assertNotEqual(first_invocation.source_identity, second_invocation.source_identity)
+            self.assertNotEqual(first_invocation.frozen_identity, second_invocation.frozen_identity)
+            self.assertNotEqual(first_invocation.invocation_root, second_invocation.invocation_root)
+            self.assertEqual(native_cycle.tree_identity(second), second_before)
+            self.assertEqual(second_invocation.source_identity, second_invocation.frozen_identity)
+
+    def test_run_prepared_special_input_fails_without_native_launch_and_persists_result_path(self) -> None:
+        with tempfile.TemporaryDirectory() as tmp:
+            repo = Path(tmp)
+            source = repo / ".local" / "prepared" / "fifo"
+            source.mkdir(parents=True)
+            os.mkfifo(source / "receipt-channel")
+            completed = subprocess.run(
+                [
+                    sys.executable,
+                    str(CLI),
+                    "run-prepared",
+                    "--repo-root", str(repo),
+                    "--input-tree", ".local/prepared/fifo",
+                    "--complete-marker", "complete###true",
+                    "--timeout-seconds", "5",
+                ],
+                text=True,
+                capture_output=True,
+                timeout=10,
+            )
+
+            self.assertEqual(completed.returncode, 1)
+            output = json.loads(completed.stdout)
+            self.assertEqual(output["status"], "precheck_failed")
+            self.assertEqual(output["errorType"], "ValueError")
+            self.assertIn("non-regular", output["error"])
+            result_path = repo / output["resultPath"]
+            self.assertTrue(result_path.is_file())
+            self.assertEqual(json.loads(result_path.read_text(encoding="utf-8")), output)
+            self.assertFalse((repo / ".local/platform/1cv8t").exists())
+
+    def test_run_prepared_rechecks_source_after_generated_copy_failure(self) -> None:
+        native_cycle = load_module("native_cycle_copy_failure_recheck")
+        with tempfile.TemporaryDirectory() as tmp:
+            repo = Path(tmp)
+            source = repo / ".local" / "prepared" / "case-a"
+            source.mkdir(parents=True)
+            source_file = source / "Configuration.xml"
+            source_file.write_text("<Configuration/>\n", encoding="utf-8")
+
+            def fail_copy(*_args: object, **_kwargs: object) -> None:
+                source_file.write_text("<Configuration changed='true'/>\n", encoding="utf-8")
+                raise OSError("simulated generated copy failure")
+
+            with mock.patch.object(native_cycle.shutil, "copytree", side_effect=fail_copy):
+                with self.assertRaises(OSError) as raised:
+                    native_cycle.run_prepared(repo, ".local/prepared/case-a", "complete###true", 5)
+
+            result_path = getattr(raised.exception, "result_path", None)
+            self.assertIsNotNone(result_path)
+            result = json.loads(result_path.read_text(encoding="utf-8"))
+            self.assertEqual(result["status"], "input_changed")
+            self.assertEqual(result["failedStage"], "prepared-input-reverify")
+            self.assertNotEqual(
+                result["preparedInvocation"]["sourceBefore"],
+                result["preparedInvocation"]["sourceAfter"],
+            )
+            self.assertEqual(result["preparedInvocation"]["generatedSpec"]["status"], "absent")
+            self.assertIn("totalDurationSeconds", result)
+            self.assertEqual(result["resultPath"], result_path.relative_to(repo).as_posix())
+            invocation_root = repo / result["preparedInvocation"]["invocationRoot"]
+            self.assertFalse((invocation_root / "frozen-input").exists())
+            self.assertEqual(result["storageCompaction"]["status"], "completed")
+
+    def test_run_prepared_persists_result_when_generated_plan_preflight_fails(self) -> None:
+        native_cycle = load_module("native_cycle_generated_plan_preflight")
+        with tempfile.TemporaryDirectory() as tmp:
+            repo = Path(tmp)
+            source = repo / ".local" / "prepared" / "case-a"
+            source.mkdir(parents=True)
+            (source / "Configuration.xml").write_text("<Configuration/>\n", encoding="utf-8")
+
+            with mock.patch.object(
+                native_cycle,
+                "load_plan",
+                side_effect=RuntimeError("simulated procfs preflight failure"),
+            ):
+                with self.assertRaises(RuntimeError) as raised:
+                    native_cycle.run_prepared(repo, ".local/prepared/case-a", "complete###true", 5)
+
+            result_path = getattr(raised.exception, "result_path", None)
+            self.assertIsNotNone(result_path)
+            self.assertTrue(result_path.is_file())
+            result = json.loads(result_path.read_text(encoding="utf-8"))
+            self.assertEqual(result["status"], "precheck_failed")
+            self.assertEqual(result["failedStage"], "generated-plan-preflight")
+            self.assertEqual(result["resultPath"], result_path.relative_to(repo).as_posix())
+            self.assertEqual(result["preparedInvocation"]["sourceBefore"], result["preparedInvocation"]["sourceAfter"])
+            invocation_root = repo / result["preparedInvocation"]["invocationRoot"]
+            self.assertFalse((invocation_root / "frozen-input").exists())
+            self.assertEqual(result["storageCompaction"]["status"], "completed")
+
+    def test_run_prepared_failure_compacts_only_current_invocation_and_preserves_diagnostic(self) -> None:
+        native_cycle = load_module("native_cycle_failure_compaction")
+        with tempfile.TemporaryDirectory() as tmp:
+            repo = Path(tmp)
+            source = repo / ".local" / "prepared" / "case-a"
+            source.mkdir(parents=True)
+            (source / "Configuration.xml").write_text("<Configuration/>\n", encoding="utf-8")
+            source_before = native_cycle.tree_identity(source)
+
+            def fake_plan(spec_path: Path, _repo: Path, **_kwargs: object) -> SimpleNamespace:
+                invocation_root = spec_path.parent
+                receipt = invocation_root / "run" / "evidence" / "receipt.txt"
+                return SimpleNamespace(receipt=receipt, runtime_argv=["ENTERPRISE", "/C", str(receipt)])
+
+            def fail_cycle(plan: SimpleNamespace, _spec_path: Path) -> None:
+                run_root = plan.receipt.parents[1]
+                for name in ("work-copy", "ib", "home", "tmp", "logs", "evidence"):
+                    directory = run_root / name
+                    directory.mkdir(parents=True, exist_ok=True)
+                    (directory / "diagnostic.txt").write_bytes(b"diagnostic\n" * 128)
+                result = {
+                    "schemaVersion": 1,
+                    "status": "runtime_timeout",
+                    "failedStage": "runtime",
+                    "errorType": "TimeoutError",
+                    "error": "simulated timeout",
+                }
+                native_cycle._write_json_atomic(run_root / "result.json", result)
+                raise TimeoutError("simulated timeout")
+
+            with mock.patch.object(native_cycle, "load_plan", side_effect=fake_plan), mock.patch.object(
+                native_cycle, "run_cycle", side_effect=fail_cycle
+            ):
+                with self.assertRaises(TimeoutError) as raised:
+                    native_cycle.run_prepared(repo, ".local/prepared/case-a", "complete###true", 5)
+
+            persisted = json.loads(Path(raised.exception.result_path).read_text(encoding="utf-8"))
+            invocation_root = repo / persisted["preparedInvocation"]["invocationRoot"]
+            self.assertEqual(persisted["status"], "runtime_timeout")
+            self.assertEqual(persisted["storageCompaction"]["status"], "completed")
+            self.assertEqual(native_cycle.tree_identity(source), source_before)
+            self.assertFalse((invocation_root / "frozen-input").exists())
+            for disposable in ("work-copy", "ib", "home", "tmp"):
+                self.assertFalse((invocation_root / "run" / disposable).exists())
+            self.assertTrue((invocation_root / "run" / "logs" / "diagnostic.txt").is_file())
+            self.assertTrue((invocation_root / "run" / "evidence" / "diagnostic.txt").is_file())
+
+    def test_remove_generated_tree_rejects_dangling_symlink_target(self) -> None:
+        native_cycle = load_module("native_cycle_cleanup_dangling_symlink")
+        with tempfile.TemporaryDirectory() as tmp:
+            target = Path(tmp) / "frozen-input"
+            target.symlink_to("missing-generated-tree", target_is_directory=True)
+            with self.assertRaisesRegex(RuntimeError, "not a directory"):
+                native_cycle._remove_generated_tree(target)
+            self.assertTrue(target.is_symlink())
+
+    def test_remove_generated_tree_unlinks_runtime_unix_socket(self) -> None:
+        native_cycle = load_module("native_cycle_cleanup_unix_socket")
+        with tempfile.TemporaryDirectory() as tmp:
+            target = Path(tmp) / "home"
+            agent = target / ".1C" / "agent"
+            agent.mkdir(parents=True)
+            socket_path = agent / "runtime.socket"
+            endpoint = socket.socket(socket.AF_UNIX, socket.SOCK_STREAM)
+            try:
+                endpoint.bind(str(socket_path))
+                native_cycle._remove_generated_tree(target)
+            finally:
+                endpoint.close()
+            self.assertFalse(os.path.lexists(target))
+
+    def test_compaction_persists_non_success_before_destructive_cleanup(self) -> None:
+        native_cycle = load_module("native_cycle_compaction_pending_state")
+        with tempfile.TemporaryDirectory() as tmp:
+            root = Path(tmp) / "run-current"
+            invocation = SimpleNamespace(
+                invocation_root=root,
+                frozen_input=root / "frozen-input",
+                run_root=root / "run",
+            )
+            for path in (
+                invocation.frozen_input,
+                invocation.run_root / "work-copy",
+                invocation.run_root / "ib",
+                invocation.run_root / "home",
+                invocation.run_root / "tmp",
+                invocation.run_root / "logs",
+                invocation.run_root / "evidence",
+            ):
+                path.mkdir(parents=True, exist_ok=True)
+                (path / "artifact.bin").write_bytes(b"x" * 64)
+            (root / "spec.json").write_text("{}\n", encoding="utf-8")
+            result = {"schemaVersion": 1, "status": "runtime_contract_completed"}
+            original_write = native_cycle._write_json_atomic
+            calls = 0
+
+            def fail_after_pending(path: Path, value: object) -> None:
+                nonlocal calls
+                calls += 1
+                if calls >= 2:
+                    raise OSError("simulated persistent finalization failure")
+                original_write(path, value)
+
+            with mock.patch.object(native_cycle, "_write_json_atomic", side_effect=fail_after_pending):
+                with self.assertRaises(OSError) as raised:
+                    native_cycle._compact_prepared_invocation(invocation, result, time.monotonic())
+
+            result_path = Path(raised.exception.result_path)
+            persisted = json.loads(result_path.read_text(encoding="utf-8"))
+            self.assertEqual(persisted["status"], "artifact_cleanup_pending")
+            self.assertEqual(persisted["failedStage"], "artifact-cleanup")
+            self.assertEqual(persisted["storageCompaction"]["status"], "pending")
+
+    def test_compaction_final_result_write_failure_persists_non_success(self) -> None:
+        native_cycle = load_module("native_cycle_compaction_final_write")
+        with tempfile.TemporaryDirectory() as tmp:
+            root = Path(tmp) / "run-current"
+            invocation = SimpleNamespace(
+                invocation_root=root,
+                frozen_input=root / "frozen-input",
+                run_root=root / "run",
+            )
+            for path in (
+                invocation.frozen_input,
+                invocation.run_root / "work-copy",
+                invocation.run_root / "ib",
+                invocation.run_root / "home",
+                invocation.run_root / "tmp",
+                invocation.run_root / "logs",
+                invocation.run_root / "evidence",
+            ):
+                path.mkdir(parents=True, exist_ok=True)
+                (path / "artifact.bin").write_bytes(b"x" * 64)
+            (root / "spec.json").write_text("{}\n", encoding="utf-8")
+            result = {"schemaVersion": 1, "status": "runtime_contract_completed"}
+            original_write = native_cycle._write_json_atomic
+            calls = 0
+
+            def fail_final_write(path: Path, value: object) -> None:
+                nonlocal calls
+                calls += 1
+                if calls == 2:
+                    raise OSError("simulated final result write failure")
+                original_write(path, value)
+
+            with mock.patch.object(native_cycle, "_write_json_atomic", side_effect=fail_final_write):
+                with self.assertRaises(OSError) as raised:
+                    native_cycle._compact_prepared_invocation(invocation, result, time.monotonic())
+
+            result_path = Path(raised.exception.result_path)
+            persisted = json.loads(result_path.read_text(encoding="utf-8"))
+            self.assertEqual(persisted["status"], "artifact_cleanup_failed")
+            self.assertEqual(persisted["failedStage"], "artifact-finalization")
+            self.assertEqual(persisted["storageCompaction"]["status"], "failed")
+
+    def test_partial_cleanup_reports_only_verified_removed_paths(self) -> None:
+        native_cycle = load_module("native_cycle_partial_cleanup_diagnostic")
+        with tempfile.TemporaryDirectory() as tmp:
+            root = Path(tmp) / "run-current"
+            invocation = SimpleNamespace(
+                invocation_root=root,
+                frozen_input=root / "frozen-input",
+                run_root=root / "run",
+            )
+            for path in (
+                invocation.frozen_input,
+                invocation.run_root / "work-copy",
+                invocation.run_root / "ib",
+                invocation.run_root / "home",
+                invocation.run_root / "tmp",
+                invocation.run_root / "logs",
+                invocation.run_root / "evidence",
+            ):
+                path.mkdir(parents=True, exist_ok=True)
+                (path / "artifact.bin").write_bytes(b"x" * 64)
+            (root / "spec.json").write_text("{}\n", encoding="utf-8")
+            result = {"schemaVersion": 1, "status": "runtime_contract_completed"}
+            original_remove = native_cycle._remove_generated_tree
+            calls = 0
+
+            def remove_one_then_fail(path: Path) -> None:
+                nonlocal calls
+                calls += 1
+                if calls == 2:
+                    raise RuntimeError("simulated second-target rejection")
+                original_remove(path)
+
+            with mock.patch.object(
+                native_cycle, "_remove_generated_tree", side_effect=remove_one_then_fail
+            ):
+                with self.assertRaises(RuntimeError) as raised:
+                    native_cycle._compact_prepared_invocation(invocation, result, time.monotonic())
+
+            persisted = json.loads(Path(raised.exception.result_path).read_text(encoding="utf-8"))
+            storage = persisted["storageCompaction"]
+            self.assertEqual(storage["completedRemovedPaths"], ["frozen-input"])
+            self.assertEqual(storage["removedLogicalBytes"], 64)
+            self.assertFalse(os.path.lexists(invocation.frozen_input))
+            self.assertTrue(os.path.lexists(invocation.run_root / "work-copy"))
+            expected_retained = native_cycle._logical_file_bytes(root) - (invocation.run_root / "result.json").lstat().st_size
+            self.assertEqual(storage["retainedLogicalBytesExcludingResult"], expected_retained)
+
+    def test_run_prepared_cleanup_failure_cannot_remain_success(self) -> None:
+        native_cycle = load_module("native_cycle_cleanup_failure")
+        with tempfile.TemporaryDirectory() as tmp:
+            repo = Path(tmp)
+            source = repo / ".local" / "prepared" / "case-a"
+            source.mkdir(parents=True)
+            (source / "Configuration.xml").write_text("<Configuration/>\n", encoding="utf-8")
+
+            def fake_plan(spec_path: Path, _repo: Path, **_kwargs: object) -> SimpleNamespace:
+                receipt = spec_path.parent / "run" / "evidence" / "receipt.txt"
+                return SimpleNamespace(receipt=receipt, runtime_argv=["ENTERPRISE", "/C", str(receipt)])
+
+            def successful_cycle(plan: SimpleNamespace, _spec_path: Path) -> dict[str, object]:
+                run_root = plan.receipt.parents[1]
+                for name in ("work-copy", "ib", "home", "tmp", "logs", "evidence"):
+                    (run_root / name).mkdir(parents=True, exist_ok=True)
+                return {"schemaVersion": 1, "status": "runtime_contract_completed", "durationSeconds": 1.0}
+
+            with mock.patch.object(native_cycle, "load_plan", side_effect=fake_plan), mock.patch.object(
+                native_cycle, "run_cycle", side_effect=successful_cycle
+            ), mock.patch.object(
+                native_cycle, "_remove_generated_tree", side_effect=OSError("simulated cleanup failure")
+            ):
+                with self.assertRaises(OSError) as raised:
+                    native_cycle.run_prepared(repo, ".local/prepared/case-a", "complete###true", 5)
+
+            persisted = json.loads(Path(raised.exception.result_path).read_text(encoding="utf-8"))
+            self.assertEqual(persisted["status"], "artifact_cleanup_failed")
+            self.assertEqual(persisted["failedStage"], "artifact-cleanup")
+            self.assertEqual(persisted["storageCompaction"]["status"], "failed")
+            storage = persisted["storageCompaction"]
+            self.assertEqual(storage["configuredTargets"], [
+                "frozen-input", "run/work-copy", "run/ib", "run/home", "run/tmp",
+            ])
+            self.assertEqual(storage["completedRemovedPaths"], [])
+            self.assertIn("retainedLogicalBytesExcludingResult", storage)
+            self.assertIn("simulated cleanup failure", storage["error"])
+
+    def test_run_prepared_prioritizes_input_change_during_generated_plan_failure(self) -> None:
+        native_cycle = load_module("native_cycle_plan_failure_source_change")
+        with tempfile.TemporaryDirectory() as tmp:
+            repo = Path(tmp)
+            source = repo / ".local" / "prepared" / "case-a"
+            source.mkdir(parents=True)
+            source_file = source / "Configuration.xml"
+            source_file.write_text("<Configuration/>\n", encoding="utf-8")
+
+            def fail_plan(*_args: object, **_kwargs: object) -> None:
+                source_file.write_text("<Configuration changed='true'/>\n", encoding="utf-8")
+                raise RuntimeError("simulated generated plan failure")
+
+            with mock.patch.object(native_cycle, "load_plan", side_effect=fail_plan):
+                with self.assertRaises(RuntimeError) as raised:
+                    native_cycle.run_prepared(repo, ".local/prepared/case-a", "complete###true", 5)
+
+            result_path = getattr(raised.exception, "result_path", None)
+            self.assertIsNotNone(result_path)
+            result = json.loads(result_path.read_text(encoding="utf-8"))
+            self.assertEqual(result["status"], "input_changed")
+            self.assertEqual(result["failedStage"], "prepared-input-reverify")
+            self.assertNotEqual(
+                result["preparedInvocation"]["sourceBefore"],
+                result["preparedInvocation"]["sourceAfter"],
+            )
+
+    def test_run_prepared_reports_source_replacement_as_input_changed(self) -> None:
+        native_cycle = load_module("native_cycle_source_replacement")
+        with tempfile.TemporaryDirectory() as tmp:
+            repo = Path(tmp)
+            source = repo / ".local" / "prepared" / "replace"
+            source.mkdir(parents=True)
+            configuration = source / "Configuration.xml"
+            configuration.write_text("<Configuration/>\n", encoding="utf-8")
+
+            def replace_source(_plan: SimpleNamespace, _spec_path: Path) -> dict[str, object]:
+                configuration.unlink()
+                configuration.symlink_to("missing.xml")
+                return {"schemaVersion": 1, "status": "runtime_contract_completed"}
+
+            with mock.patch.object(native_cycle, "run_cycle", side_effect=replace_source):
+                with self.assertRaisesRegex(RuntimeError, "prepared input tree changed") as raised:
+                    native_cycle.run_prepared(
+                        repo,
+                        ".local/prepared/replace",
+                        "complete###true",
+                        5,
+                    )
+
+            result_path = Path(raised.exception.result_path)
+            persisted = json.loads(result_path.read_text(encoding="utf-8"))
+            self.assertEqual(persisted["status"], "input_changed")
+            self.assertEqual(persisted["failedStage"], "prepared-input-reverify")
+            self.assertEqual(
+                persisted["preparedInvocation"]["sourceAfter"]["errorType"],
+                "ValueError",
+            )
+            invocation_root = repo / persisted["preparedInvocation"]["invocationRoot"]
+            self.assertFalse((invocation_root / "frozen-input").exists())
+            self.assertEqual(persisted["storageCompaction"]["status"], "completed")
+
     def test_build_plan_uses_one_frozen_spec_without_path_substitution(self) -> None:
         native_cycle = load_module()
         with tempfile.TemporaryDirectory() as tmp:
@@ -88,6 +575,7 @@ class NativeCycleContractTests(unittest.TestCase):
             self.assertEqual(plan.create_argv[4:6], [str(platform), "CREATEINFOBASE"])
             self.assertIn(f"File={run_root / 'ib'}", plan.create_argv)
             self.assertIn(str(run_root / "work-copy"), plan.load_argv)
+            self.assertNotIn("/C", plan.runtime_argv)
             self.assertEqual(plan.environment["HOME"], str(run_root / "home"))
             self.assertEqual(plan.environment["LD_LIBRARY_PATH"], ":".join([
                 str(repo / ".local/platform/1cv8t/x86_64/8.5.1.1150"),
@@ -615,6 +1103,107 @@ class NativeCycleContractTests(unittest.TestCase):
                         receipt_root=evidence, poll_seconds=0.025, stable_reads=2,
                     )
 
+    def test_receipt_read_rejects_link_count_change_without_retry_classification(self) -> None:
+        native_cycle = load_module("native_cycle_receipt_nlink_change")
+        with tempfile.TemporaryDirectory() as tmp:
+            root = Path(tmp)
+            receipt = root / "receipt.txt"
+            receipt.write_text("complete###true\n", encoding="utf-8")
+            original_fstat = native_cycle.os.fstat
+            calls = 0
+
+            def changed_nlink(fd: int):
+                nonlocal calls
+                current = original_fstat(fd)
+                calls += 1
+                if calls != 2:
+                    return current
+                return SimpleNamespace(
+                    st_mode=current.st_mode,
+                    st_nlink=2,
+                    st_dev=current.st_dev,
+                    st_ino=current.st_ino,
+                    st_size=current.st_size,
+                    st_mtime_ns=current.st_mtime_ns,
+                    st_ctime_ns=current.st_ctime_ns,
+                )
+
+            with mock.patch.object(native_cycle.os, "fstat", side_effect=changed_nlink):
+                with self.assertRaisesRegex(RuntimeError, "single-link"):
+                    native_cycle._read_receipt_channel(root, receipt)
+
+    def test_runtime_retries_same_file_change_during_receipt_observation(self) -> None:
+        native_cycle = load_module("native_cycle_runtime_receipt_growth")
+        with tempfile.TemporaryDirectory() as tmp:
+            root = Path(tmp)
+            receipt = root / "receipt.txt"
+            fake = root / "fake-runtime"
+            fake.write_text(
+                "#!/usr/bin/env python3\n"
+                "import time\n"
+                "time.sleep(60)\n",
+                encoding="utf-8",
+            )
+            fake.chmod(fake.stat().st_mode | stat.S_IXUSR)
+            complete = b"started###true\ncomplete###true\n"
+            changed = native_cycle._ReceiptChangedDuringRead(
+                "runtime receipt channel changed during read"
+            )
+
+            with mock.patch.object(
+                native_cycle,
+                "_read_receipt_channel",
+                side_effect=[changed, complete, complete, complete],
+            ):
+                outcome = native_cycle.run_runtime(
+                    [str(fake)], os.environ.copy(), receipt,
+                    "complete###true", timeout_seconds=5,
+                    receipt_root=receipt.parent,
+                    poll_seconds=0.01, stable_reads=2,
+                )
+
+            self.assertTrue(outcome["completed"])
+
+    def test_runtime_confirms_stable_terminal_receipt_after_writer_exit(self) -> None:
+        native_cycle = load_module("native_cycle_runtime_receipt_exit")
+        with tempfile.TemporaryDirectory() as tmp:
+            root = Path(tmp)
+            receipt = root / "receipt.txt"
+            fake = root / "fake-runtime"
+            fake.write_text(
+                "#!/usr/bin/env python3\n",
+                encoding="utf-8",
+            )
+            fake.chmod(fake.stat().st_mode | stat.S_IXUSR)
+            complete = b"started###true\ncomplete###true\n"
+            changed = native_cycle._ReceiptChangedDuringRead(
+                "runtime receipt channel changed during read"
+            )
+
+            observations = iter([changed, complete, complete, complete])
+
+            def observe(*_args):
+                value = next(observations)
+                if value is changed:
+                    time.sleep(0.2)
+                    raise value
+                return value
+
+            with mock.patch.object(
+                native_cycle,
+                "_read_receipt_channel",
+                side_effect=observe,
+            ):
+                outcome = native_cycle.run_runtime(
+                    [str(fake)], os.environ.copy(), receipt,
+                    "complete###true", timeout_seconds=5,
+                    receipt_root=receipt.parent,
+                    poll_seconds=0.05, stable_reads=2,
+                )
+
+            self.assertTrue(outcome["completed"])
+            self.assertEqual(outcome["processReturn"], 0)
+
     def test_runtime_waits_for_stable_marker_and_cleans_its_process_group(self) -> None:
         native_cycle = load_module("native_cycle_runtime")
         with tempfile.TemporaryDirectory() as tmp:
@@ -805,6 +1394,98 @@ class NativeCycleContractTests(unittest.TestCase):
                 json.loads((run_root / "result.json").read_text(encoding="utf-8"))["status"],
                 "runtime_contract_completed",
             )
+
+    def test_run_prepared_cli_repeats_same_command_with_unique_bindings_and_result_paths(self) -> None:
+        native_cycle = load_module("native_cycle_prepared_cli")
+        with tempfile.TemporaryDirectory() as tmp:
+            repo = Path(tmp)
+            source = repo / ".local" / "prepared" / "case-a"
+            source.mkdir(parents=True)
+            (source / "Configuration.xml").write_text("<Configuration/>\n", encoding="utf-8")
+            source_before = native_cycle.tree_identity(source)
+            platform, xvfb = create_fixed_profile(repo)
+            platform.write_text(
+                "#!/usr/bin/env python3\n"
+                "from pathlib import Path\n"
+                "import sys, time\n"
+                "mode = sys.argv[1]\n"
+                "out = Path(sys.argv[sys.argv.index('/Out') + 1])\n"
+                "result = Path(sys.argv[sys.argv.index('/DumpResult') + 1])\n"
+                "out.parent.mkdir(parents=True, exist_ok=True)\n"
+                "if mode == 'CREATEINFOBASE':\n"
+                "    Path(sys.argv[2].split('=', 1)[1]).mkdir(parents=True)\n"
+                "    marker = 'completed successfully'\n"
+                "elif mode == 'DESIGNER': marker = 'Configuration successfully updated'\n"
+                "else:\n"
+                "    receipt = Path(sys.argv[sys.argv.index('/C') + 1])\n"
+                "    receipt.parent.mkdir(parents=True, exist_ok=True)\n"
+                "    receipt.write_text('complete###true\\n')\n"
+                "    time.sleep(60)\n"
+                "    marker = 'runtime'\n"
+                "out.write_text(marker + '\\n')\n"
+                "result.write_bytes(b'\\xef\\xbb\\xbf0\\n')\n",
+                encoding="utf-8",
+            )
+            platform.chmod(platform.stat().st_mode | stat.S_IXUSR)
+            xvfb.write_text(
+                "#!/usr/bin/env python3\nimport os, sys\nos.execv(sys.argv[4], sys.argv[4:])\n",
+                encoding="utf-8",
+            )
+            xvfb.chmod(xvfb.stat().st_mode | stat.S_IXUSR)
+            argv = [
+                sys.executable,
+                str(CLI),
+                "run-prepared",
+                "--repo-root", str(repo),
+                "--input-tree", ".local/prepared/case-a",
+                "--complete-marker", "complete###true",
+                "--timeout-seconds", "5",
+            ]
+
+            outputs = []
+            for _ in range(2):
+                completed = subprocess.run(argv, text=True, capture_output=True, timeout=20)
+                self.assertEqual(completed.returncode, 0, completed.stderr or completed.stdout)
+                outputs.append(json.loads(completed.stdout))
+
+            self.assertEqual(native_cycle.tree_identity(source), source_before)
+            self.assertNotEqual(outputs[0]["resultPath"], outputs[1]["resultPath"])
+            for output in outputs:
+                self.assertEqual(output["status"], "runtime_contract_completed")
+                self.assertGreaterEqual(output["totalDurationSeconds"], output["durationSeconds"])
+                self.assertEqual(
+                    output["preparedInvocation"]["sourceBefore"],
+                    output["preparedInvocation"]["sourceAfter"],
+                )
+                result_path = repo / output["resultPath"]
+                self.assertTrue(result_path.is_file())
+                persisted = json.loads(result_path.read_text(encoding="utf-8"))
+                self.assertEqual(persisted, output)
+                self.assertEqual(persisted["commands"]["runtime"].count("/C"), 1)
+                binding = persisted["preparedInvocation"]["generatedBinding"]
+                self.assertEqual(binding["kind"], "1c-enterprise-launch-parameter")
+                self.assertEqual(len(binding["runtimeArgvSha256"]), 64)
+                invocation_root = repo / persisted["preparedInvocation"]["invocationRoot"]
+                self.assertFalse((invocation_root / "frozen-input").exists())
+                for disposable in ("work-copy", "ib", "home", "tmp"):
+                    self.assertFalse((invocation_root / "run" / disposable).exists())
+                for retained in (
+                    invocation_root / "spec.json",
+                    invocation_root / "run" / "result.json",
+                    invocation_root / "run" / "evidence" / "receipt.txt",
+                    invocation_root / "run" / "logs" / "create.log",
+                    invocation_root / "run" / "logs" / "load.log",
+                ):
+                    self.assertTrue(retained.is_file(), retained)
+                storage = persisted["storageCompaction"]
+                self.assertEqual(storage["status"], "completed")
+                self.assertEqual(storage["policy"], "compact-current-invocation-v1")
+                self.assertGreater(
+                    storage["preCompactionLogicalBytes"],
+                    storage["retainedLogicalBytesExcludingResult"],
+                )
+                self.assertGreater(storage["removedLogicalBytes"], 0)
+                self.assertEqual(storage["manualCleanupActions"], 0)
 
     def test_run_cycle_timeout_preserves_completed_stage_diagnostics(self) -> None:
         native_cycle = load_module("native_cycle_failure_result")

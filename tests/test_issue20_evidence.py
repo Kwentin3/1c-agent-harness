@@ -20,6 +20,18 @@ class Issue20EvidencePackageTests(unittest.TestCase):
     def test_package_manifest_and_claims_validate(self) -> None:
         validate_package(PACKAGE)
 
+    def test_historical_candidate_code_identity_forgery_is_rejected(self) -> None:
+        with tempfile.TemporaryDirectory() as tmp:
+            package = Path(tmp) / "package"
+            shutil.copytree(PACKAGE, package)
+            identity_path = package / "candidate-code-identity.json"
+            identity = json.loads(identity_path.read_text(encoding="utf-8"))
+            identity["codeIdentity"]["scripts/native_cycle.py"] = "0" * 64
+            identity_path.write_text(json.dumps(identity, indent=2) + "\n", encoding="utf-8")
+            rewrite_manifest(package)
+            with self.assertRaises(AssertionError):
+                validate_package(package)
+
     def test_changed_success_status_is_rejected_after_manifest_refresh(self) -> None:
         with tempfile.TemporaryDirectory() as tmp:
             package = Path(tmp) / "package"

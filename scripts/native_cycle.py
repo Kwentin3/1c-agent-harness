@@ -13,6 +13,7 @@ import shutil
 import signal
 import stat
 import subprocess
+import tempfile
 import time
 from types import SimpleNamespace
 from typing import Optional
@@ -20,6 +21,10 @@ from typing import Optional
 
 XVFB_SCREEN = "-screen 0 1280x1024x8 -nolisten tcp"
 PR_SET_CHILD_SUBREAPER = 36
+
+
+class _ReceiptChangedDuringRead(RuntimeError):
+    """The admitted receipt changed while one observation was in flight."""
 
 
 def _reject_symlink_components(repo_root: Path, candidate: Path, *, field: str) -> None:
@@ -54,7 +59,12 @@ def _unique_json_object(pairs: list[tuple[str, object]]) -> dict[str, object]:
     return result
 
 
-def load_plan(spec_path: Path, repo_root: Path) -> SimpleNamespace:
+def load_plan(
+    spec_path: Path,
+    repo_root: Path,
+    *,
+    bind_receipt_launch_parameter: bool = False,
+) -> SimpleNamespace:
     data = json.loads(
         spec_path.read_text(encoding="utf-8"),
         object_pairs_hook=_unique_json_object,
@@ -121,8 +131,10 @@ def load_plan(spec_path: Path, repo_root: Path) -> SimpleNamespace:
         "/Out", str(logs / "load.log"),
         "/DumpResult", str(logs / "load.result"),
     ]
-    runtime_argv = common + [
-        "ENTERPRISE", "/F", str(infobase),
+    runtime_argv = common + ["ENTERPRISE", "/F", str(infobase)]
+    if bind_receipt_launch_parameter:
+        runtime_argv += ["/C", str(receipt)]
+    runtime_argv += [
         "/DisableStartupDialogs", "/DisableStartupMessages",
         "/Out", str(logs / "run.log"),
         "/DumpResult", str(logs / "run.result"),
@@ -140,6 +152,8 @@ def load_plan(spec_path: Path, repo_root: Path) -> SimpleNamespace:
     complete_marker = data.get("completeMarker")
     if not isinstance(complete_marker, str) or not complete_marker:
         raise ValueError("completeMarker must be a non-empty string")
+    if "\n" in complete_marker or "\r" in complete_marker:
+        raise ValueError("completeMarker must be a single line")
     timeout_seconds = data.get("timeoutSeconds")
     if type(timeout_seconds) is not int or not 1 <= timeout_seconds <= 3600:
         raise ValueError("timeoutSeconds must be an integer from 1 to 3600")
@@ -246,6 +260,89 @@ def prepare_run(plan: SimpleNamespace) -> dict[str, object]:
         "copiedTreeSha256": copied_identity["sha256"],
         "loadTreeSha256": load_identity["sha256"],
     }
+
+
+def _new_invocation_root(repo_root: Path) -> Path:
+    invocation_parent_relative = Path(".local/runs/native-cycle")
+    _reject_symlink_components(
+        repo_root,
+        invocation_parent_relative,
+        field="invocationRoot",
+    )
+    invocation_parent = repo_root / invocation_parent_relative
+    invocation_parent.mkdir(parents=True, exist_ok=True)
+    return Path(tempfile.mkdtemp(prefix="run-", dir=invocation_parent))
+
+
+def prepare_invocation(
+    repo_root: Path,
+    input_tree_value: str,
+    complete_marker: str,
+    timeout_seconds: int,
+    invocation_root: Optional[Path] = None,
+) -> SimpleNamespace:
+    repo_root = repo_root.resolve()
+    if invocation_root is None:
+        invocation_root = _new_invocation_root(repo_root)
+    input_tree = _repo_path(repo_root, input_tree_value, field="inputTree")
+    prepared_root = (repo_root / ".local" / "prepared").resolve()
+    try:
+        input_tree.relative_to(prepared_root)
+    except ValueError as exc:
+        raise ValueError("inputTree must be inside .local/prepared") from exc
+    if input_tree == prepared_root:
+        raise ValueError("inputTree must be inside .local/prepared")
+    if not isinstance(complete_marker, str) or not complete_marker:
+        raise ValueError("completeMarker must be a non-empty string")
+    if "\n" in complete_marker or "\r" in complete_marker:
+        raise ValueError("completeMarker must be a single line")
+    if type(timeout_seconds) is not int or not 1 <= timeout_seconds <= 3600:
+        raise ValueError("timeoutSeconds must be an integer from 1 to 3600")
+
+    source_identity = tree_identity(input_tree)
+    frozen_input = invocation_root / "frozen-input"
+    spec_path = invocation_root / "spec.json"
+    run_root = invocation_root / "run"
+    invocation = SimpleNamespace(
+        invocation_root=invocation_root,
+        input_tree=input_tree,
+        source_identity=source_identity,
+        copied_identity=None,
+        frozen_input=frozen_input,
+        frozen_identity=None,
+        spec_path=spec_path,
+        run_root=run_root,
+        receipt=run_root / "evidence" / "receipt.txt",
+        runtime_argv_sha256=None,
+    )
+    try:
+        shutil.copytree(input_tree, frozen_input, copy_function=shutil.copy2)
+        copied_identity = tree_identity(frozen_input)
+        invocation.copied_identity = copied_identity
+        if copied_identity != source_identity:
+            raise RuntimeError("generated input copy differs from prepared source")
+        for path in sorted(frozen_input.rglob("*"), reverse=True):
+            if path.is_symlink():
+                raise ValueError(f"generated frozen input contains a symlink: {path}")
+            path.chmod(path.lstat().st_mode & ~0o222)
+        frozen_input.chmod(frozen_input.lstat().st_mode & ~0o222)
+        frozen_identity = tree_identity(frozen_input)
+        invocation.frozen_identity = frozen_identity
+
+        spec = {
+            "schemaVersion": 1,
+            "inputTree": frozen_input.relative_to(repo_root).as_posix(),
+            "inputTreeSha256": frozen_identity["sha256"],
+            "runRoot": run_root.relative_to(repo_root).as_posix(),
+            "receipt": "evidence/receipt.txt",
+            "completeMarker": complete_marker,
+            "timeoutSeconds": timeout_seconds,
+        }
+        _write_json_atomic(spec_path, spec)
+    except Exception as exc:
+        setattr(exc, "partial_invocation", invocation)
+        raise
+    return invocation
 
 
 def _file_sha256(path: Path) -> str:
@@ -422,12 +519,13 @@ def _read_receipt_channel(receipt_root: Path, receipt_path: Path) -> Optional[by
         with os.fdopen(os.dup(file_descriptor), "rb") as stream:
             payload = stream.read()
         after = os.fstat(file_descriptor)
+        if after.st_nlink != 1:
+            raise RuntimeError("runtime receipt channel is not a single-link regular file")
         if (
-            (before.st_dev, before.st_ino, before.st_size)
-            != (after.st_dev, after.st_ino, after.st_size)
-            or after.st_nlink != 1
+            (before.st_dev, before.st_ino, before.st_size, before.st_mtime_ns, before.st_ctime_ns)
+            != (after.st_dev, after.st_ino, after.st_size, after.st_mtime_ns, after.st_ctime_ns)
         ):
-            raise RuntimeError("runtime receipt channel changed during read")
+            raise _ReceiptChangedDuringRead("runtime receipt channel changed during read")
         return payload
     except FileNotFoundError:
         return None
@@ -522,7 +620,14 @@ def run_runtime(
     try:
         try:
             while time.monotonic() < deadline:
-                payload = _read_receipt_channel(receipt_root, receipt_path)
+                try:
+                    payload = _read_receipt_channel(receipt_root, receipt_path)
+                except _ReceiptChangedDuringRead:
+                    stable_hash = None
+                    stable_count = 0
+                    time.sleep(min(poll_seconds, 0.01))
+                    continue
+                marker_present = False
                 if payload is not None:
                     current_hash = hashlib.sha256(payload).hexdigest()
                     decoded_lines = payload.decode("utf-8-sig", errors="strict").splitlines()
@@ -539,6 +644,9 @@ def run_runtime(
                         completed = True
                         break
                 if process.poll() is not None:
+                    if marker_present:
+                        time.sleep(poll_seconds)
+                        continue
                     failure = RuntimeError(f"runtime exited before completion: {process.returncode}")
                     break
                 time.sleep(poll_seconds)
@@ -590,6 +698,149 @@ def _write_json_atomic(path: Path, value: object) -> None:
     temporary = path.with_name(f".{path.name}.tmp")
     temporary.write_text(json.dumps(value, ensure_ascii=False, indent=2) + "\n", encoding="utf-8")
     temporary.replace(path)
+
+
+def _logical_file_bytes(root: Path) -> int:
+    total = 0
+    if not root.exists():
+        return total
+    for path in root.rglob("*"):
+        mode = path.lstat().st_mode
+        if stat.S_ISREG(mode):
+            total += path.lstat().st_size
+    return total
+
+
+def _remove_generated_tree(path: Path) -> None:
+    if path.is_symlink():
+        raise RuntimeError(f"generated cleanup target is not a directory: {path}")
+    if not path.exists():
+        return
+    if not path.is_dir():
+        raise RuntimeError(f"generated cleanup target is not a directory: {path}")
+
+    for candidate in (path, *path.rglob("*")):
+        mode = candidate.lstat().st_mode
+        if stat.S_ISDIR(mode):
+            candidate.chmod(mode | stat.S_IRWXU)
+        elif stat.S_ISREG(mode):
+            candidate.chmod(mode | stat.S_IRUSR | stat.S_IWUSR)
+        elif stat.S_ISSOCK(mode):
+            continue
+        else:
+            raise RuntimeError(f"generated cleanup target contains a special entry: {candidate}")
+    shutil.rmtree(path)
+
+
+def _compact_prepared_invocation(
+    invocation: SimpleNamespace,
+    result: dict[str, object],
+    started: float,
+) -> None:
+    result_path = invocation.run_root / "result.json"
+    storage_started = time.monotonic()
+    disposable = (
+        invocation.frozen_input,
+        invocation.run_root / "work-copy",
+        invocation.run_root / "ib",
+        invocation.run_root / "home",
+        invocation.run_root / "tmp",
+    )
+    original_status = result.get("status")
+    result["storageCompaction"] = {
+        "policy": "compact-current-invocation-v1",
+        "status": "pending",
+        "manualCleanupActions": 0,
+        "configuredTargets": [
+            path.relative_to(invocation.invocation_root).as_posix()
+            for path in disposable
+        ],
+        "completedRemovedPaths": [],
+        "retainedPaths": ["spec.json", "run/evidence", "run/logs", "run/result.json"],
+    }
+    if original_status == "runtime_contract_completed":
+        result.update({
+            "status": "artifact_cleanup_pending",
+            "failedStage": "artifact-cleanup",
+        })
+    _write_json_atomic(result_path, result)
+    if original_status == "runtime_contract_completed":
+        result["status"] = original_status
+        result.pop("failedStage", None)
+    pre_compaction_bytes = _logical_file_bytes(invocation.invocation_root)
+    removed_bytes = 0
+    try:
+        for path in disposable:
+            path_bytes = _logical_file_bytes(path)
+            _remove_generated_tree(path)
+            if os.path.lexists(path):
+                raise RuntimeError(f"generated cleanup target still exists after removal: {path}")
+            removed_bytes += path_bytes
+            completed = result["storageCompaction"]["completedRemovedPaths"]
+            assert isinstance(completed, list)
+            completed.append(path.relative_to(invocation.invocation_root).as_posix())
+    except Exception as exc:
+        storage = result["storageCompaction"]
+        assert isinstance(storage, dict)
+        storage.update({
+            "status": "failed",
+            "preCompactionLogicalBytes": pre_compaction_bytes,
+            "removedLogicalBytes": removed_bytes,
+            "errorType": type(exc).__name__,
+            "error": str(exc),
+        })
+        if result.get("status") == "runtime_contract_completed":
+            result.update({
+                "status": "artifact_cleanup_failed",
+                "failedStage": "artifact-cleanup",
+                "errorType": type(exc).__name__,
+                "error": str(exc),
+            })
+        result["totalDurationSeconds"] = round(time.monotonic() - started, 3)
+        storage["durationSeconds"] = round(time.monotonic() - storage_started, 3)
+        storage["retainedLogicalBytesExcludingResult"] = (
+            _logical_file_bytes(invocation.invocation_root) - result_path.lstat().st_size
+        )
+        _write_json_atomic(result_path, result)
+        setattr(exc, "result_path", result_path)
+        raise
+
+    storage = result["storageCompaction"]
+    assert isinstance(storage, dict)
+    storage.update({
+        "status": "completed",
+        "preCompactionLogicalBytes": pre_compaction_bytes,
+        "removedLogicalBytes": removed_bytes,
+        "retainedLogicalBytesExcludingResult": (
+            _logical_file_bytes(invocation.invocation_root) - result_path.lstat().st_size
+        ),
+    })
+    storage["durationSeconds"] = round(time.monotonic() - storage_started, 3)
+    result["totalDurationSeconds"] = round(time.monotonic() - started, 3)
+    try:
+        _write_json_atomic(result_path, result)
+    except Exception as exc:
+        storage.update({
+            "status": "failed",
+            "durationSeconds": round(time.monotonic() - storage_started, 3),
+            "errorType": type(exc).__name__,
+            "error": str(exc),
+        })
+        if result.get("status") == "runtime_contract_completed":
+            result.update({
+                "status": "artifact_cleanup_failed",
+                "failedStage": "artifact-finalization",
+                "errorType": type(exc).__name__,
+                "error": str(exc),
+            })
+        result["totalDurationSeconds"] = round(time.monotonic() - started, 3)
+        setattr(exc, "result_path", result_path)
+        try:
+            _write_json_atomic(result_path, result)
+        except Exception as persistence_exc:
+            setattr(persistence_exc, "result_path", result_path)
+            raise persistence_exc from exc
+        raise
 
 
 def run_cycle(plan: SimpleNamespace, spec_path: Path) -> dict[str, object]:
@@ -695,15 +946,286 @@ def run_cycle(plan: SimpleNamespace, spec_path: Path) -> dict[str, object]:
     return result
 
 
+def _prepared_source_after(invocation: SimpleNamespace) -> dict[str, object]:
+    try:
+        return tree_identity(invocation.input_tree)
+    except Exception as exc:
+        return {
+            "errorType": type(exc).__name__,
+            "error": str(exc),
+        }
+
+
+def _partial_prepared_invocation_fields(
+    invocation: SimpleNamespace,
+    repo_root: Path,
+    source_after: dict[str, object],
+) -> dict[str, object]:
+    prepared: dict[str, object] = {
+        "invocationRoot": invocation.invocation_root.relative_to(repo_root).as_posix(),
+        "sourcePath": invocation.input_tree.relative_to(repo_root).as_posix(),
+        "sourceBefore": invocation.source_identity,
+        "sourceAfter": source_after,
+        "copiedBeforeFreeze": invocation.copied_identity,
+        "frozenInput": {
+            "path": invocation.frozen_input.relative_to(repo_root).as_posix(),
+            "identity": invocation.frozen_identity,
+        },
+        "generatedBinding": {
+            "kind": "1c-enterprise-launch-parameter",
+            "status": (
+                "generated" if invocation.runtime_argv_sha256 is not None
+                else "not-generated"
+            ),
+            "receipt": invocation.receipt.relative_to(repo_root).as_posix(),
+            "runtimeArgvSha256": invocation.runtime_argv_sha256,
+        },
+    }
+    if invocation.spec_path.is_file():
+        prepared["generatedSpec"] = {
+            "path": invocation.spec_path.relative_to(repo_root).as_posix(),
+            "sha256": _file_sha256(invocation.spec_path),
+        }
+    else:
+        prepared["generatedSpec"] = {
+            "path": invocation.spec_path.relative_to(repo_root).as_posix(),
+            "status": "absent",
+        }
+    return {
+        "resultPath": (invocation.run_root / "result.json").relative_to(repo_root).as_posix(),
+        "preparedInvocation": prepared,
+    }
+
+
+def _prepared_invocation_fields(
+    invocation: SimpleNamespace,
+    repo_root: Path,
+    source_after: dict[str, object],
+) -> dict[str, object]:
+    result_path = invocation.run_root / "result.json"
+    return {
+        "resultPath": result_path.relative_to(repo_root).as_posix(),
+        "preparedInvocation": {
+            "invocationRoot": invocation.invocation_root.relative_to(repo_root).as_posix(),
+            "sourcePath": invocation.input_tree.relative_to(repo_root).as_posix(),
+            "sourceBefore": invocation.source_identity,
+            "sourceAfter": source_after,
+            "copiedBeforeFreeze": invocation.copied_identity,
+            "frozenInput": {
+                "path": invocation.frozen_input.relative_to(repo_root).as_posix(),
+                "identity": invocation.frozen_identity,
+            },
+            "generatedSpec": {
+                "path": invocation.spec_path.relative_to(repo_root).as_posix(),
+                "sha256": _file_sha256(invocation.spec_path),
+            },
+            "generatedBinding": {
+                "kind": "1c-enterprise-launch-parameter",
+                "status": (
+                    "generated" if invocation.runtime_argv_sha256 is not None
+                    else "not-generated"
+                ),
+                "receipt": invocation.receipt.relative_to(repo_root).as_posix(),
+                "runtimeArgvSha256": invocation.runtime_argv_sha256,
+            },
+        },
+    }
+
+
+def run_prepared(
+    repo_root: Path,
+    input_tree_value: str,
+    complete_marker: str,
+    timeout_seconds: int,
+) -> dict[str, object]:
+    repo_root = repo_root.resolve()
+    started = time.monotonic()
+    invocation_root = _new_invocation_root(repo_root)
+    try:
+        invocation = prepare_invocation(
+            repo_root,
+            input_tree_value,
+            complete_marker,
+            timeout_seconds,
+            invocation_root=invocation_root,
+        )
+    except Exception as exc:
+        partial = getattr(exc, "partial_invocation", None)
+        if partial is not None:
+            source_after = _prepared_source_after(partial)
+            result_path = partial.run_root / "result.json"
+            result_path.parent.mkdir(parents=True, exist_ok=True)
+            failure = {
+                "schemaVersion": 1,
+                "status": "precheck_failed",
+                "failedStage": "generated-input-freeze",
+                "durationSeconds": round(time.monotonic() - started, 3),
+                "totalDurationSeconds": round(time.monotonic() - started, 3),
+                "errorType": type(exc).__name__,
+                "error": str(exc),
+            }
+            failure.update(_partial_prepared_invocation_fields(partial, repo_root, source_after))
+            if source_after != partial.source_identity:
+                failure.update({
+                    "status": "input_changed",
+                    "failedStage": "prepared-input-reverify",
+                })
+            try:
+                _compact_prepared_invocation(partial, failure, started)
+            except Exception as cleanup_exc:
+                raise cleanup_exc from exc
+            setattr(exc, "result_path", result_path)
+            raise
+        result_path = invocation_root / "result.json"
+        failure = {
+            "schemaVersion": 1,
+            "status": "precheck_failed",
+            "durationSeconds": round(time.monotonic() - started, 3),
+            "errorType": type(exc).__name__,
+            "error": str(exc),
+            "resultPath": result_path.relative_to(repo_root).as_posix(),
+            "preparedInvocation": {
+                "invocationRoot": invocation_root.relative_to(repo_root).as_posix(),
+                "requestedSourcePath": input_tree_value,
+            },
+        }
+        _write_json_atomic(result_path, failure)
+        setattr(exc, "result_path", result_path)
+        raise
+    invocation.receipt = invocation.run_root / "evidence" / "receipt.txt"
+    invocation.runtime_argv_sha256 = None
+    try:
+        plan = load_plan(
+            invocation.spec_path,
+            repo_root,
+            bind_receipt_launch_parameter=True,
+        )
+        invocation.receipt = plan.receipt
+        invocation.runtime_argv_sha256 = hashlib.sha256(
+            json.dumps(
+                plan.runtime_argv,
+                ensure_ascii=False,
+                separators=(",", ":"),
+            ).encode("utf-8")
+        ).hexdigest()
+    except Exception as exc:
+        source_after = _prepared_source_after(invocation)
+        result_path = invocation.run_root / "result.json"
+        result_path.parent.mkdir(parents=True, exist_ok=True)
+        failure = {
+            "schemaVersion": 1,
+            "status": "precheck_failed",
+            "failedStage": "generated-plan-preflight",
+            "durationSeconds": round(time.monotonic() - started, 3),
+            "totalDurationSeconds": round(time.monotonic() - started, 3),
+            "errorType": type(exc).__name__,
+            "error": str(exc),
+        }
+        failure.update(_prepared_invocation_fields(invocation, repo_root, source_after))
+        if source_after != invocation.source_identity:
+            failure.update({
+                "status": "input_changed",
+                "failedStage": "prepared-input-reverify",
+            })
+        try:
+            _compact_prepared_invocation(invocation, failure, started)
+        except Exception as cleanup_exc:
+            raise cleanup_exc from exc
+        setattr(exc, "result_path", result_path)
+        raise
+    try:
+        result = run_cycle(plan, invocation.spec_path)
+    except Exception as exc:
+        source_after = _prepared_source_after(invocation)
+        result_path = invocation.run_root / "result.json"
+        if result_path.is_file():
+            result = json.loads(result_path.read_text(encoding="utf-8"))
+        else:
+            invocation.run_root.mkdir(parents=True, exist_ok=True)
+            result = {
+                "schemaVersion": 1,
+                "status": "copy_failed" if any(invocation.run_root.iterdir()) else "precheck_failed",
+                "durationSeconds": round(time.monotonic() - started, 3),
+                "errorType": type(exc).__name__,
+                "error": str(exc),
+            }
+        result.update(_prepared_invocation_fields(invocation, repo_root, source_after))
+        result["totalDurationSeconds"] = round(time.monotonic() - started, 3)
+        if source_after != invocation.source_identity:
+            result.update({
+                "status": "input_changed",
+                "failedStage": "prepared-input-reverify",
+                "errorType": "RuntimeError",
+                "error": "prepared input tree changed during lifecycle",
+            })
+        try:
+            _compact_prepared_invocation(invocation, result, started)
+        except Exception as cleanup_exc:
+            raise cleanup_exc from exc
+        setattr(exc, "result_path", result_path)
+        raise
+
+    source_after = _prepared_source_after(invocation)
+    result.update(_prepared_invocation_fields(invocation, repo_root, source_after))
+    result["totalDurationSeconds"] = round(time.monotonic() - started, 3)
+    result_path = invocation.run_root / "result.json"
+    result_path.parent.mkdir(parents=True, exist_ok=True)
+    if source_after != invocation.source_identity:
+        result.update({
+            "status": "input_changed",
+            "failedStage": "prepared-input-reverify",
+            "errorType": "RuntimeError",
+            "error": "prepared input tree changed during lifecycle",
+        })
+        _compact_prepared_invocation(invocation, result, started)
+        exc = RuntimeError("prepared input tree changed during lifecycle")
+        setattr(exc, "result_path", result_path)
+        raise exc
+    _compact_prepared_invocation(invocation, result, started)
+    return result
+
+
 def main(argv: Optional[list[str]] = None) -> int:
     parser = argparse.ArgumentParser(description=__doc__)
     subparsers = parser.add_subparsers(dest="command", required=True)
     run_parser = subparsers.add_parser("run", help="run one frozen native lifecycle spec")
     run_parser.add_argument("--spec", required=True, type=Path)
     run_parser.add_argument("--repo-root", type=Path, default=Path.cwd())
+    prepared_parser = subparsers.add_parser(
+        "run-prepared",
+        help="freeze, fingerprint, bind, and run one prepared tree",
+    )
+    prepared_parser.add_argument("--input-tree", required=True)
+    prepared_parser.add_argument("--complete-marker", required=True)
+    prepared_parser.add_argument("--timeout-seconds", required=True, type=int)
+    prepared_parser.add_argument("--repo-root", type=Path, default=Path.cwd())
     args = parser.parse_args(argv)
 
     repo_root = args.repo_root.resolve()
+    if args.command == "run-prepared":
+        try:
+            result = run_prepared(
+                repo_root,
+                args.input_tree,
+                args.complete_marker,
+                args.timeout_seconds,
+            )
+        except Exception as exc:
+            result_path = getattr(exc, "result_path", None)
+            if result_path is not None and Path(result_path).is_file():
+                failure = json.loads(Path(result_path).read_text(encoding="utf-8"))
+            else:
+                failure = {
+                    "schemaVersion": 1,
+                    "status": "precheck_failed",
+                    "errorType": type(exc).__name__,
+                    "error": str(exc),
+                }
+            print(json.dumps(failure, ensure_ascii=False))
+            return 1
+        print(json.dumps(result, ensure_ascii=False))
+        return 0
+
     spec_path = args.spec if args.spec.is_absolute() else repo_root / args.spec
     plan: Optional[SimpleNamespace] = None
     run_root_existed = False
