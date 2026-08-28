@@ -33,6 +33,17 @@ class Issue20LowCostEvidenceTests(unittest.TestCase):
                 envelope["sanitizedResult"],
             )
 
+    def test_native_repo_root_rejects_missing_empty_and_ambiguous_roots(self) -> None:
+        invalid_runtime_values = (
+            ["ENTERPRISE", "/C", "relative-receipt.txt"],
+            ["/.local/runtime"],
+            ["/first/.local/runtime", "/second/.local/receipt"],
+        )
+        for runtime in invalid_runtime_values:
+            with self.subTest(runtime=runtime):
+                with self.assertRaises(AssertionError):
+                    evidence_validator._native_repo_root({"commands": {"runtime": runtime}})
+
     def test_unlisted_file_is_rejected(self) -> None:
         with tempfile.TemporaryDirectory() as tmp:
             package = Path(tmp) / "package"

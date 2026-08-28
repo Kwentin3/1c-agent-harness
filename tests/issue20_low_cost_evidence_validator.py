@@ -71,11 +71,12 @@ def _native_repo_root(result: dict[str, object]) -> str:
     assert isinstance(commands, dict)
     runtime = commands.get("runtime")
     assert isinstance(runtime, list)
-    roots = {
-        value.split("/.local/", 1)[0]
-        for value in runtime
-        if isinstance(value, str) and value.startswith("/") and "/.local/" in value
-    }
+    roots = set()
+    for value in runtime:
+        if isinstance(value, str) and value.startswith("/") and "/.local/" in value:
+            root = value.split("/.local/", 1)[0]
+            assert root
+            roots.add(root)
     assert len(roots) == 1
     return roots.pop()
 
