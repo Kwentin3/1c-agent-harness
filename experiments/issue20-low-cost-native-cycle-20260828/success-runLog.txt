@@ -1,0 +1,2 @@
+Insufficient quantity on Issue18 existing_insufficient_stock warehouse
+Product: Issue18 existing_insufficient_stock product 1, shortage 1 Issue18 existing_insufficient_stock unit

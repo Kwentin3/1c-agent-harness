@@ -1,0 +1,136 @@
+{
+  "schemaVersion": 1,
+  "issue": 20,
+  "candidateCodeIdentityFile": "candidate-code-identity.json",
+  "candidateCodeIdentityFileSha256": "d1ba37429118e074a1619b6ceafc4166e1242ace8bf4ae5cc60a7f5ef4a38735",
+  "snapshotVerificationFile": "snapshot-verification.json",
+  "snapshotVerificationFileSha256": "48a55bd98bb82d5cfb6728b8985d8f43df53938a1d91cdbb34cd5f444784dd6f",
+  "preparedInputIdentity": {
+    "files": 5099,
+    "directories": 4847,
+    "bytes": 61802510,
+    "sha256": "d7628a2191d03a0dea3343ee1de19228dace3b4dc382c2fc1bd3058dcd2aaf27"
+  },
+  "machineProducedArtifacts": {
+    "success": {
+      "invocationLabel": "run-8f4l42x8",
+      "result": {
+        "rawFile": "success-result.raw.json.gz",
+        "rawSha256": "33798e5f285a9932283d0c38e226cc5894eadd57585110776e8790f4e4114765",
+        "sanitizedFile": "success-result.json",
+        "sanitizedSha256": "05a5272f07c3fdc257d6c4b5af0217395396e5dc127c5810f444a1ee4e054046"
+      },
+      "receipt": {
+        "rawFile": "success-receipt.raw.gz",
+        "rawSha256": "57b05be591de2c6f6166e647f8850705a93d28154a7a38795be645af631a4533",
+        "sanitizedFile": "success-receipt.txt",
+        "sanitizedSha256": "d7a5b459734b90f1641537f1cfd897d4ec11657b3737d0c360d085c3346e39e0"
+      },
+      "spec": {
+        "rawFile": "success-spec.raw.json.gz",
+        "rawSha256": "e29b331ddf7569cae7feb6a32d599f7929f1a4c93c2076032c3230457e9e1e92",
+        "sanitizedFile": "success-spec.json",
+        "sanitizedSha256": "40c7836464bbea7fbb3242758b80b76c2639ef1d1d3e4bb32ec0eea0fd1b1bba"
+      },
+      "acceptanceFile": "success-acceptance.json",
+      "acceptanceSha256": "501bddedc144bdefea10f56f9d4125a75510016b84dd62d253cab0bb61e8997d",
+      "artifacts": {
+        "createLog": {
+          "rawFile": "success-createLog.raw.gz",
+          "rawSha256": "5cc557e5f1f15222f707feb0558182ec8fb1f5112da775cf5d28918047afa873",
+          "sanitizedFile": "success-createLog.txt",
+          "sanitizedSha256": "79a1a7bca88718bdca07fb993e199821cf1a2fa3019a734ccfc460b169331cf5"
+        },
+        "createResult": {
+          "rawFile": "success-createResult.raw.gz",
+          "rawSha256": "e45825471ed10290785b62676dc5f453d228a1e1d933c45a733e9bb239c9e083",
+          "sanitizedFile": "success-createResult.txt",
+          "sanitizedSha256": "5feceb66ffc86f38d952786c6d696c79c2dbc239dd4e91b46729d73a27fb57e9"
+        },
+        "loadLog": {
+          "rawFile": "success-loadLog.raw.gz",
+          "rawSha256": "4d841be04b71dd0ee7cfebcfa7af194d74902e2ec1c213987889d7d3940c0f86",
+          "sanitizedFile": "success-loadLog.txt",
+          "sanitizedSha256": "a939dede3187c426d7919047639c16cebce2f2425b72d50402a738bea62688a7"
+        },
+        "loadResult": {
+          "rawFile": "success-loadResult.raw.gz",
+          "rawSha256": "e45825471ed10290785b62676dc5f453d228a1e1d933c45a733e9bb239c9e083",
+          "sanitizedFile": "success-loadResult.txt",
+          "sanitizedSha256": "5feceb66ffc86f38d952786c6d696c79c2dbc239dd4e91b46729d73a27fb57e9"
+        },
+        "runLog": {
+          "rawFile": "success-runLog.raw.gz",
+          "rawSha256": "e8d8977dd4eafc3aed5271e9fd63591f0f3bd23cdb157a9bfe6e581bd3a9c149",
+          "sanitizedFile": "success-runLog.txt",
+          "sanitizedSha256": "94fe87d0e20030b48141f5f5acb4b3aa2a9a6ba57f9b1f8c43f4ed0e317abde5"
+        }
+      }
+    },
+    "repeat": {
+      "invocationLabel": "run-k6yyc5rx",
+      "result": {
+        "rawFile": "repeat-result.raw.json.gz",
+        "rawSha256": "e31b2f7418d718ea36ce4da70e50988f1839927ee821828aeb6dd6b0108259d1",
+        "sanitizedFile": "repeat-result.json",
+        "sanitizedSha256": "5b09240878722e480b5308663ecfbef6a190094fa188c161a4adfad023eff7b2"
+      },
+      "receipt": {
+        "rawFile": "repeat-receipt.raw.gz",
+        "rawSha256": "796a37919af796ded650bae0d434d241357c773993788cd1d5ac68629f771719",
+        "sanitizedFile": "repeat-receipt.txt",
+        "sanitizedSha256": "260df0b1b166574ae996b7a26fe5dee9d5109c86c1ccd49ff4cce3502ff6585e"
+      },
+      "spec": {
+        "rawFile": "repeat-spec.raw.json.gz",
+        "rawSha256": "678e86210fbd2cdbe1b44bb395405c505c5d93769c71faa25b33e0a5ae393bd5",
+        "sanitizedFile": "repeat-spec.json",
+        "sanitizedSha256": "08275f68bd7466d85f763e0dd15f11510513553dae5b86cc82f0af32eb84aef9"
+      },
+      "acceptanceFile": "repeat-acceptance.json",
+      "acceptanceSha256": "095e9e63d6733ef8fd47757338ee8f5a7df5c6d553e596162b84796ba3190ab8",
+      "artifacts": {
+        "createLog": {
+          "rawFile": "repeat-createLog.raw.gz",
+          "rawSha256": "7bea655e6b2752973bff2afe431d012bb879b3ec4f51f7e88ea009f850481777",
+          "sanitizedFile": "repeat-createLog.txt",
+          "sanitizedSha256": "be8ff7b5658de17a5efcedce91481d6a2f1449e8f582b808797c50d4326365f4"
+        },
+        "createResult": {
+          "rawFile": "repeat-createResult.raw.gz",
+          "rawSha256": "e45825471ed10290785b62676dc5f453d228a1e1d933c45a733e9bb239c9e083",
+          "sanitizedFile": "repeat-createResult.txt",
+          "sanitizedSha256": "5feceb66ffc86f38d952786c6d696c79c2dbc239dd4e91b46729d73a27fb57e9"
+        },
+        "loadLog": {
+          "rawFile": "repeat-loadLog.raw.gz",
+          "rawSha256": "4d841be04b71dd0ee7cfebcfa7af194d74902e2ec1c213987889d7d3940c0f86",
+          "sanitizedFile": "repeat-loadLog.txt",
+          "sanitizedSha256": "a939dede3187c426d7919047639c16cebce2f2425b72d50402a738bea62688a7"
+        },
+        "loadResult": {
+          "rawFile": "repeat-loadResult.raw.gz",
+          "rawSha256": "e45825471ed10290785b62676dc5f453d228a1e1d933c45a733e9bb239c9e083",
+          "sanitizedFile": "repeat-loadResult.txt",
+          "sanitizedSha256": "5feceb66ffc86f38d952786c6d696c79c2dbc239dd4e91b46729d73a27fb57e9"
+        },
+        "runLog": {
+          "rawFile": "repeat-runLog.raw.gz",
+          "rawSha256": "e8d8977dd4eafc3aed5271e9fd63591f0f3bd23cdb157a9bfe6e581bd3a9c149",
+          "sanitizedFile": "repeat-runLog.txt",
+          "sanitizedSha256": "94fe87d0e20030b48141f5f5acb4b3aa2a9a6ba57f9b1f8c43f4ed0e317abde5"
+        }
+      }
+    }
+  },
+  "sameCallerCommand": "python3 scripts/native_cycle.py run-prepared --input-tree .local/prepared/issue20-low-cost-jet --complete-marker 'complete###true' --timeout-seconds 240",
+  "repeatComparison": {
+    "differentInvocationRoots": true,
+    "differentSpecSha256": true,
+    "differentBindingArgvSha256": true,
+    "samePreparedSourceIdentity": true,
+    "sameFrozenInputIdentity": true,
+    "semanticKeyOrderParity": true,
+    "unexpectedBehaviorDifferences": []
+  }
+}

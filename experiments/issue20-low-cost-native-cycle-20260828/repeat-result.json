@@ -1,0 +1,170 @@
+{
+  "schemaVersion": 1,
+  "sourceKind": "deterministically path-sanitized machine-produced result.json",
+  "rawSha256": "e31b2f7418d718ea36ce4da70e50988f1839927ee821828aeb6dd6b0108259d1",
+  "sanitizedResult": {
+    "schemaVersion": 1,
+    "status": "runtime_contract_completed",
+    "durationSeconds": 150.113,
+    "specSha256": "678e86210fbd2cdbe1b44bb395405c505c5d93769c71faa25b33e0a5ae393bd5",
+    "input": {
+      "files": 5099,
+      "directories": 4847,
+      "bytes": 61802510,
+      "sourceTreeSha256": "043e2f950e393c0615a72989bed78ab6e417cec87859e2bf8795effa2f429fbc",
+      "copiedTreeSha256": "043e2f950e393c0615a72989bed78ab6e417cec87859e2bf8795effa2f429fbc",
+      "loadTreeSha256": "d7628a2191d03a0dea3343ee1de19228dace3b4dc382c2fc1bd3058dcd2aaf27"
+    },
+    "commands": {
+      "create": [
+        "<REPO_ROOT>/.local/platform/libs/usr/bin/xvfb-run",
+        "-a",
+        "-s",
+        "-screen 0 1280x1024x8 -nolisten tcp",
+        "<REPO_ROOT>/.local/platform/1cv8t/x86_64/8.5.1.1150/1cv8t",
+        "CREATEINFOBASE",
+        "File=<REPO_ROOT>/.local/runs/native-cycle/run-k6yyc5rx/run/ib",
+        "/DisableStartupDialogs",
+        "/DisableStartupMessages",
+        "/Out",
+        "<REPO_ROOT>/.local/runs/native-cycle/run-k6yyc5rx/run/logs/create.log",
+        "/DumpResult",
+        "<REPO_ROOT>/.local/runs/native-cycle/run-k6yyc5rx/run/logs/create.result"
+      ],
+      "load": [
+        "<REPO_ROOT>/.local/platform/libs/usr/bin/xvfb-run",
+        "-a",
+        "-s",
+        "-screen 0 1280x1024x8 -nolisten tcp",
+        "<REPO_ROOT>/.local/platform/1cv8t/x86_64/8.5.1.1150/1cv8t",
+        "DESIGNER",
+        "/F",
+        "<REPO_ROOT>/.local/runs/native-cycle/run-k6yyc5rx/run/ib",
+        "/LoadConfigFromFiles",
+        "<REPO_ROOT>/.local/runs/native-cycle/run-k6yyc5rx/run/work-copy",
+        "/UpdateDBCfg",
+        "/DisableStartupDialogs",
+        "/DisableStartupMessages",
+        "/Out",
+        "<REPO_ROOT>/.local/runs/native-cycle/run-k6yyc5rx/run/logs/load.log",
+        "/DumpResult",
+        "<REPO_ROOT>/.local/runs/native-cycle/run-k6yyc5rx/run/logs/load.result"
+      ],
+      "runtime": [
+        "<REPO_ROOT>/.local/platform/libs/usr/bin/xvfb-run",
+        "-a",
+        "-s",
+        "-screen 0 1280x1024x8 -nolisten tcp",
+        "<REPO_ROOT>/.local/platform/1cv8t/x86_64/8.5.1.1150/1cv8t",
+        "ENTERPRISE",
+        "/F",
+        "<REPO_ROOT>/.local/runs/native-cycle/run-k6yyc5rx/run/ib",
+        "/C",
+        "<REPO_ROOT>/.local/runs/native-cycle/run-k6yyc5rx/run/evidence/receipt.txt",
+        "/DisableStartupDialogs",
+        "/DisableStartupMessages",
+        "/Out",
+        "<REPO_ROOT>/.local/runs/native-cycle/run-k6yyc5rx/run/logs/run.log",
+        "/DumpResult",
+        "<REPO_ROOT>/.local/runs/native-cycle/run-k6yyc5rx/run/logs/run.result"
+      ]
+    },
+    "environment": {
+      "HOME": "<REPO_ROOT>/.local/runs/native-cycle/run-k6yyc5rx/run/home",
+      "TMPDIR": "<REPO_ROOT>/.local/runs/native-cycle/run-k6yyc5rx/run/tmp",
+      "XDG_CACHE_HOME": "<REPO_ROOT>/.local/runs/native-cycle/run-k6yyc5rx/run/home/xdg-cache",
+      "XDG_CONFIG_HOME": "<REPO_ROOT>/.local/runs/native-cycle/run-k6yyc5rx/run/home/xdg-config",
+      "XDG_DATA_HOME": "<REPO_ROOT>/.local/runs/native-cycle/run-k6yyc5rx/run/home/xdg-data",
+      "FONTCONFIG_FILE": "<REPO_ROOT>/.local/platform/fonts.conf",
+      "LD_LIBRARY_PATH": "<REPO_ROOT>/.local/platform/1cv8t/x86_64/8.5.1.1150:<REPO_ROOT>/.local/platform/libs/usr/lib/x86_64-linux-gnu",
+      "PATH": "<REPO_ROOT>/.local/platform/libs/usr/bin:<USER_HOME>/.local/bin:<USER_HOME>/.local/bin:/usr/local/bin:/usr/bin:/bin:/usr/local/games:/usr/games"
+    },
+    "create": {
+      "processReturn": 0,
+      "dumpResult": "0",
+      "resultSha256": "e45825471ed10290785b62676dc5f453d228a1e1d933c45a733e9bb239c9e083",
+      "logSha256": "7bea655e6b2752973bff2afe431d012bb879b3ec4f51f7e88ea009f850481777",
+      "successMarker": "completed successfully"
+    },
+    "load": {
+      "processReturn": 0,
+      "dumpResult": "0",
+      "resultSha256": "e45825471ed10290785b62676dc5f453d228a1e1d933c45a733e9bb239c9e083",
+      "logSha256": "4d841be04b71dd0ee7cfebcfa7af194d74902e2ec1c213987889d7d3940c0f86",
+      "successMarker": "Configuration successfully updated"
+    },
+    "runtime": {
+      "completed": true,
+      "completeMarker": "complete###true",
+      "stableReads": 2,
+      "processReturn": -15,
+      "receipt": {
+        "state": "regular",
+        "bytes": 18642,
+        "sha256": "796a37919af796ded650bae0d434d241357c773993788cd1d5ac68629f771719",
+        "terminalMarker": true
+      },
+      "outputs": {
+        "log": {
+          "state": "regular",
+          "bytes": 184,
+          "sha256": "e8d8977dd4eafc3aed5271e9fd63591f0f3bd23cdb157a9bfe6e581bd3a9c149"
+        },
+        "result": {
+          "state": "absent"
+        }
+      },
+      "receiptSha256": "796a37919af796ded650bae0d434d241357c773993788cd1d5ac68629f771719",
+      "receiptBytes": 18642
+    },
+    "inputAfter": {
+      "files": 5099,
+      "directories": 4847,
+      "bytes": 61802510,
+      "sha256": "043e2f950e393c0615a72989bed78ab6e417cec87859e2bf8795effa2f429fbc"
+    },
+    "resultPath": ".local/runs/native-cycle/run-k6yyc5rx/run/result.json",
+    "preparedInvocation": {
+      "invocationRoot": ".local/runs/native-cycle/run-k6yyc5rx",
+      "sourcePath": ".local/prepared/issue20-low-cost-jet",
+      "sourceBefore": {
+        "files": 5099,
+        "directories": 4847,
+        "bytes": 61802510,
+        "sha256": "d7628a2191d03a0dea3343ee1de19228dace3b4dc382c2fc1bd3058dcd2aaf27"
+      },
+      "sourceAfter": {
+        "files": 5099,
+        "directories": 4847,
+        "bytes": 61802510,
+        "sha256": "d7628a2191d03a0dea3343ee1de19228dace3b4dc382c2fc1bd3058dcd2aaf27"
+      },
+      "copiedBeforeFreeze": {
+        "files": 5099,
+        "directories": 4847,
+        "bytes": 61802510,
+        "sha256": "d7628a2191d03a0dea3343ee1de19228dace3b4dc382c2fc1bd3058dcd2aaf27"
+      },
+      "frozenInput": {
+        "path": ".local/runs/native-cycle/run-k6yyc5rx/frozen-input",
+        "identity": {
+          "files": 5099,
+          "directories": 4847,
+          "bytes": 61802510,
+          "sha256": "043e2f950e393c0615a72989bed78ab6e417cec87859e2bf8795effa2f429fbc"
+        }
+      },
+      "generatedSpec": {
+        "path": ".local/runs/native-cycle/run-k6yyc5rx/spec.json",
+        "sha256": "678e86210fbd2cdbe1b44bb395405c505c5d93769c71faa25b33e0a5ae393bd5"
+      },
+      "generatedBinding": {
+        "kind": "1c-enterprise-launch-parameter",
+        "status": "generated",
+        "receipt": ".local/runs/native-cycle/run-k6yyc5rx/run/evidence/receipt.txt",
+        "runtimeArgvSha256": "1400a649ebee19d397cd659d651b1734d142c5a2ad2afb8a251e564ba91cb538"
+      }
+    },
+    "totalDurationSeconds": 175.193
+  }
+}

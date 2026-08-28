@@ -1,6 +1,6 @@
 # Issue #20 — low-cost prepared-tree native loop
 
-Status: pre-implementation finish contract, frozen before product code on branch `product/issue-20-low-cost-loop` from merge commit `c4e40ff96a36c709cab46df651ee0564647f3146`.
+Status: implementation candidate `4ef4bf3b6e3ce1cd74316d3a35a3ab69476ad330` / tree `47fa6aa5e2f89bd70373f9e42e5e44567fb0a3e7` passed independent pre-native review. Fresh success/repeat evidence is captured in `experiments/issue20-low-cost-native-cycle-20260828/`; final exact-tree review and publication are pending.
 
 ## User boundary
 
@@ -53,7 +53,7 @@ The result must distinguish:
 
 ## Baseline and budget
 
-Current caller-owned preparation after task-specific patch/probe authoring requires three manual actions per binding:
+Before this change, caller-owned preparation after task-specific patch/probe authoring required three manual actions per binding:
 
 1. recursively remove write bits;
 2. import internal Python code to compute the closed-tree fingerprint and copy it into JSON;
@@ -72,6 +72,19 @@ Target from the user command boundary:
 - new common product code: measured on the final candidate.
 
 `LOW-COST NATIVE LOOP` is permitted only if all target counts are met by success and clean repeat using the same caller command.
+
+Measured candidate result:
+
+- supported caller command blocks per run: `1`;
+- manual `chmod`, fingerprint substitution, spec/run-root/receipt edits: `0`;
+- native attempts: success `1`, repeat `1`;
+- full command wall time: success `176.373 s`, repeat `175.193 s`;
+- executor wall time within those totals: success `151.752 s`, repeat `150.113 s`;
+- same caller command: yes;
+- unique invocation roots/specs/bindings: yes;
+- post-repeat active native processes: `[]`.
+
+Candidate verdict: **LOW-COST PREPARED-TREE LIFECYCLE PASS; TASK-SPECIFIC PREPARATION AND SEMANTIC ORACLE REMAIN OUTSIDE THE CAPABILITY.** This remains a candidate claim until exact-tree review and owner publication are complete.
 
 ## Compared approaches
 

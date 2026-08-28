@@ -1,0 +1,36 @@
+{
+  "schemaVersion": 1,
+  "issue": 20,
+  "measurementBoundary": {
+    "included": "one run-prepared command from an already task-authored prepared tree through freeze, fingerprint, generated binding, native lifecycle, cleanup, source recheck, and result.json",
+    "excluded": "task reconnaissance, BSL patch/probe authoring, semantic oracle authoring, evidence publication and review"
+  },
+  "supportedPreparedTreeEntrypoint": true,
+  "callerCommandBlocksPerRun": 1,
+  "manualBindingActionsPerRun": 0,
+  "manualPathSubstitutionsPerRun": 0,
+  "sameCommandUsedForRepeat": true,
+  "nativeAttempts": {
+    "success": 1,
+    "repeat": 1
+  },
+  "fullWallSeconds": {
+    "success": 176.373,
+    "repeat": 175.193
+  },
+  "executorSeconds": {
+    "success": 151.752,
+    "repeat": 150.113
+  },
+  "newCommonCodeDiff": {
+    "scripts/native_cycle.py": {
+      "added": 358,
+      "removed": 3
+    },
+    "tests/test_native_cycle.py": {
+      "added": 309,
+      "removed": 0
+    }
+  },
+  "verdict": "LOW-COST PREPARED-TREE LIFECYCLE PASS; TASK-SPECIFIC PREPARATION AND SEMANTIC ORACLE REMAIN OUTSIDE THE CAPABILITY"
+}

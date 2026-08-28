@@ -1,0 +1,39 @@
+{
+  "schemaVersion": 1,
+  "label": "repeat",
+  "status": "runtime_contract_completed",
+  "durationSeconds": 150.113,
+  "totalDurationSeconds": 175.193,
+  "rows": 320,
+  "uniqueKeys": 319,
+  "keyOrderParityWithIssue18Green": true,
+  "completeProgression": [
+    "false",
+    "true"
+  ],
+  "declaredBindingOrPlatformDifferences": [
+    {
+      "index": 1,
+      "key": "nonce",
+      "baseline": "green-4d091690b7ec4fef",
+      "observed": "<REPO_ROOT>/.local/runs/native-cycle/run-k6yyc5rx/run/evidence/receipt.txt"
+    },
+    {
+      "index": 2,
+      "key": "mode",
+      "baseline": "green-production-patch",
+      "observed": "issue20-low-cost"
+    },
+    {
+      "index": 295,
+      "key": "existing_insufficient_stock.postError",
+      "baseline": "{CommonModule.JetServerCall.Module(106)}: Error calling context method (Write): Failed to post \"Sales invoice 000000004 dated 8/27/2026 10:15:08 PM\"!",
+      "observed": "{CommonModule.JetServerCall.Module(106)}: Error calling context method (Write): Failed to post \"Sales invoice 000000004 dated 8/28/2026 11:15:38 AM\"!"
+    }
+  ],
+  "unexpectedBehaviorDifferences": [],
+  "sourceStable": true,
+  "generatedBindingStatus": "generated",
+  "generatedBindingKind": "1c-enterprise-launch-parameter",
+  "runtimeCCount": 1
+}
