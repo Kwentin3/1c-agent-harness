@@ -2,8 +2,8 @@
   "schemaVersion": 1,
   "label": "success",
   "status": "runtime_contract_completed",
-  "durationSeconds": 151.752,
-  "totalDurationSeconds": 176.373,
+  "durationSeconds": 151.896,
+  "totalDurationSeconds": 176.03,
   "rows": 320,
   "uniqueKeys": 319,
   "keyOrderParityWithIssue18Green": true,
@@ -13,22 +13,22 @@
   ],
   "declaredBindingOrPlatformDifferences": [
     {
-      "index": 1,
+      "index": 0,
       "key": "nonce",
       "baseline": "green-4d091690b7ec4fef",
-      "observed": "<REPO_ROOT>/.local/runs/native-cycle/run-8f4l42x8/run/evidence/receipt.txt"
+      "observed": "<REPO_ROOT>/.local/runs/native-cycle/run-lqfdgq0u/run/evidence/receipt.txt"
     },
     {
-      "index": 2,
+      "index": 1,
       "key": "mode",
       "baseline": "green-production-patch",
       "observed": "issue20-low-cost"
     },
     {
-      "index": 295,
+      "index": 294,
       "key": "existing_insufficient_stock.postError",
       "baseline": "{CommonModule.JetServerCall.Module(106)}: Error calling context method (Write): Failed to post \"Sales invoice 000000004 dated 8/27/2026 10:15:08 PM\"!",
-      "observed": "{CommonModule.JetServerCall.Module(106)}: Error calling context method (Write): Failed to post \"Sales invoice 000000004 dated 8/28/2026 11:12:06 AM\"!"
+      "observed": "{CommonModule.JetServerCall.Module(106)}: Error calling context method (Write): Failed to post \"Sales invoice 000000004 dated 8/28/2026 11:58:13 AM\"!"
     }
   ],
   "unexpectedBehaviorDifferences": [],

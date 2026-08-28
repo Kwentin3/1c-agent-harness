@@ -15,20 +15,20 @@
     "repeat": 1
   },
   "fullWallSeconds": {
-    "success": 176.373,
-    "repeat": 175.193
+    "success": 176.03,
+    "repeat": 169.239
   },
   "executorSeconds": {
-    "success": 151.752,
-    "repeat": 150.113
+    "success": 151.896,
+    "repeat": 145.268
   },
   "newCommonCodeDiff": {
     "scripts/native_cycle.py": {
-      "added": 358,
-      "removed": 3
+      "added": 378,
+      "removed": 8
     },
     "tests/test_native_cycle.py": {
-      "added": 309,
+      "added": 410,
       "removed": 0
     }
   },

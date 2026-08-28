@@ -1,12 +1,11 @@
 {
   "schemaVersion": 1,
-  "sourceKind": "deterministically path-sanitized generated spec",
-  "rawSha256": "e29b331ddf7569cae7feb6a32d599f7929f1a4c93c2076032c3230457e9e1e92",
+  "rawSha256": "6c91251fb33d61c53cabfb7ead16bdb9707da3be970bb08ea79365ac24bcb755",
   "sanitizedSpec": {
     "schemaVersion": 1,
-    "inputTree": ".local/runs/native-cycle/run-8f4l42x8/frozen-input",
+    "inputTree": ".local/runs/native-cycle/run-lqfdgq0u/frozen-input",
     "inputTreeSha256": "043e2f950e393c0615a72989bed78ab6e417cec87859e2bf8795effa2f429fbc",
-    "runRoot": ".local/runs/native-cycle/run-8f4l42x8/run",
+    "runRoot": ".local/runs/native-cycle/run-lqfdgq0u/run",
     "receipt": "evidence/receipt.txt",
     "completeMarker": "complete###true",
     "timeoutSeconds": 240

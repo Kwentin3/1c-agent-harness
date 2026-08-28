@@ -1,6 +1,6 @@
 # Issue #20 — low-cost prepared-tree native loop
 
-Status: implementation candidate `4ef4bf3b6e3ce1cd74316d3a35a3ab69476ad330` / tree `47fa6aa5e2f89bd70373f9e42e5e44567fb0a3e7` passed independent pre-native review. Fresh success/repeat evidence is captured in `experiments/issue20-low-cost-native-cycle-20260828/`; exact-tree review and separate open/unmerged PR are mandatory release gates.
+Status: implementation candidate `41ced17f3f01c0661bb50dfa69bcd36ca3bfb109` / tree `12e34ae765628954cc7f1895ceab1e3d76cd26d1` passed independent pre-native review. Fresh success/repeat evidence from those exact runner bytes is captured in `experiments/issue20-low-cost-native-cycle-20260828/`; exact-tree review and a separate open/unmerged PR are mandatory release gates.
 
 ## User boundary
 
@@ -78,8 +78,8 @@ Measured candidate result:
 - supported caller command blocks per run: `1`;
 - manual `chmod`, fingerprint substitution, spec/run-root/receipt edits: `0`;
 - native attempts: success `1`, repeat `1`;
-- full command wall time: success `176.373 s`, repeat `175.193 s`;
-- executor wall time within those totals: success `151.752 s`, repeat `150.113 s`;
+- full command wall time: success `176.030 s`, repeat `169.239 s`;
+- executor wall time within those totals: success `151.896 s`, repeat `145.268 s`;
 - same caller command: yes;
 - unique invocation roots/specs/bindings: yes;
 - post-repeat active native processes: `[]`.

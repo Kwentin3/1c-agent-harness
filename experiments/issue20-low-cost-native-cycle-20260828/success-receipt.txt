@@ -1,4 +1,4 @@
-nonce###<REPO_ROOT>/.local/runs/native-cycle/run-8f4l42x8/run/evidence/receipt.txt
+nonce###<REPO_ROOT>/.local/runs/native-cycle/run-lqfdgq0u/run/evidence/receipt.txt
 mode###issue20-low-cost
 complete###false
 target_mixed_four_middle_stale.begin###true
@@ -292,7 +292,7 @@ existing_insufficient_stock.draft.row1.amount###11
 existing_insufficient_stock.draft.row1.vatAmount###0
 existing_insufficient_stock.draft.row1.total###11
 existing_insufficient_stock.postCallSucceeded###false
-existing_insufficient_stock.postError###{CommonModule.JetServerCall.Module(106)}: Error calling context method (Write): Failed to post "Sales invoice 000000004 dated 8/28/2026 11:12:06 AM"!
+existing_insufficient_stock.postError###{CommonModule.JetServerCall.Module(106)}: Error calling context method (Write): Failed to post "Sales invoice 000000004 dated 8/28/2026 11:58:13 AM"!
 existing_insufficient_stock.post.headerTotal###11
 existing_insufficient_stock.post.rowCount###1
 existing_insufficient_stock.post.row1.quantity###11

@@ -7,31 +7,31 @@ from pathlib import Path
 
 REPO_ROOT = Path(__file__).resolve().parents[1]
 MANIFEST = "package-manifest.json"
-CANDIDATE_COMMIT = "4ef4bf3b6e3ce1cd74316d3a35a3ab69476ad330"
-CANDIDATE_TREE = "47fa6aa5e2f89bd70373f9e42e5e44567fb0a3e7"
+CANDIDATE_COMMIT = "41ced17f3f01c0661bb50dfa69bcd36ca3bfb109"
+CANDIDATE_TREE = "12e34ae765628954cc7f1895ceab1e3d76cd26d1"
 CODE_IDENTITY = {
-    "scripts/native_cycle.py": "6141447edced9c69cee970bbe145e3ff1a38e880f9c807d5e6e736a62f5660be",
-    "tests/test_native_cycle.py": "d8ba432c2b4cf09c0aa37537f2ed31e723fc4808b30d32e3a65d952b3ff42888",
+    "scripts/native_cycle.py": "f1dfe8a774f3093ae5e4ea479309e10b1dfaf3384c771dcdfdcf2a810c93fd91",
+    "tests/test_native_cycle.py": "72af3ef7520417f9284e24bceb1c9dbc19f529d4b743ce1e25ca5388b598f2be",
 }
 SNAPSHOT_MANIFEST_SHA256 = "70972b5e11901ca31c7f7ec67dca03f78986206b024be01aeb34e0e1f3ff6691"
 BASELINE_RECEIPT_SHA256 = "bc7d3f5c31de4bd291b6939d1a24ce206b8fd65d045ca2fb6797e53ff42fa77a"
 PROCESS_CHECK_SHA256 = "37517e5f3dc66819f61f5a7bb8ace1921282415f10551d2defa5c3eb0985b570"
 RAW_SHA256 = {
     "success": {
-        "result": "33798e5f285a9932283d0c38e226cc5894eadd57585110776e8790f4e4114765",
-        "receipt": "57b05be591de2c6f6166e647f8850705a93d28154a7a38795be645af631a4533",
-        "spec": "e29b331ddf7569cae7feb6a32d599f7929f1a4c93c2076032c3230457e9e1e92",
-        "createLog": "5cc557e5f1f15222f707feb0558182ec8fb1f5112da775cf5d28918047afa873",
+        "result": "e14e63a8eda7a5a90b1a88b5db8c345f923e6dd958a8b7c8698af4d96bb9a279",
+        "receipt": "f0ce4f134f857a9b07fbdc266c75108f478b1c332c5dfc937ddc94168604e5ac",
+        "spec": "6c91251fb33d61c53cabfb7ead16bdb9707da3be970bb08ea79365ac24bcb755",
+        "createLog": "7690d1096d3951cfb553a61fd0c83fd008e7c0d59dc039d0f4e3f421a0e9f347",
         "createResult": "e45825471ed10290785b62676dc5f453d228a1e1d933c45a733e9bb239c9e083",
         "loadLog": "4d841be04b71dd0ee7cfebcfa7af194d74902e2ec1c213987889d7d3940c0f86",
         "loadResult": "e45825471ed10290785b62676dc5f453d228a1e1d933c45a733e9bb239c9e083",
         "runLog": "e8d8977dd4eafc3aed5271e9fd63591f0f3bd23cdb157a9bfe6e581bd3a9c149",
     },
     "repeat": {
-        "result": "e31b2f7418d718ea36ce4da70e50988f1839927ee821828aeb6dd6b0108259d1",
-        "receipt": "796a37919af796ded650bae0d434d241357c773993788cd1d5ac68629f771719",
-        "spec": "678e86210fbd2cdbe1b44bb395405c505c5d93769c71faa25b33e0a5ae393bd5",
-        "createLog": "7bea655e6b2752973bff2afe431d012bb879b3ec4f51f7e88ea009f850481777",
+        "result": "4ef45ad614789c2686f3b9d0bd1e8c990222b18d5c48a6a6143cb0b2785e63b4",
+        "receipt": "525e1af3f27ac54b1caa6ac8c303fa1249116b39859858f9b2ca9420ab334394",
+        "spec": "bcada580a1fd6e925610e686777cffcbd03287c7838d4e4c9caa1b69a8b9543c",
+        "createLog": "96e2e9a90744582bde9ff6b3287dceffd1e77a81a5b73a79d118206bf6b16b41",
         "createResult": "e45825471ed10290785b62676dc5f453d228a1e1d933c45a733e9bb239c9e083",
         "loadLog": "4d841be04b71dd0ee7cfebcfa7af194d74902e2ec1c213987889d7d3940c0f86",
         "loadResult": "e45825471ed10290785b62676dc5f453d228a1e1d933c45a733e9bb239c9e083",
