@@ -382,6 +382,53 @@ class NativeCycleContractTests(unittest.TestCase):
             self.assertEqual(persisted["failedStage"], "artifact-finalization")
             self.assertEqual(persisted["storageCompaction"]["status"], "failed")
 
+    def test_partial_cleanup_reports_only_verified_removed_paths(self) -> None:
+        native_cycle = load_module("native_cycle_partial_cleanup_diagnostic")
+        with tempfile.TemporaryDirectory() as tmp:
+            root = Path(tmp) / "run-current"
+            invocation = SimpleNamespace(
+                invocation_root=root,
+                frozen_input=root / "frozen-input",
+                run_root=root / "run",
+            )
+            for path in (
+                invocation.frozen_input,
+                invocation.run_root / "work-copy",
+                invocation.run_root / "ib",
+                invocation.run_root / "home",
+                invocation.run_root / "tmp",
+                invocation.run_root / "logs",
+                invocation.run_root / "evidence",
+            ):
+                path.mkdir(parents=True, exist_ok=True)
+                (path / "artifact.bin").write_bytes(b"x" * 64)
+            (root / "spec.json").write_text("{}\n", encoding="utf-8")
+            result = {"schemaVersion": 1, "status": "runtime_contract_completed"}
+            original_remove = native_cycle._remove_generated_tree
+            calls = 0
+
+            def remove_one_then_fail(path: Path) -> None:
+                nonlocal calls
+                calls += 1
+                if calls == 2:
+                    raise RuntimeError("simulated second-target rejection")
+                original_remove(path)
+
+            with mock.patch.object(
+                native_cycle, "_remove_generated_tree", side_effect=remove_one_then_fail
+            ):
+                with self.assertRaises(RuntimeError) as raised:
+                    native_cycle._compact_prepared_invocation(invocation, result, time.monotonic())
+
+            persisted = json.loads(Path(raised.exception.result_path).read_text(encoding="utf-8"))
+            storage = persisted["storageCompaction"]
+            self.assertEqual(storage["completedRemovedPaths"], ["frozen-input"])
+            self.assertEqual(storage["removedLogicalBytes"], 64)
+            self.assertFalse(os.path.lexists(invocation.frozen_input))
+            self.assertTrue(os.path.lexists(invocation.run_root / "work-copy"))
+            expected_retained = native_cycle._logical_file_bytes(root) - (invocation.run_root / "result.json").lstat().st_size
+            self.assertEqual(storage["retainedLogicalBytesExcludingResult"], expected_retained)
+
     def test_run_prepared_cleanup_failure_cannot_remain_success(self) -> None:
         native_cycle = load_module("native_cycle_cleanup_failure")
         with tempfile.TemporaryDirectory() as tmp:
@@ -412,7 +459,13 @@ class NativeCycleContractTests(unittest.TestCase):
             self.assertEqual(persisted["status"], "artifact_cleanup_failed")
             self.assertEqual(persisted["failedStage"], "artifact-cleanup")
             self.assertEqual(persisted["storageCompaction"]["status"], "failed")
-            self.assertIn("simulated cleanup failure", persisted["storageCompaction"]["error"])
+            storage = persisted["storageCompaction"]
+            self.assertEqual(storage["configuredTargets"], [
+                "frozen-input", "run/work-copy", "run/ib", "run/home", "run/tmp",
+            ])
+            self.assertEqual(storage["completedRemovedPaths"], [])
+            self.assertIn("retainedLogicalBytesExcludingResult", storage)
+            self.assertIn("simulated cleanup failure", storage["error"])
 
     def test_run_prepared_prioritizes_input_change_during_generated_plan_failure(self) -> None:
         native_cycle = load_module("native_cycle_plan_failure_source_change")

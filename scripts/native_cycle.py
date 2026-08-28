@@ -749,10 +749,11 @@ def _compact_prepared_invocation(
         "policy": "compact-current-invocation-v1",
         "status": "pending",
         "manualCleanupActions": 0,
-        "removedPaths": [
+        "configuredTargets": [
             path.relative_to(invocation.invocation_root).as_posix()
             for path in disposable
         ],
+        "completedRemovedPaths": [],
         "retainedPaths": ["spec.json", "run/evidence", "run/logs", "run/result.json"],
     }
     if original_status == "runtime_contract_completed":
@@ -765,17 +766,24 @@ def _compact_prepared_invocation(
         result["status"] = original_status
         result.pop("failedStage", None)
     pre_compaction_bytes = _logical_file_bytes(invocation.invocation_root)
-    removed_bytes = sum(_logical_file_bytes(path) for path in disposable)
+    removed_bytes = 0
     try:
         for path in disposable:
+            path_bytes = _logical_file_bytes(path)
             _remove_generated_tree(path)
+            if os.path.lexists(path):
+                raise RuntimeError(f"generated cleanup target still exists after removal: {path}")
+            removed_bytes += path_bytes
+            completed = result["storageCompaction"]["completedRemovedPaths"]
+            assert isinstance(completed, list)
+            completed.append(path.relative_to(invocation.invocation_root).as_posix())
     except Exception as exc:
         storage = result["storageCompaction"]
         assert isinstance(storage, dict)
         storage.update({
             "status": "failed",
             "preCompactionLogicalBytes": pre_compaction_bytes,
-            "removedLogicalBytes": pre_compaction_bytes - _logical_file_bytes(invocation.invocation_root),
+            "removedLogicalBytes": removed_bytes,
             "errorType": type(exc).__name__,
             "error": str(exc),
         })
@@ -788,7 +796,9 @@ def _compact_prepared_invocation(
             })
         result["totalDurationSeconds"] = round(time.monotonic() - started, 3)
         storage["durationSeconds"] = round(time.monotonic() - storage_started, 3)
-        storage["retainedLogicalBytes"] = _logical_file_bytes(invocation.invocation_root)
+        storage["retainedLogicalBytesExcludingResult"] = (
+            _logical_file_bytes(invocation.invocation_root) - result_path.lstat().st_size
+        )
         _write_json_atomic(result_path, result)
         setattr(exc, "result_path", result_path)
         raise
