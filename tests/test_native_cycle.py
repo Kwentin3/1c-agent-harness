@@ -853,6 +853,38 @@ class NativeCycleContractTests(unittest.TestCase):
                         receipt_root=evidence, poll_seconds=0.025, stable_reads=2,
                     )
 
+    def test_runtime_retries_same_file_change_during_receipt_observation(self) -> None:
+        native_cycle = load_module("native_cycle_runtime_receipt_growth")
+        with tempfile.TemporaryDirectory() as tmp:
+            root = Path(tmp)
+            receipt = root / "receipt.txt"
+            fake = root / "fake-runtime"
+            fake.write_text(
+                "#!/usr/bin/env python3\n"
+                "import time\n"
+                "time.sleep(60)\n",
+                encoding="utf-8",
+            )
+            fake.chmod(fake.stat().st_mode | stat.S_IXUSR)
+            complete = b"started###true\ncomplete###true\n"
+            changed = native_cycle._ReceiptChangedDuringRead(
+                "runtime receipt channel changed during read"
+            )
+
+            with mock.patch.object(
+                native_cycle,
+                "_read_receipt_channel",
+                side_effect=[changed, complete, complete, complete],
+            ):
+                outcome = native_cycle.run_runtime(
+                    [str(fake)], os.environ.copy(), receipt,
+                    "complete###true", timeout_seconds=5,
+                    receipt_root=receipt.parent,
+                    poll_seconds=0.01, stable_reads=2,
+                )
+
+            self.assertTrue(outcome["completed"])
+
     def test_runtime_waits_for_stable_marker_and_cleans_its_process_group(self) -> None:
         native_cycle = load_module("native_cycle_runtime")
         with tempfile.TemporaryDirectory() as tmp:

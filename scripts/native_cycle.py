@@ -23,6 +23,10 @@ XVFB_SCREEN = "-screen 0 1280x1024x8 -nolisten tcp"
 PR_SET_CHILD_SUBREAPER = 36
 
 
+class _ReceiptChangedDuringRead(RuntimeError):
+    """The admitted receipt changed while one observation was in flight."""
+
+
 def _reject_symlink_components(repo_root: Path, candidate: Path, *, field: str) -> None:
     current = repo_root
     for part in candidate.parts:
@@ -516,11 +520,11 @@ def _read_receipt_channel(receipt_root: Path, receipt_path: Path) -> Optional[by
             payload = stream.read()
         after = os.fstat(file_descriptor)
         if (
-            (before.st_dev, before.st_ino, before.st_size)
-            != (after.st_dev, after.st_ino, after.st_size)
+            (before.st_dev, before.st_ino, before.st_size, before.st_mtime_ns, before.st_ctime_ns)
+            != (after.st_dev, after.st_ino, after.st_size, after.st_mtime_ns, after.st_ctime_ns)
             or after.st_nlink != 1
         ):
-            raise RuntimeError("runtime receipt channel changed during read")
+            raise _ReceiptChangedDuringRead("runtime receipt channel changed during read")
         return payload
     except FileNotFoundError:
         return None
@@ -615,7 +619,13 @@ def run_runtime(
     try:
         try:
             while time.monotonic() < deadline:
-                payload = _read_receipt_channel(receipt_root, receipt_path)
+                try:
+                    payload = _read_receipt_channel(receipt_root, receipt_path)
+                except _ReceiptChangedDuringRead:
+                    stable_hash = None
+                    stable_count = 0
+                    time.sleep(min(poll_seconds, 0.01))
+                    continue
                 if payload is not None:
                     current_hash = hashlib.sha256(payload).hexdigest()
                     decoded_lines = payload.decode("utf-8-sig", errors="strict").splitlines()
