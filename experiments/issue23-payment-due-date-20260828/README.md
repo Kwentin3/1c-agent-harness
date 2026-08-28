@@ -1,6 +1,6 @@
 # Issue #23 — SalesInvoice payment due date
 
-Status: native baseline/RED/GREEN/clean-repeat complete; exact candidate review and PR are pending.
+Status: native baseline/RED/GREEN/clean-repeat complete; operational storage correction applied; exact corrected-candidate review and PR are pending.
 
 ## Result
 
@@ -18,7 +18,8 @@ It adds no form, migration, external integration, role, shared harness or skill 
 - original frozen contract: `4b0ec90eefcac7780291624ff0341279d281dc74`;
 - additive amendment: `c8f4e9644254eb47c418558f27af823b09d4726f`;
 - independent pre-patch verdict: `PASS`;
-- owner interventions: `0`.
+- semantic/1C owner interventions: `0`;
+- operational storage owner interventions: `1`.
 
 The amendment closes absolute-current-date, day/month component, hidden upper-bound and weak date-qualifier countermodels. See `docs/issue-23-frozen-semantic-contract.md`.
 
@@ -49,9 +50,17 @@ Machine-readable cases are in `behavior-summary.json`; the task-specific determi
 - `instrumentation.diff.gz` contains only the task-specific ManagedApplication entrypoint and JetServerCall probe. It is not production logic. Its normalized reconstruction also requires restoring the source export’s missing terminal newline in `CommonModules/JetServerCall/Ext/Module.bsl`; `source-identity.json` records this prerequisite and the four byte-exact reconstruction checks.
 - `source-identity.json` binds source, production, patch and instrumentation hashes.
 
-## Cost
+## Cost and storage incident
 
-From fresh-executor start to packaged candidate: `5222` seconds. Native attempts and `run-prepared` calls: `4`; owner interventions: `0`; manual native lifecycle actions outside the supported command: `0`; changed production files: `2`; common harness/skill changes: `0`. See `cost-ledger.json`.
+From fresh-executor start to the first packaged candidate: `5222` seconds. Native attempts and `run-prepared` calls: `4`; semantic/1C owner interventions: `0`; manual native lifecycle actions outside the supported command: `0`; changed production files: `2`; common harness/skill changes: `0`.
+
+The end-to-end cycle was **not operationally autonomous or fully low-cost**. After publication of the first candidate, accumulated host data exhausted storage and interrupted Hermes. The exact allocation at the ENOSPC instant and the exact per-command creator history are unavailable, so this package does not assign the whole incident to issue #23. The later read-only recovery inventory found a mixture of issue-23 data and older/shared data. Issue #23 had created four task-prepared trees; two consumed source/metadata-RED trees had already been removed by one exact preparation cleanup event, while `issue23-green` and `issue23-repeat` remained. It also had three external reconstruction/review roots in `/tmp` (allocated `181727232` bytes at inventory time). A separate `storage-policy-evidence-candidate` tree was created by post-incident policy work and is not counted as issue-23 execution data.
+
+The unchanged `run-prepared` lifecycle did compact its own four invocations: each removed only `frozen-input`, `run/work-copy`, `run/ib`, `run/home`, and `run/tmp`, for `898852430` logical bytes in total. It correctly did not own task-prepared inputs, external exact-archive/review roots, platform installations, or legacy data. Thus the accepted native calls were bounded individually, but the surrounding fresh-executor/reviewer lifecycle was not bounded end-to-end.
+
+Owner recovery was required: the owner requested diagnosis and selected the exact cleanup scope. One allowlisted recovery operation took `806.624` seconds wall time and two removal passes (the first stopped on a read-only directory; the retry followed full revalidation and owner-only permission opening). It removed 16 explicitly enumerated old temporary/cache/platform paths and reclaimed `5002485760` allocated bytes (`4.659 GiB`). The largest removed object was the older commercial `1cv8` platform (`4155269120` allocated bytes), so the recovered total must not be described as issue-23-only growth. The filesystem changed from `4.5 GiB` available / `88%` used at recovery-session start to `9.3 GiB` available / `75%` used afterward.
+
+No accepted issue-23 compact run root, prepared GREEN/repeat tree, immutable snapshot, manifest, source CF, training platform, installer, or tracked package file was removed. Therefore no published semantic/native claim depends on bytes lost in the recovery. Raw receipt hashes remain local provenance anchors rather than portable authentication; exact-Git-archive validation below is the portability gate. See `cost-ledger.json` for the machine-readable split between semantic/native cost and operational storage intervention.
 
 ## Limitations
 

@@ -20,12 +20,64 @@
     "clean-repeat"
   ],
   "nativeTotalDurationSeconds": 868.588,
-  "ownerInterventions": 0,
+  "ownerInterventions": 1,
+  "ownerInterventionBreakdown": {
+    "semanticOr1c": 0,
+    "operationalStorage": 1
+  },
   "manualLifecycleActionsOutsideRunPrepared": 0,
   "manualTaskPreparation": {
     "preparedCopies": 4,
     "ownedPreparedCleanupEvents": 1,
     "note": "Task-specific preparation and exact cleanup of two consumed prepared copies; no CREATEINFOBASE/DESIGNER/ENTERPRISE/spec/hash/run-root/compaction action was performed outside run-prepared."
+  },
+  "operationalStorageIncident": {
+    "exactAllocationAtEnospcKnown": false,
+    "exactPerCommandCreatorHistoryKnown": false,
+    "classification": "cumulative shared-host storage pressure; not attributable solely to issue 23",
+    "issue23PreparedCopiesCreated": 4,
+    "issue23ConsumedPreparedCopiesRemovedBeforePackaging": 2,
+    "issue23PreparedCopiesRetainedAtRecovery": [
+      ".local/prepared/issue23-green",
+      ".local/prepared/issue23-repeat"
+    ],
+    "issue23ExternalReviewRootsAtRecovery": {
+      "count": 3,
+      "allocatedBytes": 181727232,
+      "paths": [
+        "/tmp/issue23-reconstruct2-k2r10qyb",
+        "/tmp/issue23-reconstruct-h6bjqckv",
+        "/tmp/issue23-review-m4qrrbzk"
+      ]
+    },
+    "excludedPostIncidentPolicyTree": ".local/prepared/storage-policy-evidence-candidate",
+    "runPreparedCompaction": {
+      "invocations": 4,
+      "removedLogicalBytes": 898852430,
+      "ownedTargetsOnly": true,
+      "doesNotOwnPreparedOrExternalReviewRoots": true
+    },
+    "recovery": {
+      "ownerAuthorizationRequired": true,
+      "elapsedSeconds": 806.624,
+      "allowlistedPathsRemoved": 16,
+      "removalPasses": 2,
+      "permissionRetryAfterFullRevalidation": 1,
+      "reclaimedAllocatedBytes": 5002485760,
+      "largestRemovedPath": ".local/platform/1cv8",
+      "largestRemovedPathAllocatedBytes": 4155269120,
+      "filesystemAtRecoveryStart": {
+        "availableGiBDisplay": 4.5,
+        "usedPercent": 88
+      },
+      "filesystemAfterRecovery": {
+        "availableGiBDisplay": 9.3,
+        "usedPercent": 75
+      }
+    },
+    "acceptedIssue23RawArtifactsRemoved": false,
+    "portableClaimsDependOnRemovedRawArtifacts": false,
+    "productVerdict": "functional fresh-agent goal loop proven; storage usability requires separate correction"
   },
   "productionChange": {
     "files": [

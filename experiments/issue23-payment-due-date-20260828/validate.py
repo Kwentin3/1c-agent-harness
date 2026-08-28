@@ -180,6 +180,7 @@ def main() -> None:
 
     native = load_json('native-runs.json')
     assert [item['phase'] for item in native['runs']] == list(PHASES)
+    compacted_logical_bytes = 0
     for item in native['runs']:
         phase = item['phase']
         assert item['status'] == 'runtime_contract_completed'
@@ -200,12 +201,47 @@ def main() -> None:
         assert compaction['status'] == 'completed'
         assert compaction['manualCleanupActions'] == 0
         assert compaction['completedRemovedPaths'] == ['frozen-input', 'run/work-copy', 'run/ib', 'run/home', 'run/tmp']
+        compacted_logical_bytes += compaction['removedLogicalBytes']
 
     cost = load_json('cost-ledger.json')
     assert cost['elapsedToPackagedCandidateSeconds'] == 5222
     assert cost['nativeAttempts'] == cost['runPreparedCalls'] == 4
-    assert cost['ownerInterventions'] == 0
+    assert cost['ownerInterventions'] == 1
+    assert cost['ownerInterventionBreakdown'] == {'semanticOr1c': 0, 'operationalStorage': 1}
     assert cost['manualLifecycleActionsOutsideRunPrepared'] == 0
+    incident = cost['operationalStorageIncident']
+    assert incident['exactAllocationAtEnospcKnown'] is False
+    assert incident['exactPerCommandCreatorHistoryKnown'] is False
+    assert incident['issue23PreparedCopiesCreated'] == 4
+    assert incident['issue23ConsumedPreparedCopiesRemovedBeforePackaging'] == 2
+    assert incident['issue23PreparedCopiesRetainedAtRecovery'] == [
+        '.local/prepared/issue23-green',
+        '.local/prepared/issue23-repeat',
+    ]
+    assert incident['issue23ExternalReviewRootsAtRecovery']['count'] == 3
+    assert incident['issue23ExternalReviewRootsAtRecovery']['allocatedBytes'] == 181727232
+    assert incident['excludedPostIncidentPolicyTree'] == '.local/prepared/storage-policy-evidence-candidate'
+    assert compacted_logical_bytes == 898852430
+    assert incident['runPreparedCompaction'] == {
+        'invocations': 4,
+        'removedLogicalBytes': compacted_logical_bytes,
+        'ownedTargetsOnly': True,
+        'doesNotOwnPreparedOrExternalReviewRoots': True,
+    }
+    recovery = incident['recovery']
+    assert recovery['ownerAuthorizationRequired'] is True
+    assert recovery['elapsedSeconds'] == 806.624
+    assert recovery['allowlistedPathsRemoved'] == 16
+    assert recovery['removalPasses'] == 2
+    assert recovery['permissionRetryAfterFullRevalidation'] == 1
+    assert recovery['reclaimedAllocatedBytes'] == 5002485760
+    assert recovery['largestRemovedPath'] == '.local/platform/1cv8'
+    assert recovery['largestRemovedPathAllocatedBytes'] == 4155269120
+    assert recovery['filesystemAtRecoveryStart'] == {'availableGiBDisplay': 4.5, 'usedPercent': 88}
+    assert recovery['filesystemAfterRecovery'] == {'availableGiBDisplay': 9.3, 'usedPercent': 75}
+    assert incident['acceptedIssue23RawArtifactsRemoved'] is False
+    assert incident['portableClaimsDependOnRemovedRawArtifacts'] is False
+    assert incident['productVerdict'] == 'functional fresh-agent goal loop proven; storage usability requires separate correction'
     assert cost['productionChange']['files'] == production_files
     assert cost['productionChange']['addedLines'] == 52
     assert cost['commonHarnessChangedFiles'] == cost['skillsChangedFiles'] == cost['newGeneralFrameworks'] == 0
