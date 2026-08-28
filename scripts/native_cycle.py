@@ -237,12 +237,14 @@ def prepare_run(plan: SimpleNamespace) -> dict[str, object]:
         if path.is_symlink():
             raise ValueError(f"copied work tree contains a symlink: {path}")
         path.chmod(path.stat().st_mode | stat.S_IWUSR)
+    load_identity = tree_identity(plan.work_copy)
     return {
         "files": source_identity["files"],
         "directories": source_identity["directories"],
         "bytes": source_identity["bytes"],
         "sourceTreeSha256": source_identity["sha256"],
-        "workCopyTreeSha256": copied_identity["sha256"],
+        "copiedTreeSha256": copied_identity["sha256"],
+        "loadTreeSha256": load_identity["sha256"],
     }
 
 
@@ -310,15 +312,30 @@ def _enable_child_subreaper() -> None:
         raise OSError(error_number, os.strerror(error_number))
 
 
+def _proc_children_path() -> Path:
+    return Path(f"/proc/{os.getpid()}/task/{os.getpid()}/children")
+
+
 def _direct_children() -> set[int]:
-    children_path = Path(f"/proc/{os.getpid()}/task/{os.getpid()}/children")
-    text = children_path.read_text(encoding="ascii").strip()
+    text = _proc_children_path().read_text(encoding="ascii").strip()
     return {int(value) for value in text.split()} if text else set()
 
 
 def _prepare_process_ownership() -> set[int]:
-    _enable_child_subreaper()
-    return _direct_children()
+    try:
+        _enable_child_subreaper()
+        return _direct_children()
+    except (OSError, ValueError) as exc:
+        detail = (
+            "procfs children interface unavailable"
+            if isinstance(exc, FileNotFoundError)
+            else str(exc)
+        )
+        raise RuntimeError(f"process ownership preflight failed: {detail}") from exc
+
+
+def _preflight_process_ownership() -> None:
+    _prepare_process_ownership()
 
 
 def _reap_owned_children(baseline_children: set[int], grace_seconds: float) -> None:
@@ -421,6 +438,58 @@ def _read_receipt_channel(receipt_root: Path, receipt_path: Path) -> Optional[by
             os.close(descriptor)
 
 
+def _artifact_diagnostic(path: Optional[Path]) -> dict[str, object]:
+    if path is None or not os.path.lexists(path):
+        return {"state": "absent"}
+    path_stat = path.lstat()
+    if path.is_symlink() or not stat.S_ISREG(path_stat.st_mode):
+        return {"state": "invalid", "mode": stat.S_IFMT(path_stat.st_mode)}
+    payload = path.read_bytes()
+    return {
+        "state": "regular",
+        "bytes": len(payload),
+        "sha256": hashlib.sha256(payload).hexdigest(),
+    }
+
+
+def _receipt_diagnostic(
+    receipt_root: Path,
+    receipt_path: Path,
+    complete_marker: str,
+) -> dict[str, object]:
+    try:
+        payload = _read_receipt_channel(receipt_root, receipt_path)
+    except Exception as exc:
+        return {
+            "state": "invalid",
+            "errorType": type(exc).__name__,
+            "error": str(exc),
+        }
+    if payload is None:
+        return {"state": "absent"}
+    try:
+        lines = payload.decode("utf-8-sig", errors="strict").splitlines()
+        terminal_marker = bool(lines) and lines[-1] == complete_marker
+    except UnicodeDecodeError:
+        terminal_marker = False
+    return {
+        "state": "regular",
+        "bytes": len(payload),
+        "sha256": hashlib.sha256(payload).hexdigest(),
+        "terminalMarker": terminal_marker,
+    }
+
+
+def _runtime_failure_kind(error: Exception) -> str:
+    if isinstance(error, TimeoutError):
+        return "timeout"
+    if str(error).startswith("runtime exited before completion"):
+        return "exited_before_completion"
+    if "receipt channel" in str(error):
+        return "invalid_receipt"
+    return "runtime_error"
+
+
 def run_runtime(
     argv: list[str],
     environment: dict[str, str],
@@ -429,6 +498,8 @@ def run_runtime(
     *,
     timeout_seconds: int,
     receipt_root: Path,
+    log_path: Optional[Path] = None,
+    result_path: Optional[Path] = None,
     poll_seconds: float = 0.25,
     stable_reads: int = 2,
 ) -> dict[str, object]:
@@ -449,50 +520,70 @@ def run_runtime(
     completed = False
     failure: Optional[Exception] = None
     try:
-        while time.monotonic() < deadline:
-            payload = _read_receipt_channel(receipt_root, receipt_path)
-            if payload is not None:
-                current_hash = hashlib.sha256(payload).hexdigest()
-                decoded_lines = payload.decode("utf-8-sig", errors="strict").splitlines()
-                marker_present = bool(decoded_lines) and decoded_lines[-1] == complete_marker
-                if marker_present and current_hash == stable_hash:
-                    stable_count += 1
-                elif marker_present:
-                    stable_hash = current_hash
-                    stable_count = 1
-                else:
-                    stable_hash = None
-                    stable_count = 0
-                if stable_count >= stable_reads:
-                    completed = True
+        try:
+            while time.monotonic() < deadline:
+                payload = _read_receipt_channel(receipt_root, receipt_path)
+                if payload is not None:
+                    current_hash = hashlib.sha256(payload).hexdigest()
+                    decoded_lines = payload.decode("utf-8-sig", errors="strict").splitlines()
+                    marker_present = bool(decoded_lines) and decoded_lines[-1] == complete_marker
+                    if marker_present and current_hash == stable_hash:
+                        stable_count += 1
+                    elif marker_present:
+                        stable_hash = current_hash
+                        stable_count = 1
+                    else:
+                        stable_hash = None
+                        stable_count = 0
+                    if stable_count >= stable_reads:
+                        completed = True
+                        break
+                if process.poll() is not None:
+                    failure = RuntimeError(f"runtime exited before completion: {process.returncode}")
                     break
-            if process.poll() is not None:
-                failure = RuntimeError(f"runtime exited before completion: {process.returncode}")
-                break
-            time.sleep(poll_seconds)
-        if not completed and failure is None:
-            failure = TimeoutError(f"runtime completion marker not observed within {timeout_seconds}s")
+                time.sleep(poll_seconds)
+            if not completed and failure is None:
+                failure = TimeoutError(
+                    f"runtime completion marker not observed within {timeout_seconds}s"
+                )
+        except Exception as exc:
+            failure = exc
     finally:
         process_return = _stop_process_group(process, baseline_children)
-    if failure is not None:
-        raise failure
-    if stable_hash is None:
-        raise RuntimeError("runtime completed without a stable receipt hash")
-    final_payload = _read_receipt_channel(receipt_root, receipt_path)
-    if final_payload is None:
-        raise RuntimeError("runtime receipt channel disappeared during process cleanup")
-    final_lines = final_payload.decode("utf-8-sig", errors="strict").splitlines()
-    final_hash = hashlib.sha256(final_payload).hexdigest()
-    if not final_lines or final_lines[-1] != complete_marker or final_hash != stable_hash:
-        raise RuntimeError("runtime receipt changed after completion during process cleanup")
-    return {
-        "completed": True,
+
+    diagnostic: dict[str, object] = {
+        "completed": completed,
         "completeMarker": complete_marker,
         "stableReads": stable_count,
-        "receiptSha256": final_hash,
-        "receiptBytes": len(final_payload),
         "processReturn": process_return,
+        "receipt": _receipt_diagnostic(receipt_root, receipt_path, complete_marker),
+        "outputs": {
+            "log": _artifact_diagnostic(log_path),
+            "result": _artifact_diagnostic(result_path),
+        },
     }
+    if failure is not None:
+        diagnostic["failureKind"] = _runtime_failure_kind(failure)
+        failure.runtime_diagnostic = diagnostic
+        raise failure
+    if stable_hash is None:
+        failure = RuntimeError("runtime completed without a stable receipt hash")
+        diagnostic["failureKind"] = _runtime_failure_kind(failure)
+        failure.runtime_diagnostic = diagnostic
+        raise failure
+    final_receipt = diagnostic["receipt"]
+    if (
+        final_receipt.get("state") != "regular"
+        or not final_receipt.get("terminalMarker")
+        or final_receipt.get("sha256") != stable_hash
+    ):
+        failure = RuntimeError("runtime receipt changed after completion during process cleanup")
+        diagnostic["failureKind"] = _runtime_failure_kind(failure)
+        failure.runtime_diagnostic = diagnostic
+        raise failure
+    diagnostic["receiptSha256"] = final_receipt["sha256"]
+    diagnostic["receiptBytes"] = final_receipt["bytes"]
+    return diagnostic
 
 
 def _write_json_atomic(path: Path, value: object) -> None:
@@ -512,6 +603,7 @@ def run_cycle(plan: SimpleNamespace, spec_path: Path) -> dict[str, object]:
             raise ValueError(f"{label} is not an existing {kind}: {path}")
     if plan.receipt == plan.run_root or plan.run_root not in plan.receipt.parents:
         raise ValueError("receipt must be inside runRoot")
+    _preflight_process_ownership()
     started = time.monotonic()
     input_identity = prepare_run(plan)
     for directory in (
@@ -558,6 +650,8 @@ def run_cycle(plan: SimpleNamespace, spec_path: Path) -> dict[str, object]:
             plan.runtime_argv, environment, plan.receipt, plan.complete_marker,
             timeout_seconds=plan.timeout_seconds,
             receipt_root=plan.run_root / "evidence",
+            log_path=logs / "run.log",
+            result_path=logs / "run.result",
         )
         failed_stage = "input-reverify"
         input_after = tree_identity(plan.input_tree)
@@ -565,6 +659,9 @@ def run_cycle(plan: SimpleNamespace, spec_path: Path) -> dict[str, object]:
         if input_after["sha256"] != plan.expected_input_tree_sha256:
             raise RuntimeError("immutable input tree changed during lifecycle")
     except Exception as exc:
+        runtime_diagnostic = getattr(exc, "runtime_diagnostic", None)
+        if failed_stage == "runtime" and runtime_diagnostic is not None:
+            result["runtime"] = runtime_diagnostic
         if "inputAfter" not in result:
             try:
                 result["inputAfter"] = tree_identity(plan.input_tree)

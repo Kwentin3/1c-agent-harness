@@ -20,6 +20,7 @@ REQUIRED = {
     "success-create-result.native",
     "success-load-log.native",
     "success-load-result.native",
+    "success-run-log.native",
     "success-process-check.native",
     "repeat-result.json",
     "repeat-result.raw.json.gz",
@@ -29,6 +30,7 @@ REQUIRED = {
     "repeat-create-result.native",
     "repeat-load-log.native",
     "repeat-load-result.native",
+    "repeat-run-log.native",
     "repeat-process-check.native",
     "timeout-result.json",
     "timeout-result.raw.json.gz",
@@ -36,6 +38,7 @@ REQUIRED = {
     "timeout-create-result.native",
     "timeout-load-log.native",
     "timeout-load-result.native",
+    "timeout-run-log.native",
     "timeout-process-check.native",
     "process-cleanup-checks.json",
 }
@@ -43,20 +46,20 @@ SNAPSHOT_MANIFEST_SHA256 = "70972b5e11901ca31c7f7ec67dca03f78986206b024be01aeb34
 RESULT_ZERO_SHA256 = "e45825471ed10290785b62676dc5f453d228a1e1d933c45a733e9bb239c9e083"
 LOAD_LOG_SHA256 = "4d841be04b71dd0ee7cfebcfa7af194d74902e2ec1c213987889d7d3940c0f86"
 RAW_RESULT_SHA256 = {
-    "success": "3b84303e3607b1c838f1466aa29e7f28f27b8050a91d60930ca36104b37e5079",
-    "repeat": "64ec288dabd0cf2260137af769a7213333d74b8f58b149394d54d9d717927d6e",
-    "timeout": "c9e6979681edda15d8889514edc40fbdaf45b3ce193c8ce8b7513c3f73ddc7c3",
+    "success": "51ce62a3e5af1f637639ede5520ed20b0c85a2caaabd76fada22f6b9ed11d850",
+    "repeat": "c62286068ebbe0df51d4f86d1b41b9ca3300a454c24c5964001016905a3d100b",
+    "timeout": "854dd6bee25722a2a50699e784b569e241e47f303a632f9c736744d798beabc2",
 }
 RAW_RECEIPT_SHA256 = {
-    "success": "4328d31ca02b67ae13e41f5858f2f39ca2540752c0ce4c576f0706fe89ebca36",
-    "repeat": "65ec08a188ec21323616ed45b7f3ba919f7f68c7d09a5e1a52bcc34bbdf1f1a4",
+    "success": "ff421393ffbce2bee31fe682310c90fc91f5e9a07256111e834ff9879b3ba04e",
+    "repeat": "02e9054091e7ab3ba9297b6ec02a60b29253b272905b0f190e86cabc153aa524",
 }
 CREATE_LOG_SHA256 = {
-    "success": "630b1dc9705de66f860aa33f4295b1d13d0867b1c76b792d7d6601a62b54aa4c",
-    "repeat": "4931f445ecba23a23c31219c3a6c1a6c1a00cfad16e865ae11cccd17007b9df5",
-    "timeout": "ce7af1c039293a4af2171ebeb879f099b4f84eea00e7572a3140116d120b2b34",
+    "success": "8b9f50c80935f9651474120bd47bb54e8f2c15166cc22ca668734dd9e8d5e59b",
+    "repeat": "714f1178f1a2d13c512dc0afeec054553ae3b28fbf1313f0d3f36974b61d8708",
+    "timeout": "9d861e72e19fe2189fe601cf3bf5609e093ce9789728cf47c9432f96a670883d",
 }
-PROCESS_CHECKS_SHA256 = "5576ddac44f12816c16b5f9a5ffadb88f893b37517fcd8cba43791858f972eec"
+PROCESS_CHECKS_SHA256 = "3c52361bc98454b9f3848995042d8f6e749956c7ad92402a4582c5513c9ed78d"
 REPO_ROOT = Path(__file__).resolve().parents[1]
 
 
@@ -148,6 +151,9 @@ def validate_package(package: Path) -> None:
         assert declaration["rawResultFileSha256"] == sha256(package / declaration["rawResultFile"])
         assert declaration["processCheckFile"] == f"{name}-process-check.native"
         assert declaration["receiptFileSha256"] == sha256(package / declaration["receiptFile"])
+        assert declaration["runLogFile"] == f"{name}-run-log.native"
+        assert declaration["runLogFileSha256"] == sha256(package / declaration["runLogFile"])
+        assert declaration["runResultExpected"] is False
         run = load_sanitized_result(package, declaration["resultFile"], name)
         receipt = (package / declaration["receiptFile"]).read_bytes()
         assert sha256(package / declaration["receiptFile"]) == RAW_RECEIPT_SHA256[name]
@@ -166,7 +172,9 @@ def validate_package(package: Path) -> None:
         assert lines[-1] == "complete###true"
         assert run["status"] == "runtime_contract_completed"
         assert run["specSha256"] and len(run["specSha256"]) == 64
-        assert run["input"]["sourceTreeSha256"] == run["input"]["workCopyTreeSha256"]
+        assert run["input"]["sourceTreeSha256"] == run["input"]["copiedTreeSha256"]
+        assert run["input"]["loadTreeSha256"] != run["input"]["sourceTreeSha256"]
+        assert len(run["input"]["loadTreeSha256"]) == 64
         assert run["input"]["sourceTreeSha256"] == run["inputAfter"]["sha256"]
         assert run["input"]["directories"] == run["inputAfter"]["directories"] == 4847
         assert run["create"]["dumpResult"] == "0"
@@ -178,6 +186,14 @@ def validate_package(package: Path) -> None:
         assert run["runtime"]["stableReads"] >= 2
         assert run["runtime"]["receiptSha256"] == RAW_RECEIPT_SHA256[name]
         assert run["runtime"]["receiptBytes"] == len(receipt)
+        assert run["runtime"]["receipt"]["state"] == "regular"
+        assert run["runtime"]["receipt"]["terminalMarker"] is True
+        log_output = run["runtime"]["outputs"]["log"]
+        log_artifact = package / declaration["runLogFile"]
+        assert log_output["state"] == "regular"
+        assert log_output["bytes"] == log_artifact.stat().st_size
+        assert log_output["sha256"] == sha256(log_artifact)
+        assert run["runtime"]["outputs"]["result"] == {"state": "absent"}
         commands = run["commands"]
         assert "CREATEINFOBASE" in commands["create"]
         assert "/LoadConfigFromFiles" in commands["load"]
@@ -193,6 +209,11 @@ def validate_package(package: Path) -> None:
     assert timeout_declaration["rawResultFileSha256"] == sha256(package / timeout_declaration["rawResultFile"])
     assert timeout_declaration["processCheckFile"] == "timeout-process-check.native"
     assert timeout_declaration["receiptExpected"] is False
+    assert timeout_declaration["runLogFile"] == "timeout-run-log.native"
+    assert timeout_declaration["runLogFileSha256"] == sha256(
+        package / timeout_declaration["runLogFile"]
+    )
+    assert timeout_declaration["runResultExpected"] is False
     timeout = load_sanitized_result(package, timeout_declaration["resultFile"], "timeout")
     assert (package / timeout_declaration["createResultFile"]).read_bytes().decode("utf-8-sig").strip() == "0"
     assert sha256(package / timeout_declaration["createResultFile"]) == RESULT_ZERO_SHA256
@@ -207,7 +228,20 @@ def validate_package(package: Path) -> None:
     assert timeout["errorType"] == "TimeoutError"
     assert timeout["error"] == "runtime completion marker not observed within 3s"
     assert timeout["create"]["dumpResult"] == timeout["load"]["dumpResult"] == "0"
+    assert timeout["input"]["sourceTreeSha256"] == timeout["input"]["copiedTreeSha256"]
+    assert timeout["input"]["loadTreeSha256"] != timeout["input"]["sourceTreeSha256"]
     assert timeout["input"]["sourceTreeSha256"] == timeout["inputAfter"]["sha256"]
+    runtime = timeout["runtime"]
+    assert runtime["completed"] is False
+    assert runtime["failureKind"] == "timeout"
+    assert isinstance(runtime["processReturn"], int)
+    assert runtime["receipt"] == {"state": "absent"}
+    log_output = runtime["outputs"]["log"]
+    log_artifact = package / timeout_declaration["runLogFile"]
+    assert log_output["state"] == "regular"
+    assert log_output["bytes"] == log_artifact.stat().st_size
+    assert log_output["sha256"] == sha256(log_artifact)
+    assert runtime["outputs"]["result"] == {"state": "absent"}
 
     cleanup_path = package / "process-cleanup-checks.json"
     assert sha256(cleanup_path) == PROCESS_CHECKS_SHA256
@@ -228,8 +262,16 @@ def validate_package(package: Path) -> None:
     assert repeat["meaningfulObservationParity"] is True
 
     cost = json.loads((package / "cost-ledger.json").read_text(encoding="utf-8"))
-    assert cost["afterTaskPreparation"]["stableEntrypointsPerRun"] == 1
-    assert cost["afterTaskPreparation"]["manualPathSubstitutionsPerRun"] == 0
-    assert cost["afterTaskPreparation"]["manualProcessCleanupOperationsOnSuccess"] == 0
+    preparation = cost["callerOwnedPreparationPerNewBinding"]
+    assert preparation["supportedEntrypoint"] is False
+    assert preparation["measuredWallSeconds"] is None
+    assert preparation["manualActionsCount"] == len(preparation["manualActions"]) == 3
+    assert preparation["repeatRequiresNewBinding"] is True
+    execution = cost["nativeExecutionAfterBinding"]
+    assert execution["stableEntrypointsPerRun"] == 1
+    assert execution["manualPathSubstitutionsPerRun"] == 0
+    assert execution["manualProcessCleanupOperationsOnSuccess"] == 0
     assert cost["nativeAttempts"] == {"success": 1, "repeat": 1, "timeout": 1}
-    assert cost["verdict"] == "LOW-COST LIFECYCLE LOOP / END-TO-END TASK COST NOT CLAIMED"
+    assert cost["verdict"] == (
+        "BOUNDED NATIVE EXECUTOR / PREPARATION REMAINS MANUAL / LOW-COST NOT CLAIMED"
+    )

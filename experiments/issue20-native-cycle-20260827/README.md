@@ -1,6 +1,6 @@
 # Issue #20 — native lifecycle entrypoint
 
-Status: exact-candidate success, clean repeat and timeout evidence captured; final independent review pending.
+Status: prior exact candidate `a2d38c569a035f2296e3ca9acb6e1cce0b5404b9` passed independent review; fresh PR #21 correction evidence is captured and a new exact-tree review is pending.
 
 ## Claim
 
@@ -20,9 +20,9 @@ The exact interface and preparation rules are documented in [`docs/issue-20-nati
 
 | Run | State | Wall time | Key evidence |
 |---|---|---:|---|
-| success | `runtime_contract_completed` | 108.616 s | create/load `DumpResult=0`; stable terminal `complete###true`; input unchanged; no remaining native process |
-| clean repeat | `runtime_contract_completed` | 105.543 s | exact 320-key order and meaningful observation parity with success |
-| bounded failure | `runtime_timeout` | 98.812 s | create/load completed; missing marker rejected after 3 s; input unchanged; no remaining native process |
+| success | `runtime_contract_completed` | 125.046 s | source/copy identity plus distinct post-`chmod` load identity; create/load `DumpResult=0`; terminal receipt; exact runtime log state; no remaining native process |
+| clean repeat | `runtime_contract_completed` | 164.740 s | same mechanical contract and exact observation parity with success |
+| bounded failure | `runtime_timeout` | 128.231 s | process return `-15`; absent receipt and `run.result` explicit; empty `run.log` identity preserved; no remaining native process |
 
 Both successful runs reused the issue #18 task-specific probe and accepted GREEN observation vector. That external acceptance observed totals `34` and `40`; it is evidence that the common lifecycle did not hard-code one exact receipt. The runner itself claims only completion-contract success.
 
@@ -30,17 +30,11 @@ The immutable snapshot was checked after the final runs: 5,099 declared/actual f
 
 ## Budget
 
-[`cost-ledger.json`](cost-ledger.json) separates lifecycle cost from end-to-end task cost.
+[`cost-ledger.json`](cost-ledger.json) records both the bounded native executor and the caller-owned preparation needed before every new input binding.
 
-After task preparation:
+The native execution command has one stable entrypoint, zero path substitutions inside the process and no manual cleanup on nominal success. However, the caller must still freeze the prepared tree, invoke the internal fingerprint calculation and author a new spec/run-root binding; repeat requires those binding actions again. There is no supported preparation CLI in this capability and no preparation wall-time measurement.
 
-- one stable orchestration entrypoint per native run;
-- zero manual path substitutions inside a run;
-- zero manual process-cleanup operations on nominal success;
-- clean repeat requires a new spec/run root, not reconstruction of native command sequences;
-- common code contains no task-specific instrumentation or oracle.
-
-Verdict: **LOW-COST LIFECYCLE LOOP / END-TO-END TASK COST NOT CLAIMED**. Native platform wall time remains about 1.7–1.9 minutes per run and task preparation/review are deliberately outside this claim.
+Verdict: **BOUNDED NATIVE EXECUTOR / PREPARATION REMAINS MANUAL / LOW-COST NOT CLAIMED**. Native platform wall time and all manual preparation/review costs remain visible rather than being hidden behind an after-preparation lifecycle claim.
 
 ## Fail-closed surface
 
@@ -48,7 +42,8 @@ Unit tests reproduce and reject:
 
 - duplicate JSON keys and unknown spec fields;
 - path traversal and run roots outside `.local/runs`;
-- writable, identity-mismatched, symlinked or non-regular input;
+- writable, identity-mismatched, symlinked or non-regular input, while separately binding the byte-identical copy and the post-`chmod` tree actually loaded by Designer;
+- missing Linux child-subreaper/procfs-children prerequisites through an explicit preflight diagnostic;
 - existing run roots and stale output artifacts;
 - non-zero/missing `DumpResult` and missing native success markers;
 - batch and runtime timeouts, including a runtime-created FIFO receipt that must be classified without blocking and still trigger owned-process cleanup;

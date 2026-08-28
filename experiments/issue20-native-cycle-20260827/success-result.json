@@ -1,18 +1,19 @@
 {
   "schemaVersion": 1,
   "sourceKind": "deterministically path-sanitized machine-produced result.json",
-  "rawLocalSha256": "3b84303e3607b1c838f1466aa29e7f28f27b8050a91d60930ca36104b37e5079",
+  "rawLocalSha256": "51ce62a3e5af1f637639ede5520ed20b0c85a2caaabd76fada22f6b9ed11d850",
   "sanitizedResult": {
     "schemaVersion": 1,
     "status": "runtime_contract_completed",
-    "durationSeconds": 108.616,
-    "specSha256": "0d25df5d05ed12219fdb4b9775fd06c921e20caa54519a11fe764255791fcbf0",
+    "durationSeconds": 125.046,
+    "specSha256": "68d52b1bc2297c7121d736a6fbf985652553daee4fce5e98f43042e9db8ea727",
     "input": {
       "files": 5099,
       "directories": 4847,
       "bytes": 61802679,
-      "sourceTreeSha256": "2955b78c41ff7d59fe22f7fe594df466c85549a3d0735330b89b88fbbafb14d5",
-      "workCopyTreeSha256": "2955b78c41ff7d59fe22f7fe594df466c85549a3d0735330b89b88fbbafb14d5"
+      "sourceTreeSha256": "28647ca3c5fb2bc7abad7b18678f8cb9023895f64ffb854082c9cd80654edaba",
+      "copiedTreeSha256": "28647ca3c5fb2bc7abad7b18678f8cb9023895f64ffb854082c9cd80654edaba",
+      "loadTreeSha256": "13f306218b4a81e18e36b3cbc2d0263cce35b188377d9f472cd687b2937207a5"
     },
     "commands": {
       "create": [
@@ -22,13 +23,13 @@
         "-screen 0 1280x1024x8 -nolisten tcp",
         "<REPO_ROOT>/.local/platform/1cv8t/x86_64/8.5.1.1150/1cv8t",
         "CREATEINFOBASE",
-        "File=<REPO_ROOT>/.local/runs/issue20-native-loop/review11-success/ib",
+        "File=<REPO_ROOT>/.local/runs/issue20-native-loop/review12-success/ib",
         "/DisableStartupDialogs",
         "/DisableStartupMessages",
         "/Out",
-        "<REPO_ROOT>/.local/runs/issue20-native-loop/review11-success/logs/create.log",
+        "<REPO_ROOT>/.local/runs/issue20-native-loop/review12-success/logs/create.log",
         "/DumpResult",
-        "<REPO_ROOT>/.local/runs/issue20-native-loop/review11-success/logs/create.result"
+        "<REPO_ROOT>/.local/runs/issue20-native-loop/review12-success/logs/create.result"
       ],
       "load": [
         "<REPO_ROOT>/.local/platform/libs/usr/bin/xvfb-run",
@@ -38,16 +39,16 @@
         "<REPO_ROOT>/.local/platform/1cv8t/x86_64/8.5.1.1150/1cv8t",
         "DESIGNER",
         "/F",
-        "<REPO_ROOT>/.local/runs/issue20-native-loop/review11-success/ib",
+        "<REPO_ROOT>/.local/runs/issue20-native-loop/review12-success/ib",
         "/LoadConfigFromFiles",
-        "<REPO_ROOT>/.local/runs/issue20-native-loop/review11-success/work-copy",
+        "<REPO_ROOT>/.local/runs/issue20-native-loop/review12-success/work-copy",
         "/UpdateDBCfg",
         "/DisableStartupDialogs",
         "/DisableStartupMessages",
         "/Out",
-        "<REPO_ROOT>/.local/runs/issue20-native-loop/review11-success/logs/load.log",
+        "<REPO_ROOT>/.local/runs/issue20-native-loop/review12-success/logs/load.log",
         "/DumpResult",
-        "<REPO_ROOT>/.local/runs/issue20-native-loop/review11-success/logs/load.result"
+        "<REPO_ROOT>/.local/runs/issue20-native-loop/review12-success/logs/load.result"
       ],
       "runtime": [
         "<REPO_ROOT>/.local/platform/libs/usr/bin/xvfb-run",
@@ -57,21 +58,21 @@
         "<REPO_ROOT>/.local/platform/1cv8t/x86_64/8.5.1.1150/1cv8t",
         "ENTERPRISE",
         "/F",
-        "<REPO_ROOT>/.local/runs/issue20-native-loop/review11-success/ib",
+        "<REPO_ROOT>/.local/runs/issue20-native-loop/review12-success/ib",
         "/DisableStartupDialogs",
         "/DisableStartupMessages",
         "/Out",
-        "<REPO_ROOT>/.local/runs/issue20-native-loop/review11-success/logs/run.log",
+        "<REPO_ROOT>/.local/runs/issue20-native-loop/review12-success/logs/run.log",
         "/DumpResult",
-        "<REPO_ROOT>/.local/runs/issue20-native-loop/review11-success/logs/run.result"
+        "<REPO_ROOT>/.local/runs/issue20-native-loop/review12-success/logs/run.result"
       ]
     },
     "environment": {
-      "HOME": "<REPO_ROOT>/.local/runs/issue20-native-loop/review11-success/home",
-      "TMPDIR": "<REPO_ROOT>/.local/runs/issue20-native-loop/review11-success/tmp",
-      "XDG_CACHE_HOME": "<REPO_ROOT>/.local/runs/issue20-native-loop/review11-success/home/xdg-cache",
-      "XDG_CONFIG_HOME": "<REPO_ROOT>/.local/runs/issue20-native-loop/review11-success/home/xdg-config",
-      "XDG_DATA_HOME": "<REPO_ROOT>/.local/runs/issue20-native-loop/review11-success/home/xdg-data",
+      "HOME": "<REPO_ROOT>/.local/runs/issue20-native-loop/review12-success/home",
+      "TMPDIR": "<REPO_ROOT>/.local/runs/issue20-native-loop/review12-success/tmp",
+      "XDG_CACHE_HOME": "<REPO_ROOT>/.local/runs/issue20-native-loop/review12-success/home/xdg-cache",
+      "XDG_CONFIG_HOME": "<REPO_ROOT>/.local/runs/issue20-native-loop/review12-success/home/xdg-config",
+      "XDG_DATA_HOME": "<REPO_ROOT>/.local/runs/issue20-native-loop/review12-success/home/xdg-data",
       "FONTCONFIG_FILE": "<REPO_ROOT>/.local/platform/fonts.conf",
       "LD_LIBRARY_PATH": "<REPO_ROOT>/.local/platform/1cv8t/x86_64/8.5.1.1150:<REPO_ROOT>/.local/platform/libs/usr/lib/x86_64-linux-gnu",
       "PATH": "<REPO_ROOT>/.local/platform/libs/usr/bin:<USER_HOME>/.local/bin:<USER_HOME>/.local/bin:/usr/local/bin:/usr/bin:/bin:/usr/local/games:/usr/games"
@@ -80,7 +81,7 @@
       "processReturn": 0,
       "dumpResult": "0",
       "resultSha256": "e45825471ed10290785b62676dc5f453d228a1e1d933c45a733e9bb239c9e083",
-      "logSha256": "630b1dc9705de66f860aa33f4295b1d13d0867b1c76b792d7d6601a62b54aa4c",
+      "logSha256": "8b9f50c80935f9651474120bd47bb54e8f2c15166cc22ca668734dd9e8d5e59b",
       "successMarker": "completed successfully"
     },
     "load": {
@@ -94,15 +95,31 @@
       "completed": true,
       "completeMarker": "complete###true",
       "stableReads": 2,
-      "receiptSha256": "4328d31ca02b67ae13e41f5858f2f39ca2540752c0ce4c576f0706fe89ebca36",
-      "receiptBytes": 18578,
-      "processReturn": -15
+      "processReturn": -15,
+      "receipt": {
+        "state": "regular",
+        "bytes": 18578,
+        "sha256": "ff421393ffbce2bee31fe682310c90fc91f5e9a07256111e834ff9879b3ba04e",
+        "terminalMarker": true
+      },
+      "outputs": {
+        "log": {
+          "state": "regular",
+          "bytes": 184,
+          "sha256": "e8d8977dd4eafc3aed5271e9fd63591f0f3bd23cdb157a9bfe6e581bd3a9c149"
+        },
+        "result": {
+          "state": "absent"
+        }
+      },
+      "receiptSha256": "ff421393ffbce2bee31fe682310c90fc91f5e9a07256111e834ff9879b3ba04e",
+      "receiptBytes": 18578
     },
     "inputAfter": {
       "files": 5099,
       "directories": 4847,
       "bytes": 61802679,
-      "sha256": "2955b78c41ff7d59fe22f7fe594df466c85549a3d0735330b89b88fbbafb14d5"
+      "sha256": "28647ca3c5fb2bc7abad7b18678f8cb9023895f64ffb854082c9cd80654edaba"
     }
   }
 }

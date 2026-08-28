@@ -202,7 +202,12 @@ class NativeCycleContractTests(unittest.TestCase):
             identity = native_cycle.prepare_run(plan)
 
             self.assertEqual(identity["files"], 1)
-            self.assertEqual(identity["sourceTreeSha256"], identity["workCopyTreeSha256"])
+            self.assertEqual(identity["sourceTreeSha256"], identity["copiedTreeSha256"])
+            self.assertEqual(
+                identity["loadTreeSha256"],
+                native_cycle.tree_identity(plan.work_copy)["sha256"],
+            )
+            self.assertNotEqual(identity["sourceTreeSha256"], identity["loadTreeSha256"])
             self.assertEqual((plan.work_copy / "Configuration.xml").read_text(encoding="utf-8"), "<Configuration/>\n")
             with self.assertRaisesRegex(FileExistsError, "runRoot already exists"):
                 native_cycle.prepare_run(plan)
@@ -284,6 +289,18 @@ class NativeCycleContractTests(unittest.TestCase):
 
             with self.assertRaisesRegex(ValueError, "duplicate JSON key: inputTree"):
                 native_cycle.load_plan(spec_path, repo)
+
+    def test_process_ownership_preflight_reports_missing_procfs_children(self) -> None:
+        native_cycle = load_module("native_cycle_procfs_preflight")
+        with tempfile.TemporaryDirectory() as tmp:
+            missing = Path(tmp) / "proc-children"
+            native_cycle._proc_children_path = lambda: missing
+
+            with self.assertRaisesRegex(
+                RuntimeError,
+                "process ownership preflight failed.*procfs children interface unavailable",
+            ):
+                native_cycle._preflight_process_ownership()
 
     def test_batch_step_requires_fresh_zero_dump_result_and_success_marker(self) -> None:
         native_cycle = load_module("native_cycle_batch")
@@ -459,6 +476,42 @@ class NativeCycleContractTests(unittest.TestCase):
                     break
                 time.sleep(0.025)
             self.assertFalse(process_is_running(child_pid), "escaped child survived success cleanup")
+
+    def test_runtime_early_exit_reports_process_and_native_outputs(self) -> None:
+        native_cycle = load_module("native_cycle_runtime_early_exit_diagnostic")
+        with tempfile.TemporaryDirectory() as tmp:
+            root = Path(tmp)
+            receipt = root / "receipt.txt"
+            log = root / "run.log"
+            result = root / "run.result"
+            fake = root / "fake-runtime"
+            fake.write_text(
+                "#!/usr/bin/env python3\n"
+                "from pathlib import Path\n"
+                "import sys\n"
+                "Path(sys.argv[1]).write_text('platform failed\\n')\n"
+                "Path(sys.argv[2]).write_text('7\\n')\n"
+                "raise SystemExit(7)\n",
+                encoding="utf-8",
+            )
+            fake.chmod(fake.stat().st_mode | stat.S_IXUSR)
+
+            with self.assertRaisesRegex(RuntimeError, "runtime exited before completion") as raised:
+                native_cycle.run_runtime(
+                    [str(fake), str(log), str(result)], os.environ.copy(), receipt,
+                    "complete###true", timeout_seconds=5,
+                    receipt_root=root, log_path=log, result_path=result,
+                    poll_seconds=0.025, stable_reads=2,
+                )
+
+            diagnostic = raised.exception.runtime_diagnostic
+            self.assertEqual(diagnostic["failureKind"], "exited_before_completion")
+            self.assertEqual(diagnostic["processReturn"], 7)
+            self.assertEqual(diagnostic["receipt"], {"state": "absent"})
+            self.assertEqual(diagnostic["outputs"]["log"]["state"], "regular")
+            self.assertEqual(diagnostic["outputs"]["result"]["state"], "regular")
+            self.assertEqual(len(diagnostic["outputs"]["log"]["sha256"]), 64)
+            self.assertEqual(len(diagnostic["outputs"]["result"]["sha256"]), 64)
 
     def test_runtime_fifo_receipt_is_bounded_and_cleans_process(self) -> None:
         with tempfile.TemporaryDirectory() as tmp:
@@ -807,6 +860,13 @@ class NativeCycleContractTests(unittest.TestCase):
             self.assertEqual(diagnostic["create"]["dumpResult"], "0")
             self.assertEqual(diagnostic["load"]["dumpResult"], "0")
             self.assertEqual(diagnostic["errorType"], "TimeoutError")
+            runtime = diagnostic["runtime"]
+            self.assertFalse(runtime["completed"])
+            self.assertEqual(runtime["failureKind"], "timeout")
+            self.assertEqual(runtime["processReturn"], -15)
+            self.assertEqual(runtime["receipt"], {"state": "absent"})
+            self.assertEqual(runtime["outputs"]["log"], {"state": "absent"})
+            self.assertEqual(runtime["outputs"]["result"], {"state": "absent"})
 
 
 if __name__ == "__main__":

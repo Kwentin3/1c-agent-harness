@@ -1,7 +1,7 @@
 {
   "schemaVersion": 1,
   "issue": 20,
-  "scope": "native lifecycle after task-specific work tree and probe preparation",
+  "scope": "bounded native execution after caller-owned prepared-tree and spec binding",
   "baseline": {
     "issue14": {
       "entrypointDiagnostics": "1-2 h",
@@ -15,18 +15,30 @@
       "verdict": "SECOND TASK PASS / COST NOT YET LOW"
     }
   },
-  "afterTaskPreparation": {
+  "callerOwnedPreparationPerNewBinding": {
+    "supportedEntrypoint": false,
+    "measuredWallSeconds": null,
+    "manualActions": [
+      "remove all write bits from the prepared tree",
+      "invoke the internal closed-tree identity calculation and copy its SHA-256 into the spec",
+      "author a new spec with a fresh runRoot and receipt binding"
+    ],
+    "manualActionsCount": 3,
+    "repeatRequiresNewBinding": true,
+    "businessPatchProbeAndOracleAlsoExcluded": true
+  },
+  "nativeExecutionAfterBinding": {
     "stableEntrypointsPerRun": 1,
     "manualPathSubstitutionsPerRun": 0,
     "manualProcessCleanupOperationsOnSuccess": 0,
     "manualNativeCommandBlocksPerRun": 1,
-    "repeatRequiresManualCommandSequenceRebuild": false,
+    "repeatRequiresManualNativeCommandSequenceRebuild": false,
     "taskSpecificInstrumentationInCommonTool": false
   },
   "nativeWallSeconds": {
-    "success": 108.616,
-    "repeat": 105.543,
-    "timeout": 98.812
+    "success": 125.046,
+    "repeat": 164.74,
+    "timeout": 128.231
   },
   "nativeAttempts": {
     "success": 1,
@@ -35,15 +47,16 @@
   },
   "newCommonCode": {
     "productFiles": 1,
-    "productLines": 647,
-    "productBytes": 25028,
+    "productLines": 744,
+    "productBytes": 28268,
     "testFiles": 1,
-    "testLines": 813,
-    "testBytes": 38412
+    "testLines": 873,
+    "testBytes": 41526
   },
   "measurementBoundary": {
-    "included": "one runner invocation from frozen spec through cleanup and result.json",
-    "excluded": "task reconnaissance, semantic contract, BSL patch/probe preparation, evidence publication and review"
+    "measured": "one runner invocation from an already frozen and bound spec through cleanup and result.json",
+    "unmeasuredButCounted": "three manual caller actions for each new prepared-tree/spec binding",
+    "outsideCapability": "task reconnaissance, semantic contract, BSL patch/probe authoring, semantic oracle, evidence publication and review"
   },
-  "verdict": "LOW-COST LIFECYCLE LOOP / END-TO-END TASK COST NOT CLAIMED"
+  "verdict": "BOUNDED NATIVE EXECUTOR / PREPARATION REMAINS MANUAL / LOW-COST NOT CLAIMED"
 }
