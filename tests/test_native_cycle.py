@@ -5,6 +5,7 @@ import json
 import os
 from pathlib import Path
 import stat
+import socket
 import subprocess
 import sys
 import tempfile
@@ -297,6 +298,21 @@ class NativeCycleContractTests(unittest.TestCase):
             with self.assertRaisesRegex(RuntimeError, "not a directory"):
                 native_cycle._remove_generated_tree(target)
             self.assertTrue(target.is_symlink())
+
+    def test_remove_generated_tree_unlinks_runtime_unix_socket(self) -> None:
+        native_cycle = load_module("native_cycle_cleanup_unix_socket")
+        with tempfile.TemporaryDirectory() as tmp:
+            target = Path(tmp) / "home"
+            agent = target / ".1C" / "agent"
+            agent.mkdir(parents=True)
+            socket_path = agent / "runtime.socket"
+            endpoint = socket.socket(socket.AF_UNIX, socket.SOCK_STREAM)
+            try:
+                endpoint.bind(str(socket_path))
+                native_cycle._remove_generated_tree(target)
+            finally:
+                endpoint.close()
+            self.assertFalse(os.path.lexists(target))
 
     def test_compaction_persists_non_success_before_destructive_cleanup(self) -> None:
         native_cycle = load_module("native_cycle_compaction_pending_state")

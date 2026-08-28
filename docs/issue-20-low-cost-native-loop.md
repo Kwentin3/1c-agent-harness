@@ -116,6 +116,8 @@ The final result reports policy, status, exact `configuredTargets`, verified `co
 
 This contract deliberately does not delete another invocation, an older issue root, prepared input, source snapshot, manifest, platform or external path. Cross-run retention and general filesystem cleanup remain outside the product surface because current-invocation compaction removes the reproduced unbounded-growth cause without adding a cleaner abstraction.
 
+Generated runtime trees may contain a Unix-domain socket left by 1C under the invocation-owned HOME. Compaction may unlink that socket as a leaf; symlinks, FIFOs and device nodes remain rejected, and no link target is followed.
+
 ## Compared approaches
 
 ### A. Generated frozen binding inside the existing CLI — selected

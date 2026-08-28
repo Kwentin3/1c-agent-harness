@@ -79,6 +79,8 @@ After source revalidation, `run-prepared` automatically removes only five paths 
 
 There is no cleanup command, glob, retention count or user-supplied deletion path. Prepared input, immutable snapshot, manifest, platform, live infobase, sibling invocation roots and older issue roots are never implicit targets. The lower-level `run --spec` path preserves its existing artifact behavior; bounded compaction belongs only to the generated `run-prepared` ownership boundary.
 
+An invocation-owned Unix-domain socket left in generated HOME is removed as a socket leaf. Symlinks, FIFOs and device nodes remain fail-closed cleanup errors.
+
 ## Verification
 
 Pure and fake-process contract tests:

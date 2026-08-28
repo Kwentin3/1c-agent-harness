@@ -725,6 +725,8 @@ def _remove_generated_tree(path: Path) -> None:
             candidate.chmod(mode | stat.S_IRWXU)
         elif stat.S_ISREG(mode):
             candidate.chmod(mode | stat.S_IRUSR | stat.S_IWUSR)
+        elif stat.S_ISSOCK(mode):
+            continue
         else:
             raise RuntimeError(f"generated cleanup target contains a special entry: {candidate}")
     shutil.rmtree(path)
