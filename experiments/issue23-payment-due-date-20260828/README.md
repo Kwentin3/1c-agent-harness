@@ -46,12 +46,12 @@ Machine-readable cases are in `behavior-summary.json`; the task-specific determi
 ## Patch and instrumentation boundaries
 
 - `production-patch.diff.gz` contains the minimal LF-normalized two-file production patch against the immutable snapshot export. After deterministic gzip decompression, applying it requires normalizing those two text files to UTF-8/LF first; this was done on a fresh repeat copy after exact pre-normalization SHA checks, and reconstructed the byte-identical GREEN production files.
-- `instrumentation.diff.gz` contains only the task-specific ManagedApplication entrypoint and JetServerCall probe. It is not production logic.
+- `instrumentation.diff.gz` contains only the task-specific ManagedApplication entrypoint and JetServerCall probe. It is not production logic. Its normalized reconstruction also requires restoring the source export’s missing terminal newline in `CommonModules/JetServerCall/Ext/Module.bsl`; `source-identity.json` records this prerequisite and the four byte-exact reconstruction checks.
 - `source-identity.json` binds source, production, patch and instrumentation hashes.
 
 ## Cost
 
-From fresh-executor start to packaged candidate: `4602` seconds. Native attempts and `run-prepared` calls: `4`; owner interventions: `0`; manual native lifecycle actions outside the supported command: `0`; changed production files: `2`; common harness/skill changes: `0`. See `cost-ledger.json`.
+From fresh-executor start to packaged candidate: `5222` seconds. Native attempts and `run-prepared` calls: `4`; owner interventions: `0`; manual native lifecycle actions outside the supported command: `0`; changed production files: `2`; common harness/skill changes: `0`. See `cost-ledger.json`.
 
 ## Limitations
 

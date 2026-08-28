@@ -6,11 +6,11 @@
     "freshExecutorStart": "2026-08-28T12:38:56Z",
     "contractFrozen": "2026-08-28T13:00:45Z",
     "amendedContractAccepted": "2026-08-28T13:20:04Z",
-    "candidatePackaged": "2026-08-28T13:55:38Z",
+    "candidatePackaged": "2026-08-28T14:05:58Z",
     "finalReviewCompleted": null,
     "prOpened": null
   },
-  "elapsedToPackagedCandidateSeconds": 4602,
+  "elapsedToPackagedCandidateSeconds": 5222,
   "nativeAttempts": 4,
   "runPreparedCalls": 4,
   "acceptedRuns": [

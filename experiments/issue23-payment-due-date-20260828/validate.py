@@ -129,6 +129,9 @@ def main() -> None:
     assert identity['snapshotClosure'] == {'declaredFiles': 5099, 'actualFiles': 5099, 'missing': 0, 'extra': 0, 'mismatch': 0, 'symlink': 0, 'writable': 0}
     assert identity['productionTreeSha256'] == EXPECTED_TREES['green']
     assert identity['greenRepeatTreeIdentityEqual'] is True
+    assert identity['applicationProof']['payloadsAppliedFromExactGitCandidate'] is True
+    assert all(identity['applicationProof']['reconstructsGreenBytes'].values())
+    assert identity['applicationProof']['canonicalization']['terminalNewlineRequiredFor'] == ['CommonModules/JetServerCall/Ext/Module.bsl']
     production_archive = PACKAGE / 'production-patch.diff.gz'
     production_payload = diff_payload(production_archive)
     production_files, production_added, production_removed = diff_counts(production_archive)
@@ -175,7 +178,7 @@ def main() -> None:
         assert compaction['completedRemovedPaths'] == ['frozen-input', 'run/work-copy', 'run/ib', 'run/home', 'run/tmp']
 
     cost = load_json('cost-ledger.json')
-    assert cost['elapsedToPackagedCandidateSeconds'] == 4602
+    assert cost['elapsedToPackagedCandidateSeconds'] == 5222
     assert cost['nativeAttempts'] == cost['runPreparedCalls'] == 4
     assert cost['ownerInterventions'] == 0
     assert cost['manualLifecycleActionsOutsideRunPrepared'] == 0

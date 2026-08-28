@@ -56,5 +56,22 @@
   "instrumentationFiles": [
     "Ext/ManagedApplicationModule.bsl",
     "CommonModules/JetServerCall/Ext/Module.bsl"
-  ]
+  ],
+  "applicationProof": {
+    "sourcePreconditions": "exact source SHA-256 values in files map",
+    "canonicalization": {
+      "encoding": "UTF-8",
+      "lineEndings": "LF",
+      "terminalNewlineRequiredFor": [
+        "CommonModules/JetServerCall/Ext/Module.bsl"
+      ]
+    },
+    "payloadsAppliedFromExactGitCandidate": true,
+    "reconstructsGreenBytes": {
+      "Documents/SalesInvoice.xml": true,
+      "Documents/SalesInvoice/Ext/ObjectModule.bsl": true,
+      "Ext/ManagedApplicationModule.bsl": true,
+      "CommonModules/JetServerCall/Ext/Module.bsl": true
+    }
+  }
 }
