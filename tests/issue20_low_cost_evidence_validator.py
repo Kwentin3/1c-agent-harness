@@ -4,6 +4,7 @@ import gzip
 import hashlib
 import json
 from pathlib import Path
+from typing import Optional
 
 REPO_ROOT = Path(__file__).resolve().parents[1]
 MANIFEST = "package-manifest.json"
@@ -65,12 +66,28 @@ def sha256(path: Path) -> str:
     return hashlib.sha256(path.read_bytes()).hexdigest()
 
 
-def sanitize(value: object) -> object:
+def _native_repo_root(result: dict[str, object]) -> str:
+    commands = result.get("commands")
+    assert isinstance(commands, dict)
+    runtime = commands.get("runtime")
+    assert isinstance(runtime, list)
+    roots = {
+        value.split("/.local/", 1)[0]
+        for value in runtime
+        if isinstance(value, str) and value.startswith("/") and "/.local/" in value
+    }
+    assert len(roots) == 1
+    return roots.pop()
+
+
+def sanitize(value: object, *, native_root: Optional[str] = None) -> object:
     if isinstance(value, dict):
-        return {key: sanitize(item) for key, item in value.items()}
+        return {key: sanitize(item, native_root=native_root) for key, item in value.items()}
     if isinstance(value, list):
-        return [sanitize(item) for item in value]
+        return [sanitize(item, native_root=native_root) for item in value]
     if isinstance(value, str):
+        if native_root is not None:
+            value = value.replace(native_root, "<REPO_ROOT>")
         return value.replace(str(REPO_ROOT), "<REPO_ROOT>").replace(
             "/home/hermeswebui", "<USER_HOME>"
         )
@@ -167,16 +184,19 @@ def validate_package(package: Path) -> None:
         result_envelope = json.loads((package / f"{label}-result.json").read_text(encoding="utf-8"))
         assert result_envelope["rawSha256"] == RAW_SHA256[label]["result"]
         result = json.loads(raw_payloads["result"])
-        assert result_envelope["sanitizedResult"] == sanitize(result)
+        native_root = _native_repo_root(result)
+        assert result_envelope["sanitizedResult"] == sanitize(result, native_root=native_root)
         results[label] = result
 
         spec_envelope = json.loads((package / f"{label}-spec.json").read_text(encoding="utf-8"))
         assert spec_envelope["rawSha256"] == RAW_SHA256[label]["spec"]
-        assert spec_envelope["sanitizedSpec"] == sanitize(json.loads(raw_payloads["spec"]))
+        assert spec_envelope["sanitizedSpec"] == sanitize(
+            json.loads(raw_payloads["spec"]), native_root=native_root
+        )
 
         receipt = _rows(raw_payloads["receipt"])
         assert (package / f"{label}-receipt.txt").read_bytes().decode("utf-8") == (
-            sanitize(raw_payloads["receipt"].decode("utf-8-sig"))
+            sanitize(raw_payloads["receipt"].decode("utf-8-sig"), native_root=native_root)
             .replace("\r\n", "\n")
             .rstrip("\n") + "\n"
         )
@@ -213,8 +233,10 @@ def validate_package(package: Path) -> None:
         assert result["totalDurationSeconds"] >= result["durationSeconds"]
         for key in ("createLog", "createResult", "loadLog", "loadResult", "runLog"):
             expected_text = raw_payloads[key].decode("utf-8-sig", errors="strict").replace(
-                str(REPO_ROOT), "<REPO_ROOT>"
-            ).replace("/home/hermeswebui", "<USER_HOME>").replace("\r\n", "\n")
+                native_root, "<REPO_ROOT>"
+            ).replace(str(REPO_ROOT), "<REPO_ROOT>").replace(
+                "/home/hermeswebui", "<USER_HOME>"
+            ).replace("\r\n", "\n")
             assert (package / f"{label}-{key}.txt").read_bytes().decode("utf-8") == expected_text
 
     native = json.loads((package / "native-results.json").read_text(encoding="utf-8"))

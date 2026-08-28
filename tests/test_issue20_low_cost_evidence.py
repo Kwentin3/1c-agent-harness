@@ -8,9 +8,11 @@ import shutil
 import sys
 import tempfile
 import unittest
+from unittest import mock
 
 sys.path.insert(0, str(Path(__file__).resolve().parent))
 
+import issue20_low_cost_evidence_validator as evidence_validator
 from issue20_low_cost_evidence_validator import rewrite_manifest, validate_package
 
 ROOT = Path(__file__).resolve().parents[1]
@@ -20,6 +22,16 @@ PACKAGE = ROOT / "experiments" / "issue20-low-cost-native-cycle-20260828"
 class Issue20LowCostEvidenceTests(unittest.TestCase):
     def test_package_manifest_and_claims_validate(self) -> None:
         validate_package(PACKAGE)
+
+    def test_raw_sanitization_uses_native_root_not_checkout_root(self) -> None:
+        result = json.loads(gzip.decompress((PACKAGE / "success-result.raw.json.gz").read_bytes()))
+        envelope = json.loads((PACKAGE / "success-result.json").read_text(encoding="utf-8"))
+        with mock.patch.object(evidence_validator, "REPO_ROOT", Path("/different/checkout")):
+            native_root = evidence_validator._native_repo_root(result)
+            self.assertEqual(
+                evidence_validator.sanitize(result, native_root=native_root),
+                envelope["sanitizedResult"],
+            )
 
     def test_unlisted_file_is_rejected(self) -> None:
         with tempfile.TemporaryDirectory() as tmp:
