@@ -2,7 +2,7 @@
   "schemaVersion": 1,
   "artifacts": {
     ".gitattributes": "35c15ca60f84235daa84b5c135231de36d3ec73ebe1ca43ec2c9392edf16dd55",
-    "README.md": "f50a83bb6aeff2bdf3e001272538dd35d905e7666ae53426e590bec5993147f1",
+    "README.md": "5c955008c57001c3ec8ed43469d84ef1598648d46f16855ebb27008c762f96c2",
     "candidate-code-identity.json": "d3e1f17ac0c67d819c028750cebe21c098aec3b289918e3923535422c6597a2e",
     "cost-ledger.json": "44dd4e29b56bc793d86d7d727cb17463ed978fff89cb4d67e37ab32ac3903e79",
     "native-results.json": "a7baeb5e2a8aadefde2c4db9cc3aa05af526bcfc25df6c04d7d4a9c613439117",

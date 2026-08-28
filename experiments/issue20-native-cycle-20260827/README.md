@@ -1,6 +1,6 @@
 # Issue #20 — native lifecycle entrypoint
 
-Status: prior exact candidate `a2d38c569a035f2296e3ca9acb6e1cce0b5404b9` passed independent review; fresh PR #21 correction evidence is captured and a new exact-tree review is pending.
+Status: exact technical candidate `e40603982eea90278f29fbb31f598f880fb9b9de` / tree `70a8a2c26e8057e1aaff229e216d082950910165` passed the published independent review. PR #21 remains on **PRODUCT HOLD** because preparation/fingerprint/binding is still manual and issue #20 remains open; the follow-up correction changes documentation/status only and does not alter the reviewed runner or native evidence bytes.
 
 ## Claim
 
