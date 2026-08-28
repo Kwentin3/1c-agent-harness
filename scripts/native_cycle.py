@@ -796,7 +796,26 @@ def _compact_prepared_invocation(
     })
     storage["durationSeconds"] = round(time.monotonic() - storage_started, 3)
     result["totalDurationSeconds"] = round(time.monotonic() - started, 3)
-    _write_json_atomic(result_path, result)
+    try:
+        _write_json_atomic(result_path, result)
+    except Exception as exc:
+        storage.update({
+            "status": "failed",
+            "durationSeconds": round(time.monotonic() - storage_started, 3),
+            "errorType": type(exc).__name__,
+            "error": str(exc),
+        })
+        if result.get("status") == "runtime_contract_completed":
+            result.update({
+                "status": "artifact_cleanup_failed",
+                "failedStage": "artifact-finalization",
+                "errorType": type(exc).__name__,
+                "error": str(exc),
+            })
+        result["totalDurationSeconds"] = round(time.monotonic() - started, 3)
+        setattr(exc, "result_path", result_path)
+        _write_json_atomic(result_path, result)
+        raise
 
 
 def run_cycle(plan: SimpleNamespace, spec_path: Path) -> dict[str, object]:
