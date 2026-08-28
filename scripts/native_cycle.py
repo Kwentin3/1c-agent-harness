@@ -712,9 +712,11 @@ def _logical_file_bytes(root: Path) -> int:
 
 
 def _remove_generated_tree(path: Path) -> None:
+    if path.is_symlink():
+        raise RuntimeError(f"generated cleanup target is not a directory: {path}")
     if not path.exists():
         return
-    if path.is_symlink() or not path.is_dir():
+    if not path.is_dir():
         raise RuntimeError(f"generated cleanup target is not a directory: {path}")
 
     for candidate in (path, *path.rglob("*")):
@@ -776,6 +778,7 @@ def _compact_prepared_invocation(
                 "error": str(exc),
             })
         result["totalDurationSeconds"] = round(time.monotonic() - started, 3)
+        storage["durationSeconds"] = round(time.monotonic() - storage_started, 3)
         storage["retainedLogicalBytes"] = _logical_file_bytes(invocation.invocation_root)
         _write_json_atomic(result_path, result)
         setattr(exc, "result_path", result_path)
@@ -787,13 +790,13 @@ def _compact_prepared_invocation(
         "status": "completed",
         "peakLogicalBytes": peak_bytes,
         "removedLogicalBytes": removed_bytes,
-        "durationSeconds": round(time.monotonic() - storage_started, 3),
     })
-    result["totalDurationSeconds"] = round(time.monotonic() - started, 3)
     for _ in range(4):
         retained_bytes = _logical_file_bytes(invocation.invocation_root)
         storage["peakLogicalBytes"] = max(peak_bytes, retained_bytes)
         storage["retainedLogicalBytes"] = retained_bytes
+        storage["durationSeconds"] = round(time.monotonic() - storage_started, 3)
+        result["totalDurationSeconds"] = round(time.monotonic() - started, 3)
         _write_json_atomic(result_path, result)
         if _logical_file_bytes(invocation.invocation_root) == retained_bytes:
             break

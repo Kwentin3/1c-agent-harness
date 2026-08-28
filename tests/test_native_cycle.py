@@ -289,6 +289,15 @@ class NativeCycleContractTests(unittest.TestCase):
             self.assertTrue((invocation_root / "run" / "logs" / "diagnostic.txt").is_file())
             self.assertTrue((invocation_root / "run" / "evidence" / "diagnostic.txt").is_file())
 
+    def test_remove_generated_tree_rejects_dangling_symlink_target(self) -> None:
+        native_cycle = load_module("native_cycle_cleanup_dangling_symlink")
+        with tempfile.TemporaryDirectory() as tmp:
+            target = Path(tmp) / "frozen-input"
+            target.symlink_to("missing-generated-tree", target_is_directory=True)
+            with self.assertRaisesRegex(RuntimeError, "not a directory"):
+                native_cycle._remove_generated_tree(target)
+            self.assertTrue(target.is_symlink())
+
     def test_run_prepared_cleanup_failure_cannot_remain_success(self) -> None:
         native_cycle = load_module("native_cycle_cleanup_failure")
         with tempfile.TemporaryDirectory() as tmp:
