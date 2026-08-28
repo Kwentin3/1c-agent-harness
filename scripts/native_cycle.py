@@ -627,6 +627,7 @@ def run_runtime(
                     stable_count = 0
                     time.sleep(min(poll_seconds, 0.01))
                     continue
+                marker_present = False
                 if payload is not None:
                     current_hash = hashlib.sha256(payload).hexdigest()
                     decoded_lines = payload.decode("utf-8-sig", errors="strict").splitlines()
@@ -643,6 +644,9 @@ def run_runtime(
                         completed = True
                         break
                 if process.poll() is not None:
+                    if marker_present:
+                        time.sleep(poll_seconds)
+                        continue
                     failure = RuntimeError(f"runtime exited before completion: {process.returncode}")
                     break
                 time.sleep(poll_seconds)
