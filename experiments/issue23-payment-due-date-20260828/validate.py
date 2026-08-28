@@ -33,6 +33,26 @@ EXPECTED_TREES = {
     'green': '978c3953f95dff49d6fa1893d87b684178d885569fb7c4e31feff713b5be1a8d',
     'clean-repeat': '978c3953f95dff49d6fa1893d87b684178d885569fb7c4e31feff713b5be1a8d',
 }
+EXPECTED_PATCH_PAYLOADS = {
+    'production': 'fe02c1b534af164294a2be3d37acccd0f36b6e392f7957c5b2a4e860e52b97f3',
+    'instrumentation': 'c42cd1aa71b8d66a692ab89deaef7290623611946c682f70f510fad9d22b1f0f',
+}
+EXPECTED_FILE_HASHES = {
+    'Documents/SalesInvoice.xml': {
+        'sourceSha256': '2aadf05f9fc93e482fc6a450d914b58a2f657162a341757d547d4da07b9ef27a',
+        'productionSha256': '1ea8e3b768b92e8653b48dfbb2c47b0784b9b9a69423eb37f8f644338773198a',
+    },
+    'Documents/SalesInvoice/Ext/ObjectModule.bsl': {
+        'sourceSha256': '535bbbee743a15a92d536c824dd2b69418f6e1d0429b31d9f0b9ca2084a65611',
+        'productionSha256': 'c644e1eb7a277354047f126f89eb29b6eb4836d910dd63d105c751751ccf0183',
+    },
+}
+EXPECTED_RECEIPTS = {
+    'source-baseline': ('95cbe060b1c5be7cf2edb7b070ea32bb0c6be9118f7a65d0fdc1e090e1cebe68', 'ff2913017c8f772cda621a7a06419a3cf1da7df6b17e8375eaa13b235976f43e'),
+    'metadata-only-red': ('ffb760c4870966266e707e1d0d7f6e5ba6032486e84d0c366c0ebf4c57ee52f8', '4061670b7d00711516e85d83c6212e34397979037dd3ddcdadb184c10ce4577c'),
+    'green': ('b0035a8dce6f2296a28be8221f0579a6ab9a124aae0a59e08be1ed792535042f', 'f697477fff094b00a6f1956fb501c054ff6c1eb24d6b27066cd3ee5948b5627b'),
+    'clean-repeat': ('ec64911b5b3385de646c7d6c38d6396c911a6d949b5e8403cd017d100bd05f8d', 'f697477fff094b00a6f1956fb501c054ff6c1eb24d6b27066cd3ee5948b5627b'),
+}
 
 
 def sha(path: Path) -> str:
@@ -127,6 +147,7 @@ def main() -> None:
     assert identity['sourceCfSha256'] == '5694f9e4bdf9a0857185118ba816d562d8ee8de2b8da3f60792397a399ca128a'
     assert identity['snapshotManifestSha256'] == '70972b5e11901ca31c7f7ec67dca03f78986206b024be01aeb34e0e1f3ff6691'
     assert identity['snapshotClosure'] == {'declaredFiles': 5099, 'actualFiles': 5099, 'missing': 0, 'extra': 0, 'mismatch': 0, 'symlink': 0, 'writable': 0}
+    assert identity['files'] == EXPECTED_FILE_HASHES
     assert identity['productionTreeSha256'] == EXPECTED_TREES['green']
     assert identity['greenRepeatTreeIdentityEqual'] is True
     assert identity['applicationProof']['payloadsAppliedFromExactGitCandidate'] is True
@@ -139,6 +160,7 @@ def main() -> None:
     assert (production_added, production_removed) == (52, 0)
     assert identity['productionPatch']['archiveSha256'] == sha(production_archive)
     assert identity['productionPatch']['payloadSha256'] == hashlib.sha256(production_payload).hexdigest()
+    assert identity['productionPatch']['payloadSha256'] == EXPECTED_PATCH_PAYLOADS['production']
     instrumentation_archive = PACKAGE / 'instrumentation.diff.gz'
     instrumentation_payload = diff_payload(instrumentation_archive)
     instrumentation_files, instrumentation_added, instrumentation_removed = diff_counts(instrumentation_archive)
@@ -146,6 +168,7 @@ def main() -> None:
     assert (instrumentation_added, instrumentation_removed) == (247, 0)
     assert identity['instrumentation']['archiveSha256'] == sha(instrumentation_archive)
     assert identity['instrumentation']['payloadSha256'] == hashlib.sha256(instrumentation_payload).hexdigest()
+    assert identity['instrumentation']['payloadSha256'] == EXPECTED_PATCH_PAYLOADS['instrumentation']
     patch_text = production_payload.decode('utf-8')
     assert patch_text.count('<Name>PaymentDueDate</Name>') == 1
     assert patch_text.count('ValueIsFilled(PaymentDueDate)') == 1
@@ -171,6 +194,7 @@ def main() -> None:
         assert item['load']['successMarker'] == 'Configuration successfully updated'
         assert item['runtime']['completed'] is True and item['runtime']['completeMarker'] == 'complete###true'
         assert item['runtime']['stableReads'] == 2
+        assert (item['runtime']['rawReceiptSha256'], item['runtime']['publishedReceiptSha256']) == EXPECTED_RECEIPTS[phase]
         assert item['runtime']['publishedReceiptSha256'] == sha(PACKAGE / item['runtime']['publishedReceipt'])
         compaction = item['storageCompaction']
         assert compaction['status'] == 'completed'

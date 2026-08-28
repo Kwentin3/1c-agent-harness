@@ -1,7 +1,7 @@
 {
   "schemaVersion": 1,
   "artifacts": {
-    "README.md": "314e7281c6f568bf51b07ade40c98a23d3dcb70637e714e279a2079b58dc1d24",
+    "README.md": "db05b2936345799b81df956174141a19877a5ff7c465c1639a8a6e1a9e4752e4",
     "behavior-summary.json": "493c9ef94a5f419cb5689635fee2939ea410ca2b7ee4784b7258e90dce90bac0",
     "clean-repeat-receipt.txt": "f697477fff094b00a6f1956fb501c054ff6c1eb24d6b27066cd3ee5948b5627b",
     "cost-ledger.json": "8a1a7ab14301adc399760a4b25e026a8ebcb5737111144381df839fc430f5778",
@@ -13,6 +13,6 @@
     "production-patch.diff.gz": "5394fb382e7aa21115f1d92fe2050b34f4524dd1a7bf5cc7713acdd706625ac6",
     "source-baseline-receipt.txt": "ff2913017c8f772cda621a7a06419a3cf1da7df6b17e8375eaa13b235976f43e",
     "source-identity.json": "31a887fefb3b9f3e98359968a62380b0e8a6a10bcda2e3d20e37385837627ca4",
-    "validate.py": "dffaf8a93f3872914330f4af83cbfff4550a13abc067f0e894b7d87562e3be87"
+    "validate.py": "0dfef69cb919878803c270a913a5997134cfdf2a352e57af6bf96c49a37e3204"
   }
 }

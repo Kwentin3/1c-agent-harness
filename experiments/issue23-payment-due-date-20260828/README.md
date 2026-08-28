@@ -33,7 +33,7 @@ All four attempts used the unchanged public `scripts/native_cycle.py run-prepare
 | GREEN | `run-j6xxr6e2` | semantic oracle PASS |
 | clean repeat | `run-vw6i7lhd` | semantic oracle PASS |
 
-GREEN and repeat have the same prepared tree identity `978c3953f95dff49d6fa1893d87b684178d885569fb7c4e31feff713b5be1a8d`. They match on all 236 run-independent semantic labels. Raw local run roots remain untracked; published receipts replace only the machine-local `/C` nonce with `<RUN_RECEIPT>`. Raw hashes remain bound in `native-runs.json`.
+GREEN and repeat have the same prepared tree identity `978c3953f95dff49d6fa1893d87b684178d885569fb7c4e31feff713b5be1a8d`. They match on all 236 run-independent semantic labels. Raw local run roots remain untracked; published receipts replace only the machine-local `/C` nonce with `<RUN_RECEIPT>`. Raw receipt hashes in `native-runs.json` are local provenance anchors, not independently reproducible authentication without the untracked raw bytes; the portable semantic claims are bound to the manifest-closed published receipts and exact validator constants.
 
 ## Behavior matrix
 
