@@ -1,0 +1,965 @@
+{
+  "schemaVersion": 1,
+  "issue": 23,
+  "baseline": {
+    "attributeExists": false,
+    "labels": 3,
+    "verdict": "PASS: loadable source proves feature metadata absent"
+  },
+  "metadataOnlyRed": {
+    "metadata": {
+      "attributeExists": true,
+      "name": "PaymentDueDate",
+      "containsDate": true,
+      "dateOnly": true
+    },
+    "cases": {
+      "P1": {
+        "documentDate": "8/18/2026 12:00:00 PM",
+        "dueDateInput": "8/19/2026 12:00:00 AM",
+        "draftSucceeded": true,
+        "persistedDueDate": "8/19/2026 12:00:00 AM",
+        "postCallSucceeded": true,
+        "postedAfter": true,
+        "movements": {
+          "salesRows": "1",
+          "customerRows": "1",
+          "inventoryRows": "1",
+          "costRows": "1"
+        },
+        "before": {
+          "inventoryQuantity": "10",
+          "costQuantity": "10",
+          "costAmount": "10",
+          "salesRows": "0",
+          "customerAmount": "0"
+        },
+        "after": {
+          "inventoryQuantity": "9",
+          "costQuantity": "9",
+          "costAmount": "9",
+          "salesRows": "1",
+          "customerAmount": "4"
+        }
+      },
+      "B1": {
+        "documentDate": "8/18/2026 12:00:00 PM",
+        "dueDateInput": "8/18/2026 12:00:00 AM",
+        "draftSucceeded": true,
+        "persistedDueDate": "8/18/2026 12:00:00 AM",
+        "postCallSucceeded": true,
+        "postedAfter": true,
+        "movements": {
+          "salesRows": "1",
+          "customerRows": "1",
+          "inventoryRows": "1",
+          "costRows": "1"
+        },
+        "before": {
+          "inventoryQuantity": "10",
+          "costQuantity": "10",
+          "costAmount": "10",
+          "salesRows": "0",
+          "customerAmount": "0"
+        },
+        "after": {
+          "inventoryQuantity": "9",
+          "costQuantity": "9",
+          "costAmount": "9",
+          "salesRows": "1",
+          "customerAmount": "4"
+        }
+      },
+      "P2": {
+        "documentDate": "7/19/2026 12:00:00 PM",
+        "dueDateInput": "7/20/2026 12:00:00 AM",
+        "draftSucceeded": true,
+        "persistedDueDate": "7/20/2026 12:00:00 AM",
+        "postCallSucceeded": true,
+        "postedAfter": true,
+        "movements": {
+          "salesRows": "1",
+          "customerRows": "1",
+          "inventoryRows": "1",
+          "costRows": "1"
+        },
+        "before": {
+          "inventoryQuantity": "10",
+          "costQuantity": "10",
+          "costAmount": "10",
+          "salesRows": "0",
+          "customerAmount": "0"
+        },
+        "after": {
+          "inventoryQuantity": "9",
+          "costQuantity": "9",
+          "costAmount": "9",
+          "salesRows": "1",
+          "customerAmount": "4"
+        }
+      },
+      "P3": {
+        "documentDate": "8/18/2026 12:00:00 PM",
+        "dueDateInput": "10/2/2027 12:00:00 AM",
+        "draftSucceeded": true,
+        "persistedDueDate": "10/2/2027 12:00:00 AM",
+        "postCallSucceeded": true,
+        "postedAfter": true,
+        "movements": {
+          "salesRows": "1",
+          "customerRows": "1",
+          "inventoryRows": "1",
+          "costRows": "1"
+        },
+        "before": {
+          "inventoryQuantity": "10",
+          "costQuantity": "10",
+          "costAmount": "10",
+          "salesRows": "0",
+          "customerAmount": "0"
+        },
+        "after": {
+          "inventoryQuantity": "9",
+          "costQuantity": "9",
+          "costAmount": "9",
+          "salesRows": "1",
+          "customerAmount": "4"
+        }
+      },
+      "P4": {
+        "documentDate": "12/31/2024 12:00:00 PM",
+        "dueDateInput": "1/1/2025 12:00:00 AM",
+        "draftSucceeded": true,
+        "persistedDueDate": "1/1/2025 12:00:00 AM",
+        "postCallSucceeded": true,
+        "postedAfter": true,
+        "movements": {
+          "salesRows": "1",
+          "customerRows": "1",
+          "inventoryRows": "1",
+          "costRows": "1"
+        },
+        "before": {
+          "inventoryQuantity": "10",
+          "costQuantity": "10",
+          "costAmount": "10",
+          "salesRows": "0",
+          "customerAmount": "0"
+        },
+        "after": {
+          "inventoryQuantity": "9",
+          "costQuantity": "9",
+          "costAmount": "9",
+          "salesRows": "1",
+          "customerAmount": "4"
+        }
+      },
+      "N1": {
+        "documentDate": "8/18/2026 12:00:00 PM",
+        "dueDateInput": "8/17/2026 12:00:00 AM",
+        "draftSucceeded": true,
+        "persistedDueDate": "8/17/2026 12:00:00 AM",
+        "postCallSucceeded": true,
+        "postedAfter": true,
+        "movements": {
+          "salesRows": "1",
+          "customerRows": "1",
+          "inventoryRows": "1",
+          "costRows": "1"
+        },
+        "before": {
+          "inventoryQuantity": "10",
+          "costQuantity": "10",
+          "costAmount": "10",
+          "salesRows": "0",
+          "customerAmount": "0"
+        },
+        "after": {
+          "inventoryQuantity": "9",
+          "costQuantity": "9",
+          "costAmount": "9",
+          "salesRows": "1",
+          "customerAmount": "4"
+        }
+      },
+      "N2": {
+        "documentDate": "8/8/2026 12:00:00 PM",
+        "dueDateInput": "8/6/2026 12:00:00 AM",
+        "draftSucceeded": true,
+        "persistedDueDate": "8/6/2026 12:00:00 AM",
+        "postCallSucceeded": true,
+        "postedAfter": true,
+        "movements": {
+          "salesRows": "1",
+          "customerRows": "1",
+          "inventoryRows": "1",
+          "costRows": "1"
+        },
+        "before": {
+          "inventoryQuantity": "10",
+          "costQuantity": "10",
+          "costAmount": "10",
+          "salesRows": "0",
+          "customerAmount": "0"
+        },
+        "after": {
+          "inventoryQuantity": "9",
+          "costQuantity": "9",
+          "costAmount": "9",
+          "salesRows": "1",
+          "customerAmount": "4"
+        }
+      },
+      "N3": {
+        "documentDate": "8/26/2026 12:00:00 PM",
+        "dueDateInput": "8/25/2026 12:00:00 AM",
+        "draftSucceeded": true,
+        "persistedDueDate": "8/25/2026 12:00:00 AM",
+        "postCallSucceeded": true,
+        "postedAfter": true,
+        "movements": {
+          "salesRows": "1",
+          "customerRows": "1",
+          "inventoryRows": "1",
+          "costRows": "1"
+        },
+        "before": {
+          "inventoryQuantity": "10",
+          "costQuantity": "10",
+          "costAmount": "10",
+          "salesRows": "0",
+          "customerAmount": "0"
+        },
+        "after": {
+          "inventoryQuantity": "9",
+          "costQuantity": "9",
+          "costAmount": "9",
+          "salesRows": "1",
+          "customerAmount": "4"
+        }
+      },
+      "N4": {
+        "documentDate": "1/1/2025 12:00:00 PM",
+        "dueDateInput": "12/31/2024 12:00:00 AM",
+        "draftSucceeded": true,
+        "persistedDueDate": "12/31/2024 12:00:00 AM",
+        "postCallSucceeded": true,
+        "postedAfter": true,
+        "movements": {
+          "salesRows": "1",
+          "customerRows": "1",
+          "inventoryRows": "1",
+          "costRows": "1"
+        },
+        "before": {
+          "inventoryQuantity": "10",
+          "costQuantity": "10",
+          "costAmount": "10",
+          "salesRows": "0",
+          "customerAmount": "0"
+        },
+        "after": {
+          "inventoryQuantity": "9",
+          "costQuantity": "9",
+          "costAmount": "9",
+          "salesRows": "1",
+          "customerAmount": "4"
+        }
+      },
+      "R1": {
+        "documentDate": "8/18/2026 12:00:00 PM",
+        "dueDateInput": "",
+        "draftSucceeded": true,
+        "persistedDueDate": "",
+        "postCallSucceeded": true,
+        "postedAfter": true,
+        "movements": {
+          "salesRows": "1",
+          "customerRows": "1",
+          "inventoryRows": "1",
+          "costRows": "1"
+        },
+        "before": {
+          "inventoryQuantity": "10",
+          "costQuantity": "10",
+          "costAmount": "10",
+          "salesRows": "0",
+          "customerAmount": "0"
+        },
+        "after": {
+          "inventoryQuantity": "9",
+          "costQuantity": "9",
+          "costAmount": "9",
+          "salesRows": "1",
+          "customerAmount": "4"
+        }
+      },
+      "R2": {
+        "documentDate": "8/18/2026 12:00:00 PM",
+        "dueDateInput": "",
+        "draftSucceeded": true,
+        "persistedDueDate": "",
+        "postCallSucceeded": false,
+        "postedAfter": false,
+        "movements": {
+          "salesRows": "0",
+          "customerRows": "0",
+          "inventoryRows": "0",
+          "costRows": "0"
+        },
+        "before": {
+          "inventoryQuantity": "10",
+          "costQuantity": "10",
+          "costAmount": "10",
+          "salesRows": "0",
+          "customerAmount": "0"
+        },
+        "after": {
+          "inventoryQuantity": "10",
+          "costQuantity": "10",
+          "costAmount": "10",
+          "salesRows": "0",
+          "customerAmount": "0"
+        }
+      }
+    },
+    "verdict": "RED: N1/N2/N3/N4 post because production guard is absent"
+  },
+  "green": {
+    "metadata": {
+      "attributeExists": true,
+      "name": "PaymentDueDate",
+      "containsDate": true,
+      "dateOnly": true
+    },
+    "cases": {
+      "P1": {
+        "documentDate": "8/18/2026 12:00:00 PM",
+        "dueDateInput": "8/19/2026 12:00:00 AM",
+        "draftSucceeded": true,
+        "persistedDueDate": "8/19/2026 12:00:00 AM",
+        "postCallSucceeded": true,
+        "postedAfter": true,
+        "movements": {
+          "salesRows": "1",
+          "customerRows": "1",
+          "inventoryRows": "1",
+          "costRows": "1"
+        },
+        "before": {
+          "inventoryQuantity": "10",
+          "costQuantity": "10",
+          "costAmount": "10",
+          "salesRows": "0",
+          "customerAmount": "0"
+        },
+        "after": {
+          "inventoryQuantity": "9",
+          "costQuantity": "9",
+          "costAmount": "9",
+          "salesRows": "1",
+          "customerAmount": "4"
+        }
+      },
+      "B1": {
+        "documentDate": "8/18/2026 12:00:00 PM",
+        "dueDateInput": "8/18/2026 12:00:00 AM",
+        "draftSucceeded": true,
+        "persistedDueDate": "8/18/2026 12:00:00 AM",
+        "postCallSucceeded": true,
+        "postedAfter": true,
+        "movements": {
+          "salesRows": "1",
+          "customerRows": "1",
+          "inventoryRows": "1",
+          "costRows": "1"
+        },
+        "before": {
+          "inventoryQuantity": "10",
+          "costQuantity": "10",
+          "costAmount": "10",
+          "salesRows": "0",
+          "customerAmount": "0"
+        },
+        "after": {
+          "inventoryQuantity": "9",
+          "costQuantity": "9",
+          "costAmount": "9",
+          "salesRows": "1",
+          "customerAmount": "4"
+        }
+      },
+      "P2": {
+        "documentDate": "7/19/2026 12:00:00 PM",
+        "dueDateInput": "7/20/2026 12:00:00 AM",
+        "draftSucceeded": true,
+        "persistedDueDate": "7/20/2026 12:00:00 AM",
+        "postCallSucceeded": true,
+        "postedAfter": true,
+        "movements": {
+          "salesRows": "1",
+          "customerRows": "1",
+          "inventoryRows": "1",
+          "costRows": "1"
+        },
+        "before": {
+          "inventoryQuantity": "10",
+          "costQuantity": "10",
+          "costAmount": "10",
+          "salesRows": "0",
+          "customerAmount": "0"
+        },
+        "after": {
+          "inventoryQuantity": "9",
+          "costQuantity": "9",
+          "costAmount": "9",
+          "salesRows": "1",
+          "customerAmount": "4"
+        }
+      },
+      "P3": {
+        "documentDate": "8/18/2026 12:00:00 PM",
+        "dueDateInput": "10/2/2027 12:00:00 AM",
+        "draftSucceeded": true,
+        "persistedDueDate": "10/2/2027 12:00:00 AM",
+        "postCallSucceeded": true,
+        "postedAfter": true,
+        "movements": {
+          "salesRows": "1",
+          "customerRows": "1",
+          "inventoryRows": "1",
+          "costRows": "1"
+        },
+        "before": {
+          "inventoryQuantity": "10",
+          "costQuantity": "10",
+          "costAmount": "10",
+          "salesRows": "0",
+          "customerAmount": "0"
+        },
+        "after": {
+          "inventoryQuantity": "9",
+          "costQuantity": "9",
+          "costAmount": "9",
+          "salesRows": "1",
+          "customerAmount": "4"
+        }
+      },
+      "P4": {
+        "documentDate": "12/31/2024 12:00:00 PM",
+        "dueDateInput": "1/1/2025 12:00:00 AM",
+        "draftSucceeded": true,
+        "persistedDueDate": "1/1/2025 12:00:00 AM",
+        "postCallSucceeded": true,
+        "postedAfter": true,
+        "movements": {
+          "salesRows": "1",
+          "customerRows": "1",
+          "inventoryRows": "1",
+          "costRows": "1"
+        },
+        "before": {
+          "inventoryQuantity": "10",
+          "costQuantity": "10",
+          "costAmount": "10",
+          "salesRows": "0",
+          "customerAmount": "0"
+        },
+        "after": {
+          "inventoryQuantity": "9",
+          "costQuantity": "9",
+          "costAmount": "9",
+          "salesRows": "1",
+          "customerAmount": "4"
+        }
+      },
+      "N1": {
+        "documentDate": "8/18/2026 12:00:00 PM",
+        "dueDateInput": "8/17/2026 12:00:00 AM",
+        "draftSucceeded": true,
+        "persistedDueDate": "8/17/2026 12:00:00 AM",
+        "postCallSucceeded": false,
+        "postedAfter": false,
+        "movements": {
+          "salesRows": "0",
+          "customerRows": "0",
+          "inventoryRows": "0",
+          "costRows": "0"
+        },
+        "before": {
+          "inventoryQuantity": "10",
+          "costQuantity": "10",
+          "costAmount": "10",
+          "salesRows": "0",
+          "customerAmount": "0"
+        },
+        "after": {
+          "inventoryQuantity": "10",
+          "costQuantity": "10",
+          "costAmount": "10",
+          "salesRows": "0",
+          "customerAmount": "0"
+        }
+      },
+      "N2": {
+        "documentDate": "8/8/2026 12:00:00 PM",
+        "dueDateInput": "8/6/2026 12:00:00 AM",
+        "draftSucceeded": true,
+        "persistedDueDate": "8/6/2026 12:00:00 AM",
+        "postCallSucceeded": false,
+        "postedAfter": false,
+        "movements": {
+          "salesRows": "0",
+          "customerRows": "0",
+          "inventoryRows": "0",
+          "costRows": "0"
+        },
+        "before": {
+          "inventoryQuantity": "10",
+          "costQuantity": "10",
+          "costAmount": "10",
+          "salesRows": "0",
+          "customerAmount": "0"
+        },
+        "after": {
+          "inventoryQuantity": "10",
+          "costQuantity": "10",
+          "costAmount": "10",
+          "salesRows": "0",
+          "customerAmount": "0"
+        }
+      },
+      "N3": {
+        "documentDate": "8/26/2026 12:00:00 PM",
+        "dueDateInput": "8/25/2026 12:00:00 AM",
+        "draftSucceeded": true,
+        "persistedDueDate": "8/25/2026 12:00:00 AM",
+        "postCallSucceeded": false,
+        "postedAfter": false,
+        "movements": {
+          "salesRows": "0",
+          "customerRows": "0",
+          "inventoryRows": "0",
+          "costRows": "0"
+        },
+        "before": {
+          "inventoryQuantity": "10",
+          "costQuantity": "10",
+          "costAmount": "10",
+          "salesRows": "0",
+          "customerAmount": "0"
+        },
+        "after": {
+          "inventoryQuantity": "10",
+          "costQuantity": "10",
+          "costAmount": "10",
+          "salesRows": "0",
+          "customerAmount": "0"
+        }
+      },
+      "N4": {
+        "documentDate": "1/1/2025 12:00:00 PM",
+        "dueDateInput": "12/31/2024 12:00:00 AM",
+        "draftSucceeded": true,
+        "persistedDueDate": "12/31/2024 12:00:00 AM",
+        "postCallSucceeded": false,
+        "postedAfter": false,
+        "movements": {
+          "salesRows": "0",
+          "customerRows": "0",
+          "inventoryRows": "0",
+          "costRows": "0"
+        },
+        "before": {
+          "inventoryQuantity": "10",
+          "costQuantity": "10",
+          "costAmount": "10",
+          "salesRows": "0",
+          "customerAmount": "0"
+        },
+        "after": {
+          "inventoryQuantity": "10",
+          "costQuantity": "10",
+          "costAmount": "10",
+          "salesRows": "0",
+          "customerAmount": "0"
+        }
+      },
+      "R1": {
+        "documentDate": "8/18/2026 12:00:00 PM",
+        "dueDateInput": "",
+        "draftSucceeded": true,
+        "persistedDueDate": "",
+        "postCallSucceeded": true,
+        "postedAfter": true,
+        "movements": {
+          "salesRows": "1",
+          "customerRows": "1",
+          "inventoryRows": "1",
+          "costRows": "1"
+        },
+        "before": {
+          "inventoryQuantity": "10",
+          "costQuantity": "10",
+          "costAmount": "10",
+          "salesRows": "0",
+          "customerAmount": "0"
+        },
+        "after": {
+          "inventoryQuantity": "9",
+          "costQuantity": "9",
+          "costAmount": "9",
+          "salesRows": "1",
+          "customerAmount": "4"
+        }
+      },
+      "R2": {
+        "documentDate": "8/18/2026 12:00:00 PM",
+        "dueDateInput": "",
+        "draftSucceeded": true,
+        "persistedDueDate": "",
+        "postCallSucceeded": false,
+        "postedAfter": false,
+        "movements": {
+          "salesRows": "0",
+          "customerRows": "0",
+          "inventoryRows": "0",
+          "costRows": "0"
+        },
+        "before": {
+          "inventoryQuantity": "10",
+          "costQuantity": "10",
+          "costAmount": "10",
+          "salesRows": "0",
+          "customerAmount": "0"
+        },
+        "after": {
+          "inventoryQuantity": "10",
+          "costQuantity": "10",
+          "costAmount": "10",
+          "salesRows": "0",
+          "customerAmount": "0"
+        }
+      }
+    },
+    "verdict": "PASS"
+  },
+  "cleanRepeat": {
+    "cases": {
+      "P1": {
+        "documentDate": "8/18/2026 12:00:00 PM",
+        "dueDateInput": "8/19/2026 12:00:00 AM",
+        "draftSucceeded": true,
+        "persistedDueDate": "8/19/2026 12:00:00 AM",
+        "postCallSucceeded": true,
+        "postedAfter": true,
+        "movements": {
+          "salesRows": "1",
+          "customerRows": "1",
+          "inventoryRows": "1",
+          "costRows": "1"
+        },
+        "before": {
+          "inventoryQuantity": "10",
+          "costQuantity": "10",
+          "costAmount": "10",
+          "salesRows": "0",
+          "customerAmount": "0"
+        },
+        "after": {
+          "inventoryQuantity": "9",
+          "costQuantity": "9",
+          "costAmount": "9",
+          "salesRows": "1",
+          "customerAmount": "4"
+        }
+      },
+      "B1": {
+        "documentDate": "8/18/2026 12:00:00 PM",
+        "dueDateInput": "8/18/2026 12:00:00 AM",
+        "draftSucceeded": true,
+        "persistedDueDate": "8/18/2026 12:00:00 AM",
+        "postCallSucceeded": true,
+        "postedAfter": true,
+        "movements": {
+          "salesRows": "1",
+          "customerRows": "1",
+          "inventoryRows": "1",
+          "costRows": "1"
+        },
+        "before": {
+          "inventoryQuantity": "10",
+          "costQuantity": "10",
+          "costAmount": "10",
+          "salesRows": "0",
+          "customerAmount": "0"
+        },
+        "after": {
+          "inventoryQuantity": "9",
+          "costQuantity": "9",
+          "costAmount": "9",
+          "salesRows": "1",
+          "customerAmount": "4"
+        }
+      },
+      "P2": {
+        "documentDate": "7/19/2026 12:00:00 PM",
+        "dueDateInput": "7/20/2026 12:00:00 AM",
+        "draftSucceeded": true,
+        "persistedDueDate": "7/20/2026 12:00:00 AM",
+        "postCallSucceeded": true,
+        "postedAfter": true,
+        "movements": {
+          "salesRows": "1",
+          "customerRows": "1",
+          "inventoryRows": "1",
+          "costRows": "1"
+        },
+        "before": {
+          "inventoryQuantity": "10",
+          "costQuantity": "10",
+          "costAmount": "10",
+          "salesRows": "0",
+          "customerAmount": "0"
+        },
+        "after": {
+          "inventoryQuantity": "9",
+          "costQuantity": "9",
+          "costAmount": "9",
+          "salesRows": "1",
+          "customerAmount": "4"
+        }
+      },
+      "P3": {
+        "documentDate": "8/18/2026 12:00:00 PM",
+        "dueDateInput": "10/2/2027 12:00:00 AM",
+        "draftSucceeded": true,
+        "persistedDueDate": "10/2/2027 12:00:00 AM",
+        "postCallSucceeded": true,
+        "postedAfter": true,
+        "movements": {
+          "salesRows": "1",
+          "customerRows": "1",
+          "inventoryRows": "1",
+          "costRows": "1"
+        },
+        "before": {
+          "inventoryQuantity": "10",
+          "costQuantity": "10",
+          "costAmount": "10",
+          "salesRows": "0",
+          "customerAmount": "0"
+        },
+        "after": {
+          "inventoryQuantity": "9",
+          "costQuantity": "9",
+          "costAmount": "9",
+          "salesRows": "1",
+          "customerAmount": "4"
+        }
+      },
+      "P4": {
+        "documentDate": "12/31/2024 12:00:00 PM",
+        "dueDateInput": "1/1/2025 12:00:00 AM",
+        "draftSucceeded": true,
+        "persistedDueDate": "1/1/2025 12:00:00 AM",
+        "postCallSucceeded": true,
+        "postedAfter": true,
+        "movements": {
+          "salesRows": "1",
+          "customerRows": "1",
+          "inventoryRows": "1",
+          "costRows": "1"
+        },
+        "before": {
+          "inventoryQuantity": "10",
+          "costQuantity": "10",
+          "costAmount": "10",
+          "salesRows": "0",
+          "customerAmount": "0"
+        },
+        "after": {
+          "inventoryQuantity": "9",
+          "costQuantity": "9",
+          "costAmount": "9",
+          "salesRows": "1",
+          "customerAmount": "4"
+        }
+      },
+      "N1": {
+        "documentDate": "8/18/2026 12:00:00 PM",
+        "dueDateInput": "8/17/2026 12:00:00 AM",
+        "draftSucceeded": true,
+        "persistedDueDate": "8/17/2026 12:00:00 AM",
+        "postCallSucceeded": false,
+        "postedAfter": false,
+        "movements": {
+          "salesRows": "0",
+          "customerRows": "0",
+          "inventoryRows": "0",
+          "costRows": "0"
+        },
+        "before": {
+          "inventoryQuantity": "10",
+          "costQuantity": "10",
+          "costAmount": "10",
+          "salesRows": "0",
+          "customerAmount": "0"
+        },
+        "after": {
+          "inventoryQuantity": "10",
+          "costQuantity": "10",
+          "costAmount": "10",
+          "salesRows": "0",
+          "customerAmount": "0"
+        }
+      },
+      "N2": {
+        "documentDate": "8/8/2026 12:00:00 PM",
+        "dueDateInput": "8/6/2026 12:00:00 AM",
+        "draftSucceeded": true,
+        "persistedDueDate": "8/6/2026 12:00:00 AM",
+        "postCallSucceeded": false,
+        "postedAfter": false,
+        "movements": {
+          "salesRows": "0",
+          "customerRows": "0",
+          "inventoryRows": "0",
+          "costRows": "0"
+        },
+        "before": {
+          "inventoryQuantity": "10",
+          "costQuantity": "10",
+          "costAmount": "10",
+          "salesRows": "0",
+          "customerAmount": "0"
+        },
+        "after": {
+          "inventoryQuantity": "10",
+          "costQuantity": "10",
+          "costAmount": "10",
+          "salesRows": "0",
+          "customerAmount": "0"
+        }
+      },
+      "N3": {
+        "documentDate": "8/26/2026 12:00:00 PM",
+        "dueDateInput": "8/25/2026 12:00:00 AM",
+        "draftSucceeded": true,
+        "persistedDueDate": "8/25/2026 12:00:00 AM",
+        "postCallSucceeded": false,
+        "postedAfter": false,
+        "movements": {
+          "salesRows": "0",
+          "customerRows": "0",
+          "inventoryRows": "0",
+          "costRows": "0"
+        },
+        "before": {
+          "inventoryQuantity": "10",
+          "costQuantity": "10",
+          "costAmount": "10",
+          "salesRows": "0",
+          "customerAmount": "0"
+        },
+        "after": {
+          "inventoryQuantity": "10",
+          "costQuantity": "10",
+          "costAmount": "10",
+          "salesRows": "0",
+          "customerAmount": "0"
+        }
+      },
+      "N4": {
+        "documentDate": "1/1/2025 12:00:00 PM",
+        "dueDateInput": "12/31/2024 12:00:00 AM",
+        "draftSucceeded": true,
+        "persistedDueDate": "12/31/2024 12:00:00 AM",
+        "postCallSucceeded": false,
+        "postedAfter": false,
+        "movements": {
+          "salesRows": "0",
+          "customerRows": "0",
+          "inventoryRows": "0",
+          "costRows": "0"
+        },
+        "before": {
+          "inventoryQuantity": "10",
+          "costQuantity": "10",
+          "costAmount": "10",
+          "salesRows": "0",
+          "customerAmount": "0"
+        },
+        "after": {
+          "inventoryQuantity": "10",
+          "costQuantity": "10",
+          "costAmount": "10",
+          "salesRows": "0",
+          "customerAmount": "0"
+        }
+      },
+      "R1": {
+        "documentDate": "8/18/2026 12:00:00 PM",
+        "dueDateInput": "",
+        "draftSucceeded": true,
+        "persistedDueDate": "",
+        "postCallSucceeded": true,
+        "postedAfter": true,
+        "movements": {
+          "salesRows": "1",
+          "customerRows": "1",
+          "inventoryRows": "1",
+          "costRows": "1"
+        },
+        "before": {
+          "inventoryQuantity": "10",
+          "costQuantity": "10",
+          "costAmount": "10",
+          "salesRows": "0",
+          "customerAmount": "0"
+        },
+        "after": {
+          "inventoryQuantity": "9",
+          "costQuantity": "9",
+          "costAmount": "9",
+          "salesRows": "1",
+          "customerAmount": "4"
+        }
+      },
+      "R2": {
+        "documentDate": "8/18/2026 12:00:00 PM",
+        "dueDateInput": "",
+        "draftSucceeded": true,
+        "persistedDueDate": "",
+        "postCallSucceeded": false,
+        "postedAfter": false,
+        "movements": {
+          "salesRows": "0",
+          "customerRows": "0",
+          "inventoryRows": "0",
+          "costRows": "0"
+        },
+        "before": {
+          "inventoryQuantity": "10",
+          "costQuantity": "10",
+          "costAmount": "10",
+          "salesRows": "0",
+          "customerAmount": "0"
+        },
+        "after": {
+          "inventoryQuantity": "10",
+          "costQuantity": "10",
+          "costAmount": "10",
+          "salesRows": "0",
+          "customerAmount": "0"
+        }
+      }
+    },
+    "verdict": "PASS"
+  },
+  "repeatEquivalence": {
+    "semanticLabelsCompared": 236,
+    "ignoredRunVariantLabels": 57,
+    "equal": true
+  }
+}

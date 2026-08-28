@@ -1,0 +1,118 @@
+{
+  "schemaVersion": 1,
+  "issue": 23,
+  "status": "portable-evidence-finalized-at-pr-open-boundary",
+  "timestampsUtc": {
+    "freshExecutorStart": "2026-08-28T12:38:56Z",
+    "contractFrozen": "2026-08-28T13:00:45Z",
+    "amendedContractAccepted": "2026-08-28T13:20:04Z",
+    "candidatePackaged": "2026-08-28T14:05:58Z",
+    "prOpened": "2026-08-28T20:30:30Z"
+  },
+  "elapsedToPackagedCandidateSeconds": 5222,
+  "elapsedToPrOpenedSeconds": 28294,
+  "externalGithubLifecycle": {
+    "finalReview": "external GitHub record",
+    "merge": "external GitHub record",
+    "issueState": "external GitHub record"
+  },
+  "nativeAttempts": 4,
+  "runPreparedCalls": 4,
+  "acceptedRuns": [
+    "source-baseline",
+    "metadata-only-red",
+    "green",
+    "clean-repeat"
+  ],
+  "nativeTotalDurationSeconds": 868.588,
+  "ownerInterventions": 1,
+  "ownerInterventionBreakdown": {
+    "semanticOr1c": 0,
+    "operationalStorage": 1
+  },
+  "manualLifecycleActionsOutsideRunPrepared": 0,
+  "manualTaskPreparation": {
+    "preparedCopies": 4,
+    "ownedPreparedCleanupEvents": 1,
+    "note": "Task-specific preparation and exact cleanup of two consumed prepared copies; no CREATEINFOBASE/DESIGNER/ENTERPRISE/spec/hash/run-root/compaction action was performed outside run-prepared."
+  },
+  "operationalStorageIncident": {
+    "exactAllocationAtEnospcKnown": false,
+    "exactPerCommandCreatorHistoryKnown": false,
+    "classification": "cumulative shared-host storage pressure; not attributable solely to issue 23",
+    "issue23PreparedCopiesCreated": 4,
+    "issue23ConsumedPreparedCopiesRemovedBeforePackaging": 2,
+    "issue23PreparedCopiesRetainedAtRecovery": [
+      ".local/prepared/issue23-green",
+      ".local/prepared/issue23-repeat"
+    ],
+    "issue23ExternalReviewRootsAtRecovery": {
+      "count": 3,
+      "allocatedBytes": 181727232,
+      "paths": [
+        "/tmp/issue23-reconstruct2-k2r10qyb",
+        "/tmp/issue23-reconstruct-h6bjqckv",
+        "/tmp/issue23-review-m4qrrbzk"
+      ]
+    },
+    "excludedPostIncidentPolicyTree": ".local/prepared/storage-policy-evidence-candidate",
+    "runPreparedCompaction": {
+      "invocations": 4,
+      "removedLogicalBytes": 898852430,
+      "ownedTargetsOnly": true,
+      "doesNotOwnPreparedOrExternalReviewRoots": true
+    },
+    "recovery": {
+      "ownerAuthorizationRequired": true,
+      "elapsedSeconds": 806.624,
+      "allowlistedPathsRemoved": 16,
+      "removalPasses": 2,
+      "permissionRetryAfterFullRevalidation": 1,
+      "reclaimedAllocatedBytes": 5002485760,
+      "largestRemovedPath": ".local/platform/1cv8",
+      "largestRemovedPathAllocatedBytes": 4155269120,
+      "filesystemAtRecoveryStart": {
+        "availableGiBDisplay": 4.5,
+        "usedPercent": 88
+      },
+      "filesystemAfterRecovery": {
+        "availableGiBDisplay": 9.3,
+        "usedPercent": 75
+      }
+    },
+    "acceptedIssue23RawArtifactsRemoved": false,
+    "portableClaimsDependOnRemovedRawArtifacts": false,
+    "productVerdict": "functional fresh-agent goal loop proven; storage usability requires separate correction"
+  },
+  "productionChange": {
+    "files": [
+      "Documents/SalesInvoice.xml",
+      "Documents/SalesInvoice/Ext/ObjectModule.bsl"
+    ],
+    "addedLines": 52,
+    "removedLines": 0,
+    "bytes": 2042,
+    "path": "production-patch.diff.gz",
+    "payloadSha256": "fe02c1b534af164294a2be3d37acccd0f36b6e392f7957c5b2a4e860e52b97f3",
+    "archiveSha256": "5394fb382e7aa21115f1d92fe2050b34f4524dd1a7bf5cc7713acdd706625ac6"
+  },
+  "commonHarnessChangedFiles": 0,
+  "skillsChangedFiles": 0,
+  "newGeneralFrameworks": 0,
+  "freshExecutor": {
+    "input": [
+      "live issue #23",
+      "repository main at ac673ff6ed2542452767983395fb635396d61282",
+      "published repository docs/skills"
+    ],
+    "unpublishedTaskSpecificSolutionReceived": false,
+    "independentlyDerived": [
+      "candidate comparison and choice",
+      "semantic matrix and amendments",
+      "task-specific prepared trees",
+      "probe and oracle",
+      "native command through documented run-prepared",
+      "portable evidence package"
+    ]
+  }
+}
