@@ -853,6 +853,35 @@ class NativeCycleContractTests(unittest.TestCase):
                         receipt_root=evidence, poll_seconds=0.025, stable_reads=2,
                     )
 
+    def test_receipt_read_rejects_link_count_change_without_retry_classification(self) -> None:
+        native_cycle = load_module("native_cycle_receipt_nlink_change")
+        with tempfile.TemporaryDirectory() as tmp:
+            root = Path(tmp)
+            receipt = root / "receipt.txt"
+            receipt.write_text("complete###true\n", encoding="utf-8")
+            original_fstat = native_cycle.os.fstat
+            calls = 0
+
+            def changed_nlink(fd: int):
+                nonlocal calls
+                current = original_fstat(fd)
+                calls += 1
+                if calls != 2:
+                    return current
+                return SimpleNamespace(
+                    st_mode=current.st_mode,
+                    st_nlink=2,
+                    st_dev=current.st_dev,
+                    st_ino=current.st_ino,
+                    st_size=current.st_size,
+                    st_mtime_ns=current.st_mtime_ns,
+                    st_ctime_ns=current.st_ctime_ns,
+                )
+
+            with mock.patch.object(native_cycle.os, "fstat", side_effect=changed_nlink):
+                with self.assertRaisesRegex(RuntimeError, "single-link"):
+                    native_cycle._read_receipt_channel(root, receipt)
+
     def test_runtime_retries_same_file_change_during_receipt_observation(self) -> None:
         native_cycle = load_module("native_cycle_runtime_receipt_growth")
         with tempfile.TemporaryDirectory() as tmp:

@@ -519,10 +519,11 @@ def _read_receipt_channel(receipt_root: Path, receipt_path: Path) -> Optional[by
         with os.fdopen(os.dup(file_descriptor), "rb") as stream:
             payload = stream.read()
         after = os.fstat(file_descriptor)
+        if after.st_nlink != 1:
+            raise RuntimeError("runtime receipt channel is not a single-link regular file")
         if (
             (before.st_dev, before.st_ino, before.st_size, before.st_mtime_ns, before.st_ctime_ns)
             != (after.st_dev, after.st_ino, after.st_size, after.st_mtime_ns, after.st_ctime_ns)
-            or after.st_nlink != 1
         ):
             raise _ReceiptChangedDuringRead("runtime receipt channel changed during read")
         return payload
