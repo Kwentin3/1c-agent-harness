@@ -64,6 +64,21 @@ class Issue20LowCostEvidenceTests(unittest.TestCase):
             with self.assertRaises(AssertionError):
                 validate_package(package)
 
+    def test_common_code_cost_forgery_is_rejected_after_manifest_refresh(self) -> None:
+        with tempfile.TemporaryDirectory() as tmp:
+            package = Path(tmp) / "package"
+            shutil.copytree(PACKAGE, package)
+            path = package / "cost-ledger.json"
+            value = json.loads(path.read_text(encoding="utf-8"))
+            value["fullPrCommonCodeDiff"] = {
+                "scripts/native_cycle.py": {"added": 0, "removed": 0},
+                "tests/test_native_cycle.py": {"added": 0, "removed": 0},
+            }
+            path.write_text(json.dumps(value, indent=2) + "\n", encoding="utf-8")
+            rewrite_manifest(package)
+            with self.assertRaises(AssertionError):
+                validate_package(package)
+
     def test_coordinated_result_and_acceptance_forgery_is_rejected(self) -> None:
         with tempfile.TemporaryDirectory() as tmp:
             package = Path(tmp) / "package"

@@ -1,6 +1,6 @@
 # Issue #20 — low-cost prepared-tree native loop
 
-Status: bounded-storage runner candidate `a4e1509d44147229b4a515c7cd0013efba34762b` / tree `070ac2fe8e93fce22a8771989e56dad8e9531457` passed pre-native adversarial review and fresh native success/repeat. Both runs compacted the five fixed current-invocation disposable trees from a sampled 224,800,941-byte peak to 43,792 retained bytes with zero manual cleanup actions. The evidence/validator publication candidate still requires full Python 3.9/3.12 verification and independent exact-tree review before PR update or merge.
+Status: bounded-storage runner `a4e1509d44147229b4a515c7cd0013efba34762b` / tree `070ac2fe8e93fce22a8771989e56dad8e9531457` passed pre-native review and fresh native success/repeat. Publication candidate `cbfa8b201307714dd92893d512fdc838faf208b8` / tree `d879e1313fbcdc69a0c0fe4eadcabfed2ab33917` passed Python 3.9/3.12 full suites, exact-archive validation, independent exact-tree review and CI. Owner re-review accepted storage behavior and returned only the code-cost evidence contract: the final correction binds the full common-code delta to the goal-loop base and adds a coordinated mutation regression. No native rerun or runner change is required.
 
 ## User boundary
 
@@ -90,11 +90,17 @@ Measured candidate result:
 - exact removed logical bytes: success `224,757,378` bytes, repeat `224,757,378` bytes;
 - compaction duration: success `6.628 s`, repeat `6.652 s`;
 - manual artifact cleanup actions: `0` for both runs;
+- full common-code delta from goal-loop base `c4e40ff…` to native runner `a4e1509…`: `scripts/native_cycle.py +530/-8`, `tests/test_native_cycle.py +681/-0`;
+- bounded-storage correction delta from accepted product-core `a352741…`: `scripts/native_cycle.py +157/-5`, `tests/test_native_cycle.py +271/-0`;
 - same caller command: yes;
 - unique invocation roots/specs/bindings: yes;
 - post-repeat active native processes: `[]`.
 
-The earlier `PRODUCT CORE PASS / ISSUE #20 HOLD` storage counterexample is closed by fresh bounded success/repeat evidence. Final release readiness remains gated on full cross-version validation and independent exact-tree evidence review.
+The earlier retained-storage counterexample is closed by fresh bounded success/repeat evidence. Cross-version validation, exact-archive validation, independent exact-tree review and CI passed on `cbfa8b2…`; the remaining owner HOLD is limited to binding the code-cost ledger to the full goal-loop baseline and independently reviewing that evidence-only correction.
+
+### KISS assessment of the full code delta
+
+The full `+530/-8` common-runner delta is larger than the original three manual binding actions. It is accepted as proportionate only because each added slice closes a reproduced gap: the supported preparation/binding boundary, deterministic persisted failure/result location and source recheck, receipt-observation and detached-descendant races, and bounded fail-closed current-invocation storage after a real disk-space blocker. The implementation still has one native lifecycle owner (`run_cycle()`), leaves `run --spec` unchanged, and adds no task semantics, arbitrary command interface, universal cleaner, cross-run retention framework or speculative product arm.
 
 ## Bounded current-invocation storage contract
 

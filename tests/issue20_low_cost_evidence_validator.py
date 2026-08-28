@@ -363,6 +363,50 @@ def validate_package(package: Path) -> None:
         label: results[label]["storageCompaction"]["durationSeconds"]
         for label in results
     }
+    assert cost["codeCostBoundary"] == {
+        "baselineCommit": "c4e40ff96a36c709cab46df651ee0564647f3146",
+        "candidateCommit": CANDIDATE_COMMIT,
+        "candidateTree": CANDIDATE_TREE,
+        "measuredPaths": ["scripts/native_cycle.py", "tests/test_native_cycle.py"],
+        "rationale": (
+            "The full PR delta is measured from the issue #20 low-cost goal-loop base "
+            "through the exact native runner bytes used for fresh success/repeat. Later "
+            "evidence-only publication commits do not change either measured path."
+        ),
+    }
+    assert cost["fullPrCommonCodeDiff"] == {
+        "scripts/native_cycle.py": {
+            "added": 530, "removed": 8, "baselineLines": 744, "candidateLines": 1266,
+        },
+        "tests/test_native_cycle.py": {
+            "added": 681, "removed": 0, "baselineLines": 873, "candidateLines": 1554,
+        },
+    }
+    assert cost["boundedStorageCorrectionDiff"] == {
+        "baselineCommit": "a3527412118f2c5dc608b0c549a5f4ff0c308d8b",
+        "candidateCommit": CANDIDATE_COMMIT,
+        "scripts/native_cycle.py": {"added": 157, "removed": 5},
+        "tests/test_native_cycle.py": {"added": 271, "removed": 0},
+    }
+    assert cost["kissAssessment"] == {
+        "answer": (
+            "The full +530/-8 common runner delta is larger than the original three manual "
+            "binding actions but is justified by reproduced lifecycle gaps rather than "
+            "speculative framework surface."
+        ),
+        "justifiedBy": [
+            "one supported run-prepared boundary replacing manual freeze, fingerprint, spec, run-root and receipt binding",
+            "persisted resultPath and terminal source recheck across preparation, native and failure paths",
+            "receipt observation races and detached native descendant cleanup reproduced during exact-tree review",
+            "bounded current-invocation storage after owner reproduced unbounded retained artifacts and disk exhaustion",
+            "fail-closed partial cleanup, result finalization and native Unix-socket cleanup reproduced by tests or fresh native execution",
+        ],
+        "scopeControls": [
+            "run_cycle remains the only native lifecycle implementation",
+            "legacy run --spec behavior is unchanged",
+            "no task-specific BSL, semantic oracle, arbitrary command, general cleaner, cross-run retention scan, GUI, RAG, MCP or deployment surface was added",
+        ],
+    }
     assert cost["verdict"] == (
         "LOW-COST PREPARED-TREE LIFECYCLE PASS; "
         "TASK-SPECIFIC PREPARATION AND SEMANTIC ORACLE REMAIN OUTSIDE THE CAPABILITY"

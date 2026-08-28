@@ -2,9 +2,9 @@
   "schemaVersion": 1,
   "artifacts": {
     ".gitattributes": "80242f64e5bf8c01bf0d6c22b7b74291797442b9bf72be9db5e00ead44036cea",
-    "README.md": "09a6a211d075cccf1326a9ffcc2dc0239ab4e4a8460a1834374718c0823ae674",
+    "README.md": "b474cb54a4c87e39c5d784a83a8fafd0be0cc514bbe47eafe24b39bd980b6228",
     "candidate-code-identity.json": "277b2969d292f4bc55651901955f9908ee69ce5b6faa6833aa0305a62f2c635e",
-    "cost-ledger.json": "8d0b2aa32579f7adf37d4c86d4875cba36062f94a805e2792f11f05da824e647",
+    "cost-ledger.json": "b2f6a05e67eab6a06edb6634bca8f4d3092cf9d4116ff014eb2cace4879c8f6f",
     "native-results.json": "52cf9ec7f919820a8005d9f01e9935fc1b2a677ac8581a31c63ecfa11fb63bd5",
     "post-repeat-process-check.native": "37517e5f3dc66819f61f5a7bb8ace1921282415f10551d2defa5c3eb0985b570",
     "process-cleanup-check.json": "ba1a70b7f45797336ab3c62c0e7617fdc199d3c270db1d0a001dd259cf144ac4",
