@@ -6,14 +6,27 @@
 
 - Run from the repository root.
 - Use the pinned training-edition profile already provisioned under `.local/platform/`.
-- Prepare a physically separate tree under `.local/`; do not point the runner at the immutable source snapshot.
-- The prepared tree must contain only directories and regular files, have no symlinks or symlinked path components, and have all write bits removed before invocation.
-- Compute and bind the declared closed-tree SHA-256. There is intentionally no supported preparation/fingerprint CLI in this capability: freezing the prepared tree, invoking the internal identity calculation and authoring a new spec are manual caller-owned actions recorded in the cost ledger.
+- Prepare a physically separate task-specific tree; do not point either command at the immutable source snapshot.
+- The supported `run-prepared` path requires that tree below `.local/prepared/`. It may be writable or already read-only, but it must contain only directories and regular files and have no symlinks or symlinked path components. The command creates and freezes a separate generated copy; it never changes the supplied tree.
+- The lower-level `run --spec` path remains available for an already frozen binding. Its input must have all write bits removed and its closed-tree SHA-256 must already be declared in the spec.
 - Provide Linux procfs with readable `/proc/<pid>/task/<pid>/children` and support for `prctl(PR_SET_CHILD_SUBREAPER)`. The runner checks both before creating the run root and fails with a bounded preflight diagnostic when either prerequisite is unavailable.
 - Choose a new, non-existing run root below `.local/runs/`.
 - The task-specific probe must write a fresh receipt into the declared relative receipt path below the dedicated `runRoot/evidence/` directory and finish with the exact terminal line from `completeMarker`. The receipt cannot alias runner-owned logs, results, work copy, infobase or environment directories: every receipt path component is opened relative to a descriptor-bound `evidence` directory with `O_NOFOLLOW`, and the leaf must be a single-link regular file.
 
-## Spec v1
+## Supported prepared-tree path
+
+The task-specific probe uses the standard 1C global `LaunchParameter` as its receipt file path. One command owns freeze, closed-tree fingerprinting, unique spec/run-root/receipt binding and the accepted lifecycle executor:
+
+```bash
+python3 scripts/native_cycle.py run-prepared \
+  --input-tree .local/prepared/example \
+  --complete-marker 'complete###true' \
+  --timeout-seconds 180
+```
+
+`run-prepared` passes the generated receipt path to `ENTERPRISE` through `/C`. The same exact caller argv can be repeated: every invocation creates a fresh root below `.local/runs/native-cycle/` and prints a repository-relative `resultPath`. The persisted result binds the prepared source before/after, generated frozen input, generated spec, generated `/C` runtime argv, executor copy and post-`chmod` Designer load tree. It does not parse task-specific receipt semantics.
+
+## Frozen spec v1
 
 ```json
 {
@@ -58,9 +71,11 @@ Closed failure states include `precheck_failed`, `copy_failed`, `create_failed`,
 
 ## Repeat and cleanup
 
-For a repeat, the caller must manually freeze and fingerprint a new prepared input binding, author a new spec with a new run root, then invoke the same native command. The runner removes reconstruction of native command sequences and cleanup, but does not claim that preparation/binding is automated or low-cost. Do not reuse or pre-create a run root.
+For a repeat through the supported path, invoke the exact same `run-prepared` command again. The command generates a new frozen input, fingerprint, spec, run root, receipt binding and result location without caller edits. The task-specific preparation that produced the supplied tree remains outside the capability.
 
-The runner does not delete artifacts. After evidence has been copied or inspected, cleanup is an explicit caller action limited to the exact disposable root the caller created. It must not target the source snapshot, manifest, platform, live infobase or another issue's run.
+For the lower-level `run --spec` path, the caller still owns freezing/fingerprinting and a fresh spec. Do not reuse or pre-create a native run root.
+
+The runner does not delete artifacts. Each generated root is new and disposable, but deletion remains an explicit owner decision limited to the exact root. It must not target the prepared source, immutable snapshot, manifest, platform, live infobase or another issue's run.
 
 ## Verification
 
