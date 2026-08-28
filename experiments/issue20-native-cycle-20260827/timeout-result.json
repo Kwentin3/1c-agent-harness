@@ -1,0 +1,124 @@
+{
+  "schemaVersion": 1,
+  "sourceKind": "deterministically path-sanitized machine-produced result.json",
+  "rawLocalSha256": "854dd6bee25722a2a50699e784b569e241e47f303a632f9c736744d798beabc2",
+  "sanitizedResult": {
+    "schemaVersion": 1,
+    "status": "runtime_timeout",
+    "durationSeconds": 128.231,
+    "specSha256": "942bf25158e2e4f58a485b90d42ab7262c668af07a3143322418f21aa08af62e",
+    "input": {
+      "files": 5099,
+      "directories": 4847,
+      "bytes": 61802679,
+      "sourceTreeSha256": "f9052daada931992e0f44e3be852efd4762ce9a791b0ea166c45b9f0c1ab4e4a",
+      "copiedTreeSha256": "f9052daada931992e0f44e3be852efd4762ce9a791b0ea166c45b9f0c1ab4e4a",
+      "loadTreeSha256": "bed74e54c0750f87bc4151e41fa6d6b7b4d7a4b60b69c1c6b5fc5e7b378ca6ab"
+    },
+    "commands": {
+      "create": [
+        "<REPO_ROOT>/.local/platform/libs/usr/bin/xvfb-run",
+        "-a",
+        "-s",
+        "-screen 0 1280x1024x8 -nolisten tcp",
+        "<REPO_ROOT>/.local/platform/1cv8t/x86_64/8.5.1.1150/1cv8t",
+        "CREATEINFOBASE",
+        "File=<REPO_ROOT>/.local/runs/issue20-native-loop/review12-timeout/ib",
+        "/DisableStartupDialogs",
+        "/DisableStartupMessages",
+        "/Out",
+        "<REPO_ROOT>/.local/runs/issue20-native-loop/review12-timeout/logs/create.log",
+        "/DumpResult",
+        "<REPO_ROOT>/.local/runs/issue20-native-loop/review12-timeout/logs/create.result"
+      ],
+      "load": [
+        "<REPO_ROOT>/.local/platform/libs/usr/bin/xvfb-run",
+        "-a",
+        "-s",
+        "-screen 0 1280x1024x8 -nolisten tcp",
+        "<REPO_ROOT>/.local/platform/1cv8t/x86_64/8.5.1.1150/1cv8t",
+        "DESIGNER",
+        "/F",
+        "<REPO_ROOT>/.local/runs/issue20-native-loop/review12-timeout/ib",
+        "/LoadConfigFromFiles",
+        "<REPO_ROOT>/.local/runs/issue20-native-loop/review12-timeout/work-copy",
+        "/UpdateDBCfg",
+        "/DisableStartupDialogs",
+        "/DisableStartupMessages",
+        "/Out",
+        "<REPO_ROOT>/.local/runs/issue20-native-loop/review12-timeout/logs/load.log",
+        "/DumpResult",
+        "<REPO_ROOT>/.local/runs/issue20-native-loop/review12-timeout/logs/load.result"
+      ],
+      "runtime": [
+        "<REPO_ROOT>/.local/platform/libs/usr/bin/xvfb-run",
+        "-a",
+        "-s",
+        "-screen 0 1280x1024x8 -nolisten tcp",
+        "<REPO_ROOT>/.local/platform/1cv8t/x86_64/8.5.1.1150/1cv8t",
+        "ENTERPRISE",
+        "/F",
+        "<REPO_ROOT>/.local/runs/issue20-native-loop/review12-timeout/ib",
+        "/DisableStartupDialogs",
+        "/DisableStartupMessages",
+        "/Out",
+        "<REPO_ROOT>/.local/runs/issue20-native-loop/review12-timeout/logs/run.log",
+        "/DumpResult",
+        "<REPO_ROOT>/.local/runs/issue20-native-loop/review12-timeout/logs/run.result"
+      ]
+    },
+    "environment": {
+      "HOME": "<REPO_ROOT>/.local/runs/issue20-native-loop/review12-timeout/home",
+      "TMPDIR": "<REPO_ROOT>/.local/runs/issue20-native-loop/review12-timeout/tmp",
+      "XDG_CACHE_HOME": "<REPO_ROOT>/.local/runs/issue20-native-loop/review12-timeout/home/xdg-cache",
+      "XDG_CONFIG_HOME": "<REPO_ROOT>/.local/runs/issue20-native-loop/review12-timeout/home/xdg-config",
+      "XDG_DATA_HOME": "<REPO_ROOT>/.local/runs/issue20-native-loop/review12-timeout/home/xdg-data",
+      "FONTCONFIG_FILE": "<REPO_ROOT>/.local/platform/fonts.conf",
+      "LD_LIBRARY_PATH": "<REPO_ROOT>/.local/platform/1cv8t/x86_64/8.5.1.1150:<REPO_ROOT>/.local/platform/libs/usr/lib/x86_64-linux-gnu",
+      "PATH": "<REPO_ROOT>/.local/platform/libs/usr/bin:<USER_HOME>/.local/bin:<USER_HOME>/.local/bin:/usr/local/bin:/usr/bin:/bin:/usr/local/games:/usr/games"
+    },
+    "create": {
+      "processReturn": 0,
+      "dumpResult": "0",
+      "resultSha256": "e45825471ed10290785b62676dc5f453d228a1e1d933c45a733e9bb239c9e083",
+      "logSha256": "9d861e72e19fe2189fe601cf3bf5609e093ce9789728cf47c9432f96a670883d",
+      "successMarker": "completed successfully"
+    },
+    "load": {
+      "processReturn": 0,
+      "dumpResult": "0",
+      "resultSha256": "e45825471ed10290785b62676dc5f453d228a1e1d933c45a733e9bb239c9e083",
+      "logSha256": "4d841be04b71dd0ee7cfebcfa7af194d74902e2ec1c213987889d7d3940c0f86",
+      "successMarker": "Configuration successfully updated"
+    },
+    "runtime": {
+      "completed": false,
+      "completeMarker": "issue20-never-complete###true",
+      "stableReads": 0,
+      "processReturn": -15,
+      "receipt": {
+        "state": "absent"
+      },
+      "outputs": {
+        "log": {
+          "state": "regular",
+          "bytes": 0,
+          "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+        },
+        "result": {
+          "state": "absent"
+        }
+      },
+      "failureKind": "timeout"
+    },
+    "inputAfter": {
+      "files": 5099,
+      "directories": 4847,
+      "bytes": 61802679,
+      "sha256": "f9052daada931992e0f44e3be852efd4762ce9a791b0ea166c45b9f0c1ab4e4a"
+    },
+    "failedStage": "runtime",
+    "errorType": "TimeoutError",
+    "error": "runtime completion marker not observed within 3s"
+  }
+}

@@ -1,0 +1,94 @@
+{
+  "schemaVersion": 2,
+  "platformProfile": "training-8.5.1.1150-linux-x86_64",
+  "snapshot": {
+    "manifestSha256": "70972b5e11901ca31c7f7ec67dca03f78986206b024be01aeb34e0e1f3ff6691",
+    "declaredFiles": 5099,
+    "actualFiles": 5099,
+    "missing": [],
+    "extra": [],
+    "mismatch": [],
+    "symlinks": []
+  },
+  "machineProducedArtifacts": {
+    "codeIdentityFile": "candidate-code-identity.json",
+    "codeIdentityFileSha256": "d3e1f17ac0c67d819c028750cebe21c098aec3b289918e3923535422c6597a2e",
+    "processCleanupChecksFile": "process-cleanup-checks.json",
+    "processCleanupChecksFileSha256": "3c52361bc98454b9f3848995042d8f6e749956c7ad92402a4582c5513c9ed78d",
+    "success": {
+      "resultFile": "success-result.json",
+      "resultFileSha256": "58ea06024d9c2ff749b0c793aaffe66c97a6f5fb5417ea50b4f0f75f207d550a",
+      "rawResultFile": "success-result.raw.json.gz",
+      "rawResultFileSha256": "a4efac9c7413d8370d03b0ff501a507a0cda2af2f0becdd61ca15e0767beae17",
+      "receiptFile": "success-receipt.native",
+      "receiptFileSha256": "ff421393ffbce2bee31fe682310c90fc91f5e9a07256111e834ff9879b3ba04e",
+      "readableReceiptFile": "success-receipt.txt",
+      "readableReceiptFileSha256": "4dce61a85d3f33edd516cef6469d5bffcb0ea86e2b72dc5a5805944b59f8edb0",
+      "createLogFile": "success-create-log.txt",
+      "createResultFile": "success-create-result.native",
+      "loadLogFile": "success-load-log.native",
+      "loadResultFile": "success-load-result.native",
+      "processCheckFile": "success-process-check.native",
+      "runLogFile": "success-run-log.native",
+      "runResultExpected": false,
+      "runLogFileSha256": "e8d8977dd4eafc3aed5271e9fd63591f0f3bd23cdb157a9bfe6e581bd3a9c149"
+    },
+    "repeat": {
+      "resultFile": "repeat-result.json",
+      "resultFileSha256": "9aa971b73b5d548960048e054af1d40a00840e2ac658724593024c7533b56b08",
+      "rawResultFile": "repeat-result.raw.json.gz",
+      "rawResultFileSha256": "6f47361b305ad5c839843cd6935268fb8835cfd43cf04706973a18b7dfc14efa",
+      "receiptFile": "repeat-receipt.native",
+      "receiptFileSha256": "02e9054091e7ab3ba9297b6ec02a60b29253b272905b0f190e86cabc153aa524",
+      "readableReceiptFile": "repeat-receipt.txt",
+      "readableReceiptFileSha256": "f60abd269d8c28dc258283b78ac92255defaeef3769ef19852ae673991dad695",
+      "createLogFile": "repeat-create-log.txt",
+      "createResultFile": "repeat-create-result.native",
+      "loadLogFile": "repeat-load-log.native",
+      "loadResultFile": "repeat-load-result.native",
+      "processCheckFile": "repeat-process-check.native",
+      "runLogFile": "repeat-run-log.native",
+      "runResultExpected": false,
+      "runLogFileSha256": "e8d8977dd4eafc3aed5271e9fd63591f0f3bd23cdb157a9bfe6e581bd3a9c149"
+    },
+    "timeout": {
+      "resultFile": "timeout-result.json",
+      "resultFileSha256": "b1310f649be359bff22a8e84f0e0002b218664cc071f852061f8cc751aaed483",
+      "rawResultFile": "timeout-result.raw.json.gz",
+      "rawResultFileSha256": "0c4cf3f431b4269067c4dd581568563de50d3fbfd13da3dc1d48d68d4d1ba40a",
+      "receiptExpected": false,
+      "createLogFile": "timeout-create-log.txt",
+      "createResultFile": "timeout-create-result.native",
+      "loadLogFile": "timeout-load-log.native",
+      "loadResultFile": "timeout-load-result.native",
+      "processCheckFile": "timeout-process-check.native",
+      "runLogFile": "timeout-run-log.native",
+      "runResultExpected": false,
+      "runLogFileSha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    }
+  },
+  "repeatComparison": {
+    "rows": 320,
+    "uniqueKeys": 319,
+    "exactKeyOrderParity": true,
+    "declaredRunBindingOrPlatformDifferenceKeys": [
+      "nonce",
+      "existing_insufficient_stock.postError"
+    ],
+    "unexpectedBehaviorDifferences": [],
+    "meaningfulObservationParity": true
+  },
+  "semanticBoundary": {
+    "runnerVerdict": "completion contract only",
+    "externalAcceptance": "issue 18 accepted GREEN observation vector",
+    "targetTotalsObserved": [
+      "34",
+      "40"
+    ]
+  },
+  "rawResultSha256Anchors": {
+    "success": "51ce62a3e5af1f637639ede5520ed20b0c85a2caaabd76fada22f6b9ed11d850",
+    "repeat": "c62286068ebbe0df51d4f86d1b41b9ca3300a454c24c5964001016905a3d100b",
+    "timeout": "854dd6bee25722a2a50699e784b569e241e47f303a632f9c736744d798beabc2"
+  }
+}

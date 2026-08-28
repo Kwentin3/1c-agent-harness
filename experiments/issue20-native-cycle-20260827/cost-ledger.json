@@ -1,0 +1,62 @@
+{
+  "schemaVersion": 1,
+  "issue": 20,
+  "scope": "bounded native execution after caller-owned prepared-tree and spec binding",
+  "baseline": {
+    "issue14": {
+      "entrypointDiagnostics": "1-2 h",
+      "nativeLifecycle": "manual CREATEINFOBASE, load/update, runtime polling and cleanup"
+    },
+    "issue18": {
+      "manualCommandBlocksWholeIssue": 29,
+      "manualPathSubstitutionsWholeIssue": 12,
+      "redToFirstGreenSeconds": 289,
+      "repeatSeconds": 229,
+      "verdict": "SECOND TASK PASS / COST NOT YET LOW"
+    }
+  },
+  "callerOwnedPreparationPerNewBinding": {
+    "supportedEntrypoint": false,
+    "measuredWallSeconds": null,
+    "manualActions": [
+      "remove all write bits from the prepared tree",
+      "invoke the internal closed-tree identity calculation and copy its SHA-256 into the spec",
+      "author a new spec with a fresh runRoot and receipt binding"
+    ],
+    "manualActionsCount": 3,
+    "repeatRequiresNewBinding": true,
+    "businessPatchProbeAndOracleAlsoExcluded": true
+  },
+  "nativeExecutionAfterBinding": {
+    "stableEntrypointsPerRun": 1,
+    "manualPathSubstitutionsPerRun": 0,
+    "manualProcessCleanupOperationsOnSuccess": 0,
+    "manualNativeCommandBlocksPerRun": 1,
+    "repeatRequiresManualNativeCommandSequenceRebuild": false,
+    "taskSpecificInstrumentationInCommonTool": false
+  },
+  "nativeWallSeconds": {
+    "success": 125.046,
+    "repeat": 164.74,
+    "timeout": 128.231
+  },
+  "nativeAttempts": {
+    "success": 1,
+    "repeat": 1,
+    "timeout": 1
+  },
+  "newCommonCode": {
+    "productFiles": 1,
+    "productLines": 744,
+    "productBytes": 28268,
+    "testFiles": 1,
+    "testLines": 873,
+    "testBytes": 41526
+  },
+  "measurementBoundary": {
+    "measured": "one runner invocation from an already frozen and bound spec through cleanup and result.json",
+    "unmeasuredButCounted": "three manual caller actions for each new prepared-tree/spec binding",
+    "outsideCapability": "task reconnaissance, semantic contract, BSL patch/probe authoring, semantic oracle, evidence publication and review"
+  },
+  "verdict": "BOUNDED NATIVE EXECUTOR / PREPARATION REMAINS MANUAL / LOW-COST NOT CLAIMED"
+}

@@ -1,0 +1,873 @@
+from __future__ import annotations
+
+import importlib.util
+import json
+import os
+from pathlib import Path
+import stat
+import subprocess
+import tempfile
+import time
+from types import SimpleNamespace
+import unittest
+
+ROOT = Path(__file__).resolve().parents[1]
+CLI = ROOT / "scripts" / "native_cycle.py"
+
+
+def load_module(name: str = "native_cycle_under_test") -> object:
+    spec = importlib.util.spec_from_file_location(name, CLI)
+    if spec is None or spec.loader is None:
+        raise AssertionError("cannot load native cycle module")
+    module = importlib.util.module_from_spec(spec)
+    spec.loader.exec_module(module)
+    return module
+
+
+def process_is_running(pid: int) -> bool:
+    status = Path(f"/proc/{pid}/status")
+    if not status.exists():
+        return False
+    state = next(
+        (line for line in status.read_text(encoding="utf-8").splitlines() if line.startswith("State:")),
+        "",
+    )
+    return "Z (zombie)" not in state
+
+
+def freeze_tree(root: Path) -> None:
+    for path in sorted(root.rglob("*"), reverse=True):
+        if path.is_file():
+            path.chmod(path.stat().st_mode & ~0o222)
+        elif path.is_dir():
+            path.chmod(path.stat().st_mode & ~0o222)
+    root.chmod(root.stat().st_mode & ~0o222)
+
+
+def create_fixed_profile(repo: Path, platform_body: str = "binary") -> tuple[Path, Path]:
+    platform = repo / ".local/platform/1cv8t/x86_64/8.5.1.1150/1cv8t"
+    platform.parent.mkdir(parents=True)
+    platform.write_text(platform_body, encoding="utf-8")
+    xvfb = repo / ".local/platform/libs/usr/bin/xvfb-run"
+    xvfb.parent.mkdir(parents=True)
+    xvfb.write_text("script", encoding="utf-8")
+    fontconfig = repo / ".local/platform/fonts.conf"
+    fontconfig.write_text("fonts", encoding="utf-8")
+    (repo / ".local/platform/libs/usr/lib/x86_64-linux-gnu").mkdir(parents=True)
+    return platform, xvfb
+
+
+class NativeCycleContractTests(unittest.TestCase):
+    def test_build_plan_uses_one_frozen_spec_without_path_substitution(self) -> None:
+        native_cycle = load_module()
+        with tempfile.TemporaryDirectory() as tmp:
+            repo = Path(tmp)
+            source = repo / ".local" / "prepared" / "case-a"
+            source.mkdir(parents=True)
+            (source / "Configuration.xml").write_text("<Configuration/>\n", encoding="utf-8")
+            platform, xvfb = create_fixed_profile(repo)
+            expected_identity = native_cycle.tree_identity(source)["sha256"]
+            spec_path = repo / ".local" / "spec.json"
+            spec_path.write_text(json.dumps({
+                "schemaVersion": 1,
+                "inputTree": ".local/prepared/case-a",
+                "inputTreeSha256": expected_identity,
+                "runRoot": ".local/runs/issue20/case-a",
+                "receipt": "evidence/receipt.txt",
+                "completeMarker": "complete###true",
+                "timeoutSeconds": 30,
+            }), encoding="utf-8")
+
+            plan = native_cycle.load_plan(spec_path, repo)
+
+            run_root = repo / ".local" / "runs" / "issue20" / "case-a"
+            self.assertEqual(plan.run_root, run_root)
+            self.assertEqual(plan.work_copy, run_root / "work-copy")
+            self.assertEqual(plan.infobase, run_root / "ib")
+            self.assertEqual(plan.receipt, run_root / "evidence" / "receipt.txt")
+            self.assertEqual(plan.create_argv[4:6], [str(platform), "CREATEINFOBASE"])
+            self.assertIn(f"File={run_root / 'ib'}", plan.create_argv)
+            self.assertIn(str(run_root / "work-copy"), plan.load_argv)
+            self.assertEqual(plan.environment["HOME"], str(run_root / "home"))
+            self.assertEqual(plan.environment["LD_LIBRARY_PATH"], ":".join([
+                str(repo / ".local/platform/1cv8t/x86_64/8.5.1.1150"),
+                str(repo / ".local/platform/libs/usr/lib/x86_64-linux-gnu"),
+            ]))
+
+    def test_load_plan_rejects_json_booleans_for_integer_fields(self) -> None:
+        native_cycle = load_module("native_cycle_boolean_type_guard")
+        with tempfile.TemporaryDirectory() as tmp:
+            repo = Path(tmp)
+            base = {
+                "schemaVersion": 1,
+                "inputTree": ".local/prepared/case-a",
+                "inputTreeSha256": "0" * 64,
+                "runRoot": ".local/runs/issue20/case-a",
+                "receipt": "evidence/receipt.txt",
+                "completeMarker": "complete###true",
+                "timeoutSeconds": 30,
+            }
+            for field in ("schemaVersion", "timeoutSeconds"):
+                candidate = dict(base)
+                candidate[field] = True
+                spec_path = repo / f"{field}.json"
+                spec_path.write_text(json.dumps(candidate), encoding="utf-8")
+                with self.subTest(field=field), self.assertRaises(ValueError):
+                    native_cycle.load_plan(spec_path, repo)
+
+    def test_load_plan_rejects_receipt_outside_dedicated_evidence_directory(self) -> None:
+        native_cycle = load_module("native_cycle_receipt_separation")
+        with tempfile.TemporaryDirectory() as tmp:
+            repo = Path(tmp)
+            base = {
+                "schemaVersion": 1,
+                "inputTree": ".local/prepared/case-a",
+                "inputTreeSha256": "0" * 64,
+                "runRoot": ".local/runs/issue20/case-a",
+                "receipt": "evidence/receipt.txt",
+                "completeMarker": "complete###true",
+                "timeoutSeconds": 30,
+            }
+            for receipt in (
+                "logs/run.log", "logs/create.result", "result.json",
+                "work-copy/receipt.txt", "ib/receipt.txt", "home/receipt.txt",
+                "tmp/receipt.txt", "evidence",
+            ):
+                candidate = dict(base)
+                candidate["receipt"] = receipt
+                spec_path = repo / "spec.json"
+                spec_path.write_text(json.dumps(candidate), encoding="utf-8")
+                with self.subTest(receipt=receipt), self.assertRaisesRegex(
+                    ValueError, "receipt must be a file inside runRoot/evidence"
+                ):
+                    native_cycle.load_plan(spec_path, repo)
+
+    def test_load_plan_rejects_run_root_outside_local_runs(self) -> None:
+        native_cycle = load_module("native_cycle_path_guard")
+        with tempfile.TemporaryDirectory() as tmp:
+            repo = Path(tmp)
+            spec_path = repo / "spec.json"
+            spec_path.write_text(json.dumps({
+                "schemaVersion": 1,
+                "inputTree": ".local/prepared/case-a",
+                "inputTreeSha256": "0" * 64,
+                "runRoot": ".local/prepared/not-a-run",
+                "receipt": "evidence/receipt.txt",
+                "completeMarker": "complete###true",
+                "timeoutSeconds": 30,
+            }), encoding="utf-8")
+
+            with self.assertRaisesRegex(ValueError, "runRoot must be inside .local/runs"):
+                native_cycle.load_plan(spec_path, repo)
+
+    def test_load_plan_rejects_symlinked_input_and_runs_ancestors(self) -> None:
+        native_cycle = load_module("native_cycle_symlinked_path_guard")
+        with tempfile.TemporaryDirectory() as tmp:
+            repo = Path(tmp)
+            real_input = repo / ".local/real-input"
+            real_input.mkdir(parents=True)
+            (repo / ".local/prepared").symlink_to(real_input, target_is_directory=True)
+            real_runs = repo / "run-storage"
+            real_runs.mkdir()
+            (repo / ".local/runs").symlink_to(real_runs, target_is_directory=True)
+            spec_path = repo / "spec.json"
+            spec_path.write_text(json.dumps({
+                "schemaVersion": 1,
+                "inputTree": ".local/prepared",
+                "inputTreeSha256": "0" * 64,
+                "runRoot": ".local/runs/case-a",
+                "receipt": "evidence/receipt.txt",
+                "completeMarker": "complete###true",
+                "timeoutSeconds": 30,
+            }), encoding="utf-8")
+
+            with self.assertRaisesRegex(ValueError, "symlink path component"):
+                native_cycle.load_plan(spec_path, repo)
+
+    def test_prepare_run_refuses_existing_root_and_copies_closed_input_tree(self) -> None:
+        native_cycle = load_module("native_cycle_prepare")
+        with tempfile.TemporaryDirectory() as tmp:
+            repo = Path(tmp)
+            source = repo / ".local" / "prepared" / "case-a"
+            source.mkdir(parents=True)
+            (source / "Configuration.xml").write_text("<Configuration/>\n", encoding="utf-8")
+            freeze_tree(source)
+            run_root = repo / ".local" / "runs" / "issue20" / "case-a"
+            expected = native_cycle.tree_identity(source)["sha256"]
+            plan = SimpleNamespace(
+                input_tree=source, run_root=run_root, work_copy=run_root / "work-copy",
+                expected_input_tree_sha256=expected,
+            )
+
+            identity = native_cycle.prepare_run(plan)
+
+            self.assertEqual(identity["files"], 1)
+            self.assertEqual(identity["sourceTreeSha256"], identity["copiedTreeSha256"])
+            self.assertEqual(
+                identity["loadTreeSha256"],
+                native_cycle.tree_identity(plan.work_copy)["sha256"],
+            )
+            self.assertNotEqual(identity["sourceTreeSha256"], identity["loadTreeSha256"])
+            self.assertEqual((plan.work_copy / "Configuration.xml").read_text(encoding="utf-8"), "<Configuration/>\n")
+            with self.assertRaisesRegex(FileExistsError, "runRoot already exists"):
+                native_cycle.prepare_run(plan)
+
+    def test_prepare_run_rejects_input_identity_mismatch_before_creating_root(self) -> None:
+        native_cycle = load_module("native_cycle_identity_guard")
+        with tempfile.TemporaryDirectory() as tmp:
+            repo = Path(tmp)
+            source = repo / ".local/prepared/case-a"
+            source.mkdir(parents=True)
+            (source / "Configuration.xml").write_text("<Configuration/>\n", encoding="utf-8")
+            run_root = repo / ".local/runs/issue20/case-a"
+            plan = SimpleNamespace(
+                input_tree=source, run_root=run_root, work_copy=run_root / "work-copy",
+                expected_input_tree_sha256="0" * 64,
+            )
+
+            with self.assertRaisesRegex(ValueError, "input tree identity mismatch"):
+                native_cycle.prepare_run(plan)
+            self.assertFalse(run_root.exists())
+
+    def test_prepare_run_rejects_writable_declared_input(self) -> None:
+        native_cycle = load_module("native_cycle_read_only_guard")
+        with tempfile.TemporaryDirectory() as tmp:
+            repo = Path(tmp)
+            source = repo / ".local/prepared/case-a"
+            source.mkdir(parents=True)
+            candidate = source / "Configuration.xml"
+            candidate.write_text("<Configuration/>\n", encoding="utf-8")
+            run_root = repo / ".local/runs/issue20/case-a"
+            plan = SimpleNamespace(
+                input_tree=source, run_root=run_root, work_copy=run_root / "work-copy",
+                expected_input_tree_sha256=native_cycle.tree_identity(source)["sha256"],
+            )
+
+            with self.assertRaisesRegex(ValueError, "input tree must be read-only"):
+                native_cycle.prepare_run(plan)
+            self.assertFalse(run_root.exists())
+
+    def test_tree_identity_rejects_non_regular_input_entry(self) -> None:
+        native_cycle = load_module("native_cycle_non_regular_guard")
+        with tempfile.TemporaryDirectory() as tmp:
+            source = Path(tmp) / "input"
+            source.mkdir()
+            os.mkfifo(source / "surprise.fifo")
+
+            with self.assertRaisesRegex(ValueError, "non-regular input entry"):
+                native_cycle.tree_identity(source)
+
+    def test_tree_identity_binds_empty_directories_and_modes(self) -> None:
+        native_cycle = load_module("native_cycle_closed_tree_identity")
+        with tempfile.TemporaryDirectory() as tmp:
+            source = Path(tmp) / "input"
+            source.mkdir()
+            candidate = source / "Configuration.xml"
+            candidate.write_text("<Configuration/>\n", encoding="utf-8")
+            initial = native_cycle.tree_identity(source)["sha256"]
+
+            (source / "empty").mkdir()
+            with_directory = native_cycle.tree_identity(source)["sha256"]
+            candidate.chmod(candidate.stat().st_mode & ~stat.S_IWUSR)
+            with_mode_change = native_cycle.tree_identity(source)["sha256"]
+
+            self.assertNotEqual(initial, with_directory)
+            self.assertNotEqual(with_directory, with_mode_change)
+
+    def test_load_plan_rejects_duplicate_json_keys(self) -> None:
+        native_cycle = load_module("native_cycle_duplicate_keys")
+        with tempfile.TemporaryDirectory() as tmp:
+            repo = Path(tmp)
+            spec_path = repo / "spec.json"
+            spec_path.write_text(
+                '{"schemaVersion":1,"inputTree":".local/a","inputTree":".local/b",'
+                '"inputTreeSha256":"' + "0" * 64 + '","runRoot":".local/runs/x",'
+                '"receipt":"evidence/receipt.txt","completeMarker":"complete###true",'
+                '"timeoutSeconds":30}',
+                encoding="utf-8",
+            )
+
+            with self.assertRaisesRegex(ValueError, "duplicate JSON key: inputTree"):
+                native_cycle.load_plan(spec_path, repo)
+
+    def test_process_ownership_preflight_reports_missing_procfs_children(self) -> None:
+        native_cycle = load_module("native_cycle_procfs_preflight")
+        with tempfile.TemporaryDirectory() as tmp:
+            missing = Path(tmp) / "proc-children"
+            native_cycle._proc_children_path = lambda: missing
+
+            with self.assertRaisesRegex(
+                RuntimeError,
+                "process ownership preflight failed.*procfs children interface unavailable",
+            ):
+                native_cycle._preflight_process_ownership()
+
+    def test_batch_step_requires_fresh_zero_dump_result_and_success_marker(self) -> None:
+        native_cycle = load_module("native_cycle_batch")
+        with tempfile.TemporaryDirectory() as tmp:
+            root = Path(tmp)
+            result = root / "step.result"
+            log = root / "step.log"
+            fake = root / "fake-step"
+            fake.write_text(
+                "#!/usr/bin/env python3\n"
+                "from pathlib import Path\n"
+                "import sys\n"
+                "Path(sys.argv[1]).write_bytes(b'\\xef\\xbb\\xbf0\\n')\n"
+                "Path(sys.argv[2]).write_text('Configuration successfully updated\\n')\n",
+                encoding="utf-8",
+            )
+            fake.chmod(fake.stat().st_mode | stat.S_IXUSR)
+
+            outcome = native_cycle.run_batch_step(
+                "load", [str(fake), str(result), str(log)], os.environ.copy(),
+                result, log, "Configuration successfully updated", 10,
+            )
+
+            self.assertEqual(outcome["dumpResult"], "0")
+            self.assertEqual(outcome["processReturn"], 0)
+            self.assertEqual(len(outcome["resultSha256"]), 64)
+            self.assertEqual(len(outcome["logSha256"]), 64)
+            with self.assertRaisesRegex(RuntimeError, "stale load result"):
+                native_cycle.run_batch_step(
+                    "load", [str(fake), str(result), str(log)], os.environ.copy(),
+                    result, log, "Configuration successfully updated", 10,
+                )
+
+    def test_batch_step_rejects_success_marker_as_substring(self) -> None:
+        native_cycle = load_module("native_cycle_batch_exact_marker")
+        with tempfile.TemporaryDirectory() as tmp:
+            root = Path(tmp)
+            result = root / "step.result"
+            log = root / "step.log"
+            fake = root / "fake-step"
+            fake.write_text(
+                "#!/usr/bin/env python3\n"
+                "from pathlib import Path\n"
+                "import sys\n"
+                "Path(sys.argv[1]).write_text('0\\n')\n"
+                "Path(sys.argv[2]).write_text('ERROR: not completed successfully; rollback occurred\\n')\n",
+                encoding="utf-8",
+            )
+            fake.chmod(fake.stat().st_mode | stat.S_IXUSR)
+
+            with self.assertRaisesRegex(RuntimeError, "successMarker=False"):
+                native_cycle.run_batch_step(
+                    "create", [str(fake), str(result), str(log)], os.environ.copy(),
+                    result, log, "completed successfully", 10,
+                )
+
+    def test_batch_step_accepts_native_create_terminal_sentence(self) -> None:
+        native_cycle = load_module("native_cycle_native_create_marker")
+        with tempfile.TemporaryDirectory() as tmp:
+            root = Path(tmp)
+            result = root / "step.result"
+            log = root / "step.log"
+            fake = root / "fake-step"
+            fake.write_text(
+                "#!/usr/bin/env python3\n"
+                "from pathlib import Path\n"
+                "import sys\n"
+                "Path(sys.argv[1]).write_text('0\\n')\n"
+                "Path(sys.argv[2]).write_bytes(b'\\xef\\xbb\\xbfCreation of infobase (\\\"File=/tmp/ib\\\") completed successfully\\n')\n",
+                encoding="utf-8",
+            )
+            fake.chmod(fake.stat().st_mode | stat.S_IXUSR)
+
+            outcome = native_cycle.run_batch_step(
+                "create", [str(fake), str(result), str(log)], os.environ.copy(),
+                result, log, "completed successfully", 10,
+            )
+            self.assertEqual(outcome["dumpResult"], "0")
+
+    def test_batch_timeout_cleans_child_process_group(self) -> None:
+        native_cycle = load_module("native_cycle_batch_timeout")
+        with tempfile.TemporaryDirectory() as tmp:
+            root = Path(tmp)
+            result = root / "step.result"
+            log = root / "step.log"
+            pid_file = root / "child.pid"
+            fake = root / "fake-timeout"
+            fake.write_text(
+                "#!/usr/bin/env python3\n"
+                "from pathlib import Path\n"
+                "import subprocess, sys, time\n"
+                "child = subprocess.Popen(['sleep', '60'])\n"
+                "Path(sys.argv[1]).write_text(str(child.pid))\n"
+                "time.sleep(60)\n",
+                encoding="utf-8",
+            )
+            fake.chmod(fake.stat().st_mode | stat.S_IXUSR)
+
+            with self.assertRaisesRegex(TimeoutError, "load timed out"):
+                native_cycle.run_batch_step(
+                    "load", [str(fake), str(pid_file)], os.environ.copy(),
+                    result, log, "Configuration successfully updated", 1.0,
+                )
+
+            child_pid = int(pid_file.read_text(encoding="utf-8"))
+            for _ in range(40):
+                if not process_is_running(child_pid):
+                    break
+                time.sleep(0.025)
+            self.assertFalse(process_is_running(child_pid), "batch child survived timeout cleanup")
+
+    def test_batch_success_cleans_lingering_child_process_group(self) -> None:
+        native_cycle = load_module("native_cycle_batch_success_cleanup")
+        with tempfile.TemporaryDirectory() as tmp:
+            root = Path(tmp)
+            result = root / "step.result"
+            log = root / "step.log"
+            pid_file = root / "child.pid"
+            fake = root / "fake-success-with-child"
+            fake.write_text(
+                "#!/usr/bin/env python3\n"
+                "from pathlib import Path\n"
+                "import subprocess, sys\n"
+                "child = subprocess.Popen(['sleep', '60'])\n"
+                "Path(sys.argv[1]).write_text(str(child.pid))\n"
+                "Path(sys.argv[2]).write_text('0\\n')\n"
+                "Path(sys.argv[3]).write_text('Configuration successfully updated\\n')\n",
+                encoding="utf-8",
+            )
+            fake.chmod(fake.stat().st_mode | stat.S_IXUSR)
+
+            outcome = native_cycle.run_batch_step(
+                "load", [str(fake), str(pid_file), str(result), str(log)], os.environ.copy(),
+                result, log, "Configuration successfully updated", 5,
+            )
+
+            self.assertEqual(outcome["processReturn"], 0)
+            child_pid = int(pid_file.read_text(encoding="utf-8"))
+            for _ in range(40):
+                if not process_is_running(child_pid):
+                    break
+                time.sleep(0.025)
+            self.assertFalse(process_is_running(child_pid), "batch child survived success cleanup")
+
+    def test_batch_success_cleans_child_that_escaped_into_new_session(self) -> None:
+        native_cycle = load_module("native_cycle_batch_escaped_child")
+        with tempfile.TemporaryDirectory() as tmp:
+            root = Path(tmp)
+            result = root / "step.result"
+            log = root / "step.log"
+            pid_file = root / "child.pid"
+            fake = root / "fake-success-with-escaped-child"
+            fake.write_text(
+                "#!/usr/bin/env python3\n"
+                "from pathlib import Path\n"
+                "import subprocess, sys\n"
+                "child = subprocess.Popen(['sleep', '60'], start_new_session=True)\n"
+                "Path(sys.argv[1]).write_text(str(child.pid))\n"
+                "Path(sys.argv[2]).write_text('0\\n')\n"
+                "Path(sys.argv[3]).write_text('Configuration successfully updated\\n')\n",
+                encoding="utf-8",
+            )
+            fake.chmod(fake.stat().st_mode | stat.S_IXUSR)
+
+            native_cycle.run_batch_step(
+                "load", [str(fake), str(pid_file), str(result), str(log)], os.environ.copy(),
+                result, log, "Configuration successfully updated", 5,
+            )
+
+            child_pid = int(pid_file.read_text(encoding="utf-8"))
+            for _ in range(40):
+                if not process_is_running(child_pid):
+                    break
+                time.sleep(0.025)
+            self.assertFalse(process_is_running(child_pid), "escaped child survived success cleanup")
+
+    def test_runtime_early_exit_reports_process_and_native_outputs(self) -> None:
+        native_cycle = load_module("native_cycle_runtime_early_exit_diagnostic")
+        with tempfile.TemporaryDirectory() as tmp:
+            root = Path(tmp)
+            receipt = root / "receipt.txt"
+            log = root / "run.log"
+            result = root / "run.result"
+            fake = root / "fake-runtime"
+            fake.write_text(
+                "#!/usr/bin/env python3\n"
+                "from pathlib import Path\n"
+                "import sys\n"
+                "Path(sys.argv[1]).write_text('platform failed\\n')\n"
+                "Path(sys.argv[2]).write_text('7\\n')\n"
+                "raise SystemExit(7)\n",
+                encoding="utf-8",
+            )
+            fake.chmod(fake.stat().st_mode | stat.S_IXUSR)
+
+            with self.assertRaisesRegex(RuntimeError, "runtime exited before completion") as raised:
+                native_cycle.run_runtime(
+                    [str(fake), str(log), str(result)], os.environ.copy(), receipt,
+                    "complete###true", timeout_seconds=5,
+                    receipt_root=root, log_path=log, result_path=result,
+                    poll_seconds=0.025, stable_reads=2,
+                )
+
+            diagnostic = raised.exception.runtime_diagnostic
+            self.assertEqual(diagnostic["failureKind"], "exited_before_completion")
+            self.assertEqual(diagnostic["processReturn"], 7)
+            self.assertEqual(diagnostic["receipt"], {"state": "absent"})
+            self.assertEqual(diagnostic["outputs"]["log"]["state"], "regular")
+            self.assertEqual(diagnostic["outputs"]["result"]["state"], "regular")
+            self.assertEqual(len(diagnostic["outputs"]["log"]["sha256"]), 64)
+            self.assertEqual(len(diagnostic["outputs"]["result"]["sha256"]), 64)
+
+    def test_runtime_fifo_receipt_is_bounded_and_cleans_process(self) -> None:
+        with tempfile.TemporaryDirectory() as tmp:
+            root = Path(tmp)
+            evidence = root / "evidence"
+            evidence.mkdir()
+            receipt = evidence / "receipt.fifo"
+            runtime_pid = root / "runtime.pid"
+            fake = root / "fake-runtime"
+            fake.write_text(
+                "#!/usr/bin/env python3\n"
+                "from pathlib import Path\n"
+                "import os, sys, time\n"
+                "Path(sys.argv[1]).write_text(str(os.getpid()))\n"
+                "os.mkfifo(sys.argv[2])\n"
+                "time.sleep(60)\n",
+                encoding="utf-8",
+            )
+            fake.chmod(fake.stat().st_mode | stat.S_IXUSR)
+            helper = root / "helper.py"
+            helper.write_text(
+                "import importlib.util, os, sys\n"
+                "from pathlib import Path\n"
+                f"spec = importlib.util.spec_from_file_location('native_cycle_fifo', {str(CLI)!r})\n"
+                "module = importlib.util.module_from_spec(spec)\n"
+                "spec.loader.exec_module(module)\n"
+                "try:\n"
+                "    module.run_runtime(\n"
+                "        [sys.argv[1], sys.argv[2], sys.argv[3]], os.environ.copy(),\n"
+                "        Path(sys.argv[3]), 'complete###true', timeout_seconds=1,\n"
+                "        receipt_root=Path(sys.argv[3]).parent, poll_seconds=0.025, stable_reads=2,\n"
+                "    )\n"
+                "except RuntimeError as exc:\n"
+                "    if 'receipt channel' in str(exc): raise SystemExit(0)\n"
+                "    raise\n"
+                "raise SystemExit(2)\n",
+                encoding="utf-8",
+            )
+            process = subprocess.Popen(
+                ["python3", str(helper), str(fake), str(runtime_pid), str(receipt)],
+                stdout=subprocess.PIPE,
+                stderr=subprocess.PIPE,
+                start_new_session=True,
+            )
+            try:
+                stdout, stderr = process.communicate(timeout=4)
+            except subprocess.TimeoutExpired:
+                process.kill()
+                process.wait()
+                if runtime_pid.is_file():
+                    try:
+                        os.kill(int(runtime_pid.read_text(encoding="utf-8")), 9)
+                    except ProcessLookupError:
+                        pass
+                self.fail("FIFO receipt blocked past the independent subprocess deadline")
+            self.assertEqual(process.returncode, 0, (stdout, stderr))
+            pid = int(runtime_pid.read_text(encoding="utf-8"))
+            for _ in range(40):
+                if not process_is_running(pid):
+                    break
+                time.sleep(0.025)
+            self.assertFalse(process_is_running(pid), "runtime survived FIFO receipt rejection")
+
+    def test_runtime_rejects_symlink_alias_to_runner_owned_log(self) -> None:
+        native_cycle = load_module("native_cycle_runtime_receipt_alias")
+        for mode in ("leaf", "ancestor", "hardlink"):
+            with self.subTest(mode=mode), tempfile.TemporaryDirectory() as tmp:
+                root = Path(tmp)
+                evidence = root / "evidence"
+                logs = root / "logs"
+                evidence.mkdir()
+                logs.mkdir()
+                target = logs / "run.log"
+                if mode == "leaf":
+                    receipt = evidence / "receipt.txt"
+                elif mode == "ancestor":
+                    receipt = evidence / "alias" / "receipt.txt"
+                else:
+                    receipt = evidence / "receipt.txt"
+                fake = root / "fake-runtime"
+                fake.write_text(
+                    "#!/usr/bin/env python3\n"
+                    "from pathlib import Path\n"
+                    "import os, sys, time\n"
+                    "receipt, target, mode = Path(sys.argv[1]), Path(sys.argv[2]), sys.argv[3]\n"
+                    "if mode == 'leaf': receipt.symlink_to(target)\n"
+                    "elif mode == 'ancestor': receipt.parent.symlink_to(target.parent, target_is_directory=True)\n"
+                    "else:\n"
+                    "    target.touch()\n"
+                    "    os.link(target, receipt)\n"
+                    "target.write_text('complete###true\\n')\n"
+                    "time.sleep(60)\n",
+                    encoding="utf-8",
+                )
+                fake.chmod(fake.stat().st_mode | stat.S_IXUSR)
+
+                with self.assertRaisesRegex(RuntimeError, "receipt channel"):
+                    native_cycle.run_runtime(
+                        [str(fake), str(receipt), str(target), mode], os.environ.copy(),
+                        receipt, "complete###true", timeout_seconds=1,
+                        receipt_root=evidence, poll_seconds=0.025, stable_reads=2,
+                    )
+
+    def test_runtime_waits_for_stable_marker_and_cleans_its_process_group(self) -> None:
+        native_cycle = load_module("native_cycle_runtime")
+        with tempfile.TemporaryDirectory() as tmp:
+            root = Path(tmp)
+            receipt = root / "receipt.txt"
+            pid_file = root / "child.pid"
+            fake = root / "fake-runtime"
+            fake.write_text(
+                "#!/usr/bin/env python3\n"
+                "from pathlib import Path\n"
+                "import subprocess, sys, time\n"
+                "child = subprocess.Popen(['sleep', '60'])\n"
+                "Path(sys.argv[2]).write_text(str(child.pid))\n"
+                "Path(sys.argv[1]).write_text('started###true\\ncomplete###true\\n')\n"
+                "time.sleep(60)\n",
+                encoding="utf-8",
+            )
+            fake.chmod(fake.stat().st_mode | stat.S_IXUSR)
+
+            outcome = native_cycle.run_runtime(
+                [str(fake), str(receipt), str(pid_file)], os.environ.copy(),
+                receipt, "complete###true", timeout_seconds=5,
+                receipt_root=receipt.parent,
+                poll_seconds=0.05, stable_reads=2,
+            )
+
+            child_pid = int(pid_file.read_text(encoding="utf-8"))
+            self.assertTrue(outcome["completed"])
+            self.assertEqual(outcome["completeMarker"], "complete###true")
+            self.assertEqual(len(outcome["receiptSha256"]), 64)
+
+            for _ in range(40):
+                if not process_is_running(child_pid):
+                    break
+                time.sleep(0.025)
+            self.assertFalse(process_is_running(child_pid), "runtime child survived cleanup")
+
+    def test_runtime_rejects_lines_after_completion_marker(self) -> None:
+        native_cycle = load_module("native_cycle_terminal_marker")
+        with tempfile.TemporaryDirectory() as tmp:
+            root = Path(tmp)
+            receipt = root / "receipt.txt"
+            fake = root / "fake-runtime"
+            fake.write_text(
+                "#!/usr/bin/env python3\n"
+                "from pathlib import Path\n"
+                "import sys, time\n"
+                "Path(sys.argv[1]).write_text('complete###true\\nERROR###after-marker\\n')\n"
+                "time.sleep(60)\n",
+                encoding="utf-8",
+            )
+            fake.chmod(fake.stat().st_mode | stat.S_IXUSR)
+
+            with self.assertRaisesRegex(TimeoutError, "completion marker not observed"):
+                native_cycle.run_runtime(
+                    [str(fake), str(receipt)], os.environ.copy(), receipt,
+                    "complete###true", timeout_seconds=1.0,
+                    receipt_root=receipt.parent,
+                    poll_seconds=0.025, stable_reads=2,
+                )
+
+    def test_runtime_rejects_receipt_changed_by_sigterm_handler_during_cleanup(self) -> None:
+        native_cycle = load_module("native_cycle_cleanup_receipt_race")
+        with tempfile.TemporaryDirectory() as tmp:
+            root = Path(tmp)
+            receipt = root / "receipt.txt"
+            fake = root / "fake-runtime"
+            fake.write_text(
+                "#!/usr/bin/env python3\n"
+                "from pathlib import Path\n"
+                "import signal, sys, time\n"
+                "receipt = Path(sys.argv[1])\n"
+                "def finish(signum, frame):\n"
+                "    with receipt.open('a', encoding='utf-8') as stream:\n"
+                "        stream.write('ERROR###after-marker\\n')\n"
+                "    raise SystemExit(0)\n"
+                "signal.signal(signal.SIGTERM, finish)\n"
+                "receipt.write_text('started###true\\ncomplete###true\\n')\n"
+                "time.sleep(60)\n",
+                encoding="utf-8",
+            )
+            fake.chmod(fake.stat().st_mode | stat.S_IXUSR)
+
+            with self.assertRaisesRegex(RuntimeError, "changed after completion"):
+                native_cycle.run_runtime(
+                    [str(fake), str(receipt)], os.environ.copy(), receipt,
+                    "complete###true", timeout_seconds=5,
+                    receipt_root=receipt.parent,
+                    poll_seconds=0.05, stable_reads=2,
+                )
+            self.assertEqual(receipt.read_text(encoding="utf-8").splitlines()[-1], "ERROR###after-marker")
+
+    def test_runtime_timeout_fails_closed_and_cleans_process(self) -> None:
+        native_cycle = load_module("native_cycle_timeout")
+        with tempfile.TemporaryDirectory() as tmp:
+            root = Path(tmp)
+            receipt = root / "receipt.txt"
+            pid_file = root / "runtime.pid"
+            fake = root / "fake-timeout"
+            fake.write_text(
+                "#!/usr/bin/env python3\n"
+                "from pathlib import Path\n"
+                "import os, sys, time\n"
+                "Path(sys.argv[1]).write_text(str(os.getpid()))\n"
+                "Path(sys.argv[2]).write_text('notcomplete###true\\n')\n"
+                "time.sleep(60)\n",
+                encoding="utf-8",
+            )
+            fake.chmod(fake.stat().st_mode | stat.S_IXUSR)
+
+            with self.assertRaisesRegex(TimeoutError, "completion marker not observed"):
+                native_cycle.run_runtime(
+                    [str(fake), str(pid_file), str(receipt)], os.environ.copy(), receipt,
+                    "complete###true", timeout_seconds=1.0,
+                    receipt_root=receipt.parent,
+                    poll_seconds=0.025, stable_reads=2,
+                )
+
+            pid = int(pid_file.read_text(encoding="utf-8"))
+            for _ in range(40):
+                if not process_is_running(pid):
+                    break
+                time.sleep(0.025)
+            self.assertFalse(process_is_running(pid), "runtime survived timeout cleanup")
+
+    def test_run_cycle_executes_one_complete_fake_lifecycle(self) -> None:
+        native_cycle = load_module("native_cycle_end_to_end")
+        with tempfile.TemporaryDirectory() as tmp:
+            repo = Path(tmp)
+            source = repo / ".local" / "prepared" / "case-a"
+            source.mkdir(parents=True)
+            (source / "Configuration.xml").write_text("<Configuration/>\n", encoding="utf-8")
+            freeze_tree(source)
+            run_root = repo / ".local" / "runs" / "issue20" / "case-a"
+            receipt = run_root / "evidence" / "receipt.txt"
+            platform, xvfb = create_fixed_profile(repo)
+            platform.write_text(
+                "#!/usr/bin/env python3\n"
+                "from pathlib import Path\n"
+                "import sys, time\n"
+                f"receipt = Path({str(receipt)!r})\n"
+                "mode = sys.argv[1]\n"
+                "out = Path(sys.argv[sys.argv.index('/Out') + 1])\n"
+                "result = Path(sys.argv[sys.argv.index('/DumpResult') + 1])\n"
+                "out.parent.mkdir(parents=True, exist_ok=True)\n"
+                "if mode == 'CREATEINFOBASE':\n"
+                "    Path(sys.argv[2].split('=', 1)[1]).mkdir(parents=True)\n"
+                "    marker = 'completed successfully'\n"
+                "elif mode == 'DESIGNER': marker = 'Configuration successfully updated'\n"
+                "else:\n"
+                "    receipt.parent.mkdir(parents=True, exist_ok=True)\n"
+                "    receipt.write_text('complete###true\\n')\n"
+                "    time.sleep(60)\n"
+                "    marker = 'runtime'\n"
+                "out.write_text(marker + '\\n')\n"
+                "result.write_bytes(b'\\xef\\xbb\\xbf0\\n')\n",
+                encoding="utf-8",
+            )
+            platform.chmod(platform.stat().st_mode | stat.S_IXUSR)
+            xvfb.write_text(
+                "#!/usr/bin/env python3\n"
+                "import os, sys\n"
+                "os.execv(sys.argv[4], sys.argv[4:])\n",
+                encoding="utf-8",
+            )
+            xvfb.chmod(xvfb.stat().st_mode | stat.S_IXUSR)
+            expected_identity = native_cycle.tree_identity(source)["sha256"]
+            spec_path = repo / ".local" / "case-a.json"
+            spec_path.write_text(json.dumps({
+                "schemaVersion": 1,
+                "inputTree": ".local/prepared/case-a",
+                "inputTreeSha256": expected_identity,
+                "runRoot": ".local/runs/issue20/case-a",
+                "receipt": "evidence/receipt.txt",
+                "completeMarker": "complete###true",
+                "timeoutSeconds": 5,
+            }), encoding="utf-8")
+
+            result = native_cycle.run_cycle(native_cycle.load_plan(spec_path, repo), spec_path)
+
+            self.assertEqual(result["status"], "runtime_contract_completed")
+            self.assertTrue(result["runtime"]["completed"])
+            self.assertEqual(result["create"]["dumpResult"], "0")
+            self.assertEqual(result["load"]["dumpResult"], "0")
+            self.assertEqual(result["inputAfter"]["sha256"], expected_identity)
+            self.assertTrue((run_root / "result.json").is_file())
+            self.assertEqual(
+                json.loads((run_root / "result.json").read_text(encoding="utf-8"))["status"],
+                "runtime_contract_completed",
+            )
+
+    def test_run_cycle_timeout_preserves_completed_stage_diagnostics(self) -> None:
+        native_cycle = load_module("native_cycle_failure_result")
+        with tempfile.TemporaryDirectory() as tmp:
+            repo = Path(tmp)
+            source = repo / ".local" / "prepared" / "timeout"
+            source.mkdir(parents=True)
+            (source / "Configuration.xml").write_text("<Configuration/>\n", encoding="utf-8")
+            freeze_tree(source)
+            run_root = repo / ".local" / "runs" / "issue20" / "timeout"
+            platform, xvfb = create_fixed_profile(repo)
+            platform.write_text(
+                "#!/usr/bin/env python3\n"
+                "from pathlib import Path\n"
+                "import sys, time\n"
+                "mode = sys.argv[1]\n"
+                "out = Path(sys.argv[sys.argv.index('/Out') + 1])\n"
+                "result = Path(sys.argv[sys.argv.index('/DumpResult') + 1])\n"
+                "out.parent.mkdir(parents=True, exist_ok=True)\n"
+                "if mode == 'CREATEINFOBASE':\n"
+                "    Path(sys.argv[2].split('=', 1)[1]).mkdir(parents=True)\n"
+                "    marker = 'completed successfully'\n"
+                "elif mode == 'DESIGNER': marker = 'Configuration successfully updated'\n"
+                "else: time.sleep(60)\n"
+                "out.write_text(marker + '\\n')\n"
+                "result.write_bytes(b'0\\n')\n",
+                encoding="utf-8",
+            )
+            platform.chmod(platform.stat().st_mode | stat.S_IXUSR)
+            xvfb.write_text(
+                "#!/usr/bin/env python3\nimport os, sys\nos.execv(sys.argv[4], sys.argv[4:])\n",
+                encoding="utf-8",
+            )
+            xvfb.chmod(xvfb.stat().st_mode | stat.S_IXUSR)
+            expected_identity = native_cycle.tree_identity(source)["sha256"]
+            spec_path = repo / ".local" / "timeout.json"
+            spec_path.write_text(json.dumps({
+                "schemaVersion": 1,
+                "inputTree": ".local/prepared/timeout",
+                "inputTreeSha256": expected_identity,
+                "runRoot": ".local/runs/issue20/timeout",
+                "receipt": "evidence/receipt.txt",
+                "completeMarker": "complete###true",
+                "timeoutSeconds": 1,
+            }), encoding="utf-8")
+
+            with self.assertRaisesRegex(TimeoutError, "completion marker not observed"):
+                native_cycle.run_cycle(native_cycle.load_plan(spec_path, repo), spec_path)
+
+            diagnostic = json.loads((run_root / "result.json").read_text(encoding="utf-8"))
+            self.assertEqual(diagnostic["status"], "runtime_timeout")
+            self.assertEqual(diagnostic["failedStage"], "runtime")
+            self.assertEqual(diagnostic["create"]["dumpResult"], "0")
+            self.assertEqual(diagnostic["load"]["dumpResult"], "0")
+            self.assertEqual(diagnostic["errorType"], "TimeoutError")
+            runtime = diagnostic["runtime"]
+            self.assertFalse(runtime["completed"])
+            self.assertEqual(runtime["failureKind"], "timeout")
+            self.assertEqual(runtime["processReturn"], -15)
+            self.assertEqual(runtime["receipt"], {"state": "absent"})
+            self.assertEqual(runtime["outputs"]["log"], {"state": "absent"})
+            self.assertEqual(runtime["outputs"]["result"], {"state": "absent"})
+
+
+if __name__ == "__main__":
+    unittest.main()

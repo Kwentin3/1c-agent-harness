@@ -1,0 +1,1 @@
+Creation of infobase ("File=<RUN_ROOT>/ib;Locale = "en_US_POSIX";") completed successfully
