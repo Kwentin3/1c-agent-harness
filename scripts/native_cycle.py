@@ -700,6 +700,107 @@ def _write_json_atomic(path: Path, value: object) -> None:
     temporary.replace(path)
 
 
+def _logical_file_bytes(root: Path) -> int:
+    total = 0
+    if not root.exists():
+        return total
+    for path in root.rglob("*"):
+        mode = path.lstat().st_mode
+        if stat.S_ISREG(mode):
+            total += path.lstat().st_size
+    return total
+
+
+def _remove_generated_tree(path: Path) -> None:
+    if not path.exists():
+        return
+    if path.is_symlink() or not path.is_dir():
+        raise RuntimeError(f"generated cleanup target is not a directory: {path}")
+
+    for candidate in (path, *path.rglob("*")):
+        mode = candidate.lstat().st_mode
+        if stat.S_ISDIR(mode):
+            candidate.chmod(mode | stat.S_IRWXU)
+        elif stat.S_ISREG(mode):
+            candidate.chmod(mode | stat.S_IRUSR | stat.S_IWUSR)
+        else:
+            raise RuntimeError(f"generated cleanup target contains a special entry: {candidate}")
+    shutil.rmtree(path)
+
+
+def _compact_prepared_invocation(
+    invocation: SimpleNamespace,
+    result: dict[str, object],
+    started: float,
+) -> None:
+    result_path = invocation.run_root / "result.json"
+    storage_started = time.monotonic()
+    disposable = (
+        invocation.frozen_input,
+        invocation.run_root / "work-copy",
+        invocation.run_root / "ib",
+        invocation.run_root / "home",
+        invocation.run_root / "tmp",
+    )
+    result["storageCompaction"] = {
+        "policy": "compact-current-invocation-v1",
+        "status": "pending",
+        "manualCleanupActions": 0,
+        "removedPaths": [
+            path.relative_to(invocation.invocation_root).as_posix()
+            for path in disposable
+        ],
+        "retainedPaths": ["spec.json", "run/evidence", "run/logs", "run/result.json"],
+    }
+    _write_json_atomic(result_path, result)
+    peak_bytes = _logical_file_bytes(invocation.invocation_root)
+    removed_bytes = sum(_logical_file_bytes(path) for path in disposable)
+    try:
+        for path in disposable:
+            _remove_generated_tree(path)
+    except Exception as exc:
+        storage = result["storageCompaction"]
+        assert isinstance(storage, dict)
+        storage.update({
+            "status": "failed",
+            "peakLogicalBytes": peak_bytes,
+            "removedLogicalBytes": peak_bytes - _logical_file_bytes(invocation.invocation_root),
+            "errorType": type(exc).__name__,
+            "error": str(exc),
+        })
+        if result.get("status") == "runtime_contract_completed":
+            result.update({
+                "status": "artifact_cleanup_failed",
+                "failedStage": "artifact-cleanup",
+                "errorType": type(exc).__name__,
+                "error": str(exc),
+            })
+        result["totalDurationSeconds"] = round(time.monotonic() - started, 3)
+        storage["retainedLogicalBytes"] = _logical_file_bytes(invocation.invocation_root)
+        _write_json_atomic(result_path, result)
+        setattr(exc, "result_path", result_path)
+        raise
+
+    storage = result["storageCompaction"]
+    assert isinstance(storage, dict)
+    storage.update({
+        "status": "completed",
+        "peakLogicalBytes": peak_bytes,
+        "removedLogicalBytes": removed_bytes,
+        "durationSeconds": round(time.monotonic() - storage_started, 3),
+    })
+    result["totalDurationSeconds"] = round(time.monotonic() - started, 3)
+    for _ in range(4):
+        retained_bytes = _logical_file_bytes(invocation.invocation_root)
+        storage["peakLogicalBytes"] = max(peak_bytes, retained_bytes)
+        storage["retainedLogicalBytes"] = retained_bytes
+        _write_json_atomic(result_path, result)
+        if _logical_file_bytes(invocation.invocation_root) == retained_bytes:
+            break
+    else:
+        raise RuntimeError("retained storage measurement did not stabilize")
+
+
 def run_cycle(plan: SimpleNamespace, spec_path: Path) -> dict[str, object]:
     for label, path, kind in (
         ("inputTree", plan.input_tree, "directory"),
@@ -927,7 +1028,10 @@ def run_prepared(
                     "status": "input_changed",
                     "failedStage": "prepared-input-reverify",
                 })
-            _write_json_atomic(result_path, failure)
+            try:
+                _compact_prepared_invocation(partial, failure, started)
+            except Exception as cleanup_exc:
+                raise cleanup_exc from exc
             setattr(exc, "result_path", result_path)
             raise
         result_path = invocation_root / "result.json"
@@ -981,7 +1085,10 @@ def run_prepared(
                 "status": "input_changed",
                 "failedStage": "prepared-input-reverify",
             })
-        _write_json_atomic(result_path, failure)
+        try:
+            _compact_prepared_invocation(invocation, failure, started)
+        except Exception as cleanup_exc:
+            raise cleanup_exc from exc
         setattr(exc, "result_path", result_path)
         raise
     try:
@@ -1009,7 +1116,10 @@ def run_prepared(
                 "errorType": "RuntimeError",
                 "error": "prepared input tree changed during lifecycle",
             })
-        _write_json_atomic(result_path, result)
+        try:
+            _compact_prepared_invocation(invocation, result, started)
+        except Exception as cleanup_exc:
+            raise cleanup_exc from exc
         setattr(exc, "result_path", result_path)
         raise
 
@@ -1025,11 +1135,11 @@ def run_prepared(
             "errorType": "RuntimeError",
             "error": "prepared input tree changed during lifecycle",
         })
-        _write_json_atomic(result_path, result)
+        _compact_prepared_invocation(invocation, result, started)
         exc = RuntimeError("prepared input tree changed during lifecycle")
         setattr(exc, "result_path", result_path)
         raise exc
-    _write_json_atomic(result_path, result)
+    _compact_prepared_invocation(invocation, result, started)
     return result
 
 

@@ -210,6 +210,9 @@ class NativeCycleContractTests(unittest.TestCase):
             self.assertEqual(result["preparedInvocation"]["generatedSpec"]["status"], "absent")
             self.assertIn("totalDurationSeconds", result)
             self.assertEqual(result["resultPath"], result_path.relative_to(repo).as_posix())
+            invocation_root = repo / result["preparedInvocation"]["invocationRoot"]
+            self.assertFalse((invocation_root / "frozen-input").exists())
+            self.assertEqual(result["storageCompaction"]["status"], "completed")
 
     def test_run_prepared_persists_result_when_generated_plan_preflight_fails(self) -> None:
         native_cycle = load_module("native_cycle_generated_plan_preflight")
@@ -235,6 +238,88 @@ class NativeCycleContractTests(unittest.TestCase):
             self.assertEqual(result["failedStage"], "generated-plan-preflight")
             self.assertEqual(result["resultPath"], result_path.relative_to(repo).as_posix())
             self.assertEqual(result["preparedInvocation"]["sourceBefore"], result["preparedInvocation"]["sourceAfter"])
+            invocation_root = repo / result["preparedInvocation"]["invocationRoot"]
+            self.assertFalse((invocation_root / "frozen-input").exists())
+            self.assertEqual(result["storageCompaction"]["status"], "completed")
+
+    def test_run_prepared_failure_compacts_only_current_invocation_and_preserves_diagnostic(self) -> None:
+        native_cycle = load_module("native_cycle_failure_compaction")
+        with tempfile.TemporaryDirectory() as tmp:
+            repo = Path(tmp)
+            source = repo / ".local" / "prepared" / "case-a"
+            source.mkdir(parents=True)
+            (source / "Configuration.xml").write_text("<Configuration/>\n", encoding="utf-8")
+            source_before = native_cycle.tree_identity(source)
+
+            def fake_plan(spec_path: Path, _repo: Path, **_kwargs: object) -> SimpleNamespace:
+                invocation_root = spec_path.parent
+                receipt = invocation_root / "run" / "evidence" / "receipt.txt"
+                return SimpleNamespace(receipt=receipt, runtime_argv=["ENTERPRISE", "/C", str(receipt)])
+
+            def fail_cycle(plan: SimpleNamespace, _spec_path: Path) -> None:
+                run_root = plan.receipt.parents[1]
+                for name in ("work-copy", "ib", "home", "tmp", "logs", "evidence"):
+                    directory = run_root / name
+                    directory.mkdir(parents=True, exist_ok=True)
+                    (directory / "diagnostic.txt").write_bytes(b"diagnostic\n" * 128)
+                result = {
+                    "schemaVersion": 1,
+                    "status": "runtime_timeout",
+                    "failedStage": "runtime",
+                    "errorType": "TimeoutError",
+                    "error": "simulated timeout",
+                }
+                native_cycle._write_json_atomic(run_root / "result.json", result)
+                raise TimeoutError("simulated timeout")
+
+            with mock.patch.object(native_cycle, "load_plan", side_effect=fake_plan), mock.patch.object(
+                native_cycle, "run_cycle", side_effect=fail_cycle
+            ):
+                with self.assertRaises(TimeoutError) as raised:
+                    native_cycle.run_prepared(repo, ".local/prepared/case-a", "complete###true", 5)
+
+            persisted = json.loads(Path(raised.exception.result_path).read_text(encoding="utf-8"))
+            invocation_root = repo / persisted["preparedInvocation"]["invocationRoot"]
+            self.assertEqual(persisted["status"], "runtime_timeout")
+            self.assertEqual(persisted["storageCompaction"]["status"], "completed")
+            self.assertEqual(native_cycle.tree_identity(source), source_before)
+            self.assertFalse((invocation_root / "frozen-input").exists())
+            for disposable in ("work-copy", "ib", "home", "tmp"):
+                self.assertFalse((invocation_root / "run" / disposable).exists())
+            self.assertTrue((invocation_root / "run" / "logs" / "diagnostic.txt").is_file())
+            self.assertTrue((invocation_root / "run" / "evidence" / "diagnostic.txt").is_file())
+
+    def test_run_prepared_cleanup_failure_cannot_remain_success(self) -> None:
+        native_cycle = load_module("native_cycle_cleanup_failure")
+        with tempfile.TemporaryDirectory() as tmp:
+            repo = Path(tmp)
+            source = repo / ".local" / "prepared" / "case-a"
+            source.mkdir(parents=True)
+            (source / "Configuration.xml").write_text("<Configuration/>\n", encoding="utf-8")
+
+            def fake_plan(spec_path: Path, _repo: Path, **_kwargs: object) -> SimpleNamespace:
+                receipt = spec_path.parent / "run" / "evidence" / "receipt.txt"
+                return SimpleNamespace(receipt=receipt, runtime_argv=["ENTERPRISE", "/C", str(receipt)])
+
+            def successful_cycle(plan: SimpleNamespace, _spec_path: Path) -> dict[str, object]:
+                run_root = plan.receipt.parents[1]
+                for name in ("work-copy", "ib", "home", "tmp", "logs", "evidence"):
+                    (run_root / name).mkdir(parents=True, exist_ok=True)
+                return {"schemaVersion": 1, "status": "runtime_contract_completed", "durationSeconds": 1.0}
+
+            with mock.patch.object(native_cycle, "load_plan", side_effect=fake_plan), mock.patch.object(
+                native_cycle, "run_cycle", side_effect=successful_cycle
+            ), mock.patch.object(
+                native_cycle, "_remove_generated_tree", side_effect=OSError("simulated cleanup failure")
+            ):
+                with self.assertRaises(OSError) as raised:
+                    native_cycle.run_prepared(repo, ".local/prepared/case-a", "complete###true", 5)
+
+            persisted = json.loads(Path(raised.exception.result_path).read_text(encoding="utf-8"))
+            self.assertEqual(persisted["status"], "artifact_cleanup_failed")
+            self.assertEqual(persisted["failedStage"], "artifact-cleanup")
+            self.assertEqual(persisted["storageCompaction"]["status"], "failed")
+            self.assertIn("simulated cleanup failure", persisted["storageCompaction"]["error"])
 
     def test_run_prepared_prioritizes_input_change_during_generated_plan_failure(self) -> None:
         native_cycle = load_module("native_cycle_plan_failure_source_change")
@@ -294,6 +379,9 @@ class NativeCycleContractTests(unittest.TestCase):
                 persisted["preparedInvocation"]["sourceAfter"]["errorType"],
                 "ValueError",
             )
+            invocation_root = repo / persisted["preparedInvocation"]["invocationRoot"]
+            self.assertFalse((invocation_root / "frozen-input").exists())
+            self.assertEqual(persisted["storageCompaction"]["status"], "completed")
 
     def test_build_plan_uses_one_frozen_spec_without_path_substitution(self) -> None:
         native_cycle = load_module()
@@ -1215,6 +1303,24 @@ class NativeCycleContractTests(unittest.TestCase):
                 binding = persisted["preparedInvocation"]["generatedBinding"]
                 self.assertEqual(binding["kind"], "1c-enterprise-launch-parameter")
                 self.assertEqual(len(binding["runtimeArgvSha256"]), 64)
+                invocation_root = repo / persisted["preparedInvocation"]["invocationRoot"]
+                self.assertFalse((invocation_root / "frozen-input").exists())
+                for disposable in ("work-copy", "ib", "home", "tmp"):
+                    self.assertFalse((invocation_root / "run" / disposable).exists())
+                for retained in (
+                    invocation_root / "spec.json",
+                    invocation_root / "run" / "result.json",
+                    invocation_root / "run" / "evidence" / "receipt.txt",
+                    invocation_root / "run" / "logs" / "create.log",
+                    invocation_root / "run" / "logs" / "load.log",
+                ):
+                    self.assertTrue(retained.is_file(), retained)
+                storage = persisted["storageCompaction"]
+                self.assertEqual(storage["status"], "completed")
+                self.assertEqual(storage["policy"], "compact-current-invocation-v1")
+                self.assertGreaterEqual(storage["peakLogicalBytes"], storage["retainedLogicalBytes"])
+                self.assertGreater(storage["removedLogicalBytes"], 0)
+                self.assertEqual(storage["manualCleanupActions"], 0)
 
     def test_run_cycle_timeout_preserves_completed_stage_diagnostics(self) -> None:
         native_cycle = load_module("native_cycle_failure_result")

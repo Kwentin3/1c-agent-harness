@@ -1,6 +1,6 @@
 # Issue #20 — low-cost prepared-tree native loop
 
-Status: implementation candidate `41ced17f3f01c0661bb50dfa69bcd36ca3bfb109` / tree `12e34ae765628954cc7f1895ceab1e3d76cd26d1` passed independent pre-native review. Fresh success/repeat evidence from those exact runner bytes is captured in `experiments/issue20-low-cost-native-cycle-20260828/`; exact-tree review and a separate open/unmerged PR are mandatory release gates.
+Status: PR #22 exact candidate `a3527412118f2c5dc608b0c549a5f4ff0c308d8b` / tree `1305ee066fc791eb0d35351c8df9be8c067422a7` passed independent review and CI for the one-command product core. Owner acceptance then held issue #20 on one reproduced operating-cost counterexample: each completed invocation retained about 224.8 MB, including two 61.8 MB configuration copies, with no bounded compaction policy. The current follow-up is limited to compacting only the current invocation while preserving result/evidence diagnostics; it requires fresh lifecycle evidence and review before merge.
 
 ## User boundary
 
@@ -41,6 +41,9 @@ For each invocation the command must:
 7. pass the generated receipt path through exact runtime argv as `/C <path>`;
 8. recheck the original prepared source after every success or failure;
 9. persist and print the final result location.
+10. after terminal source recheck, compact only the current invocation by removing its generated `frozen-input`, `run/work-copy`, `run/ib`, `run/home` and `run/tmp` trees;
+11. retain generated spec, final result, receipt and native logs/results, and report observed peak/retained logical bytes plus cleanup duration;
+12. fail closed if current-invocation compaction fails. Prepared inputs, snapshots, platform trees and sibling/older invocation roots are never cleanup targets.
 
 The result must distinguish:
 
@@ -70,6 +73,8 @@ Target from the user command boundary:
 - native attempts: measured, not inferred;
 - wall time: measured from command start, including freeze/fingerprint/binding;
 - new common product code: measured on the final candidate.
+- observed peak and retained logical bytes per invocation: measured from the invocation root;
+- manual artifact cleanup after success/failure: `0`.
 
 `LOW-COST NATIVE LOOP` is permitted only if all target counts are met by success and clean repeat using the same caller command.
 
@@ -84,7 +89,32 @@ Measured candidate result:
 - unique invocation roots/specs/bindings: yes;
 - post-repeat active native processes: `[]`.
 
-Candidate verdict: **LOW-COST PREPARED-TREE LIFECYCLE PASS; TASK-SPECIFIC PREPARATION AND SEMANTIC ORACLE REMAIN OUTSIDE THE CAPABILITY.** This remains a candidate claim until exact-tree review and owner publication are complete.
+The earlier candidate verdict is superseded by owner acceptance `PRODUCT CORE PASS / ISSUE #20 HOLD` until bounded operating storage cost is demonstrated. The final low-cost verdict may be restored only after fresh success/repeat show compact retained state with no manual cleanup and a new independent KISS/storage review passes.
+
+## Bounded current-invocation storage contract
+
+Compaction is part of `run-prepared`, not a separate cleaner or retention daemon. It has no path, age, count or glob input. Its target set is constructed from the invocation object created by the current process and is exactly:
+
+```text
+frozen-input/
+run/work-copy/
+run/ib/
+run/home/
+run/tmp/
+```
+
+The retained compact record is:
+
+```text
+spec.json
+run/result.json
+run/evidence/
+run/logs/
+```
+
+The final result reports policy, status, exact removed/retained path classes, observed `peakLogicalBytes`, `removedLogicalBytes`, stable `retainedLogicalBytes`, compaction duration and `manualCleanupActions=0`. Cleanup runs after the prepared source terminal recheck on success and failure paths. A cleanup error cannot remain `runtime_contract_completed`; it is persisted as `artifact_cleanup_failed`. Existing lifecycle failures keep their primary failure status and add explicit failed-compaction diagnostics.
+
+This contract deliberately does not delete another invocation, an older issue root, prepared input, source snapshot, manifest, platform or external path. Cross-run retention and general filesystem cleanup remain outside the product surface because current-invocation compaction removes the reproduced unbounded-growth cause without adding a cleaner abstraction.
 
 ## Compared approaches
 
@@ -108,6 +138,10 @@ Pure/fake-process tests must prove:
 - generated roots/specs/bindings are unique on repeat;
 - the same caller argv completes two fake native lifecycles with no manual edits;
 - failure prints and persists an unambiguous result location;
+- success and failure automatically remove only the current invocation's reproducible heavy trees while retaining compact diagnostics;
+- cleanup failure is explicit and cannot leave a nominal success;
+- sibling invocation roots and prepared/snapshot inputs are never cleanup targets;
+- observed peak/removed/retained bytes are persisted and repeat requires zero manual artifact cleanup;
 - the generated runtime argv contains exactly one `/C` followed by the generated receipt path;
 - no second lifecycle implementation or semantic receipt parser is introduced.
 

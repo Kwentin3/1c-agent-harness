@@ -24,7 +24,7 @@ python3 scripts/native_cycle.py run-prepared \
   --timeout-seconds 180
 ```
 
-`run-prepared` passes the generated receipt path to `ENTERPRISE` through `/C`. The same exact caller argv can be repeated: every invocation creates a fresh root below `.local/runs/native-cycle/` and prints a repository-relative `resultPath`. The persisted result binds the prepared source before/after, generated frozen input, generated spec, generated `/C` runtime argv, executor copy and post-`chmod` Designer load tree. It does not parse task-specific receipt semantics.
+`run-prepared` passes the generated receipt path to `ENTERPRISE` through `/C`. The same exact caller argv can be repeated: every invocation creates a fresh root below `.local/runs/native-cycle/` and prints a repository-relative `resultPath`. The persisted result binds the prepared source before/after, generated frozen input identity, generated spec, generated `/C` runtime argv, executor copy and post-`chmod` Designer load tree. After the terminal source recheck it removes the current invocation's reproducible heavy trees and retains the compact result/evidence record. It does not parse task-specific receipt semantics.
 
 ## Frozen spec v1
 
@@ -69,13 +69,15 @@ A nominal result state is `runtime_contract_completed`. This means only that the
 
 Closed failure states include `precheck_failed`, `copy_failed`, `create_failed`, `load_failed`, `runtime_timeout`, `runtime_exited_before_completion`, `input_changed` and `internal_error`. The CLI returns non-zero on every failure and preserves completed-stage diagnostics when a run root exists. Runtime success and failure both publish a machine-readable `runtime` object after cleanup: process return, completion/failure kind, receipt state and exact presence/size/SHA-256 state for `run.log` and `run.result`. These are mechanical platform diagnostics, not a semantic oracle.
 
-## Repeat and cleanup
+## Repeat and bounded current-invocation cleanup
 
 For a repeat through the supported path, invoke the exact same `run-prepared` command again. The command generates a new frozen input, fingerprint, spec, run root, receipt binding and result location without caller edits. The task-specific preparation that produced the supplied tree remains outside the capability.
 
 For the lower-level `run --spec` path, the caller still owns freezing/fingerprinting and a fresh spec. Do not reuse or pre-create a native run root.
 
-The runner does not delete artifacts. Each generated root is new and disposable, but deletion remains an explicit owner decision limited to the exact root. It must not target the prepared source, immutable snapshot, manifest, platform, live infobase or another issue's run.
+After source revalidation, `run-prepared` automatically removes only five paths constructed from its current generated invocation: `frozen-input`, `run/work-copy`, `run/ib`, `run/home` and `run/tmp`. It retains `spec.json`, `run/result.json`, `run/evidence/` and `run/logs/`, including failure diagnostics. The result reports observed peak, removed and retained logical bytes, cleanup duration and zero manual cleanup actions. Cleanup failure is fail-closed and persisted.
+
+There is no cleanup command, glob, retention count or user-supplied deletion path. Prepared input, immutable snapshot, manifest, platform, live infobase, sibling invocation roots and older issue roots are never implicit targets. The lower-level `run --spec` path preserves its existing artifact behavior; bounded compaction belongs only to the generated `run-prepared` ownership boundary.
 
 ## Verification
 
