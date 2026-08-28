@@ -1,0 +1,18 @@
+{
+  "schemaVersion": 1,
+  "artifacts": {
+    "README.md": "c41ba25b20fe8146813db968eeb8cbd0ecc46739d91c3dc0362c18be6d78e7ea",
+    "behavior-summary.json": "493c9ef94a5f419cb5689635fee2939ea410ca2b7ee4784b7258e90dce90bac0",
+    "clean-repeat-receipt.txt": "f697477fff094b00a6f1956fb501c054ff6c1eb24d6b27066cd3ee5948b5627b",
+    "cost-ledger.json": "9c830e8b10dbd950a0d4ba74391dfce1c0e7c495a395b152b4c9753d199e61cf",
+    "green-receipt.txt": "f697477fff094b00a6f1956fb501c054ff6c1eb24d6b27066cd3ee5948b5627b",
+    "instrumentation.diff.gz": "67024c3b5c0975fb8becd9f7c163666f6977237e2803c33f125bc42a0998c459",
+    "metadata-only-red-receipt.txt": "4061670b7d00711516e85d83c6212e34397979037dd3ddcdadb184c10ce4577c",
+    "native-runs.json": "486a25110478d8403e5a6f30ff722348206dc50c38f4b303135850d7227fd5d2",
+    "oracle.py": "e2227f60880e4937bdb04bc218a75737f0948ca150205bc37260b786257278ae",
+    "production-patch.diff.gz": "5394fb382e7aa21115f1d92fe2050b34f4524dd1a7bf5cc7713acdd706625ac6",
+    "source-baseline-receipt.txt": "ff2913017c8f772cda621a7a06419a3cf1da7df6b17e8375eaa13b235976f43e",
+    "source-identity.json": "9bdc99dc7451a0b18289f00e75b56ead53be9cea03b672ae5063ffbd2e136399",
+    "validate.py": "e7e1d9e7e9aeed007b7b2ecaf3734ea1385f03395aad4a4ca89efe3a44e95a27"
+  }
+}

@@ -1,0 +1,390 @@
+{
+  "schemaVersion": 1,
+  "issue": 23,
+  "runs": [
+    {
+      "phase": "source-baseline",
+      "invocationId": "run-sbsg8yee",
+      "status": "runtime_contract_completed",
+      "durationSeconds": 162.283,
+      "totalDurationSeconds": 203.035,
+      "input": {
+        "files": 5099,
+        "directories": 4847,
+        "bytes": 61799971,
+        "sourceTreeSha256": "767311bd84ca55d9497d7dfca53b818975d08c3b5b3662bde77d999e4fbb7f4f",
+        "copiedTreeSha256": "767311bd84ca55d9497d7dfca53b818975d08c3b5b3662bde77d999e4fbb7f4f",
+        "loadTreeSha256": "296c6e9bbaad6be7dcda674285178078918957480871ae9703ab2ccc8555a3d5"
+      },
+      "create": {
+        "processReturn": 0,
+        "dumpResult": "0",
+        "resultSha256": "e45825471ed10290785b62676dc5f453d228a1e1d933c45a733e9bb239c9e083",
+        "logSha256": "712094169176f84f534bffd357b19269abd74598fed3704a9244b8c9e84f95e6",
+        "successMarker": "completed successfully"
+      },
+      "load": {
+        "processReturn": 0,
+        "dumpResult": "0",
+        "resultSha256": "e45825471ed10290785b62676dc5f453d228a1e1d933c45a733e9bb239c9e083",
+        "logSha256": "4d841be04b71dd0ee7cfebcfa7af194d74902e2ec1c213987889d7d3940c0f86",
+        "successMarker": "Configuration successfully updated"
+      },
+      "runtime": {
+        "completed": true,
+        "completeMarker": "complete###true",
+        "stableReads": 2,
+        "processReturn": -15,
+        "rawReceiptSha256": "95cbe060b1c5be7cf2edb7b070ea32bb0c6be9118f7a65d0fdc1e090e1cebe68",
+        "rawReceiptBytes": 173,
+        "publishedReceipt": "source-baseline-receipt.txt",
+        "publishedReceiptSha256": "ff2913017c8f772cda621a7a06419a3cf1da7df6b17e8375eaa13b235976f43e"
+      },
+      "preparedInvocation": {
+        "sourceBefore": {
+          "files": 5099,
+          "directories": 4847,
+          "bytes": 61799971,
+          "sha256": "767311bd84ca55d9497d7dfca53b818975d08c3b5b3662bde77d999e4fbb7f4f"
+        },
+        "sourceAfter": {
+          "files": 5099,
+          "directories": 4847,
+          "bytes": 61799971,
+          "sha256": "767311bd84ca55d9497d7dfca53b818975d08c3b5b3662bde77d999e4fbb7f4f"
+        },
+        "copiedBeforeFreeze": {
+          "files": 5099,
+          "directories": 4847,
+          "bytes": 61799971,
+          "sha256": "767311bd84ca55d9497d7dfca53b818975d08c3b5b3662bde77d999e4fbb7f4f"
+        },
+        "frozenInputIdentity": {
+          "files": 5099,
+          "directories": 4847,
+          "bytes": 61799971,
+          "sha256": "767311bd84ca55d9497d7dfca53b818975d08c3b5b3662bde77d999e4fbb7f4f"
+        },
+        "generatedBindingKind": "1c-enterprise-launch-parameter",
+        "generatedBindingStatus": "generated"
+      },
+      "storageCompaction": {
+        "policy": "compact-current-invocation-v1",
+        "status": "completed",
+        "manualCleanupActions": 0,
+        "configuredTargets": [
+          "frozen-input",
+          "run/work-copy",
+          "run/ib",
+          "run/home",
+          "run/tmp"
+        ],
+        "completedRemovedPaths": [
+          "frozen-input",
+          "run/work-copy",
+          "run/ib",
+          "run/home",
+          "run/tmp"
+        ],
+        "retainedPaths": [
+          "spec.json",
+          "run/evidence",
+          "run/logs",
+          "run/result.json"
+        ],
+        "preCompactionLogicalBytes": 224488514,
+        "removedLogicalBytes": 224463607,
+        "retainedLogicalBytesExcludingResult": 17745,
+        "durationSeconds": 10.465
+      }
+    },
+    {
+      "phase": "metadata-only-red",
+      "invocationId": "run-up7gk5qy",
+      "status": "runtime_contract_completed",
+      "durationSeconds": 168.264,
+      "totalDurationSeconds": 205.823,
+      "input": {
+        "files": 5099,
+        "directories": 4847,
+        "bytes": 61799283,
+        "sourceTreeSha256": "d57ca89d4da558e4ef0d23377513ded8b2f2d896ceed8340041c760c720a518b",
+        "copiedTreeSha256": "d57ca89d4da558e4ef0d23377513ded8b2f2d896ceed8340041c760c720a518b",
+        "loadTreeSha256": "1029d7f0447a9327db7a16edfd937f8bf4e06f6986346f335bb1d3327d5ad20f"
+      },
+      "create": {
+        "processReturn": 0,
+        "dumpResult": "0",
+        "resultSha256": "e45825471ed10290785b62676dc5f453d228a1e1d933c45a733e9bb239c9e083",
+        "logSha256": "c9aca4a5610f362592419aa9d04f073a2fb60ea801f94c0b0d5843e972a02ef5",
+        "successMarker": "completed successfully"
+      },
+      "load": {
+        "processReturn": 0,
+        "dumpResult": "0",
+        "resultSha256": "e45825471ed10290785b62676dc5f453d228a1e1d933c45a733e9bb239c9e083",
+        "logSha256": "4d841be04b71dd0ee7cfebcfa7af194d74902e2ec1c213987889d7d3940c0f86",
+        "successMarker": "Configuration successfully updated"
+      },
+      "runtime": {
+        "completed": true,
+        "completeMarker": "complete###true",
+        "stableReads": 2,
+        "processReturn": -15,
+        "rawReceiptSha256": "ffb760c4870966266e707e1d0d7f6e5ba6032486e84d0c366c0ebf4c57ee52f8",
+        "rawReceiptBytes": 11526,
+        "publishedReceipt": "metadata-only-red-receipt.txt",
+        "publishedReceiptSha256": "4061670b7d00711516e85d83c6212e34397979037dd3ddcdadb184c10ce4577c"
+      },
+      "preparedInvocation": {
+        "sourceBefore": {
+          "files": 5099,
+          "directories": 4847,
+          "bytes": 61799283,
+          "sha256": "d57ca89d4da558e4ef0d23377513ded8b2f2d896ceed8340041c760c720a518b"
+        },
+        "sourceAfter": {
+          "files": 5099,
+          "directories": 4847,
+          "bytes": 61799283,
+          "sha256": "d57ca89d4da558e4ef0d23377513ded8b2f2d896ceed8340041c760c720a518b"
+        },
+        "copiedBeforeFreeze": {
+          "files": 5099,
+          "directories": 4847,
+          "bytes": 61799283,
+          "sha256": "d57ca89d4da558e4ef0d23377513ded8b2f2d896ceed8340041c760c720a518b"
+        },
+        "frozenInputIdentity": {
+          "files": 5099,
+          "directories": 4847,
+          "bytes": 61799283,
+          "sha256": "d57ca89d4da558e4ef0d23377513ded8b2f2d896ceed8340041c760c720a518b"
+        },
+        "generatedBindingKind": "1c-enterprise-launch-parameter",
+        "generatedBindingStatus": "generated"
+      },
+      "storageCompaction": {
+        "policy": "compact-current-invocation-v1",
+        "status": "completed",
+        "manualCleanupActions": 0,
+        "configuredTargets": [
+          "frozen-input",
+          "run/work-copy",
+          "run/ib",
+          "run/home",
+          "run/tmp"
+        ],
+        "completedRemovedPaths": [
+          "frozen-input",
+          "run/work-copy",
+          "run/ib",
+          "run/home",
+          "run/tmp"
+        ],
+        "retainedPaths": [
+          "spec.json",
+          "run/evidence",
+          "run/logs",
+          "run/result.json"
+        ],
+        "preCompactionLogicalBytes": 224828097,
+        "removedLogicalBytes": 224791739,
+        "retainedLogicalBytesExcludingResult": 29193,
+        "durationSeconds": 9.267
+      }
+    },
+    {
+      "phase": "green",
+      "invocationId": "run-j6xxr6e2",
+      "status": "runtime_contract_completed",
+      "durationSeconds": 196.47,
+      "totalDurationSeconds": 237.369,
+      "input": {
+        "files": 5099,
+        "directories": 4847,
+        "bytes": 61799311,
+        "sourceTreeSha256": "978c3953f95dff49d6fa1893d87b684178d885569fb7c4e31feff713b5be1a8d",
+        "copiedTreeSha256": "978c3953f95dff49d6fa1893d87b684178d885569fb7c4e31feff713b5be1a8d",
+        "loadTreeSha256": "fa81b78c2d15ab64a5e679e3c4bbc57df3d9a4d26dc8da3adf3d1b6638ca55b0"
+      },
+      "create": {
+        "processReturn": 0,
+        "dumpResult": "0",
+        "resultSha256": "e45825471ed10290785b62676dc5f453d228a1e1d933c45a733e9bb239c9e083",
+        "logSha256": "990bf662d3c7207d8d5efb8ffd825ff8515a2c914012e6e17428823a3be7de2c",
+        "successMarker": "completed successfully"
+      },
+      "load": {
+        "processReturn": 0,
+        "dumpResult": "0",
+        "resultSha256": "e45825471ed10290785b62676dc5f453d228a1e1d933c45a733e9bb239c9e083",
+        "logSha256": "4d841be04b71dd0ee7cfebcfa7af194d74902e2ec1c213987889d7d3940c0f86",
+        "successMarker": "Configuration successfully updated"
+      },
+      "runtime": {
+        "completed": true,
+        "completeMarker": "complete###true",
+        "stableReads": 2,
+        "processReturn": -15,
+        "rawReceiptSha256": "b0035a8dce6f2296a28be8221f0579a6ab9a124aae0a59e08be1ed792535042f",
+        "rawReceiptBytes": 12140,
+        "publishedReceipt": "green-receipt.txt",
+        "publishedReceiptSha256": "f697477fff094b00a6f1956fb501c054ff6c1eb24d6b27066cd3ee5948b5627b"
+      },
+      "preparedInvocation": {
+        "sourceBefore": {
+          "files": 5099,
+          "directories": 4847,
+          "bytes": 61799311,
+          "sha256": "978c3953f95dff49d6fa1893d87b684178d885569fb7c4e31feff713b5be1a8d"
+        },
+        "sourceAfter": {
+          "files": 5099,
+          "directories": 4847,
+          "bytes": 61799311,
+          "sha256": "978c3953f95dff49d6fa1893d87b684178d885569fb7c4e31feff713b5be1a8d"
+        },
+        "copiedBeforeFreeze": {
+          "files": 5099,
+          "directories": 4847,
+          "bytes": 61799311,
+          "sha256": "978c3953f95dff49d6fa1893d87b684178d885569fb7c4e31feff713b5be1a8d"
+        },
+        "frozenInputIdentity": {
+          "files": 5099,
+          "directories": 4847,
+          "bytes": 61799311,
+          "sha256": "978c3953f95dff49d6fa1893d87b684178d885569fb7c4e31feff713b5be1a8d"
+        },
+        "generatedBindingKind": "1c-enterprise-launch-parameter",
+        "generatedBindingStatus": "generated"
+      },
+      "storageCompaction": {
+        "policy": "compact-current-invocation-v1",
+        "status": "completed",
+        "manualCleanupActions": 0,
+        "configuredTargets": [
+          "frozen-input",
+          "run/work-copy",
+          "run/ib",
+          "run/home",
+          "run/tmp"
+        ],
+        "completedRemovedPaths": [
+          "frozen-input",
+          "run/work-copy",
+          "run/ib",
+          "run/home",
+          "run/tmp"
+        ],
+        "retainedPaths": [
+          "spec.json",
+          "run/evidence",
+          "run/logs",
+          "run/result.json"
+        ],
+        "preCompactionLogicalBytes": 224843698,
+        "removedLogicalBytes": 224806734,
+        "retainedLogicalBytesExcludingResult": 29807,
+        "durationSeconds": 7.357
+      }
+    },
+    {
+      "phase": "clean-repeat",
+      "invocationId": "run-vw6i7lhd",
+      "status": "runtime_contract_completed",
+      "durationSeconds": 179.308,
+      "totalDurationSeconds": 222.361,
+      "input": {
+        "files": 5099,
+        "directories": 4847,
+        "bytes": 61799311,
+        "sourceTreeSha256": "978c3953f95dff49d6fa1893d87b684178d885569fb7c4e31feff713b5be1a8d",
+        "copiedTreeSha256": "978c3953f95dff49d6fa1893d87b684178d885569fb7c4e31feff713b5be1a8d",
+        "loadTreeSha256": "fa81b78c2d15ab64a5e679e3c4bbc57df3d9a4d26dc8da3adf3d1b6638ca55b0"
+      },
+      "create": {
+        "processReturn": 0,
+        "dumpResult": "0",
+        "resultSha256": "e45825471ed10290785b62676dc5f453d228a1e1d933c45a733e9bb239c9e083",
+        "logSha256": "02f310d4658858ca0411ac1f68b2801a332eb4f10c8bc710895d0a36511707c8",
+        "successMarker": "completed successfully"
+      },
+      "load": {
+        "processReturn": 0,
+        "dumpResult": "0",
+        "resultSha256": "e45825471ed10290785b62676dc5f453d228a1e1d933c45a733e9bb239c9e083",
+        "logSha256": "4d841be04b71dd0ee7cfebcfa7af194d74902e2ec1c213987889d7d3940c0f86",
+        "successMarker": "Configuration successfully updated"
+      },
+      "runtime": {
+        "completed": true,
+        "completeMarker": "complete###true",
+        "stableReads": 2,
+        "processReturn": -15,
+        "rawReceiptSha256": "ec64911b5b3385de646c7d6c38d6396c911a6d949b5e8403cd017d100bd05f8d",
+        "rawReceiptBytes": 12140,
+        "publishedReceipt": "clean-repeat-receipt.txt",
+        "publishedReceiptSha256": "f697477fff094b00a6f1956fb501c054ff6c1eb24d6b27066cd3ee5948b5627b"
+      },
+      "preparedInvocation": {
+        "sourceBefore": {
+          "files": 5099,
+          "directories": 4847,
+          "bytes": 61799311,
+          "sha256": "978c3953f95dff49d6fa1893d87b684178d885569fb7c4e31feff713b5be1a8d"
+        },
+        "sourceAfter": {
+          "files": 5099,
+          "directories": 4847,
+          "bytes": 61799311,
+          "sha256": "978c3953f95dff49d6fa1893d87b684178d885569fb7c4e31feff713b5be1a8d"
+        },
+        "copiedBeforeFreeze": {
+          "files": 5099,
+          "directories": 4847,
+          "bytes": 61799311,
+          "sha256": "978c3953f95dff49d6fa1893d87b684178d885569fb7c4e31feff713b5be1a8d"
+        },
+        "frozenInputIdentity": {
+          "files": 5099,
+          "directories": 4847,
+          "bytes": 61799311,
+          "sha256": "978c3953f95dff49d6fa1893d87b684178d885569fb7c4e31feff713b5be1a8d"
+        },
+        "generatedBindingKind": "1c-enterprise-launch-parameter",
+        "generatedBindingStatus": "generated"
+      },
+      "storageCompaction": {
+        "policy": "compact-current-invocation-v1",
+        "status": "completed",
+        "manualCleanupActions": 0,
+        "configuredTargets": [
+          "frozen-input",
+          "run/work-copy",
+          "run/ib",
+          "run/home",
+          "run/tmp"
+        ],
+        "completedRemovedPaths": [
+          "frozen-input",
+          "run/work-copy",
+          "run/ib",
+          "run/home",
+          "run/tmp"
+        ],
+        "retainedPaths": [
+          "spec.json",
+          "run/evidence",
+          "run/logs",
+          "run/result.json"
+        ],
+        "preCompactionLogicalBytes": 224827316,
+        "removedLogicalBytes": 224790350,
+        "retainedLogicalBytesExcludingResult": 29807,
+        "durationSeconds": 7.027
+      }
+    }
+  ]
+}

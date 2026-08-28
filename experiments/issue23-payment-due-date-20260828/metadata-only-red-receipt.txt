@@ -1,0 +1,293 @@
+nonce###<RUN_RECEIPT>###String
+metadata.attributeExists###true###Boolean
+metadata.name###PaymentDueDate###String
+metadata.containsDate###true###Boolean
+metadata.dateOnly###true###Boolean
+run.R###8/28/2026 12:00:00 AM###Date
+P1.begin###true###Boolean
+P1.documentDate###8/18/2026 12:00:00 PM###Date
+P1.dueDateInput###8/19/2026 12:00:00 AM###Date
+P1.before.inventoryQuantity###10###Number
+P1.before.costQuantity###10###Number
+P1.before.costAmount###10###Number
+P1.before.salesRows###0###Number
+P1.before.customerAmount###0###Number
+P1.draftSucceeded###true###Boolean
+P1.draftError######String
+P1.documentRef###Sales invoice 000000001 dated 8/18/2026 12:00:00 PM###Sales invoice
+P1.draftDueDate###8/19/2026 12:00:00 AM###Date
+P1.postCallSucceeded###true###Boolean
+P1.postError######String
+P1.postDueDate###8/19/2026 12:00:00 AM###Date
+P1.postedAfter###true###Boolean
+P1.movements.salesRows###1###Number
+P1.movements.customerRows###1###Number
+P1.movements.inventoryRows###1###Number
+P1.movements.costRows###1###Number
+P1.after.inventoryQuantity###9###Number
+P1.after.costQuantity###9###Number
+P1.after.costAmount###9###Number
+P1.after.salesRows###1###Number
+P1.after.customerAmount###4###Number
+P1.end###true###Boolean
+B1.begin###true###Boolean
+B1.documentDate###8/18/2026 12:00:00 PM###Date
+B1.dueDateInput###8/18/2026 12:00:00 AM###Date
+B1.before.inventoryQuantity###10###Number
+B1.before.costQuantity###10###Number
+B1.before.costAmount###10###Number
+B1.before.salesRows###0###Number
+B1.before.customerAmount###0###Number
+B1.draftSucceeded###true###Boolean
+B1.draftError######String
+B1.documentRef###Sales invoice 000000002 dated 8/18/2026 12:00:00 PM###Sales invoice
+B1.draftDueDate###8/18/2026 12:00:00 AM###Date
+B1.postCallSucceeded###true###Boolean
+B1.postError######String
+B1.postDueDate###8/18/2026 12:00:00 AM###Date
+B1.postedAfter###true###Boolean
+B1.movements.salesRows###1###Number
+B1.movements.customerRows###1###Number
+B1.movements.inventoryRows###1###Number
+B1.movements.costRows###1###Number
+B1.after.inventoryQuantity###9###Number
+B1.after.costQuantity###9###Number
+B1.after.costAmount###9###Number
+B1.after.salesRows###1###Number
+B1.after.customerAmount###4###Number
+B1.end###true###Boolean
+P2.begin###true###Boolean
+P2.documentDate###7/19/2026 12:00:00 PM###Date
+P2.dueDateInput###7/20/2026 12:00:00 AM###Date
+P2.before.inventoryQuantity###10###Number
+P2.before.costQuantity###10###Number
+P2.before.costAmount###10###Number
+P2.before.salesRows###0###Number
+P2.before.customerAmount###0###Number
+P2.draftSucceeded###true###Boolean
+P2.draftError######String
+P2.documentRef###Sales invoice 000000003 dated 7/19/2026 12:00:00 PM###Sales invoice
+P2.draftDueDate###7/20/2026 12:00:00 AM###Date
+P2.postCallSucceeded###true###Boolean
+P2.postError######String
+P2.postDueDate###7/20/2026 12:00:00 AM###Date
+P2.postedAfter###true###Boolean
+P2.movements.salesRows###1###Number
+P2.movements.customerRows###1###Number
+P2.movements.inventoryRows###1###Number
+P2.movements.costRows###1###Number
+P2.after.inventoryQuantity###9###Number
+P2.after.costQuantity###9###Number
+P2.after.costAmount###9###Number
+P2.after.salesRows###1###Number
+P2.after.customerAmount###4###Number
+P2.end###true###Boolean
+P3.begin###true###Boolean
+P3.documentDate###8/18/2026 12:00:00 PM###Date
+P3.dueDateInput###10/2/2027 12:00:00 AM###Date
+P3.before.inventoryQuantity###10###Number
+P3.before.costQuantity###10###Number
+P3.before.costAmount###10###Number
+P3.before.salesRows###0###Number
+P3.before.customerAmount###0###Number
+P3.draftSucceeded###true###Boolean
+P3.draftError######String
+P3.documentRef###Sales invoice 000000004 dated 8/18/2026 12:00:00 PM###Sales invoice
+P3.draftDueDate###10/2/2027 12:00:00 AM###Date
+P3.postCallSucceeded###true###Boolean
+P3.postError######String
+P3.postDueDate###10/2/2027 12:00:00 AM###Date
+P3.postedAfter###true###Boolean
+P3.movements.salesRows###1###Number
+P3.movements.customerRows###1###Number
+P3.movements.inventoryRows###1###Number
+P3.movements.costRows###1###Number
+P3.after.inventoryQuantity###9###Number
+P3.after.costQuantity###9###Number
+P3.after.costAmount###9###Number
+P3.after.salesRows###1###Number
+P3.after.customerAmount###4###Number
+P3.end###true###Boolean
+P4.begin###true###Boolean
+P4.documentDate###12/31/2024 12:00:00 PM###Date
+P4.dueDateInput###1/1/2025 12:00:00 AM###Date
+P4.before.inventoryQuantity###10###Number
+P4.before.costQuantity###10###Number
+P4.before.costAmount###10###Number
+P4.before.salesRows###0###Number
+P4.before.customerAmount###0###Number
+P4.draftSucceeded###true###Boolean
+P4.draftError######String
+P4.documentRef###Sales invoice 000000001 dated 12/31/2024 12:00:00 PM###Sales invoice
+P4.draftDueDate###1/1/2025 12:00:00 AM###Date
+P4.postCallSucceeded###true###Boolean
+P4.postError######String
+P4.postDueDate###1/1/2025 12:00:00 AM###Date
+P4.postedAfter###true###Boolean
+P4.movements.salesRows###1###Number
+P4.movements.customerRows###1###Number
+P4.movements.inventoryRows###1###Number
+P4.movements.costRows###1###Number
+P4.after.inventoryQuantity###9###Number
+P4.after.costQuantity###9###Number
+P4.after.costAmount###9###Number
+P4.after.salesRows###1###Number
+P4.after.customerAmount###4###Number
+P4.end###true###Boolean
+N1.begin###true###Boolean
+N1.documentDate###8/18/2026 12:00:00 PM###Date
+N1.dueDateInput###8/17/2026 12:00:00 AM###Date
+N1.before.inventoryQuantity###10###Number
+N1.before.costQuantity###10###Number
+N1.before.costAmount###10###Number
+N1.before.salesRows###0###Number
+N1.before.customerAmount###0###Number
+N1.draftSucceeded###true###Boolean
+N1.draftError######String
+N1.documentRef###Sales invoice 000000005 dated 8/18/2026 12:00:00 PM###Sales invoice
+N1.draftDueDate###8/17/2026 12:00:00 AM###Date
+N1.postCallSucceeded###true###Boolean
+N1.postError######String
+N1.postDueDate###8/17/2026 12:00:00 AM###Date
+N1.postedAfter###true###Boolean
+N1.movements.salesRows###1###Number
+N1.movements.customerRows###1###Number
+N1.movements.inventoryRows###1###Number
+N1.movements.costRows###1###Number
+N1.after.inventoryQuantity###9###Number
+N1.after.costQuantity###9###Number
+N1.after.costAmount###9###Number
+N1.after.salesRows###1###Number
+N1.after.customerAmount###4###Number
+N1.end###true###Boolean
+N2.begin###true###Boolean
+N2.documentDate###8/8/2026 12:00:00 PM###Date
+N2.dueDateInput###8/6/2026 12:00:00 AM###Date
+N2.before.inventoryQuantity###10###Number
+N2.before.costQuantity###10###Number
+N2.before.costAmount###10###Number
+N2.before.salesRows###0###Number
+N2.before.customerAmount###0###Number
+N2.draftSucceeded###true###Boolean
+N2.draftError######String
+N2.documentRef###Sales invoice 000000006 dated 8/8/2026 12:00:00 PM###Sales invoice
+N2.draftDueDate###8/6/2026 12:00:00 AM###Date
+N2.postCallSucceeded###true###Boolean
+N2.postError######String
+N2.postDueDate###8/6/2026 12:00:00 AM###Date
+N2.postedAfter###true###Boolean
+N2.movements.salesRows###1###Number
+N2.movements.customerRows###1###Number
+N2.movements.inventoryRows###1###Number
+N2.movements.costRows###1###Number
+N2.after.inventoryQuantity###9###Number
+N2.after.costQuantity###9###Number
+N2.after.costAmount###9###Number
+N2.after.salesRows###1###Number
+N2.after.customerAmount###4###Number
+N2.end###true###Boolean
+N3.begin###true###Boolean
+N3.documentDate###8/26/2026 12:00:00 PM###Date
+N3.dueDateInput###8/25/2026 12:00:00 AM###Date
+N3.before.inventoryQuantity###10###Number
+N3.before.costQuantity###10###Number
+N3.before.costAmount###10###Number
+N3.before.salesRows###0###Number
+N3.before.customerAmount###0###Number
+N3.draftSucceeded###true###Boolean
+N3.draftError######String
+N3.documentRef###Sales invoice 000000007 dated 8/26/2026 12:00:00 PM###Sales invoice
+N3.draftDueDate###8/25/2026 12:00:00 AM###Date
+N3.postCallSucceeded###true###Boolean
+N3.postError######String
+N3.postDueDate###8/25/2026 12:00:00 AM###Date
+N3.postedAfter###true###Boolean
+N3.movements.salesRows###1###Number
+N3.movements.customerRows###1###Number
+N3.movements.inventoryRows###1###Number
+N3.movements.costRows###1###Number
+N3.after.inventoryQuantity###9###Number
+N3.after.costQuantity###9###Number
+N3.after.costAmount###9###Number
+N3.after.salesRows###1###Number
+N3.after.customerAmount###4###Number
+N3.end###true###Boolean
+N4.begin###true###Boolean
+N4.documentDate###1/1/2025 12:00:00 PM###Date
+N4.dueDateInput###12/31/2024 12:00:00 AM###Date
+N4.before.inventoryQuantity###10###Number
+N4.before.costQuantity###10###Number
+N4.before.costAmount###10###Number
+N4.before.salesRows###0###Number
+N4.before.customerAmount###0###Number
+N4.draftSucceeded###true###Boolean
+N4.draftError######String
+N4.documentRef###Sales invoice 000000001 dated 1/1/2025 12:00:00 PM###Sales invoice
+N4.draftDueDate###12/31/2024 12:00:00 AM###Date
+N4.postCallSucceeded###true###Boolean
+N4.postError######String
+N4.postDueDate###12/31/2024 12:00:00 AM###Date
+N4.postedAfter###true###Boolean
+N4.movements.salesRows###1###Number
+N4.movements.customerRows###1###Number
+N4.movements.inventoryRows###1###Number
+N4.movements.costRows###1###Number
+N4.after.inventoryQuantity###9###Number
+N4.after.costQuantity###9###Number
+N4.after.costAmount###9###Number
+N4.after.salesRows###1###Number
+N4.after.customerAmount###4###Number
+N4.end###true###Boolean
+R1.begin###true###Boolean
+R1.documentDate###8/18/2026 12:00:00 PM###Date
+R1.dueDateInput######Date
+R1.before.inventoryQuantity###10###Number
+R1.before.costQuantity###10###Number
+R1.before.costAmount###10###Number
+R1.before.salesRows###0###Number
+R1.before.customerAmount###0###Number
+R1.draftSucceeded###true###Boolean
+R1.draftError######String
+R1.documentRef###Sales invoice 000000008 dated 8/18/2026 12:00:00 PM###Sales invoice
+R1.draftDueDate######Date
+R1.postCallSucceeded###true###Boolean
+R1.postError######String
+R1.postDueDate######Date
+R1.postedAfter###true###Boolean
+R1.movements.salesRows###1###Number
+R1.movements.customerRows###1###Number
+R1.movements.inventoryRows###1###Number
+R1.movements.costRows###1###Number
+R1.after.inventoryQuantity###9###Number
+R1.after.costQuantity###9###Number
+R1.after.costAmount###9###Number
+R1.after.salesRows###1###Number
+R1.after.customerAmount###4###Number
+R1.end###true###Boolean
+R2.begin###true###Boolean
+R2.documentDate###8/18/2026 12:00:00 PM###Date
+R2.dueDateInput######Date
+R2.before.inventoryQuantity###10###Number
+R2.before.costQuantity###10###Number
+R2.before.costAmount###10###Number
+R2.before.salesRows###0###Number
+R2.before.customerAmount###0###Number
+R2.draftSucceeded###true###Boolean
+R2.draftError######String
+R2.documentRef###Sales invoice 000000009 dated 8/18/2026 12:00:00 PM###Sales invoice
+R2.draftDueDate######Date
+R2.postCallSucceeded###false###Boolean
+R2.postError###{CommonModule.JetServerCall.Module(126)}: Error calling context method (Write): Failed to post "Sales invoice 000000009 dated 8/18/2026 12:00:00 PM"!###String
+R2.postDueDate######Date
+R2.postedAfter###false###Boolean
+R2.movements.salesRows###0###Number
+R2.movements.customerRows###0###Number
+R2.movements.inventoryRows###0###Number
+R2.movements.costRows###0###Number
+R2.after.inventoryQuantity###10###Number
+R2.after.costQuantity###10###Number
+R2.after.costAmount###10###Number
+R2.after.salesRows###0###Number
+R2.after.customerAmount###0###Number
+R2.end###true###Boolean
+complete###true

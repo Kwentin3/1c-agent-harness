@@ -1,0 +1,61 @@
+{
+  "schemaVersion": 1,
+  "issue": 23,
+  "status": "candidate-packaged-final-review-pending",
+  "timestampsUtc": {
+    "freshExecutorStart": "2026-08-28T12:38:56Z",
+    "contractFrozen": "2026-08-28T13:00:45Z",
+    "amendedContractAccepted": "2026-08-28T13:20:04Z",
+    "candidatePackaged": "2026-08-28T13:55:38Z",
+    "finalReviewCompleted": null,
+    "prOpened": null
+  },
+  "elapsedToPackagedCandidateSeconds": 4602,
+  "nativeAttempts": 4,
+  "runPreparedCalls": 4,
+  "acceptedRuns": [
+    "source-baseline",
+    "metadata-only-red",
+    "green",
+    "clean-repeat"
+  ],
+  "nativeTotalDurationSeconds": 868.588,
+  "ownerInterventions": 0,
+  "manualLifecycleActionsOutsideRunPrepared": 0,
+  "manualTaskPreparation": {
+    "preparedCopies": 4,
+    "ownedPreparedCleanupEvents": 1,
+    "note": "Task-specific preparation and exact cleanup of two consumed prepared copies; no CREATEINFOBASE/DESIGNER/ENTERPRISE/spec/hash/run-root/compaction action was performed outside run-prepared."
+  },
+  "productionChange": {
+    "files": [
+      "Documents/SalesInvoice.xml",
+      "Documents/SalesInvoice/Ext/ObjectModule.bsl"
+    ],
+    "addedLines": 52,
+    "removedLines": 0,
+    "bytes": 2042,
+    "path": "production-patch.diff.gz",
+    "payloadSha256": "fe02c1b534af164294a2be3d37acccd0f36b6e392f7957c5b2a4e860e52b97f3",
+    "archiveSha256": "5394fb382e7aa21115f1d92fe2050b34f4524dd1a7bf5cc7713acdd706625ac6"
+  },
+  "commonHarnessChangedFiles": 0,
+  "skillsChangedFiles": 0,
+  "newGeneralFrameworks": 0,
+  "freshExecutor": {
+    "input": [
+      "live issue #23",
+      "repository main at ac673ff6ed2542452767983395fb635396d61282",
+      "published repository docs/skills"
+    ],
+    "unpublishedTaskSpecificSolutionReceived": false,
+    "independentlyDerived": [
+      "candidate comparison and choice",
+      "semantic matrix and amendments",
+      "task-specific prepared trees",
+      "probe and oracle",
+      "native command through documented run-prepared",
+      "portable evidence package"
+    ]
+  }
+}

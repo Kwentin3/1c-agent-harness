@@ -1,0 +1,3 @@
+nonce###<RUN_RECEIPT>###String
+metadata.attributeExists###false###Boolean
+complete###true
