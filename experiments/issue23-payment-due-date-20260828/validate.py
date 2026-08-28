@@ -207,7 +207,17 @@ def main() -> None:
         compacted_logical_bytes += compaction['removedLogicalBytes']
 
     cost = load_json('cost-ledger.json')
+    assert cost['status'] == 'portable-evidence-finalized-at-pr-open-boundary'
+    assert cost['timestampsUtc']['freshExecutorStart'] == '2026-08-28T12:38:56Z'
+    assert cost['timestampsUtc']['prOpened'] == '2026-08-28T20:30:30Z'
+    assert 'finalReviewCompleted' not in cost['timestampsUtc']
     assert cost['elapsedToPackagedCandidateSeconds'] == 5222
+    assert cost['elapsedToPrOpenedSeconds'] == 28294
+    assert cost['externalGithubLifecycle'] == {
+        'finalReview': 'external GitHub record',
+        'merge': 'external GitHub record',
+        'issueState': 'external GitHub record',
+    }
     assert cost['nativeAttempts'] == cost['runPreparedCalls'] == 4
     assert cost['ownerInterventions'] == 1
     assert cost['ownerInterventionBreakdown'] == {'semanticOr1c': 0, 'operationalStorage': 1}

@@ -1,6 +1,6 @@
 # Issue #23 — SalesInvoice payment due date
 
-Status: native baseline/RED/GREEN/clean-repeat complete; operational storage correction applied; exact corrected-candidate review and PR are pending.
+Status: portable evidence package finalized at the PR-open boundary. Final review, merge and issue state are external GitHub records.
 
 ## Result
 
@@ -52,7 +52,7 @@ Machine-readable cases are in `behavior-summary.json`; the task-specific determi
 
 ## Cost and storage incident
 
-From fresh-executor start to the first packaged candidate: `5222` seconds. Native attempts and `run-prepared` calls: `4`; semantic/1C owner interventions: `0`; manual native lifecycle actions outside the supported command: `0`; changed production files: `2`; common harness/skill changes: `0`.
+From fresh-executor start to the first packaged candidate: `5222` seconds. From fresh-executor start to PR #24 opening at `2026-08-28T20:30:30Z`: `28294` seconds. Native attempts and `run-prepared` calls: `4`; semantic/1C owner interventions: `0`; operational-storage owner interventions: `1`; manual native lifecycle actions outside the supported command: `0`; changed production files: `2`; common harness/skill changes: `0`.
 
 The end-to-end cycle was **not operationally autonomous or fully low-cost**. After publication of the first candidate, accumulated host data exhausted storage and interrupted Hermes. The exact allocation at the ENOSPC instant and the exact per-command creator history are unavailable, so this package does not assign the whole incident to issue #23. The later read-only recovery inventory found a mixture of issue-23 data and older/shared data. Issue #23 had created four task-prepared trees; two consumed source/metadata-RED trees had already been removed by one exact preparation cleanup event, while `issue23-green` and `issue23-repeat` remained. It also had three external reconstruction/review roots in `/tmp` (allocated `181727232` bytes at inventory time). A separate `storage-policy-evidence-candidate` tree was created by post-incident policy work and is not counted as issue-23 execution data.
 

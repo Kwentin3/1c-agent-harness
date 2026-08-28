@@ -1,10 +1,10 @@
 {
   "schemaVersion": 1,
   "artifacts": {
-    "README.md": "97754d96ba9bb237cdb71b7a720906dd99981ac9ffa8dfd2c6447ef2f98d4d46",
+    "README.md": "181dff4a78e9834d20535c8dcdc2990ee8abed698b44117be3f7e7b322831f0d",
     "behavior-summary.json": "493c9ef94a5f419cb5689635fee2939ea410ca2b7ee4784b7258e90dce90bac0",
     "clean-repeat-receipt.txt": "f697477fff094b00a6f1956fb501c054ff6c1eb24d6b27066cd3ee5948b5627b",
-    "cost-ledger.json": "375935c5a327bb312a90387d740ff20516e752ecb2055bffcb83a8aa04066ee0",
+    "cost-ledger.json": "9e85c12cf773719aba0451e93ea96ed042b5772f4c11706e813af5c3545e76d0",
     "green-receipt.txt": "f697477fff094b00a6f1956fb501c054ff6c1eb24d6b27066cd3ee5948b5627b",
     "instrumentation.diff.gz": "67024c3b5c0975fb8becd9f7c163666f6977237e2803c33f125bc42a0998c459",
     "metadata-only-red-receipt.txt": "4061670b7d00711516e85d83c6212e34397979037dd3ddcdadb184c10ce4577c",
@@ -13,6 +13,6 @@
     "production-patch.diff.gz": "5394fb382e7aa21115f1d92fe2050b34f4524dd1a7bf5cc7713acdd706625ac6",
     "source-baseline-receipt.txt": "ff2913017c8f772cda621a7a06419a3cf1da7df6b17e8375eaa13b235976f43e",
     "source-identity.json": "31a887fefb3b9f3e98359968a62380b0e8a6a10bcda2e3d20e37385837627ca4",
-    "validate.py": "ee04bd57a008bc6bd509a3d60b3b3fbcb3bf3616f83fd0f3ccc4ba1eb4a75268"
+    "validate.py": "c429963a157cdcb121db78b7c6b5b5f4130d688edaa823b37d9623eba753a04b"
   }
 }
