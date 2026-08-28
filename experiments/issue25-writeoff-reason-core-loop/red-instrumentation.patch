@@ -1,0 +1,44 @@
+diff --git a/CommonModules/JetServerCall/Ext/Module.bsl b/CommonModules/JetServerCall/Ext/Module.bsl
+index 17aedb7..494ece1 100644
+--- a/CommonModules/JetServerCall/Ext/Module.bsl
++++ b/CommonModules/JetServerCall/Ext/Module.bsl
+@@ -13,5 +13,24 @@ Function GetVATRateValue(VATRate) Export
+ 	Return JetCached.GetVATRateValue(VATRate);
+ 	
+ EndFunction
++
++Procedure Issue25WriteOffReasonProbe(ReceiptPath) Export
++	Writer = New TextWriter(ReceiptPath, TextEncoding.UTF8);
++	Writer.Write("scenario###issue25-red" + Chars.LF);
++	ReasonAttribute = Metadata.Documents.InventoryWriteOff.Attributes.Find("Reason");
++	Writer.Write("reasonAttributeExists###" + String(ReasonAttribute <> Undefined) + Chars.LF);
++	WarehouseObject = Catalogs.Warehouses.CreateItem(); WarehouseObject.Description = "Issue 25 RED warehouse"; WarehouseObject.Write();
++	UnitObject = Catalogs.Units.CreateItem(); UnitObject.Description = "Issue 25 RED unit"; UnitObject.Write();
++	ProductObject = Catalogs.Products.CreateItem(); ProductObject.Description = "Issue 25 RED product"; ProductObject.ProductType = Enums.ProductTypes.Inventory; ProductObject.Unit = UnitObject.Ref; ProductObject.Write();
++	Increase = Documents.InventoryIncrease.CreateDocument(); Increase.Date = CurrentDate(); Increase.Warehouse = WarehouseObject.Ref;
++	IncreaseRow = Increase.Inventory.Add(); IncreaseRow.Product = ProductObject.Ref; IncreaseRow.Quantity = 2; IncreaseRow.Price = 5; IncreaseRow.Amount = 10;
++	Increase.Write(DocumentWriteMode.Posting);
++	WriteOff = Documents.InventoryWriteOff.CreateDocument(); WriteOff.Date = CurrentDate(); WriteOff.Warehouse = WarehouseObject.Ref;
++	WriteOffRow = WriteOff.Inventory.Add(); WriteOffRow.Product = ProductObject.Ref; WriteOffRow.Quantity = 1;
++	WriteOff.Write(DocumentWriteMode.Posting);
++	Writer.Write("oldRouteBlankRuleAbsent###" + String(WriteOff.Ref.Posted) + Chars.LF);
++	Writer.Write("complete###true" + Chars.LF);
++	Writer.Close();
++EndProcedure
+ 
+ #EndRegion
+\ No newline at end of file
+diff --git a/Ext/ManagedApplicationModule.bsl b/Ext/ManagedApplicationModule.bsl
+index 03ca2b2..13409d0 100644
+--- a/Ext/ManagedApplicationModule.bsl
++++ b/Ext/ManagedApplicationModule.bsl
+@@ -55,6 +55,9 @@ EndProcedure
+ 
+ Procedure OnStart()
+ 	
++	JetServerCall.Issue25WriteOffReasonProbe(LaunchParameter);
++	Return;
++	
+ 	// StandardSubsystems
+ #If MobileClient Then
+ 	Execute("StandardSubsystemsClient.OnStart()");

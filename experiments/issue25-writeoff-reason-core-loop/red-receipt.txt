@@ -1,0 +1,4 @@
+scenario###issue25-red
+reasonAttributeExists###No
+oldRouteBlankRuleAbsent###Yes
+complete###true
