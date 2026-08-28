@@ -744,6 +744,7 @@ def _compact_prepared_invocation(
         invocation.run_root / "home",
         invocation.run_root / "tmp",
     )
+    original_status = result.get("status")
     result["storageCompaction"] = {
         "policy": "compact-current-invocation-v1",
         "status": "pending",
@@ -754,7 +755,15 @@ def _compact_prepared_invocation(
         ],
         "retainedPaths": ["spec.json", "run/evidence", "run/logs", "run/result.json"],
     }
+    if original_status == "runtime_contract_completed":
+        result.update({
+            "status": "artifact_cleanup_pending",
+            "failedStage": "artifact-cleanup",
+        })
     _write_json_atomic(result_path, result)
+    if original_status == "runtime_contract_completed":
+        result["status"] = original_status
+        result.pop("failedStage", None)
     pre_compaction_bytes = _logical_file_bytes(invocation.invocation_root)
     removed_bytes = sum(_logical_file_bytes(path) for path in disposable)
     try:
@@ -814,7 +823,11 @@ def _compact_prepared_invocation(
             })
         result["totalDurationSeconds"] = round(time.monotonic() - started, 3)
         setattr(exc, "result_path", result_path)
-        _write_json_atomic(result_path, result)
+        try:
+            _write_json_atomic(result_path, result)
+        except Exception as persistence_exc:
+            setattr(persistence_exc, "result_path", result_path)
+            raise persistence_exc from exc
         raise
 
 

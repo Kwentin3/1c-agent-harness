@@ -298,6 +298,48 @@ class NativeCycleContractTests(unittest.TestCase):
                 native_cycle._remove_generated_tree(target)
             self.assertTrue(target.is_symlink())
 
+    def test_compaction_persists_non_success_before_destructive_cleanup(self) -> None:
+        native_cycle = load_module("native_cycle_compaction_pending_state")
+        with tempfile.TemporaryDirectory() as tmp:
+            root = Path(tmp) / "run-current"
+            invocation = SimpleNamespace(
+                invocation_root=root,
+                frozen_input=root / "frozen-input",
+                run_root=root / "run",
+            )
+            for path in (
+                invocation.frozen_input,
+                invocation.run_root / "work-copy",
+                invocation.run_root / "ib",
+                invocation.run_root / "home",
+                invocation.run_root / "tmp",
+                invocation.run_root / "logs",
+                invocation.run_root / "evidence",
+            ):
+                path.mkdir(parents=True, exist_ok=True)
+                (path / "artifact.bin").write_bytes(b"x" * 64)
+            (root / "spec.json").write_text("{}\n", encoding="utf-8")
+            result = {"schemaVersion": 1, "status": "runtime_contract_completed"}
+            original_write = native_cycle._write_json_atomic
+            calls = 0
+
+            def fail_after_pending(path: Path, value: object) -> None:
+                nonlocal calls
+                calls += 1
+                if calls >= 2:
+                    raise OSError("simulated persistent finalization failure")
+                original_write(path, value)
+
+            with mock.patch.object(native_cycle, "_write_json_atomic", side_effect=fail_after_pending):
+                with self.assertRaises(OSError) as raised:
+                    native_cycle._compact_prepared_invocation(invocation, result, time.monotonic())
+
+            result_path = Path(raised.exception.result_path)
+            persisted = json.loads(result_path.read_text(encoding="utf-8"))
+            self.assertEqual(persisted["status"], "artifact_cleanup_pending")
+            self.assertEqual(persisted["failedStage"], "artifact-cleanup")
+            self.assertEqual(persisted["storageCompaction"]["status"], "pending")
+
     def test_compaction_final_result_write_failure_persists_non_success(self) -> None:
         native_cycle = load_module("native_cycle_compaction_final_write")
         with tempfile.TemporaryDirectory() as tmp:
