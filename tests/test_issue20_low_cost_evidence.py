@@ -84,6 +84,7 @@ class Issue20LowCostEvidenceTests(unittest.TestCase):
         with tempfile.TemporaryDirectory() as tmp:
             package = Path(tmp) / "package"
             shutil.copytree(PACKAGE, package)
+            validate_package(package)
             native_path = package / "native-results.json"
             native = json.loads(native_path.read_text(encoding="utf-8"))
             receipt = native["machineProducedArtifacts"]["success"]["receipt"]
