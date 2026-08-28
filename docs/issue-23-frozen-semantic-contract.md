@@ -124,3 +124,82 @@ A broken fixture/probe/load is `INVALID`, not RED. RED requires successful platf
 Current evidence tier is **static, identity-bound pre-patch contract**: exact source bytes prove available seams and feature absence, not runtime semantics. The issue ultimately requires **milestone/R&D native evidence** (baseline/RED, GREEN, clean repeat, exact candidate binding, and independent reviews) because it claims an end-to-end metadata+BSL product path. This stage makes no platform-acceptance, runtime, GUI, migration, deployment, or production-readiness claim.
 
 Freeze gate: independent review must attempt a materially plausible survivor against this exact document before any production patch. Any deficiency is recorded as an additive amendment with chronology preserved.
+
+## 11. Additive amendment 1 — relational independence, full calendar ordering, and preservation
+
+This section is appended after two independent read-only adversarial reviews of the exact frozen commit. It does not rewrite sections 1–10. Both reviews returned `HOLD` because materially plausible wrong implementations survived the original finite matrix:
+
+- a guard based on an absolute runtime-date threshold instead of `SalesInvoice.Date`;
+- a comparison of only day, or month/day without year;
+- a correct lower-bound guard combined with an unintended maximum payment-term window;
+- a metadata observation that reports only runtime value type `Date` and therefore does not prove the platform metadata qualifier is date-only.
+
+The following cases and criteria are mandatory in addition to M1/P1/B1/N1/N2/R1/R2.
+
+### P2 — old absolute date, document-relative valid
+
+- `Date = R - 40 days + 12 hours`;
+- `PaymentDueDate = R - 39 days`;
+- the draft saves and rereads successfully;
+- direct server posting succeeds and `Posted = true`;
+- the due value remains unchanged;
+- the complete normal movement/balance vector matches the compatible blank-date control.
+
+This valid due date is older in absolute time than N1 and N2. It kills an absolute current-date threshold that happens to separate the original cases.
+
+### N3 — recent absolute date, document-relative invalid
+
+- use fresh references;
+- `Date = R - 2 days + 12 hours`;
+- `PaymentDueDate = R - 3 days`;
+- the draft saves and rereads successfully;
+- direct server posting is refused;
+- persisted `Posted = false` and the due value remains unchanged;
+- recorder movement counts are zero in `Sales`, `CustomerBalance`, `InventoryInWarehouses`, and `InventoryCost`;
+- paired before/after aggregates and balances are unchanged.
+
+This invalid due date is newer in absolute time than P1 and B1. Together P2 and N3 force a relation to the document date rather than to runtime age.
+
+### P3 — far-later preservation
+
+- `Date = R - 10 days + 12 hours`;
+- `PaymentDueDate = R + 400 days`;
+- the draft saves and rereads successfully;
+- direct server posting succeeds and `Posted = true`;
+- the due value remains unchanged;
+- the complete normal movement/balance vector matches the compatible blank-date control.
+
+This kills a plausible but out-of-scope maximum payment-term or upper-bound refusal.
+
+### N4/P4 — deterministic cross-year ordering
+
+Let `Y` be a historical year derived at runtime from `R` and use fresh references for each case.
+
+- **N4:** `Date = January 1 of Y at 12:00`, `PaymentDueDate = December 31 of Y-1 at day start`; require successful draft save/reread, direct-server posting refusal, `Posted = false`, unchanged due value, zero recorder movements in all four registers, and unchanged paired aggregates/balances.
+- **P4:** `Date = December 31 of Y-1 at 12:00`, `PaymentDueDate = January 1 of Y at day start`; require successful direct-server posting, `Posted = true`, unchanged due value, and the same complete normal movement/balance vector as a compatible blank-date control.
+
+N4 kills day-only and month/day-without-year under-validation. P4 kills the inverse shortcut that rejects every cross-year pair.
+
+### Strengthened metadata observation
+
+M1 must record from the platform metadata object, not merely infer from a runtime value:
+
+- the attribute name;
+- that its type description contains `Date`;
+- that `Attribute.Type.DateQualifiers.DateFractions = DateFractions.Date`.
+
+The write/reread observation remains required. `TypeOf(value) = Date` alone is insufficient because it does not distinguish date-only from date-time-capable metadata.
+
+### Separate semantic source criterion
+
+For `PaymentDueDate`, the production delta may introduce only the document-relative lower-bound refusal:
+
+```text
+nonblank due calendar day < document calendar day
+```
+
+It must contain no `CurrentDate`/runtime-date dependency, fixed age threshold, upper bound, payment-term window, component-only day/month/year shortcut, or any other additional `PaymentDueDate`-dependent refusal. Equivalent BSL spelling remains allowed. The final source review must verify this semantic criterion in addition to runtime observations.
+
+### Amended observation matrix
+
+The task-specific oracle must now cover M1, P1, B1, P2, P3, P4, N1, N2, N3, N4, R1, and R2. For every case it must record the same typed persisted-state and side-effect fields defined in section 7; it may not weaken the original clauses while adding the new cases.
