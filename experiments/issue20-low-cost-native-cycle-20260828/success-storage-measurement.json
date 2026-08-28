@@ -1,0 +1,221 @@
+{
+  "rawSha256": "26712a2afc77cff1fd942def6af59dc8c85dca904419ef8d993c88ab5995722d",
+  "sanitizedMeasurement": {
+    "schemaVersion": 1,
+    "label": "success",
+    "callerArgv": [
+      "/usr/local/bin/python3",
+      "scripts/native_cycle.py",
+      "run-prepared",
+      "--input-tree",
+      ".local/prepared/issue20-low-cost-jet",
+      "--complete-marker",
+      "complete###true",
+      "--timeout-seconds",
+      "240"
+    ],
+    "shell": false,
+    "returnCode": 0,
+    "externalWallSeconds": 193.626,
+    "invocationName": "run-f_heomkc",
+    "samplePollSeconds": 0.1,
+    "sampleCount": 196,
+    "sampledPeakLogicalBytes": 224800941,
+    "postCommandRetainedLogicalBytes": 43792,
+    "stdoutResult": {
+      "schemaVersion": 1,
+      "status": "runtime_contract_completed",
+      "durationSeconds": 157.726,
+      "specSha256": "e981201bce74c0571cbae5457ecad4a11fdd6ca60918dae966078506c4be2371",
+      "input": {
+        "files": 5099,
+        "directories": 4847,
+        "bytes": 61802510,
+        "sourceTreeSha256": "043e2f950e393c0615a72989bed78ab6e417cec87859e2bf8795effa2f429fbc",
+        "copiedTreeSha256": "043e2f950e393c0615a72989bed78ab6e417cec87859e2bf8795effa2f429fbc",
+        "loadTreeSha256": "d7628a2191d03a0dea3343ee1de19228dace3b4dc382c2fc1bd3058dcd2aaf27"
+      },
+      "commands": {
+        "create": [
+          "<REPO_ROOT>/.local/platform/libs/usr/bin/xvfb-run",
+          "-a",
+          "-s",
+          "-screen 0 1280x1024x8 -nolisten tcp",
+          "<REPO_ROOT>/.local/platform/1cv8t/x86_64/8.5.1.1150/1cv8t",
+          "CREATEINFOBASE",
+          "File=<REPO_ROOT>/.local/runs/native-cycle/run-f_heomkc/run/ib",
+          "/DisableStartupDialogs",
+          "/DisableStartupMessages",
+          "/Out",
+          "<REPO_ROOT>/.local/runs/native-cycle/run-f_heomkc/run/logs/create.log",
+          "/DumpResult",
+          "<REPO_ROOT>/.local/runs/native-cycle/run-f_heomkc/run/logs/create.result"
+        ],
+        "load": [
+          "<REPO_ROOT>/.local/platform/libs/usr/bin/xvfb-run",
+          "-a",
+          "-s",
+          "-screen 0 1280x1024x8 -nolisten tcp",
+          "<REPO_ROOT>/.local/platform/1cv8t/x86_64/8.5.1.1150/1cv8t",
+          "DESIGNER",
+          "/F",
+          "<REPO_ROOT>/.local/runs/native-cycle/run-f_heomkc/run/ib",
+          "/LoadConfigFromFiles",
+          "<REPO_ROOT>/.local/runs/native-cycle/run-f_heomkc/run/work-copy",
+          "/UpdateDBCfg",
+          "/DisableStartupDialogs",
+          "/DisableStartupMessages",
+          "/Out",
+          "<REPO_ROOT>/.local/runs/native-cycle/run-f_heomkc/run/logs/load.log",
+          "/DumpResult",
+          "<REPO_ROOT>/.local/runs/native-cycle/run-f_heomkc/run/logs/load.result"
+        ],
+        "runtime": [
+          "<REPO_ROOT>/.local/platform/libs/usr/bin/xvfb-run",
+          "-a",
+          "-s",
+          "-screen 0 1280x1024x8 -nolisten tcp",
+          "<REPO_ROOT>/.local/platform/1cv8t/x86_64/8.5.1.1150/1cv8t",
+          "ENTERPRISE",
+          "/F",
+          "<REPO_ROOT>/.local/runs/native-cycle/run-f_heomkc/run/ib",
+          "/C",
+          "<REPO_ROOT>/.local/runs/native-cycle/run-f_heomkc/run/evidence/receipt.txt",
+          "/DisableStartupDialogs",
+          "/DisableStartupMessages",
+          "/Out",
+          "<REPO_ROOT>/.local/runs/native-cycle/run-f_heomkc/run/logs/run.log",
+          "/DumpResult",
+          "<REPO_ROOT>/.local/runs/native-cycle/run-f_heomkc/run/logs/run.result"
+        ]
+      },
+      "environment": {
+        "HOME": "<REPO_ROOT>/.local/runs/native-cycle/run-f_heomkc/run/home",
+        "TMPDIR": "<REPO_ROOT>/.local/runs/native-cycle/run-f_heomkc/run/tmp",
+        "XDG_CACHE_HOME": "<REPO_ROOT>/.local/runs/native-cycle/run-f_heomkc/run/home/xdg-cache",
+        "XDG_CONFIG_HOME": "<REPO_ROOT>/.local/runs/native-cycle/run-f_heomkc/run/home/xdg-config",
+        "XDG_DATA_HOME": "<REPO_ROOT>/.local/runs/native-cycle/run-f_heomkc/run/home/xdg-data",
+        "FONTCONFIG_FILE": "<REPO_ROOT>/.local/platform/fonts.conf",
+        "LD_LIBRARY_PATH": "<REPO_ROOT>/.local/platform/1cv8t/x86_64/8.5.1.1150:<REPO_ROOT>/.local/platform/libs/usr/lib/x86_64-linux-gnu",
+        "PATH": "<REPO_ROOT>/.local/platform/libs/usr/bin:<USER_HOME>/.local/bin:<USER_HOME>/.local/bin:/usr/local/bin:/usr/bin:/bin:/usr/local/games:/usr/games"
+      },
+      "create": {
+        "processReturn": 0,
+        "dumpResult": "0",
+        "resultSha256": "e45825471ed10290785b62676dc5f453d228a1e1d933c45a733e9bb239c9e083",
+        "logSha256": "f590e66b1c633fb87c790cbc2d1a1eb40249aff5539e76620546c3ef95a09350",
+        "successMarker": "completed successfully"
+      },
+      "load": {
+        "processReturn": 0,
+        "dumpResult": "0",
+        "resultSha256": "e45825471ed10290785b62676dc5f453d228a1e1d933c45a733e9bb239c9e083",
+        "logSha256": "4d841be04b71dd0ee7cfebcfa7af194d74902e2ec1c213987889d7d3940c0f86",
+        "successMarker": "Configuration successfully updated"
+      },
+      "runtime": {
+        "completed": true,
+        "completeMarker": "complete###true",
+        "stableReads": 2,
+        "processReturn": -15,
+        "receipt": {
+          "state": "regular",
+          "bytes": 18641,
+          "sha256": "0ee86024bac073c92b7d63f3d5a0d07ebcf9ece8d879a9da3d03bca5818fa9b1",
+          "terminalMarker": true
+        },
+        "outputs": {
+          "log": {
+            "state": "regular",
+            "bytes": 184,
+            "sha256": "e8d8977dd4eafc3aed5271e9fd63591f0f3bd23cdb157a9bfe6e581bd3a9c149"
+          },
+          "result": {
+            "state": "absent"
+          }
+        },
+        "receiptSha256": "0ee86024bac073c92b7d63f3d5a0d07ebcf9ece8d879a9da3d03bca5818fa9b1",
+        "receiptBytes": 18641
+      },
+      "inputAfter": {
+        "files": 5099,
+        "directories": 4847,
+        "bytes": 61802510,
+        "sha256": "043e2f950e393c0615a72989bed78ab6e417cec87859e2bf8795effa2f429fbc"
+      },
+      "resultPath": ".local/runs/native-cycle/run-f_heomkc/run/result.json",
+      "preparedInvocation": {
+        "invocationRoot": ".local/runs/native-cycle/run-f_heomkc",
+        "sourcePath": ".local/prepared/issue20-low-cost-jet",
+        "sourceBefore": {
+          "files": 5099,
+          "directories": 4847,
+          "bytes": 61802510,
+          "sha256": "d7628a2191d03a0dea3343ee1de19228dace3b4dc382c2fc1bd3058dcd2aaf27"
+        },
+        "sourceAfter": {
+          "files": 5099,
+          "directories": 4847,
+          "bytes": 61802510,
+          "sha256": "d7628a2191d03a0dea3343ee1de19228dace3b4dc382c2fc1bd3058dcd2aaf27"
+        },
+        "copiedBeforeFreeze": {
+          "files": 5099,
+          "directories": 4847,
+          "bytes": 61802510,
+          "sha256": "d7628a2191d03a0dea3343ee1de19228dace3b4dc382c2fc1bd3058dcd2aaf27"
+        },
+        "frozenInput": {
+          "path": ".local/runs/native-cycle/run-f_heomkc/frozen-input",
+          "identity": {
+            "files": 5099,
+            "directories": 4847,
+            "bytes": 61802510,
+            "sha256": "043e2f950e393c0615a72989bed78ab6e417cec87859e2bf8795effa2f429fbc"
+          }
+        },
+        "generatedSpec": {
+          "path": ".local/runs/native-cycle/run-f_heomkc/spec.json",
+          "sha256": "e981201bce74c0571cbae5457ecad4a11fdd6ca60918dae966078506c4be2371"
+        },
+        "generatedBinding": {
+          "kind": "1c-enterprise-launch-parameter",
+          "status": "generated",
+          "receipt": ".local/runs/native-cycle/run-f_heomkc/run/evidence/receipt.txt",
+          "runtimeArgvSha256": "e6721417817630f336e986f35d059fa1536fbcad831cbecac6409bc992dde4ad"
+        }
+      },
+      "totalDurationSeconds": 193.312,
+      "storageCompaction": {
+        "policy": "compact-current-invocation-v1",
+        "status": "completed",
+        "manualCleanupActions": 0,
+        "configuredTargets": [
+          "frozen-input",
+          "run/work-copy",
+          "run/ib",
+          "run/home",
+          "run/tmp"
+        ],
+        "completedRemovedPaths": [
+          "frozen-input",
+          "run/work-copy",
+          "run/ib",
+          "run/home",
+          "run/tmp"
+        ],
+        "retainedPaths": [
+          "spec.json",
+          "run/evidence",
+          "run/logs",
+          "run/result.json"
+        ],
+        "preCompactionLogicalBytes": 224800941,
+        "removedLogicalBytes": 224757378,
+        "retainedLogicalBytesExcludingResult": 36397,
+        "durationSeconds": 6.628
+      }
+    },
+    "stderr": ""
+  }
+}

@@ -95,4 +95,4 @@ Full repository suite:
 python3 -m unittest discover -s tests -v
 ```
 
-The committed native evidence, measurements and limitations are in [`experiments/issue20-native-cycle-20260827/`](../experiments/issue20-native-cycle-20260827/README.md).
+The accepted product-core evidence is in [`experiments/issue20-native-cycle-20260827/`](../experiments/issue20-native-cycle-20260827/README.md). Fresh bounded-storage success/repeat evidence and sampled peak/retained measurements are in [`experiments/issue20-low-cost-native-cycle-20260828/`](../experiments/issue20-low-cost-native-cycle-20260828/README.md).

@@ -2,33 +2,58 @@
   "schemaVersion": 1,
   "issue": 20,
   "measurementBoundary": {
-    "included": "one run-prepared command from an already task-authored prepared tree through freeze, fingerprint, generated binding, native lifecycle, cleanup, source recheck, and result.json",
+    "included": "one run-prepared command from an already task-authored prepared tree through freeze, fingerprint, generated binding, native lifecycle, terminal source recheck, current-invocation compaction and final result publication",
     "excluded": "task reconnaissance, BSL patch/probe authoring, semantic oracle authoring, evidence publication and review"
   },
   "supportedPreparedTreeEntrypoint": true,
   "callerCommandBlocksPerRun": 1,
   "manualBindingActionsPerRun": 0,
   "manualPathSubstitutionsPerRun": 0,
+  "manualCleanupActionsPerRun": 0,
   "sameCommandUsedForRepeat": true,
   "nativeAttempts": {
     "success": 1,
     "repeat": 1
   },
   "fullWallSeconds": {
-    "success": 176.03,
-    "repeat": 169.239
+    "success": 193.312,
+    "repeat": 198.916
   },
   "executorSeconds": {
-    "success": 151.896,
-    "repeat": 145.268
+    "success": 157.726,
+    "repeat": 166.658
+  },
+  "externalWallSeconds": {
+    "success": 193.626,
+    "repeat": 199.155
+  },
+  "sampledPeakLogicalBytes": {
+    "success": 224800941,
+    "repeat": 224800941
+  },
+  "preCompactionLogicalBytes": {
+    "success": 224800941,
+    "repeat": 224800941
+  },
+  "removedLogicalBytes": {
+    "success": 224757378,
+    "repeat": 224757378
+  },
+  "postCommandRetainedLogicalBytes": {
+    "success": 43792,
+    "repeat": 43792
+  },
+  "compactionSeconds": {
+    "success": 6.628,
+    "repeat": 6.652
   },
   "newCommonCodeDiff": {
     "scripts/native_cycle.py": {
-      "added": 378,
-      "removed": 8
+      "added": 157,
+      "removed": 5
     },
     "tests/test_native_cycle.py": {
-      "added": 410,
+      "added": 271,
       "removed": 0
     }
   },

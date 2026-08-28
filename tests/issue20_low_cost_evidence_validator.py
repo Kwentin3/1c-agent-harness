@@ -8,35 +8,37 @@ from typing import Optional
 
 REPO_ROOT = Path(__file__).resolve().parents[1]
 MANIFEST = "package-manifest.json"
-CANDIDATE_COMMIT = "41ced17f3f01c0661bb50dfa69bcd36ca3bfb109"
-CANDIDATE_TREE = "12e34ae765628954cc7f1895ceab1e3d76cd26d1"
+CANDIDATE_COMMIT = "a4e1509d44147229b4a515c7cd0013efba34762b"
+CANDIDATE_TREE = "070ac2fe8e93fce22a8771989e56dad8e9531457"
 CODE_IDENTITY = {
-    "scripts/native_cycle.py": "f1dfe8a774f3093ae5e4ea479309e10b1dfaf3384c771dcdfdcf2a810c93fd91",
-    "tests/test_native_cycle.py": "72af3ef7520417f9284e24bceb1c9dbc19f529d4b743ce1e25ca5388b598f2be",
+    "scripts/native_cycle.py": "9afc9e99c6ae3bf853113605c2c4b3be8e049240c46256b196a45062e7678ad1",
+    "tests/test_native_cycle.py": "a5dc624045f111f6f1eb9b8fca3499887a671897d8aafad4bd70e751ab369f26",
 }
 SNAPSHOT_MANIFEST_SHA256 = "70972b5e11901ca31c7f7ec67dca03f78986206b024be01aeb34e0e1f3ff6691"
 BASELINE_RECEIPT_SHA256 = "bc7d3f5c31de4bd291b6939d1a24ce206b8fd65d045ca2fb6797e53ff42fa77a"
 PROCESS_CHECK_SHA256 = "37517e5f3dc66819f61f5a7bb8ace1921282415f10551d2defa5c3eb0985b570"
 RAW_SHA256 = {
     "success": {
-        "result": "e14e63a8eda7a5a90b1a88b5db8c345f923e6dd958a8b7c8698af4d96bb9a279",
-        "receipt": "f0ce4f134f857a9b07fbdc266c75108f478b1c332c5dfc937ddc94168604e5ac",
-        "spec": "6c91251fb33d61c53cabfb7ead16bdb9707da3be970bb08ea79365ac24bcb755",
-        "createLog": "7690d1096d3951cfb553a61fd0c83fd008e7c0d59dc039d0f4e3f421a0e9f347",
+        "result": "eced70bff9a249f4ca86c3a187b7deb9a88fd3fa6a50d010563bffc29d91bb7b",
+        "receipt": "0ee86024bac073c92b7d63f3d5a0d07ebcf9ece8d879a9da3d03bca5818fa9b1",
+        "spec": "e981201bce74c0571cbae5457ecad4a11fdd6ca60918dae966078506c4be2371",
+        "createLog": "f590e66b1c633fb87c790cbc2d1a1eb40249aff5539e76620546c3ef95a09350",
         "createResult": "e45825471ed10290785b62676dc5f453d228a1e1d933c45a733e9bb239c9e083",
         "loadLog": "4d841be04b71dd0ee7cfebcfa7af194d74902e2ec1c213987889d7d3940c0f86",
         "loadResult": "e45825471ed10290785b62676dc5f453d228a1e1d933c45a733e9bb239c9e083",
         "runLog": "e8d8977dd4eafc3aed5271e9fd63591f0f3bd23cdb157a9bfe6e581bd3a9c149",
+        "storageMeasurement": "26712a2afc77cff1fd942def6af59dc8c85dca904419ef8d993c88ab5995722d",
     },
     "repeat": {
-        "result": "4ef45ad614789c2686f3b9d0bd1e8c990222b18d5c48a6a6143cb0b2785e63b4",
-        "receipt": "525e1af3f27ac54b1caa6ac8c303fa1249116b39859858f9b2ca9420ab334394",
-        "spec": "bcada580a1fd6e925610e686777cffcbd03287c7838d4e4c9caa1b69a8b9543c",
-        "createLog": "96e2e9a90744582bde9ff6b3287dceffd1e77a81a5b73a79d118206bf6b16b41",
+        "result": "a2e82a6636b643184d23521fd45739449f00dcf00697678ad8312fa44b207a06",
+        "receipt": "f32dfbd3c686da074152aeb6b161976f3433a5e4e8c1fe1a4f03650ba3888b3a",
+        "spec": "1e3b331395df311db43dd6795447fd08767dfc0f006a8a1b490e0743c8d6f61b",
+        "createLog": "30f76cf5260527cc3dd69e9e317f1d9f3ca09fc875a4b2c7b7120182a04780a2",
         "createResult": "e45825471ed10290785b62676dc5f453d228a1e1d933c45a733e9bb239c9e083",
         "loadLog": "4d841be04b71dd0ee7cfebcfa7af194d74902e2ec1c213987889d7d3940c0f86",
         "loadResult": "e45825471ed10290785b62676dc5f453d228a1e1d933c45a733e9bb239c9e083",
         "runLog": "e8d8977dd4eafc3aed5271e9fd63591f0f3bd23cdb157a9bfe6e581bd3a9c149",
+        "storageMeasurement": "bcf274c088581e0034d349b7683955927f289554b7630901c661587561b8cfd3",
     },
 }
 RAW_SUFFIX = {
@@ -48,6 +50,7 @@ RAW_SUFFIX = {
     "loadLog": "loadLog.raw.gz",
     "loadResult": "loadResult.raw.gz",
     "runLog": "runLog.raw.gz",
+    "storageMeasurement": "storage-measurement.raw.json.gz",
 }
 REQUIRED_COMMON = {
     ".gitattributes", "README.md", "candidate-code-identity.json", "cost-ledger.json",
@@ -59,6 +62,7 @@ REQUIRED_PER_RUN = {
     "createResult.txt", "loadLog.raw.gz", "loadLog.txt", "loadResult.raw.gz",
     "loadResult.txt", "receipt.raw.gz", "receipt.txt", "result.json",
     "result.raw.json.gz", "runLog.raw.gz", "runLog.txt", "spec.json", "spec.raw.json.gz",
+    "storage-measurement.json", "storage-measurement.raw.json.gz",
 }
 
 
@@ -195,6 +199,21 @@ def validate_package(package: Path) -> None:
             json.loads(raw_payloads["spec"]), native_root=native_root
         )
 
+        measurement_envelope = json.loads(
+            (package / f"{label}-storage-measurement.json").read_text(encoding="utf-8")
+        )
+        assert measurement_envelope["rawSha256"] == RAW_SHA256[label]["storageMeasurement"]
+        measurement = json.loads(raw_payloads["storageMeasurement"])
+        assert measurement_envelope["sanitizedMeasurement"] == sanitize(
+            measurement, native_root=native_root
+        )
+        assert measurement["returnCode"] == 0
+        assert measurement["stdoutResult"] == result
+        assert measurement["postCommandRetainedLogicalBytes"] > 0
+        assert measurement["sampledPeakLogicalBytes"] >= result["storageCompaction"][
+            "preCompactionLogicalBytes"
+        ]
+
         receipt = _rows(raw_payloads["receipt"])
         assert (package / f"{label}-receipt.txt").read_bytes().decode("utf-8") == (
             sanitize(raw_payloads["receipt"].decode("utf-8-sig"), native_root=native_root)
@@ -218,6 +237,8 @@ def validate_package(package: Path) -> None:
         assert acceptance["sourceStable"] is True
         assert acceptance["generatedBindingStatus"] == "generated"
         assert acceptance["runtimeCCount"] == 1
+        assert acceptance["storageCompactionStatus"] == "completed"
+        assert acceptance["manualCleanupActions"] == 0
 
         assert result["status"] == "runtime_contract_completed"
         assert result["preparedInvocation"]["sourceBefore"] == result["preparedInvocation"]["sourceAfter"]
@@ -232,6 +253,17 @@ def validate_package(package: Path) -> None:
         assert result["input"]["sourceTreeSha256"] == result["inputAfter"]["sha256"]
         assert result["input"]["loadTreeSha256"] == result["preparedInvocation"]["sourceBefore"]["sha256"]
         assert result["totalDurationSeconds"] >= result["durationSeconds"]
+        storage = result["storageCompaction"]
+        assert storage["status"] == "completed"
+        assert storage["manualCleanupActions"] == 0
+        assert storage["configuredTargets"] == storage["completedRemovedPaths"] == [
+            "frozen-input", "run/work-copy", "run/ib", "run/home", "run/tmp",
+        ]
+        assert storage["removedLogicalBytes"] > 0
+        assert storage["preCompactionLogicalBytes"] > storage["removedLogicalBytes"]
+        assert measurement["postCommandRetainedLogicalBytes"] == (
+            storage["retainedLogicalBytesExcludingResult"] + len(raw_payloads["result"])
+        )
         for key in ("createLog", "createResult", "loadLog", "loadResult", "runLog"):
             expected_text = raw_payloads[key].decode("utf-8-sig", errors="strict").replace(
                 native_root, "<REPO_ROOT>"
@@ -249,6 +281,9 @@ def validate_package(package: Path) -> None:
         "result": ("result.raw.json.gz", "result.json"),
         "receipt": ("receipt.raw.gz", "receipt.txt"),
         "spec": ("spec.raw.json.gz", "spec.json"),
+        "storageMeasurement": (
+            "storage-measurement.raw.json.gz", "storage-measurement.json"
+        ),
     }
     expected_machine_artifacts = {}
     for label, result in results.items():
@@ -292,6 +327,7 @@ def validate_package(package: Path) -> None:
     assert cost["callerCommandBlocksPerRun"] == 1
     assert cost["manualBindingActionsPerRun"] == 0
     assert cost["manualPathSubstitutionsPerRun"] == 0
+    assert cost["manualCleanupActionsPerRun"] == 0
     assert cost["sameCommandUsedForRepeat"] is True
     assert cost["nativeAttempts"] == {"success": 1, "repeat": 1}
     assert cost["fullWallSeconds"] == {
@@ -299,6 +335,33 @@ def validate_package(package: Path) -> None:
     }
     assert cost["executorSeconds"] == {
         label: results[label]["durationSeconds"] for label in results
+    }
+    measurements = {
+        label: json.loads(gzip.decompress(
+            (package / f"{label}-storage-measurement.raw.json.gz").read_bytes()
+        ))
+        for label in results
+    }
+    assert cost["externalWallSeconds"] == {
+        label: measurements[label]["externalWallSeconds"] for label in results
+    }
+    assert cost["sampledPeakLogicalBytes"] == {
+        label: measurements[label]["sampledPeakLogicalBytes"] for label in results
+    }
+    assert cost["postCommandRetainedLogicalBytes"] == {
+        label: measurements[label]["postCommandRetainedLogicalBytes"] for label in results
+    }
+    assert cost["preCompactionLogicalBytes"] == {
+        label: results[label]["storageCompaction"]["preCompactionLogicalBytes"]
+        for label in results
+    }
+    assert cost["removedLogicalBytes"] == {
+        label: results[label]["storageCompaction"]["removedLogicalBytes"]
+        for label in results
+    }
+    assert cost["compactionSeconds"] == {
+        label: results[label]["storageCompaction"]["durationSeconds"]
+        for label in results
     }
     assert cost["verdict"] == (
         "LOW-COST PREPARED-TREE LIFECYCLE PASS; "

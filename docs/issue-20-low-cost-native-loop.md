@@ -1,6 +1,6 @@
 # Issue #20 — low-cost prepared-tree native loop
 
-Status: PR #22 exact candidate `a3527412118f2c5dc608b0c549a5f4ff0c308d8b` / tree `1305ee066fc791eb0d35351c8df9be8c067422a7` passed independent review and CI for the one-command product core. Owner acceptance then held issue #20 on one reproduced operating-cost counterexample: each completed invocation retained about 224.8 MB, including two 61.8 MB configuration copies, with no bounded compaction policy. The current follow-up is limited to compacting only the current invocation while preserving result/evidence diagnostics; it requires fresh lifecycle evidence and review before merge.
+Status: bounded-storage runner candidate `a4e1509d44147229b4a515c7cd0013efba34762b` / tree `070ac2fe8e93fce22a8771989e56dad8e9531457` passed pre-native adversarial review and fresh native success/repeat. Both runs compacted the five fixed current-invocation disposable trees from a sampled 224,800,941-byte peak to 43,792 retained bytes with zero manual cleanup actions. The evidence/validator publication candidate still requires full Python 3.9/3.12 verification and independent exact-tree review before PR update or merge.
 
 ## User boundary
 
@@ -82,14 +82,19 @@ Measured candidate result:
 
 - supported caller command blocks per run: `1`;
 - manual `chmod`, fingerprint substitution, spec/run-root/receipt edits: `0`;
-- native attempts: success `1`, repeat `1`;
-- full command wall time: success `176.030 s`, repeat `169.239 s`;
-- executor wall time within those totals: success `151.896 s`, repeat `145.268 s`;
+- native attempts on the final runner bytes: success `1`, repeat `1`;
+- full command wall time: success `193.312 s`, repeat `198.916 s`;
+- executor wall time within those totals: success `157.726 s`, repeat `166.658 s`;
+- external sampled lifecycle peak: success `224,800,941` bytes, repeat `224,800,941` bytes;
+- exact post-command retained total: success `43,792` bytes, repeat `43,792` bytes;
+- exact removed logical bytes: success `224,757,378` bytes, repeat `224,757,378` bytes;
+- compaction duration: success `6.628 s`, repeat `6.652 s`;
+- manual artifact cleanup actions: `0` for both runs;
 - same caller command: yes;
 - unique invocation roots/specs/bindings: yes;
 - post-repeat active native processes: `[]`.
 
-The earlier candidate verdict is superseded by owner acceptance `PRODUCT CORE PASS / ISSUE #20 HOLD` until bounded operating storage cost is demonstrated. The final low-cost verdict may be restored only after fresh success/repeat show compact retained state with no manual cleanup and a new independent KISS/storage review passes.
+The earlier `PRODUCT CORE PASS / ISSUE #20 HOLD` storage counterexample is closed by fresh bounded success/repeat evidence. Final release readiness remains gated on full cross-version validation and independent exact-tree evidence review.
 
 ## Bounded current-invocation storage contract
 

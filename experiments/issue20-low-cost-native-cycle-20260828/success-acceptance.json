@@ -2,8 +2,8 @@
   "schemaVersion": 1,
   "label": "success",
   "status": "runtime_contract_completed",
-  "durationSeconds": 151.896,
-  "totalDurationSeconds": 176.03,
+  "durationSeconds": 157.726,
+  "totalDurationSeconds": 193.312,
   "rows": 320,
   "uniqueKeys": 319,
   "keyOrderParityWithIssue18Green": true,
@@ -16,7 +16,7 @@
       "index": 0,
       "key": "nonce",
       "baseline": "green-4d091690b7ec4fef",
-      "observed": "<REPO_ROOT>/.local/runs/native-cycle/run-lqfdgq0u/run/evidence/receipt.txt"
+      "observed": "<REPO_ROOT>/.local/runs/native-cycle/run-f_heomkc/run/evidence/receipt.txt"
     },
     {
       "index": 1,
@@ -28,12 +28,14 @@
       "index": 294,
       "key": "existing_insufficient_stock.postError",
       "baseline": "{CommonModule.JetServerCall.Module(106)}: Error calling context method (Write): Failed to post \"Sales invoice 000000004 dated 8/27/2026 10:15:08 PM\"!",
-      "observed": "{CommonModule.JetServerCall.Module(106)}: Error calling context method (Write): Failed to post \"Sales invoice 000000004 dated 8/28/2026 11:58:13 AM\"!"
+      "observed": "{CommonModule.JetServerCall.Module(106)}: Error calling context method (Write): Failed to post \"Sales invoice 000000004 dated 8/28/2026 2:52:50 PM\"!"
     }
   ],
   "unexpectedBehaviorDifferences": [],
   "sourceStable": true,
   "generatedBindingStatus": "generated",
   "generatedBindingKind": "1c-enterprise-launch-parameter",
-  "runtimeCCount": 1
+  "runtimeCCount": 1,
+  "storageCompactionStatus": "completed",
+  "manualCleanupActions": 0
 }
