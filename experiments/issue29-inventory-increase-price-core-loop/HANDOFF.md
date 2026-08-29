@@ -4,13 +4,18 @@
 
 `FUNCTIONAL FAIL — native behavior improved, but frozen GREEN evidence contract did not pass.`
 
-The two permitted native attempts were consumed by one RED and one GREEN `run-prepared` call. No low-level or manual 1C lifecycle was used. The production candidate correctly rejected zero- and negative-price posting before recorder movements, preserved draft saving, and preserved the positive multi-row case. The frozen evidence cannot establish the required full GREEN:
+The two permitted native attempts were consumed by one RED and one GREEN `run-prepared` call. No low-level or manual 1C lifecycle was used. Native observations indicate that the production candidate rejected the tested zero- and negative-price postings before recorder movements, preserved draft saving, and preserved the tested positive multi-row case. They do **not** prove the full feature contract or the universal rule for every row. The frozen evidence cannot establish the required full GREEN:
 
 1. `oracle.py` compares the complete RED dictionary to a partial `expected_red`, so the durable honest RED is rejected before GREEN grading.
 2. The frozen GREEN expectation requires `zeroPostingErrorPresent=No` and `negativePostingErrorPresent=No`, while cancellation from a posting handler produces the observed posting exception (`Yes`).
 3. The probe compares two distinct 1C `Structure` instances with `=`, which yielded `zeroBalanceUnchanged=No` and `negativeBalanceUnchanged=No` even though both rejected recorders have zero movement rows. The receipt does not emit the component balance values needed to re-grade that invariant externally.
+4. A surviving last-row-only countermodel passes the entire published matrix: the zero case has one row; the mixed negative case places its invalid row second and last; and the valid case has two positive rows. The matrix therefore does not distinguish the intended all-row validation from an implementation that checks only the last row. This violates the issue requirement for an invalid row in a non-boundary position and means the universal quantifier “every row” remains unproven.
 
 Changing the frozen probe/oracle after RED or spending a third native attempt would violate issue #29, so the result is published honestly rather than relabeled GREEN.
+
+## Evidence chronology boundary
+
+The local execution transcript recorded creation of `semantic-contract.md` and `oracle.py` before the first native RED and creation of the production candidate afterward. However, the contract, oracle, patches, receipts, and results were first committed together after both native runs. The runner results do not bind hashes of the contract or oracle, and no earlier Git commit or issue comment provides an independently durable content-bound freeze receipt. Therefore **pre-patch freeze chronology is independently unproven** in the published package. The package preserves the files and observations as produced, but it does not claim that an external reviewer can prove their pre-patch chronology from GitHub artifacts alone.
 
 ## Native evidence
 
