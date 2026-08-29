@@ -32,6 +32,26 @@
 > Knowledge handoff и следующий gate зафиксированы в
 > [`docs/write-cycle-knowledge-handoff.md`](docs/write-cycle-knowledge-handoff.md).
 
+## Перед любой native-работой
+
+Из корня репозитория сначала выполните единственный project front door:
+
+```bash
+python3 scripts/project_target.py
+```
+
+Он читает один project-owned контракт [`project-target.json`](project-target.json) и возвращает
+`ready` только после проверки SHA-256 исходного CF, SHA-256 и всех записей manifest, полного набора
+файлов snapshot, а также имени и версии конфигурации по точному `Configuration/Properties` locator.
+`blocked` означает: **не запускать 1С и не выбирать другой похожий fixture**. Для другого проекта
+заменяется сам project-owned контракт; общий verifier и `native_cycle.py` не меняются.
+
+Для этого проекта target — canonical JetTr `1.0.3.1`; immutable CF/snapshot/manifest никогда не
+являются рабочей копией. После `ready` подготовленная task-specific копия размещается отдельно под
+`.local/prepared/`, а единственный повседневный native RED/GREEN route —
+`scripts/native_cycle.py run-prepared`. Низкоуровневый `run --spec` остаётся только expert/debug
+интерфейсом и не является альтернативным стартом задачи.
+
 ## Цель MVP
 
 Кодовый агент в Linux-окружении получает снимок конфигурации 1С и может:
