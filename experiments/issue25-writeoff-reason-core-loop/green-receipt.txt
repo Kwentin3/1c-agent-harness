@@ -1,0 +1,21 @@
+scenario###issue25-green
+reasonAttributeExists###Yes
+openingBalance###10
+blankDraftSucceeded###Yes
+blankDraftError###
+blankReasonPersisted###Yes
+blankPostingSucceeded###No
+blankPostingErrorPresent###Yes
+blankPosted###No
+blankMovementCount###0
+blankBalanceUnchanged###Yes
+storedReason###Damaged during handling
+validPosted###Yes
+validMovementCount###2
+validBalanceDelta###2
+insufficientPostingSucceeded###No
+insufficientPostingErrorPresent###Yes
+insufficientPosted###No
+insufficientMovementCount###0
+insufficientBalanceUnchanged###Yes
+complete###true

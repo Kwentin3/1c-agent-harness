@@ -1,0 +1,298 @@
+{
+  "schemaVersion": 1,
+  "verdict": "FUNCTIONAL FAIL — partial feature proof on a non-canonical fixture / fresh-agent end-to-end goal not proven",
+  "budgetVerdict": "FAIL",
+  "frozenInputBaseline": {
+    "files": 5002,
+    "directories": 4744,
+    "bytes": 72790943,
+    "sha256": "404e86c0cc791b881a15b85c57384e6699d17598dca0f4af2ffad3419f354b7d"
+  },
+  "nativeAccounting": {
+    "nativeAttempts": 4,
+    "runPreparedCalls": 2,
+    "lowLevelRunCallsOutsideRequiredInterface": 2,
+    "manualLifecycleActionsOutsideRunPrepared": 2,
+    "ownerInterventions": 0,
+    "note": "One low-level RED completed and one low-level GREEN was interrupted before the two accepted run-prepared calls. They are counted and make the budget fail."
+  },
+  "accepted": {
+    "red": {
+      "status": "runtime_contract_completed",
+      "durationSeconds": 118.404,
+      "specSha256": "a3624d1f0776ecaee33c1fc8b85ae73cada80acb6f5663892a125f39a5af6b47",
+      "input": {
+        "files": 5002,
+        "directories": 4744,
+        "bytes": 72792598,
+        "sourceTreeSha256": "ad7dbeed25787be3acaea2fdcd1359c1c0ab5564b092a8600e7cc7a6269e1425",
+        "copiedTreeSha256": "ad7dbeed25787be3acaea2fdcd1359c1c0ab5564b092a8600e7cc7a6269e1425",
+        "loadTreeSha256": "78315242a735cdc8aeb61798f4d9b1459a74fe0069ea81efeeb148dfa2e0190d"
+      },
+      "create": {
+        "processReturn": 0,
+        "dumpResult": "0",
+        "resultSha256": "e45825471ed10290785b62676dc5f453d228a1e1d933c45a733e9bb239c9e083",
+        "logSha256": "89a170c182e766d106bb262f2c66175b2e9e64022790c13bb99585fb7fc4b7e7",
+        "successMarker": "completed successfully"
+      },
+      "load": {
+        "processReturn": 0,
+        "dumpResult": "0",
+        "resultSha256": "e45825471ed10290785b62676dc5f453d228a1e1d933c45a733e9bb239c9e083",
+        "logSha256": "34a719509a08832706bb75a9d5cd8c6316c7448612700ef8c445075dfcb9decd",
+        "successMarker": "Configuration successfully updated"
+      },
+      "runtime": {
+        "completed": true,
+        "completeMarker": "complete###true",
+        "stableReads": 2,
+        "processReturn": -15,
+        "receipt": {
+          "state": "regular",
+          "bytes": 103,
+          "sha256": "095a876a70aa8e0c0eb1fb8b99c1393c7b53ff4ac87c8d84e99e6764adc16558",
+          "terminalMarker": true
+        },
+        "outputs": {
+          "log": {
+            "state": "regular",
+            "bytes": 0,
+            "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+          },
+          "result": {
+            "state": "absent"
+          }
+        },
+        "receiptSha256": "095a876a70aa8e0c0eb1fb8b99c1393c7b53ff4ac87c8d84e99e6764adc16558",
+        "receiptBytes": 103
+      },
+      "inputAfter": {
+        "files": 5002,
+        "directories": 4744,
+        "bytes": 72792598,
+        "sha256": "ad7dbeed25787be3acaea2fdcd1359c1c0ab5564b092a8600e7cc7a6269e1425"
+      },
+      "resultPath": ".local/runs/native-cycle/run-ve32fkt1/run/result.json",
+      "preparedInvocation": {
+        "invocationRoot": ".local/runs/native-cycle/run-ve32fkt1",
+        "sourcePath": ".local/prepared/issue-25-writeoff-reason-red",
+        "sourceBefore": {
+          "files": 5002,
+          "directories": 4744,
+          "bytes": 72792598,
+          "sha256": "ad7dbeed25787be3acaea2fdcd1359c1c0ab5564b092a8600e7cc7a6269e1425"
+        },
+        "sourceAfter": {
+          "files": 5002,
+          "directories": 4744,
+          "bytes": 72792598,
+          "sha256": "ad7dbeed25787be3acaea2fdcd1359c1c0ab5564b092a8600e7cc7a6269e1425"
+        },
+        "copiedBeforeFreeze": {
+          "files": 5002,
+          "directories": 4744,
+          "bytes": 72792598,
+          "sha256": "ad7dbeed25787be3acaea2fdcd1359c1c0ab5564b092a8600e7cc7a6269e1425"
+        },
+        "frozenInput": {
+          "path": ".local/runs/native-cycle/run-ve32fkt1/frozen-input",
+          "identity": {
+            "files": 5002,
+            "directories": 4744,
+            "bytes": 72792598,
+            "sha256": "ad7dbeed25787be3acaea2fdcd1359c1c0ab5564b092a8600e7cc7a6269e1425"
+          }
+        },
+        "generatedSpec": {
+          "path": ".local/runs/native-cycle/run-ve32fkt1/spec.json",
+          "sha256": "a3624d1f0776ecaee33c1fc8b85ae73cada80acb6f5663892a125f39a5af6b47"
+        },
+        "generatedBinding": {
+          "kind": "1c-enterprise-launch-parameter",
+          "status": "generated",
+          "receipt": ".local/runs/native-cycle/run-ve32fkt1/run/evidence/receipt.txt",
+          "runtimeArgvSha256": "4adb1e97eff7a8f2baa74e4e2628fe79447bc81daef83da17e5beba1a0f66c16"
+        }
+      },
+      "totalDurationSeconds": 144.235,
+      "storageCompaction": {
+        "policy": "compact-current-invocation-v1",
+        "status": "completed",
+        "manualCleanupActions": 0,
+        "configuredTargets": [
+          "frozen-input",
+          "run/work-copy",
+          "run/ib",
+          "run/home",
+          "run/tmp"
+        ],
+        "completedRemovedPaths": [
+          "frozen-input",
+          "run/work-copy",
+          "run/ib",
+          "run/home",
+          "run/tmp"
+        ],
+        "retainedPaths": [
+          "spec.json",
+          "run/evidence",
+          "run/logs",
+          "run/result.json"
+        ],
+        "preCompactionLogicalBytes": 275431691,
+        "removedLogicalBytes": 275407631,
+        "retainedLogicalBytesExcludingResult": 16892,
+        "durationSeconds": 5.877
+      }
+    },
+    "green": {
+      "status": "runtime_contract_completed",
+      "durationSeconds": 124.293,
+      "specSha256": "e78b2867246341cf7e599098973508ce4c65acb242d39c6dba9937d2386285f3",
+      "input": {
+        "files": 5002,
+        "directories": 4744,
+        "bytes": 72799198,
+        "sourceTreeSha256": "119af0d50529eda80b32f90342124fe6f4b84e9a2f75753e82c9aa5102751466",
+        "copiedTreeSha256": "119af0d50529eda80b32f90342124fe6f4b84e9a2f75753e82c9aa5102751466",
+        "loadTreeSha256": "962072cb051a6c8a78295514096ce4d8998e18bb1844fe28acb42537aad5d24d"
+      },
+      "create": {
+        "processReturn": 0,
+        "dumpResult": "0",
+        "resultSha256": "e45825471ed10290785b62676dc5f453d228a1e1d933c45a733e9bb239c9e083",
+        "logSha256": "a76155b037fc755e10c6f2c1ee6374a19de7c1c2e5a6db6e20dc9b6030293a5e",
+        "successMarker": "completed successfully"
+      },
+      "load": {
+        "processReturn": 0,
+        "dumpResult": "0",
+        "resultSha256": "e45825471ed10290785b62676dc5f453d228a1e1d933c45a733e9bb239c9e083",
+        "logSha256": "34a719509a08832706bb75a9d5cd8c6316c7448612700ef8c445075dfcb9decd",
+        "successMarker": "Configuration successfully updated"
+      },
+      "runtime": {
+        "completed": true,
+        "completeMarker": "complete###true",
+        "stableReads": 2,
+        "processReturn": -15,
+        "receipt": {
+          "state": "regular",
+          "bytes": 574,
+          "sha256": "acf254ddbe09baf0fb7733a81b3ea7a61e20b4e09756de88ef512691687d425a",
+          "terminalMarker": true
+        },
+        "outputs": {
+          "log": {
+            "state": "regular",
+            "bytes": 102,
+            "sha256": "fcf0ebe1d89bbd635aae75dcc5634131d2b6d02a2b9d661a4fb1841042b56c03"
+          },
+          "result": {
+            "state": "absent"
+          }
+        },
+        "receiptSha256": "acf254ddbe09baf0fb7733a81b3ea7a61e20b4e09756de88ef512691687d425a",
+        "receiptBytes": 574
+      },
+      "inputAfter": {
+        "files": 5002,
+        "directories": 4744,
+        "bytes": 72799198,
+        "sha256": "119af0d50529eda80b32f90342124fe6f4b84e9a2f75753e82c9aa5102751466"
+      },
+      "resultPath": ".local/runs/native-cycle/run-9id07l0g/run/result.json",
+      "preparedInvocation": {
+        "invocationRoot": ".local/runs/native-cycle/run-9id07l0g",
+        "sourcePath": ".local/prepared/issue-25-writeoff-reason-green",
+        "sourceBefore": {
+          "files": 5002,
+          "directories": 4744,
+          "bytes": 72799198,
+          "sha256": "119af0d50529eda80b32f90342124fe6f4b84e9a2f75753e82c9aa5102751466"
+        },
+        "sourceAfter": {
+          "files": 5002,
+          "directories": 4744,
+          "bytes": 72799198,
+          "sha256": "119af0d50529eda80b32f90342124fe6f4b84e9a2f75753e82c9aa5102751466"
+        },
+        "copiedBeforeFreeze": {
+          "files": 5002,
+          "directories": 4744,
+          "bytes": 72799198,
+          "sha256": "119af0d50529eda80b32f90342124fe6f4b84e9a2f75753e82c9aa5102751466"
+        },
+        "frozenInput": {
+          "path": ".local/runs/native-cycle/run-9id07l0g/frozen-input",
+          "identity": {
+            "files": 5002,
+            "directories": 4744,
+            "bytes": 72799198,
+            "sha256": "119af0d50529eda80b32f90342124fe6f4b84e9a2f75753e82c9aa5102751466"
+          }
+        },
+        "generatedSpec": {
+          "path": ".local/runs/native-cycle/run-9id07l0g/spec.json",
+          "sha256": "e78b2867246341cf7e599098973508ce4c65acb242d39c6dba9937d2386285f3"
+        },
+        "generatedBinding": {
+          "kind": "1c-enterprise-launch-parameter",
+          "status": "generated",
+          "receipt": ".local/runs/native-cycle/run-9id07l0g/run/evidence/receipt.txt",
+          "runtimeArgvSha256": "2f00712c152c5385d0f9e0f552969195beee49695b9bd1e96e1ca614bffa5ebe"
+        }
+      },
+      "totalDurationSeconds": 152.5,
+      "storageCompaction": {
+        "policy": "compact-current-invocation-v1",
+        "status": "completed",
+        "manualCleanupActions": 0,
+        "configuredTargets": [
+          "frozen-input",
+          "run/work-copy",
+          "run/ib",
+          "run/home",
+          "run/tmp"
+        ],
+        "completedRemovedPaths": [
+          "frozen-input",
+          "run/work-copy",
+          "run/ib",
+          "run/home",
+          "run/tmp"
+        ],
+        "retainedPaths": [
+          "spec.json",
+          "run/evidence",
+          "run/logs",
+          "run/result.json"
+        ],
+        "preCompactionLogicalBytes": 275455145,
+        "removedLogicalBytes": 275430510,
+        "retainedLogicalBytesExcludingResult": 17465,
+        "durationSeconds": 6.299
+      }
+    }
+  },
+  "production": {
+    "files": 2,
+    "scope": [
+      "Documents/InventoryWriteOff.xml",
+      "Documents/InventoryWriteOff/Ext/ObjectModule.bsl"
+    ]
+  },
+  "nativeOnlyDeviation": {
+    "path": "Documents/InventoryWriteOff/Forms/DocumentForm/Ext/Form.xml",
+    "classification": "incidental instrumentation/prepared-tree deviation; excluded from production.patch because GUI/forms are out of scope",
+    "effectOnClaim": "does not participate in server-side object lifecycle observations"
+  },
+  "comparisonIssue23": {
+    "issue23WallSeconds": 28294,
+    "issue23NativeAttempts": 4,
+    "issue23TrackedFiles": 15,
+    "issue23AddedLines": 3115,
+    "issue23OwnerInterventions": 1
+  }
+}

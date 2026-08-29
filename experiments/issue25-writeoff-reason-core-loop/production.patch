@@ -1,0 +1,70 @@
+diff --git a/Documents/InventoryWriteOff.xml b/Documents/InventoryWriteOff.xml
+index d058480..6397d93 100644
+--- a/Documents/InventoryWriteOff.xml
++++ b/Documents/InventoryWriteOff.xml
+@@ -274,6 +274,49 @@
+ 					<DataHistory>Use</DataHistory>
+ 				</Properties>
+ 			</Attribute>
++			<Attribute uuid="21ec9ee1-6f67-410f-a16d-b9dd38a06365">
++				<Properties>
++					<Name>Reason</Name>
++					<Synonym>
++						<v8:item>
++							<v8:lang>en</v8:lang>
++							<v8:content>Write-off reason</v8:content>
++						</v8:item>
++					</Synonym>
++					<Comment/>
++					<Type>
++						<v8:Type>xs:string</v8:Type>
++						<v8:StringQualifiers>
++							<v8:Length>0</v8:Length>
++							<v8:AllowedLength>Variable</v8:AllowedLength>
++						</v8:StringQualifiers>
++					</Type>
++					<PasswordMode>false</PasswordMode>
++					<Format/>
++					<EditFormat/>
++					<ToolTip/>
++					<MarkNegatives>false</MarkNegatives>
++					<Mask/>
++					<MultiLine>true</MultiLine>
++					<ExtendedEdit>true</ExtendedEdit>
++					<MinValue xsi:nil="true"/>
++					<MaxValue xsi:nil="true"/>
++					<FillFromFillingValue>false</FillFromFillingValue>
++					<FillValue xsi:type="xs:string"/>
++					<FillChecking>DontCheck</FillChecking>
++					<ChoiceFoldersAndItems>Items</ChoiceFoldersAndItems>
++					<ChoiceParameterLinks/>
++					<ChoiceParameters/>
++					<QuickChoice>Auto</QuickChoice>
++					<CreateOnInput>Auto</CreateOnInput>
++					<ChoiceForm/>
++					<LinkByType/>
++					<ChoiceHistoryOnInput>Auto</ChoiceHistoryOnInput>
++					<Indexing>DontIndex</Indexing>
++					<FullTextSearch>Use</FullTextSearch>
++					<DataHistory>Use</DataHistory>
++				</Properties>
++			</Attribute>
+ 			<Attribute uuid="8155626b-b157-4661-b14b-a5158693dd09">
+ 				<Properties>
+ 					<Name>Comment</Name>
+diff --git a/Documents/InventoryWriteOff/Ext/ObjectModule.bsl b/Documents/InventoryWriteOff/Ext/ObjectModule.bsl
+index 5824c50..a5e5c09 100644
+--- a/Documents/InventoryWriteOff/Ext/ObjectModule.bsl
++++ b/Documents/InventoryWriteOff/Ext/ObjectModule.bsl
+@@ -10,6 +10,11 @@ EndProcedure
+ 
+ Procedure Posting(Cancel, PostingMode)
+ 	
++	If IsBlankString(Reason) Then
++		Cancel = True;
++		Return;
++	EndIf;
++	
+ 	// Initialization of additional properties for document posting.
+ 	PostingManagement.InitializeAdditionalPropertiesForPosting(Ref, AdditionalProperties);
+ 	

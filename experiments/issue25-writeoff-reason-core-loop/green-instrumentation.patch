@@ -1,0 +1,194 @@
+diff --git a/CommonModules/JetServerCall/Ext/Module.bsl b/CommonModules/JetServerCall/Ext/Module.bsl
+index 17aedb7..1e7e054 100644
+--- a/CommonModules/JetServerCall/Ext/Module.bsl
++++ b/CommonModules/JetServerCall/Ext/Module.bsl
+@@ -13,5 +13,156 @@ Function GetVATRateValue(VATRate) Export
+ 	Return JetCached.GetVATRateValue(VATRate);
+ 	
+ EndFunction
++
++Procedure Issue25WriteOffReasonProbe(ReceiptPath) Export
++	Writer = New TextWriter(ReceiptPath, TextEncoding.UTF8);
++	Writer.Write("scenario###issue25-green" + Chars.LF);
++	ReasonAttribute = Metadata.Documents.InventoryWriteOff.Attributes.Find("Reason");
++	Issue25WriteObservation(Writer, "reasonAttributeExists", ReasonAttribute <> Undefined);
++	
++	WarehouseObject = Catalogs.Warehouses.CreateItem();
++	WarehouseObject.Description = "Issue 25 warehouse";
++	WarehouseObject.Write();
++	Warehouse = WarehouseObject.Ref;
++	
++	UnitObject = Catalogs.Units.CreateItem();
++	UnitObject.Description = "Issue 25 unit";
++	UnitObject.Write();
++	
++	ProductObject = Catalogs.Products.CreateItem();
++	ProductObject.Description = "Issue 25 product";
++	ProductObject.ProductType = Enums.ProductTypes.Inventory;
++	ProductObject.Unit = UnitObject.Ref;
++	ProductObject.Write();
++	Product = ProductObject.Ref;
++	
++	Increase = Documents.InventoryIncrease.CreateDocument();
++	Increase.Date = CurrentDate();
++	Increase.Warehouse = Warehouse;
++	IncreaseRow = Increase.Inventory.Add();
++	IncreaseRow.Product = Product;
++	IncreaseRow.Quantity = 10;
++	IncreaseRow.Price = 5;
++	IncreaseRow.Amount = 50;
++	Increase.Write(DocumentWriteMode.Posting);
++	Issue25WriteObservation(Writer, "openingBalance", Issue25InventoryBalance(Warehouse, Product));
++	
++	BlankDocument = Issue25NewWriteOff(Warehouse, Product, 1, "");
++	BlankDraftSucceeded = True;
++	BlankDraftError = "";
++	Try
++		BlankDocument.Write();
++	Except
++		BlankDraftSucceeded = False;
++		BlankDraftError = ErrorDescription();
++	EndTry;
++	Issue25WriteObservation(Writer, "blankDraftSucceeded", BlankDraftSucceeded);
++	Issue25WriteObservation(Writer, "blankDraftError", BlankDraftError);
++	Issue25WriteObservation(Writer, "blankReasonPersisted", BlankDocument.Ref.GetObject().Reason = "");
++	BalanceBeforeBlankPosting = Issue25BalanceState(Warehouse, Product);
++	BlankDocument.Reason = "   ";
++	BlankPostingSucceeded = True;
++	BlankPostingError = "";
++	Try
++		BlankDocument.Write(DocumentWriteMode.Posting);
++	Except
++		BlankPostingSucceeded = False;
++		BlankPostingError = ErrorDescription();
++	EndTry;
++	Issue25WriteObservation(Writer, "blankPostingSucceeded", BlankPostingSucceeded);
++	Issue25WriteObservation(Writer, "blankPostingErrorPresent", Not IsBlankString(BlankPostingError));
++	Issue25WriteObservation(Writer, "blankPosted", BlankDocument.Ref.Posted);
++	Issue25WriteObservation(Writer, "blankMovementCount", Issue25MovementCount(BlankDocument.Ref));
++	Issue25WriteObservation(Writer, "blankBalanceUnchanged", Issue25BalanceState(Warehouse, Product) = BalanceBeforeBlankPosting);
++	
++	ExpectedReason = "Damaged during handling";
++	ValidDocument = Issue25NewWriteOff(Warehouse, Product, 2, ExpectedReason);
++	ValidDocument.Write();
++	Issue25WriteObservation(Writer, "storedReason", ValidDocument.Ref.GetObject().Reason);
++	BalanceBeforeValidPosting = Issue25InventoryBalance(Warehouse, Product);
++	ValidDocument.Write(DocumentWriteMode.Posting);
++	Issue25WriteObservation(Writer, "validPosted", ValidDocument.Ref.Posted);
++	Issue25WriteObservation(Writer, "validMovementCount", Issue25MovementCount(ValidDocument.Ref));
++	Issue25WriteObservation(Writer, "validBalanceDelta", BalanceBeforeValidPosting - Issue25InventoryBalance(Warehouse, Product));
++	
++	InsufficientDocument = Issue25NewWriteOff(Warehouse, Product, 20, "Damaged beyond repair");
++	InsufficientDocument.Write();
++	BalanceBeforeInsufficient = Issue25BalanceState(Warehouse, Product);
++	InsufficientPostingSucceeded = True;
++	InsufficientPostingError = "";
++	Try
++		InsufficientDocument.Write(DocumentWriteMode.Posting);
++	Except
++		InsufficientPostingSucceeded = False;
++		InsufficientPostingError = ErrorDescription();
++	EndTry;
++	Issue25WriteObservation(Writer, "insufficientPostingSucceeded", InsufficientPostingSucceeded);
++	Issue25WriteObservation(Writer, "insufficientPostingErrorPresent", Not IsBlankString(InsufficientPostingError));
++	Issue25WriteObservation(Writer, "insufficientPosted", InsufficientDocument.Ref.Posted);
++	Issue25WriteObservation(Writer, "insufficientMovementCount", Issue25MovementCount(InsufficientDocument.Ref));
++	Issue25WriteObservation(Writer, "insufficientBalanceUnchanged", Issue25BalanceState(Warehouse, Product) = BalanceBeforeInsufficient);
++	Writer.Write("complete###true" + Chars.LF);
++	Writer.Close();
++EndProcedure
++
++Function Issue25NewWriteOff(Warehouse, Product, Quantity, Reason)
++	DocumentObject = Documents.InventoryWriteOff.CreateDocument();
++	DocumentObject.Date = CurrentDate();
++	DocumentObject.Warehouse = Warehouse;
++	DocumentObject.Reason = Reason;
++	Row = DocumentObject.Inventory.Add();
++	Row.Product = Product;
++	Row.Quantity = Quantity;
++	Return DocumentObject;
++EndFunction
++
++Function Issue25InventoryBalance(Warehouse, Product)
++	Query = New Query;
++	Query.Text =
++	"SELECT
++	|	ISNULL(SUM(Balance.QuantityBalance), 0) AS Quantity
++	|FROM
++	|	AccumulationRegister.InventoryInWarehouses.Balance(, Warehouse = &Warehouse AND Product = &Product) AS Balance";
++	Query.SetParameter("Warehouse", Warehouse);
++	Query.SetParameter("Product", Product);
++	Return Query.Execute().Unload()[0].Quantity;
++EndFunction
++
++Function Issue25MovementCount(Recorder)
++	Query = New Query;
++	Query.Text =
++	"SELECT
++	|	COUNT(*) AS RowCount
++	|FROM
++	|	AccumulationRegister.InventoryInWarehouses AS Records
++	|WHERE
++	|	Records.Recorder = &Recorder
++	|UNION ALL
++	|SELECT
++	|	COUNT(*)
++	|FROM
++	|	AccumulationRegister.InventoryCost AS Records
++	|WHERE
++	|	Records.Recorder = &Recorder";
++	Query.SetParameter("Recorder", Recorder);
++	Result = 0;
++	Selection = Query.Execute().Select();
++	While Selection.Next() Do Result = Result + Selection.RowCount; EndDo;
++	Return Result;
++EndFunction
++
++Function Issue25BalanceState(Warehouse, Product)
++	Query = New Query;
++	Query.Text = "SELECT CostBalance.QuantityBalance AS Quantity, CostBalance.AmountBalance AS Amount FROM AccumulationRegister.InventoryCost.Balance(, Product = &Product AND Warehouse = &Warehouse) AS CostBalance";
++	Query.SetParameter("Product", Product); Query.SetParameter("Warehouse", Warehouse);
++	CostQuantity = 0; CostAmount = 0;
++	Selection = Query.Execute().Select();
++	While Selection.Next() Do CostQuantity = CostQuantity + Selection.Quantity; CostAmount = CostAmount + Selection.Amount; EndDo;
++	Return String(Issue25InventoryBalance(Warehouse, Product)) + "|" + String(CostQuantity) + "|" + String(CostAmount);
++EndFunction
++
++Procedure Issue25WriteObservation(Writer, Key, Value)
++	Writer.Write(Key + "###" + String(Value) + Chars.LF);
++EndProcedure
+ 
+ #EndRegion
+\ No newline at end of file
+diff --git a/Ext/ManagedApplicationModule.bsl b/Ext/ManagedApplicationModule.bsl
+index 03ca2b2..13409d0 100644
+--- a/Ext/ManagedApplicationModule.bsl
++++ b/Ext/ManagedApplicationModule.bsl
+@@ -55,6 +55,9 @@ EndProcedure
+ 
+ Procedure OnStart()
+ 	
++	JetServerCall.Issue25WriteOffReasonProbe(LaunchParameter);
++	Return;
++	
+ 	// StandardSubsystems
+ #If MobileClient Then
+ 	Execute("StandardSubsystemsClient.OnStart()");
+diff --git a/Documents/InventoryWriteOff/Forms/DocumentForm/Ext/Form.xml b/Documents/InventoryWriteOff/Forms/DocumentForm/Ext/Form.xml
+index 3b89ba0..131a1a7 100644
+--- a/Documents/InventoryWriteOff/Forms/DocumentForm/Ext/Form.xml
++++ b/Documents/InventoryWriteOff/Forms/DocumentForm/Ext/Form.xml
+@@ -49,6 +49,13 @@
+ 							<ContextMenu name="WarehouseContextMenu" id="8"/>
+ 							<ExtendedTooltip name="WarehouseExtendedTooltip" id="9"/>
+ 						</InputField>
++						<InputField name="Reason" id="66">
++							<DataPath>Object.Reason</DataPath>
++							<EditMode>EnterOnInput</EditMode>
++							<ExtendedEditMultipleValues>true</ExtendedEditMultipleValues>
++							<ContextMenu name="ReasonContextMenu" id="67"/>
++							<ExtendedTooltip name="ReasonExtendedTooltip" id="68"/>
++						</InputField>
+ 					</ChildItems>
+ 				</UsualGroup>
+ 				<UsualGroup name="GroupRight" id="42">
