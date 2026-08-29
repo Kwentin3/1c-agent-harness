@@ -4,11 +4,11 @@
 
 > Apply a discount only when the order amount is at least 100; retain full price below 100.
 
-The executor received only that task and the `semantic-contract-testing` skill before it derived the challenge. It did not read existing `fresh-*` artifacts or semantic-preflight tests until its independent model was frozen.
+The short task is the reproducible input for the formal plan below. This committed package does **not** establish that a particular executor received only this task, which context it had, or how long it took to derive a plan.
 
-## Independent semantic challenge and amendment
+## Reproducible formal semantic matrix
 
-The first clean run took **288,906 ms** end-to-end and returned `CONTRACT BLOCKED` for semantic acceptance: the then-candidate promoted decimal representation/precision even though the task did not establish it. The amendment deliberately returns to the smallest domain-neutral integer matrix from that review:
+The matrix deliberately uses the smallest domain-neutral integer cases needed to distinguish the declared threshold countermodels:
 
 | Required meaning | Case / scalar observation | Plausible wrong implementation | Distinguishing result |
 |---|---|---|---|
@@ -29,6 +29,8 @@ python3 scripts/semantic_preflight.py \
 
 The formal instrument returns exit `0`, `FORMAL COHERENCE READY`, `nativeRun: false`. No native 1C, snapshot, infobase, service, GUI, or dependency is used.
 
-A final independent clean-context executor then derived the same minimal authorized matrix before reading these artifacts: `99 → No`, `100 → Yes`, `101 → Yes`. It passed the amended plan in **389,501 ms** end-to-end, with no findings or surviving countermodels. Its frozen boundary excluded decimal precision, rounding, negative values, discount amount, and an upper cap as unstated requirements.
+## Fresh-executor chronology — unproven
 
-This records an independent no-native semantic challenge and its amendment. It is evidence that the agent step is observable and correctable; it is not an automatic proof that arbitrary natural-language tasks are understood.
+Earlier discussion described two clean-context executions (an initial rejection and a later pass). This repository does not retain a durable, independently inspectable binding for either execution: executor/delegation identity, exact allowed context, verbatim report or report hash, and the then-candidate for the initial rejection. Those historical timings and verdicts are therefore **not acceptance evidence** and are intentionally not reproduced here.
+
+The committed evidence is limited to the formal plan, its artificial receipts, and the reproducible command above. A future fresh-executor acceptance must capture a reviewable report bound to its exact task, context boundary, executor identity, full result, elapsed duration, and candidate identity before it can support an acceptance claim. This document is not automatic proof that arbitrary natural-language tasks are understood.

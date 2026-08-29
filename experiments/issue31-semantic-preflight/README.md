@@ -52,7 +52,7 @@ The validator contains no issue-29-specific branch. This control is a regression
 
 ## Fresh no-native acceptance
 
-[`fresh-acceptance.md`](fresh-acceptance.md) records a separate small task—discount threshold at 100—plus the agent challenge table, new plan, and independent artificial receipts. Its fresh plan returns `FORMAL COHERENCE READY`; the recorded agent challenge result is `PREFLIGHT PASS / KISS PASS`. No 1C, snapshot, infobase, dependency, daemon, service, or GUI is used.
+[`fresh-acceptance.md`](fresh-acceptance.md) records a separate small discount-threshold task, a reproducible formal matrix, plan, and artificial receipts. Its plan returns `FORMAL COHERENCE READY`; no 1C, snapshot, infobase, dependency, daemon, service, or GUI is used. Historical fresh-executor chronology is explicitly marked **unproven** unless a reviewable report binds the exact task, allowed context, executor identity, full result, duration, and candidate identity.
 
 ## Limits
 
