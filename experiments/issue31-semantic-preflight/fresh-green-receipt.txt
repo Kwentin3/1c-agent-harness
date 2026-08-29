@@ -1,0 +1,4 @@
+case###fresh-green
+amount99Accepted###No
+amount100Accepted###Yes
+complete###true

@@ -58,13 +58,14 @@ Read `references/semantic-business-rule-contracts.md` for the detailed model and
 
 Before the first expensive or native run, dry-run the measuring instrument itself:
 
-1. Mark every acceptance clause as coming from the user task, established domain semantics, or unknown. Unknown behavior remains an unknown; it blocks any criterion that depends on it.
-2. Tabulate each retained countermodel's predicted observation vector across the whole case matrix. If it matches the required vector, report the survivor and stop.
-3. Emit artificial complete RED and GREEN receipts and run the external oracle against both. Choose and state one comparison policy: exact key set, or declared-key subset with explicit handling of extra keys.
-4. Mutate one receipt at a time with a missing, extra, duplicate, and wrong-value observation. The oracle must reject each mutation according to that policy.
-5. Confirm each observation is externally checkable at the domain seam. A convenient process marker or opaque object comparison is not automatically a business-state observation.
+1. Mark every acceptance clause as coming from the user task (with a verbatim task quote), established domain semantics (with a source locator and quote), or unknown. Unknown behavior remains an unknown; it blocks any criterion that depends on it.
+2. Map every clause to at least one case and externally checkable scalar observation. This is an inspectable agent challenge, not automatic natural-language entailment.
+3. Tabulate each retained countermodel's predicted observation vector across the whole case matrix. If it matches the required vector, report the survivor and stop.
+4. Emit artificial complete RED and GREEN receipts and run the external oracle against both. Choose and state one comparison policy: exact key set, or declared-key subset with explicit handling of extra keys.
+5. Mutate one receipt at a time with a missing, extra, duplicate, and wrong-value observation. The oracle must reject each mutation according to that policy.
+6. Confirm each observation is externally checkable at the domain seam. A convenient process marker or opaque object comparison is not automatically a business-state observation.
 
-Return **READY FOR NATIVE** only when the declared matrix has no surviving retained countermodel, receipt/oracle dry-runs are coherent, and no unknown has been promoted into acceptance. Otherwise return **CONTRACT BLOCKED** with concrete survivors or contradictions. This preflight validates the declared instrument, not the business rule, and does not require an independent reviewer in the ordinary developer loop.
+Return **FORMAL COHERENCE READY** only when the declared matrix has no surviving retained countermodel, provenance/coverage is explicit, receipt/oracle dry-runs are coherent, and no unknown has been promoted into acceptance. Otherwise return **CONTRACT BLOCKED** with concrete survivors or contradictions. The formal preflight validates the declared instrument; the agent semantic challenge validates task-to-contract reasoning, and neither replaces domain judgment.
 
 ## Core Loop vs Milestone Acceptance
 

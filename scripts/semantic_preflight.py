@@ -3,22 +3,15 @@
 from __future__ import annotations
 
 import json
-import os
 from pathlib import Path
 import stat
 import sys
 from typing import Any
 
-
 REPO = Path(__file__).resolve().parents[1]
-TOP = {"schemaVersion", "task", "clauses", "observations", "cases",
-       "countermodels", "closureExplanation", "receipts"}
-
-
+TOP = {"schemaVersion", "task", "clauses", "observations", "cases", "countermodels", "receipts"}
 def finding(code: str, message: str, **details: Any) -> dict[str, Any]:
     return {"code": code, "message": message, **details}
-
-
 def obj(value: Any, keys: set[str], label: str) -> dict[str, Any]:
     if not isinstance(value, dict) or set(value) != keys:
         actual = sorted(value) if isinstance(value, dict) else type(value).__name__
@@ -38,6 +31,13 @@ def text(value: Any, label: str, empty: bool = False) -> str:
     return value
 
 
+def references(value: Any, label: str, declared: set[str]) -> set[str]:
+    result = set(items(value, label))
+    if not result <= declared or not all(isinstance(identifier, str) for identifier in result): raise ValueError(f"{label} must name declared ids")
+    if len(result) != len(value): raise ValueError(f"{label} has duplicate ids")
+    return result
+
+
 def load_json(payload: str) -> Any:
     def unique(pairs: list[tuple[str, Any]]) -> dict[str, Any]:
         result: dict[str, Any] = {}
@@ -49,31 +49,17 @@ def load_json(payload: str) -> Any:
 
 
 def safe_read(root: Path, relative: Any, label: str) -> str:
-    value = text(relative, label)
-    path = Path(value)
+    path = Path(text(relative, label))
     if path.is_absolute(): raise ValueError(f"{label} must be relative")
-    if not path.parts or any(part in {"", ".", ".."} for part in path.parts):
-        raise ValueError(f"{label} escapes its approved root")
-    flags = os.O_RDONLY | os.O_NOFOLLOW | os.O_NONBLOCK
-    descriptor = os.open(root, flags | os.O_DIRECTORY)
-    try:
-        for part in path.parts[:-1]:
-            child = os.open(part, flags | os.O_DIRECTORY, dir_fd=descriptor)
-            os.close(descriptor); descriptor = child
-        file_descriptor = os.open(path.parts[-1], flags, dir_fd=descriptor)
-        try:
-            metadata = os.fstat(file_descriptor)
-            if not stat.S_ISREG(metadata.st_mode) or metadata.st_nlink != 1 or metadata.st_size > 1_000_000:
-                raise ValueError(f"{label} must be a small singly linked regular file")
-            payload = bytearray()
-            while chunk := os.read(file_descriptor, 65536): payload.extend(chunk)
-            after = os.fstat(file_descriptor)
-            if (len(payload), metadata.st_ino, metadata.st_mtime_ns) != (after.st_size, after.st_ino, after.st_mtime_ns): raise ValueError(f"{label} changed while reading")
-            return payload.decode("utf-8-sig")
-        finally:
-            os.close(file_descriptor)
-    finally:
-        os.close(descriptor)
+    if not path.parts or any(part in {"", ".", ".."} for part in path.parts): raise ValueError(f"{label} escapes its approved root")
+    root = root.resolve(); candidate = root.joinpath(path)
+    cursor = candidate
+    while cursor != root:
+        if cursor.is_symlink(): raise ValueError(f"{label} must not use a symlink")
+        cursor = cursor.parent
+    metadata = candidate.stat()
+    if not stat.S_ISREG(metadata.st_mode) or metadata.st_size > 1_000_000: raise ValueError(f"{label} must be a small regular file")
+    return candidate.read_text(encoding="utf-8-sig")
 
 
 def pairs(value: Any, label: str) -> dict[str, str]:
@@ -101,7 +87,7 @@ def receipt(payload: str, delimiter: str, phase: str) -> tuple[dict[str, str], l
 
 
 def validate(plan_path: Path) -> dict[str, Any]:
-    plan_path = Path(os.path.abspath(plan_path))
+    plan_path = plan_path.absolute()
     if not plan_path.is_relative_to(REPO):
         raise ValueError("plan must be a regular file inside the repository")
     plan_relative = plan_path.relative_to(REPO)
@@ -111,18 +97,34 @@ def validate(plan_path: Path) -> dict[str, Any]:
 
     clause_ids: set[str] = set()
     for index, raw in enumerate(items(plan["clauses"], "clauses")):
-        clause = obj(raw, {"id", "statement", "basis"}, f"clauses[{index}]")
+        if not isinstance(raw, dict): raise ValueError(f"clauses[{index}] must be an object")
+        basis = raw.get("basis")
+        keys = {"id", "statement", "basis", "taskQuote"} if basis in {"user-task", "unknown"} else {"id", "statement", "basis", "source"}
+        clause = obj(raw, keys, f"clauses[{index}]")
         identifier = text(clause["id"], f"clauses[{index}].id"); text(clause["statement"], f"clauses[{index}].statement")
-        if identifier in clause_ids or clause["basis"] not in {"user-task", "established-domain", "unknown"}:
+        if identifier in clause_ids or basis not in {"user-task", "established-domain", "unknown"}:
             raise ValueError("clause ids must be unique and bases declared")
         clause_ids.add(identifier)
-        if clause["basis"] == "unknown":
+        if basis == "user-task":
+            quote = text(clause["taskQuote"], f"clause {identifier} taskQuote")
+            if quote not in plan["task"]: findings.append(finding("TASK_CLAUSE_MISMATCH", f"clause {identifier!r} quote is absent from task", clause=identifier))
+        elif basis == "established-domain":
+            source = obj(clause["source"], {"path", "locator", "quote"}, f"clause {identifier} source")
+            locator, quote = text(source["locator"], "source locator"), text(source["quote"], "source quote")
+            parts = locator.split(":"); valid = len(parts) == 2 and parts[0] == "line" and parts[1].isdigit()
+            lines = safe_read(REPO, source["path"], f"clause {identifier} source").splitlines()
+            if not valid or quote not in lines[int(parts[1]) - 1:int(parts[1])]:
+                findings.append(finding("UNVERIFIED_DOMAIN_SOURCE", f"clause {identifier!r} quote is absent at locator", clause=identifier, locator=locator))
+        else:
+            text(clause["taskQuote"], f"clause {identifier} taskQuote", empty=True)
             findings.append(finding("UNSUPPORTED_ACCEPTANCE_CLAUSE", f"clause {identifier!r} promotes unknown behavior", clause=identifier))
 
     observations: dict[str, dict[str, Any]] = {}
+    observation_coverage: set[str] = set(); case_coverage: set[str] = set()
     for index, raw in enumerate(items(plan["observations"], "observations")):
-        observation = obj(raw, {"id", "description", "externallyCheckable", "scalar"}, f"observations[{index}]")
+        observation = obj(raw, {"id", "description", "clauses", "externallyCheckable", "scalar"}, f"observations[{index}]")
         identifier = text(observation["id"], f"observations[{index}].id"); text(observation["description"], f"observations[{index}].description")
+        observation_coverage |= references(observation["clauses"], f"observation {identifier} clauses", clause_ids)
         if identifier in observations or type(observation["scalar"]) is not bool or type(observation["externallyCheckable"]) is not bool:
             raise ValueError("observation ids must be unique and flags boolean")
         observations[identifier] = observation
@@ -131,15 +133,19 @@ def validate(plan_path: Path) -> dict[str, Any]:
 
     cases: dict[str, dict[str, str]] = {}
     for index, raw in enumerate(items(plan["cases"], "cases")):
-        case = obj(raw, {"id", "expected"}, f"cases[{index}]"); identifier = text(case["id"], f"cases[{index}].id")
+        case = obj(raw, {"id", "clauses", "expected"}, f"cases[{index}]"); identifier = text(case["id"], f"cases[{index}].id")
+        case_coverage |= references(case["clauses"], f"case {identifier} clauses", clause_ids)
         expected = case["expected"]
         if identifier in cases or not isinstance(expected, dict) or set(expected) != set(observations):
             raise ValueError("each unique case must declare the complete observation vector")
         for value in expected.values(): text(value, "case expected value")
         cases[identifier] = expected
 
+    missing = clause_ids - observation_coverage | clause_ids - case_coverage
+    if missing: findings.append(finding("UNCOVERED_CLAUSE", "every clause needs case and observation coverage", clauses=sorted(missing)))
+
     survivors: list[str] = []; model_ids: set[str] = set()
-    for index, raw in enumerate(items(plan["countermodels"], "countermodels", empty=True)):
+    for index, raw in enumerate(items(plan["countermodels"], "countermodels")):
         model = obj(raw, {"id", "rationale", "predictions"}, f"countermodels[{index}]")
         identifier = text(model["id"], f"countermodels[{index}].id"); text(model["rationale"], f"countermodels[{index}].rationale")
         if identifier in model_ids: raise ValueError("countermodel ids must be unique")
@@ -151,9 +157,6 @@ def validate(plan_path: Path) -> dict[str, Any]:
             for value in predicted.values(): text(value, "countermodel predicted value")
         if all(predictions[case_id] == expected for case_id, expected in cases.items()):
             survivors.append(identifier); findings.append(finding("SURVIVING_COUNTERMODEL", f"{identifier!r} matches every observation", countermodel=identifier))
-    closure = plan["closureExplanation"]
-    if not isinstance(closure, str): raise ValueError("closureExplanation must be a string")
-    if not survivors and not closure.strip(): findings.append(finding("MISSING_CLOSURE_EXPLANATION", "no survivor and no closure explanation"))
 
     receipts = obj(plan["receipts"], {"policy", "delimiter", "phases"}, "receipts"); delimiter = text(receipts["delimiter"], "delimiter")
     if receipts["policy"] != "exact" or not isinstance(receipts["phases"], dict) or set(receipts["phases"]) != {"red", "green"}:
@@ -181,7 +184,7 @@ def validate(plan_path: Path) -> dict[str, Any]:
     if vectors["green"] != {(case_id, observation_id): cases[case_id][observation_id] for case_id, observation_id in required}:
         findings.append(finding("GREEN_SEMANTIC_MISMATCH", "GREEN bindings contradict the semantic case matrix"))
     if vectors["red"] == vectors["green"]: findings.append(finding("RED_NOT_DISTINGUISHING", "RED semantic vector does not differ from GREEN"))
-    return {"verdict": "CONTRACT BLOCKED" if findings else "READY FOR NATIVE", "findings": findings, "survivingCountermodels": survivors, "nativeRun": False}
+    return {"verdict": "CONTRACT BLOCKED" if findings else "FORMAL COHERENCE READY", "findings": findings, "survivingCountermodels": survivors, "nativeRun": False}
 
 
 def main(argv: list[str]) -> int:
@@ -191,7 +194,7 @@ def main(argv: list[str]) -> int:
     except (OSError, UnicodeError, ValueError, TypeError, KeyError, RuntimeError, json.JSONDecodeError) as error:
         result = {"verdict": "CONTRACT BLOCKED", "findings": [finding("INVALID_PLAN", str(error))], "survivingCountermodels": [], "nativeRun": False}
     print(json.dumps(result, ensure_ascii=False, indent=2, sort_keys=True))
-    return 0 if result["verdict"] == "READY FOR NATIVE" else 1
+    return 0 if result["verdict"] == "FORMAL COHERENCE READY" else 1
 
 
 if __name__ == "__main__": raise SystemExit(main(sys.argv))

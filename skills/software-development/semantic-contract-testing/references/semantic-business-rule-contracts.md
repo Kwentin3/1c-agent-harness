@@ -88,7 +88,7 @@ Create artificial complete RED and GREEN receipts before spending the execution 
 
 Expected partial data must not be compared as a whole dictionary to a complete receipt. Observation keys must be unique before conversion to a dictionary, otherwise duplicate evidence is silently overwritten. This mechanical check proves parser/oracle coherence only; it cannot decide whether the selected observations express the user's business rule.
 
-Every acceptance clause must also name its basis: user task, established domain semantics with a locator, or unknown. Unknown behavior stays outside acceptance until the user or an authoritative domain source resolves it.
+Every acceptance clause must also name its basis: user task with a verbatim task quote, established domain semantics with a source locator and quote, or unknown. Map each clause to at least one case and externally checkable observation. These fields make the agent's semantic challenge inspectable; they do not let a checker infer business meaning from natural language. Unknown behavior stays outside acceptance until the user or an authoritative domain source resolves it.
 
 ### 6. Transparent freeze and amendment
 

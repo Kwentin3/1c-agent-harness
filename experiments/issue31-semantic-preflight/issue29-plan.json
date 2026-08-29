@@ -1,20 +1,19 @@
 {
   "schemaVersion": 1,
-
   "task": "For InventoryIncrease, every Inventory row must have Price > 0 when posting; drafts remain saveable and valid posting remains unchanged.",
   "clauses": [
-    {"id": "every-row-positive", "statement": "Posting is rejected when any row has Price <= 0.", "basis": "user-task"},
-    {"id": "draft-preserved", "statement": "A draft with Price <= 0 can be saved.", "basis": "user-task"},
-    {"id": "no-posting-exception", "statement": "Posting cancellation must not produce an exception.", "basis": "unknown"}
+    {"id": "every-row-positive", "statement": "Posting is rejected when any row has Price <= 0.", "basis": "user-task", "taskQuote": "every Inventory row must have Price > 0 when posting"},
+    {"id": "draft-preserved", "statement": "A draft with Price <= 0 can be saved.", "basis": "user-task", "taskQuote": "drafts remain saveable"},
+    {"id": "no-posting-exception", "statement": "Posting cancellation must not produce an exception.", "basis": "unknown", "taskQuote": ""}
   ],
   "observations": [
-    {"id": "posting-result", "description": "Externally observed posted/refused result.", "externallyCheckable": true, "scalar": true},
-    {"id": "balance-unchanged", "description": "Equality of two distinct 1C Structure values containing balances.", "externallyCheckable": false, "scalar": false}
+    {"id": "posting-result", "description": "Externally observed posted/refused result.", "clauses": ["every-row-positive", "draft-preserved", "no-posting-exception"], "externallyCheckable": true, "scalar": true},
+    {"id": "balance-unchanged", "description": "Equality of two distinct 1C Structure values containing balances.", "clauses": ["every-row-positive"], "externallyCheckable": false, "scalar": false}
   ],
   "cases": [
-    {"id": "zero-single-row", "expected": {"posting-result": "No", "balance-unchanged": "Yes"}},
-    {"id": "negative-last-row", "expected": {"posting-result": "No", "balance-unchanged": "Yes"}},
-    {"id": "positive-two-row", "expected": {"posting-result": "Yes", "balance-unchanged": "No"}}
+    {"id": "zero-single-row", "clauses": ["every-row-positive", "draft-preserved", "no-posting-exception"], "expected": {"posting-result": "No", "balance-unchanged": "Yes"}},
+    {"id": "negative-last-row", "clauses": ["every-row-positive", "draft-preserved"], "expected": {"posting-result": "No", "balance-unchanged": "Yes"}},
+    {"id": "positive-two-row", "clauses": ["every-row-positive"], "expected": {"posting-result": "Yes", "balance-unchanged": "No"}}
   ],
   "countermodels": [
     {
@@ -27,43 +26,20 @@
       }
     }
   ],
-  "closureExplanation": "",
   "receipts": {
     "policy": "exact",
     "delimiter": "###",
     "phases": {
       "red": {
         "path": "issue29-red-receipt.txt",
-        "expected": [
-          ["scenario", "issue29"], ["zeroDraftSucceeded", "Yes"], ["zeroPostingSucceeded", "Yes"],
-          ["zeroPosted", "Yes"], ["negativeDraftSucceeded", "Yes"], ["negativePostingSucceeded", "Yes"],
-          ["negativePosted", "Yes"], ["complete", "true"]
-        ],
-        "bindings": [
-          ["zero-single-row", "posting-result", "zeroPosted"],
-          ["negative-last-row", "posting-result", "negativePosted"]
-        ],
+        "expected": [["scenario", "issue29"], ["zeroDraftSucceeded", "Yes"], ["zeroPostingSucceeded", "Yes"], ["zeroPosted", "Yes"], ["negativeDraftSucceeded", "Yes"], ["negativePostingSucceeded", "Yes"], ["negativePosted", "Yes"], ["complete", "true"]],
+        "bindings": [["zero-single-row", "posting-result", "zeroPosted"], ["negative-last-row", "posting-result", "negativePosted"]],
         "controls": ["scenario", "zeroDraftSucceeded", "zeroPostingSucceeded", "negativeDraftSucceeded", "negativePostingSucceeded", "complete"]
       },
       "green": {
         "path": "issue29-green-receipt.txt",
-        "expected": [
-          ["scenario", "issue29"], ["zeroDraftSucceeded", "Yes"], ["zeroPostingSucceeded", "No"],
-          ["zeroPostingErrorPresent", "No"], ["zeroPosted", "No"], ["zeroMovementCount", "0"],
-          ["zeroBalanceUnchanged", "Yes"], ["negativeDraftSucceeded", "Yes"],
-          ["negativePostingSucceeded", "No"], ["negativePostingErrorPresent", "No"],
-          ["negativePosted", "No"], ["negativeMovementCount", "0"], ["negativeBalanceUnchanged", "Yes"],
-          ["validPosted", "Yes"], ["validMovementCount", "4"], ["validQuantityDelta", "5"],
-          ["validAmountDelta", "31"], ["complete", "true"]
-        ],
-        "bindings": [
-          ["zero-single-row", "posting-result", "zeroPosted"],
-          ["zero-single-row", "balance-unchanged", "zeroBalanceUnchanged"],
-          ["negative-last-row", "posting-result", "negativePosted"],
-          ["negative-last-row", "balance-unchanged", "negativeBalanceUnchanged"],
-          ["positive-two-row", "posting-result", "validPosted"],
-          ["positive-two-row", "balance-unchanged", "validAmountDelta"]
-        ],
+        "expected": [["scenario", "issue29"], ["zeroDraftSucceeded", "Yes"], ["zeroPostingSucceeded", "No"], ["zeroPostingErrorPresent", "No"], ["zeroPosted", "No"], ["zeroMovementCount", "0"], ["zeroBalanceUnchanged", "Yes"], ["negativeDraftSucceeded", "Yes"], ["negativePostingSucceeded", "No"], ["negativePostingErrorPresent", "No"], ["negativePosted", "No"], ["negativeMovementCount", "0"], ["negativeBalanceUnchanged", "Yes"], ["validPosted", "Yes"], ["validMovementCount", "4"], ["validQuantityDelta", "5"], ["validAmountDelta", "31"], ["complete", "true"]],
+        "bindings": [["zero-single-row", "posting-result", "zeroPosted"], ["zero-single-row", "balance-unchanged", "zeroBalanceUnchanged"], ["negative-last-row", "posting-result", "negativePosted"], ["negative-last-row", "balance-unchanged", "negativeBalanceUnchanged"], ["positive-two-row", "posting-result", "validPosted"], ["positive-two-row", "balance-unchanged", "validAmountDelta"]],
         "controls": ["scenario", "zeroDraftSucceeded", "zeroPostingSucceeded", "zeroPostingErrorPresent", "zeroMovementCount", "negativeDraftSucceeded", "negativePostingSucceeded", "negativePostingErrorPresent", "negativeMovementCount", "validMovementCount", "validQuantityDelta", "complete"]
       }
     }

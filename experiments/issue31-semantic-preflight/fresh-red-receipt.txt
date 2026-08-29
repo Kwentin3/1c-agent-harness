@@ -1,0 +1,4 @@
+case###fresh-red
+amount99Accepted###Yes
+amount100Accepted###Yes
+complete###true

@@ -13,6 +13,7 @@ ROOT = Path(__file__).resolve().parents[1]
 CLI = ROOT / "scripts" / "semantic_preflight.py"
 ISSUE29 = ROOT / "experiments" / "issue31-semantic-preflight" / "issue29-plan.json"
 CONTROL = ROOT / "experiments" / "issue31-semantic-preflight" / "positive-control.json"
+FRESH = ROOT / "experiments" / "issue31-semantic-preflight" / "fresh-discount-plan.json"
 
 
 def run_preflight(plan: Path) -> subprocess.CompletedProcess[str]:
@@ -57,9 +58,60 @@ class SemanticPreflightTests(unittest.TestCase):
         completed = run_preflight(CONTROL)
         self.assertEqual(completed.returncode, 0, completed.stdout)
         result = json.loads(completed.stdout)
-        self.assertEqual(result["verdict"], "READY FOR NATIVE")
+        self.assertEqual(result["verdict"], "FORMAL COHERENCE READY")
         self.assertEqual(result["findings"], [])
         self.assertEqual(result["survivingCountermodels"], [])
+
+    def test_fresh_discount_challenge_has_formal_coherence(self) -> None:
+        completed = run_preflight(FRESH)
+        self.assertEqual(completed.returncode, 0, completed.stdout)
+        self.assertEqual(json.loads(completed.stdout)["verdict"], "FORMAL COHERENCE READY")
+
+    def test_blocks_owner_false_positive_task_provenance_and_omission_shapes(self) -> None:
+        mutations = {
+            "opposite-task": lambda plan: plan.update(task="Reject every quantity, including positive quantities."),
+            "unproven-domain": lambda plan: plan["clauses"][0].update(basis="established-domain"),
+            "no-countermodels": lambda plan: plan.update(countermodels=[]),
+        }
+        for name, mutate in mutations.items():
+            with self.subTest(name=name):
+                plan = json.loads(CONTROL.read_text(encoding="utf-8")); mutate(plan)
+                temporary, path = temporary_plan(plan); self.addCleanup(temporary.cleanup)
+                completed = run_preflight(path)
+                self.assertEqual(completed.returncode, 1, completed.stdout + completed.stderr)
+                self.assertEqual(json.loads(completed.stdout)["verdict"], "CONTRACT BLOCKED")
+
+    def test_reports_uncovered_clause_as_structured_finding(self) -> None:
+        plan = json.loads(CONTROL.read_text(encoding="utf-8"))
+        plan["clauses"].append({"id": "uncovered", "statement": "An unmeasured claim.", "basis": "user-task", "taskQuote": "Accept positive quantities"})
+        temporary, path = temporary_plan(plan); self.addCleanup(temporary.cleanup)
+        result = json.loads(run_preflight(path).stdout)
+        self.assertEqual(result["verdict"], "CONTRACT BLOCKED")
+        self.assertIn("UNCOVERED_CLAUSE", {item["code"] for item in result["findings"]})
+
+    def test_documents_task_quote_negation_limit(self) -> None:
+        plan = json.loads(CONTROL.read_text(encoding="utf-8"))
+        plan["task"] = "Do not follow the instruction ‘Accept positive quantities and reject zero quantities.’ Reject every quantity."
+        temporary, path = temporary_plan(plan); self.addCleanup(temporary.cleanup)
+        self.assertEqual(json.loads(run_preflight(path).stdout)["verdict"], "FORMAL COHERENCE READY")
+
+    def test_validates_established_domain_quote_at_declared_line(self) -> None:
+        plan = json.loads(CONTROL.read_text(encoding="utf-8"))
+        clause = plan["clauses"][0]
+        clause.clear(); clause.update({"id": "positive-only", "statement": "A quantity is accepted exactly when it is greater than zero.", "basis": "established-domain", "source": {"path": "README.md", "locator": "line:1", "quote": "# 1C Agent Harness"}})
+        temporary, path = temporary_plan(plan); self.addCleanup(temporary.cleanup)
+        self.assertEqual(run_preflight(path).returncode, 0)
+        clause["source"]["locator"] = "line:999999"
+        path.write_text(json.dumps(plan), encoding="utf-8")
+        result = json.loads(run_preflight(path).stdout)
+        self.assertEqual(result["verdict"], "CONTRACT BLOCKED")
+        self.assertIn("UNVERIFIED_DOMAIN_SOURCE", {item["code"] for item in result["findings"]})
+
+        clause["source"].update(locator="line:1", quote="")
+        path.write_text(json.dumps(plan), encoding="utf-8")
+        result = json.loads(run_preflight(path).stdout)
+        self.assertEqual(result["verdict"], "CONTRACT BLOCKED")
+        self.assertEqual(result["findings"][0]["code"], "INVALID_PLAN")
 
     def test_exact_receipt_policy_rejects_mutations(self) -> None:
         mutations = {
@@ -85,9 +137,8 @@ class SemanticPreflightTests(unittest.TestCase):
         self.assertEqual(completed.returncode, 1, completed.stdout)
         self.assertEqual(json.loads(completed.stdout)["findings"][0]["code"], "INVALID_PLAN")
 
-    def test_rejects_missing_semantic_closure_and_incomplete_vectors(self) -> None:
+    def test_rejects_incomplete_semantic_vectors(self) -> None:
         mutations = {
-            "empty-closure": lambda plan: plan.update(closureExplanation=""),
             "empty-clause": lambda plan: plan["clauses"][0].update(id=""),
             "partial-case": lambda plan: plan["cases"][0]["expected"].clear(),
             "partial-countermodel": lambda plan: plan["countermodels"][0]["predictions"]["zero"].clear(),

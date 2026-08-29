@@ -115,21 +115,21 @@
     {
       "install_root": "skills/software-development/semantic-contract-testing",
       "name": "semantic-contract-testing",
-      "resource_manifest_sha256": "cd30b6b1cbb9eed52143dbe21afa9da3c3961750bf2a680ddbbb0048f78ab3fb",
+      "resource_manifest_sha256": "f63f51f84786b3287cc2265089d4d6264b97baa7e4d193c7808efef67c75129c",
       "resources": [
         {
-          "bytes": 6124,
+          "bytes": 6406,
           "path": "SKILL.md",
-          "sha256": "8b130cc4229b2ad89523126d970a7f45939873d96f3c5d30943a018335b1148e"
+          "sha256": "29d4171feacb97e38edad24703e355e1802e8df0590c3e44bcdfd4a2493c38b8"
         },
         {
-          "bytes": 8004,
+          "bytes": 8257,
           "path": "references/semantic-business-rule-contracts.md",
-          "sha256": "d8b13ba0abf2526301b3ac02e0bf592f92221b5861f80dd0cde42c19286da216"
+          "sha256": "b38f04eccb1da6df20b0ca982669912114ac7c1765a8b02f1163eafff7205433"
         }
       ],
       "source_root": "skills/software-development/semantic-contract-testing",
-      "version": "0.2.0"
+      "version": "0.3.0"
     }
   ],
   "schema_version": 1

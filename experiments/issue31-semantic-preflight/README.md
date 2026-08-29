@@ -1,60 +1,61 @@
-# Issue #31 — semantic preflight before native 1C
+# Issue #31 — formal preflight and agent semantic challenge
 
-This package demonstrates a cheap, fail-closed check of a proposed semantic contract, probe observation plan, and external oracle **before** any native 1C attempt.
+This package keeps two different checks explicit before any native 1C attempt.
 
-The preflight does not prove business behavior and does not choose requirements. It validates only what the plan declares:
+1. **Agent semantic challenge.** Starting from the short user task, the agent makes the semantic model explicit, retains plausible countermodels, maps each clause to cases and scalar observations, and records unknowns instead of inventing acceptance criteria. This is human/domain reasoning governed by `semantic-contract-testing`.
+2. **Formal/oracle coherence.** `scripts/semantic_preflight.py` validates the prepared plan, complete vectors, artificial RED/GREEN receipts, and exact receipt policy. It does not claim to understand natural language or prove that the agent selected the right countermodels.
 
-- every acceptance clause identifies its basis (`user-task`, `established-domain`, or `unknown`);
-- observations are declared externally checkable and scalar;
-- every case and countermodel supplies the complete declared observation vector, so a matching countermodel is reported as a survivor;
-- artificial receipts match their declared expectations under the explicit `exact` key-set policy;
-- exactly RED and GREEN are required; in each phase, `bindings` uniquely cover the complete case/observation matrix, GREEN equals the semantic matrix, and RED differs from GREEN;
-- duplicate receipt keys are detected before dictionary conversion.
+The result names are deliberately separate:
+
+- `FORMAL COHERENCE READY` — the declared formal instrument is coherent; an agent semantic challenge is still required before native work.
+- `CONTRACT BLOCKED` — a declared contradiction, survivor, missing provenance/coverage, malformed plan, or receipt failure was found.
+
+Every output includes `nativeRun: false`.
 
 ## Entry point
-
-From the repository root:
 
 ```bash
 python3 scripts/semantic_preflight.py \
   experiments/issue31-semantic-preflight/issue29-plan.json
 
 python3 scripts/semantic_preflight.py \
-  experiments/issue31-semantic-preflight/positive-control.json
+  experiments/issue31-semantic-preflight/fresh-discount-plan.json
 ```
 
-Exit code `0` means `READY FOR NATIVE`; exit code `1` means `CONTRACT BLOCKED`. Output is JSON and always includes `nativeRun: false`.
+Exit `0` is `FORMAL COHERENCE READY`; exit `1` is `CONTRACT BLOCKED`.
 
-A fresh plan is ordinary JSON, not a new business-rule DSL. Use the two published inputs as small examples. Plan and receipt paths are opened component-by-component relative to the repository descriptor; descriptor-based reads reject absolute paths, traversal, symlink ancestors/finals, multiply linked files, and files larger than 1 MB without reflecting untrusted receipt keys. The semantic meaning still comes from the user task and the relevant domain skill; the validator merely checks the declared matrix and receipt policy.
+## What the formal plan must bind
+
+This is ordinary JSON, not a business-rule DSL. The validator requires only enough provenance to block the three reproduced omission/bypass shapes:
+
+- a `user-task` clause includes a nonempty verbatim `taskQuote` contained in the plan's `task`;
+- an `established-domain` clause carries a repository-relative `{path, locator, quote}`; `locator` is exactly `line:N` and that line must contain the quote;
+- every clause must be referenced by at least one observation and case;
+- at least one explicit countermodel is required; each predicts all case × observation cells;
+- observations are scalar and externally checkable; unknown clauses block;
+- RED/GREEN bindings are complete and unique, GREEN equals the case matrix, RED differs, and receipts follow the exact policy.
+
+These checks do **not** convert quoted text into a proof of business semantics. They make agent reasoning inspectable and make a contradictory task, unlocated domain claim, or silent removal of all countermodels fail closed.
+
+Plan and receipt paths remain repository-relative, reject traversal and symlinks, and must be small regular files. The prior descriptor/inode race hardening was intentionally removed: no matching single-user threat model was demonstrated, and the KISS budget is reserved for semantic linkage.
 
 ## Frozen issue #29 control
 
-`issue29-plan.json` uses byte-identical local copies of the frozen issue #29 receipts and transcribes the published oracle expectations and case matrix. A regression test binds each copy to the unchanged original. The validator contains no issue-29-specific checks or names.
+`issue29-plan.json` uses byte-identical local copies of frozen issue #29 receipts and transcribes its published case/observation material. It returns `CONTRACT BLOCKED` by general rules:
 
-It returns `CONTRACT BLOCKED` through general rules:
+1. `last-row-only` matches the declared complete vector and survives;
+2. RED's exact expectation omits receipt keys;
+3. `no-posting-exception` is unknown rather than an authorized criterion;
+4. the `Structure` balance comparison is non-scalar and externally uncheckable.
 
-1. `last-row-only` predicts the same complete observation vector as the required behavior and therefore survives;
-2. the exact RED oracle expectation omits keys present in the complete RED receipt;
-3. `no-posting-exception` is marked `unknown`, because neither the user task nor a cited established 1C semantic source made it a requirement;
-4. the balance observation is explicitly non-scalar and not externally checkable because it came from equality of separate 1C `Structure` values.
+The validator contains no issue-29-specific branch. This control is a regression fixture, not evidence that the CLI independently discovered issue #29 from source code.
 
-The same receipt comparison also reports the contradictory GREEN exception and balance values. These are additional contradictions, not substitutes for the four required defect classes.
+## Fresh no-native acceptance
 
-## Positive control and oracle mutations
-
-`positive-control.json` declares a minimal `quantity > 0` rule. Its zero/positive cases distinguish `>= 0` and reject-all countermodels, all clauses have a user-task basis, and both artificial complete receipts match the exact oracle expectation. It returns `READY FOR NATIVE`.
-
-`tests/test_semantic_preflight.py` copies that plan into repository-local temporary directories and proves that missing, extra, duplicate, and wrong-value receipt mutations are rejected individually. It also proves fail-closed behavior for missing RED/GREEN, incomplete or duplicate semantic bindings, duplicate countermodel IDs, GREEN/case disagreement, RED=GREEN, boolean schema versions, empty semantic values, malformed paths, absolute/traversal paths, receipt and plan symlinks, FIFOs, and a symlink-loop plan.
-
-## Domain ownership
-
-- Generic countermodel matrices, requirement provenance, oracle coherence, and verdict semantics are documented in `skills/software-development/semantic-contract-testing/`.
-- 1C posting exception uncertainty and scalar register-balance observations are documented in `skills/1c/1c-enterprise-linux/references/data-backed-document-write-probes.md`.
-- `scripts/semantic_preflight.py` performs formal checks only. It never imports, launches, or locates 1C and does not read `project-target.json`, snapshots, or infobases.
+[`fresh-acceptance.md`](fresh-acceptance.md) records a separate small task—discount threshold at 100—plus the agent challenge table, new plan, and independent artificial receipts. Its fresh plan returns `FORMAL COHERENCE READY`; the recorded agent challenge result is `PREFLIGHT PASS / KISS PASS`. No 1C, snapshot, infobase, dependency, daemon, service, or GUI is used.
 
 ## Limits
 
-- A dishonest or incomplete plan can omit a plausible countermodel or falsely label an observation scalar. Human/domain reasoning is still required to prepare the plan.
-- `READY FOR NATIVE` means the declared measuring instrument is internally coherent, not that the production function works.
-- The executable validator intentionally supports only one receipt policy (`exact`) and one `key###value` text format. The skills describe when another explicit policy may be designed, but this issue does not add a framework or registry.
-- Independent review is required for acceptance of this new capability at exact HEAD, not for ordinary daily use.
+- The validator checks declared provenance and formal coherence, not natural-language entailment, task-to-contract contradiction, or completeness of the real-world countermodel set. In particular, a verbatim `taskQuote` can prove only text presence; it cannot distinguish negation or quotation of that text.
+- The agent and relevant domain source remain responsible for semantic challenge. An independent reviewer is required only for this issue's acceptance, not ordinary daily preflight.
+- The executable supports one exact `key###value` receipt policy; no registry or workflow engine is added.

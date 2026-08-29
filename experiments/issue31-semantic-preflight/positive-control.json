@@ -1,16 +1,26 @@
 {
   "schemaVersion": 1,
-
   "task": "Accept positive quantities and reject zero quantities.",
   "clauses": [
-    {"id": "positive-only", "statement": "A quantity is accepted exactly when it is greater than zero.", "basis": "user-task"}
+    {
+      "id": "positive-only",
+      "statement": "A quantity is accepted exactly when it is greater than zero.",
+      "basis": "user-task",
+      "taskQuote": "Accept positive quantities and reject zero quantities."
+    }
   ],
   "observations": [
-    {"id": "accepted", "description": "Boolean acceptance result emitted as Yes or No.", "externallyCheckable": true, "scalar": true}
+    {
+      "id": "accepted",
+      "description": "Boolean acceptance result emitted as Yes or No.",
+      "clauses": ["positive-only"],
+      "externallyCheckable": true,
+      "scalar": true
+    }
   ],
   "cases": [
-    {"id": "zero", "expected": {"accepted": "No"}},
-    {"id": "positive", "expected": {"accepted": "Yes"}}
+    {"id": "zero", "clauses": ["positive-only"], "expected": {"accepted": "No"}},
+    {"id": "positive", "clauses": ["positive-only"], "expected": {"accepted": "Yes"}}
   ],
   "countermodels": [
     {
@@ -24,7 +34,6 @@
       "predictions": {"zero": {"accepted": "No"}, "positive": {"accepted": "No"}}
     }
   ],
-  "closureExplanation": "The two retained plausible boundary/control countermodels are distinguished by the zero and positive cases.",
   "receipts": {
     "policy": "exact",
     "delimiter": "###",
