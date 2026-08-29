@@ -1,0 +1,157 @@
+diff --git a/CommonModules/JetServerCall/Ext/Module.bsl b/CommonModules/JetServerCall/Ext/Module.bsl
+index 17aedb7..76c61e2 100644
+--- a/CommonModules/JetServerCall/Ext/Module.bsl
++++ b/CommonModules/JetServerCall/Ext/Module.bsl
+@@ -14,4 +14,137 @@ Function GetVATRateValue(VATRate) Export
+ 	
+ EndFunction
+ 
++
++Procedure Issue29InventoryIncreasePriceProbe(ReceiptPath) Export
++	Writer = New TextWriter(ReceiptPath, TextEncoding.UTF8);
++	Writer.Write("scenario###issue29" + Chars.LF);
++
++	WarehouseObject = Catalogs.Warehouses.CreateItem();
++	WarehouseObject.Description = "Issue 29 warehouse";
++	WarehouseObject.Write();
++	Warehouse = WarehouseObject.Ref;
++
++	UnitObject = Catalogs.Units.CreateItem();
++	UnitObject.Description = "Issue 29 unit";
++	UnitObject.Write();
++
++	ProductAObject = Catalogs.Products.CreateItem();
++	ProductAObject.Description = "Issue 29 product A";
++	ProductAObject.ProductType = Enums.ProductTypes.Inventory;
++	ProductAObject.Unit = UnitObject.Ref;
++	ProductAObject.Write();
++	ProductA = ProductAObject.Ref;
++
++	ProductBObject = Catalogs.Products.CreateItem();
++	ProductBObject.Description = "Issue 29 product B";
++	ProductBObject.ProductType = Enums.ProductTypes.Inventory;
++	ProductBObject.Unit = UnitObject.Ref;
++	ProductBObject.Write();
++	ProductB = ProductBObject.Ref;
++
++	ZeroDocument = Issue29NewIncrease(Warehouse);
++	Issue29AddIncreaseRow(ZeroDocument, ProductA, 1, 0);
++	ZeroDraftResult = Issue29TryWrite(ZeroDocument, False);
++	Issue29WriteObservation(Writer, "zeroDraftSucceeded", ZeroDraftResult.Succeeded);
++	ZeroBalanceBefore = Issue29BalanceState(Warehouse);
++	ZeroPostingResult = Issue29TryWrite(ZeroDocument, True);
++	Issue29WriteObservation(Writer, "zeroPostingSucceeded", ZeroPostingResult.Succeeded);
++	Issue29WriteObservation(Writer, "zeroPostingErrorPresent", ZeroPostingResult.Error <> "");
++	Issue29WriteObservation(Writer, "zeroPosted", ZeroDocument.Ref.Posted);
++	Issue29WriteObservation(Writer, "zeroMovementCount", Issue29MovementCount(ZeroDocument.Ref));
++	Issue29WriteObservation(Writer, "zeroBalanceUnchanged", Issue29BalanceState(Warehouse) = ZeroBalanceBefore);
++
++	NegativeDocument = Issue29NewIncrease(Warehouse);
++	Issue29AddIncreaseRow(NegativeDocument, ProductA, 2, 10);
++	Issue29AddIncreaseRow(NegativeDocument, ProductB, 1, -1);
++	NegativeDraftResult = Issue29TryWrite(NegativeDocument, False);
++	Issue29WriteObservation(Writer, "negativeDraftSucceeded", NegativeDraftResult.Succeeded);
++	NegativeBalanceBefore = Issue29BalanceState(Warehouse);
++	NegativePostingResult = Issue29TryWrite(NegativeDocument, True);
++	Issue29WriteObservation(Writer, "negativePostingSucceeded", NegativePostingResult.Succeeded);
++	Issue29WriteObservation(Writer, "negativePostingErrorPresent", NegativePostingResult.Error <> "");
++	Issue29WriteObservation(Writer, "negativePosted", NegativeDocument.Ref.Posted);
++	Issue29WriteObservation(Writer, "negativeMovementCount", Issue29MovementCount(NegativeDocument.Ref));
++	Issue29WriteObservation(Writer, "negativeBalanceUnchanged", Issue29BalanceState(Warehouse) = NegativeBalanceBefore);
++
++	ValidDocument = Issue29NewIncrease(Warehouse);
++	Issue29AddIncreaseRow(ValidDocument, ProductA, 2, 5);
++	Issue29AddIncreaseRow(ValidDocument, ProductB, 3, 7);
++	ValidBalanceBefore = Issue29BalanceState(Warehouse);
++	ValidDocument.Write(DocumentWriteMode.Posting);
++	ValidBalanceAfter = Issue29BalanceState(Warehouse);
++	Issue29WriteObservation(Writer, "validPosted", ValidDocument.Ref.Posted);
++	Issue29WriteObservation(Writer, "validMovementCount", Issue29MovementCount(ValidDocument.Ref));
++	Issue29WriteObservation(Writer, "validQuantityDelta", ValidBalanceAfter.Quantity - ValidBalanceBefore.Quantity);
++	Issue29WriteObservation(Writer, "validAmountDelta", ValidBalanceAfter.Amount - ValidBalanceBefore.Amount);
++
++	Writer.Write("complete###true" + Chars.LF);
++	Writer.Close();
++EndProcedure
++
++Function Issue29TryWrite(DocumentObject, Posting)
++	Result = New Structure("Succeeded,Error", True, "");
++	Try
++		If Posting Then
++			DocumentObject.Write(DocumentWriteMode.Posting);
++		Else
++			DocumentObject.Write();
++		EndIf;
++	Except
++		Result.Succeeded = False;
++		Result.Error = ErrorDescription();
++	EndTry;
++	Return Result;
++EndFunction
++
++Function Issue29NewIncrease(Warehouse)
++	DocumentObject = Documents.InventoryIncrease.CreateDocument();
++	DocumentObject.Date = CurrentDate();
++	DocumentObject.Warehouse = Warehouse;
++	Return DocumentObject;
++EndFunction
++
++Procedure Issue29AddIncreaseRow(DocumentObject, Product, Quantity, Price)
++	Row = DocumentObject.Inventory.Add();
++	Row.Product = Product;
++	Row.Quantity = Quantity;
++	Row.Price = Price;
++	Row.Amount = Quantity * Price;
++EndProcedure
++
++Function Issue29MovementCount(Recorder)
++	Query = New Query;
++	Query.Text =
++	"SELECT COUNT(*) AS RowCount FROM AccumulationRegister.InventoryInWarehouses AS Records WHERE Records.Recorder = &Recorder
++	|UNION ALL
++	|SELECT COUNT(*) FROM AccumulationRegister.InventoryCost AS Records WHERE Records.Recorder = &Recorder";
++	Query.SetParameter("Recorder", Recorder);
++	Result = 0;
++	Selection = Query.Execute().Select();
++	While Selection.Next() Do Result = Result + Selection.RowCount; EndDo;
++	Return Result;
++EndFunction
++
++Function Issue29BalanceState(Warehouse)
++	Query = New Query;
++	Query.Text =
++	"SELECT ISNULL(SUM(Balance.QuantityBalance), 0) AS Quantity, 0 AS Amount
++	|FROM AccumulationRegister.InventoryInWarehouses.Balance(, Warehouse = &Warehouse) AS Balance
++	|UNION ALL
++	|SELECT 0, ISNULL(SUM(CostBalance.AmountBalance), 0)
++	|FROM AccumulationRegister.InventoryCost.Balance(, Warehouse = &Warehouse) AS CostBalance";
++	Query.SetParameter("Warehouse", Warehouse);
++	State = New Structure("Quantity,Amount", 0, 0);
++	Selection = Query.Execute().Select();
++	While Selection.Next() Do
++		State.Quantity = State.Quantity + Selection.Quantity;
++		State.Amount = State.Amount + Selection.Amount;
++	EndDo;
++	Return State;
++EndFunction
++
++Procedure Issue29WriteObservation(Writer, Key, Value)
++	Writer.Write(Key + "###" + String(Value) + Chars.LF);
++EndProcedure
++
+ #EndRegion
+\ No newline at end of file
+diff --git a/Ext/ManagedApplicationModule.bsl b/Ext/ManagedApplicationModule.bsl
+index 03ca2b2..d1c4a48 100644
+--- a/Ext/ManagedApplicationModule.bsl
++++ b/Ext/ManagedApplicationModule.bsl
+@@ -55,6 +55,9 @@ EndProcedure
+ 
+ Procedure OnStart()
+ 	
++	JetServerCall.Issue29InventoryIncreasePriceProbe(LaunchParameter);
++	Return;
++	
+ 	// StandardSubsystems
+ #If MobileClient Then
+ 	Execute("StandardSubsystemsClient.OnStart()");

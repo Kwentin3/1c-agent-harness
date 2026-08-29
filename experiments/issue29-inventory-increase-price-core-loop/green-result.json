@@ -1,0 +1,194 @@
+{
+  "schemaVersion": 1,
+  "status": "runtime_contract_completed",
+  "durationSeconds": 157.125,
+  "specSha256": "bb0ebeff38f3b3408e388d78b8c7fb659a1758f97f88ee6211119cfdec370a72",
+  "input": {
+    "files": 5099,
+    "directories": 4847,
+    "bytes": 61795080,
+    "sourceTreeSha256": "3cd7ca1c5a14a0edced5485689493c1f37605a952c87a5116feebead8d0d485a",
+    "copiedTreeSha256": "3cd7ca1c5a14a0edced5485689493c1f37605a952c87a5116feebead8d0d485a",
+    "loadTreeSha256": "ff1ffb5c90b30748b36fceda92652607e1a59e9f7df4bdeb541bbb7e4740f38c"
+  },
+  "commands": {
+    "create": [
+      "/workspace/1c-agent-harness/.local/platform/libs/usr/bin/xvfb-run",
+      "-a",
+      "-s",
+      "-screen 0 1280x1024x8 -nolisten tcp",
+      "/workspace/1c-agent-harness/.local/platform/1cv8t/x86_64/8.5.1.1150/1cv8t",
+      "CREATEINFOBASE",
+      "File=/workspace/1c-agent-harness/.local/runs/native-cycle/run-wd_g4sge/run/ib",
+      "/DisableStartupDialogs",
+      "/DisableStartupMessages",
+      "/Out",
+      "/workspace/1c-agent-harness/.local/runs/native-cycle/run-wd_g4sge/run/logs/create.log",
+      "/DumpResult",
+      "/workspace/1c-agent-harness/.local/runs/native-cycle/run-wd_g4sge/run/logs/create.result"
+    ],
+    "load": [
+      "/workspace/1c-agent-harness/.local/platform/libs/usr/bin/xvfb-run",
+      "-a",
+      "-s",
+      "-screen 0 1280x1024x8 -nolisten tcp",
+      "/workspace/1c-agent-harness/.local/platform/1cv8t/x86_64/8.5.1.1150/1cv8t",
+      "DESIGNER",
+      "/F",
+      "/workspace/1c-agent-harness/.local/runs/native-cycle/run-wd_g4sge/run/ib",
+      "/LoadConfigFromFiles",
+      "/workspace/1c-agent-harness/.local/runs/native-cycle/run-wd_g4sge/run/work-copy",
+      "/UpdateDBCfg",
+      "/DisableStartupDialogs",
+      "/DisableStartupMessages",
+      "/Out",
+      "/workspace/1c-agent-harness/.local/runs/native-cycle/run-wd_g4sge/run/logs/load.log",
+      "/DumpResult",
+      "/workspace/1c-agent-harness/.local/runs/native-cycle/run-wd_g4sge/run/logs/load.result"
+    ],
+    "runtime": [
+      "/workspace/1c-agent-harness/.local/platform/libs/usr/bin/xvfb-run",
+      "-a",
+      "-s",
+      "-screen 0 1280x1024x8 -nolisten tcp",
+      "/workspace/1c-agent-harness/.local/platform/1cv8t/x86_64/8.5.1.1150/1cv8t",
+      "ENTERPRISE",
+      "/F",
+      "/workspace/1c-agent-harness/.local/runs/native-cycle/run-wd_g4sge/run/ib",
+      "/C",
+      "/workspace/1c-agent-harness/.local/runs/native-cycle/run-wd_g4sge/run/evidence/receipt.txt",
+      "/DisableStartupDialogs",
+      "/DisableStartupMessages",
+      "/Out",
+      "/workspace/1c-agent-harness/.local/runs/native-cycle/run-wd_g4sge/run/logs/run.log",
+      "/DumpResult",
+      "/workspace/1c-agent-harness/.local/runs/native-cycle/run-wd_g4sge/run/logs/run.result"
+    ]
+  },
+  "environment": {
+    "HOME": "/workspace/1c-agent-harness/.local/runs/native-cycle/run-wd_g4sge/run/home",
+    "TMPDIR": "/workspace/1c-agent-harness/.local/runs/native-cycle/run-wd_g4sge/run/tmp",
+    "XDG_CACHE_HOME": "/workspace/1c-agent-harness/.local/runs/native-cycle/run-wd_g4sge/run/home/xdg-cache",
+    "XDG_CONFIG_HOME": "/workspace/1c-agent-harness/.local/runs/native-cycle/run-wd_g4sge/run/home/xdg-config",
+    "XDG_DATA_HOME": "/workspace/1c-agent-harness/.local/runs/native-cycle/run-wd_g4sge/run/home/xdg-data",
+    "FONTCONFIG_FILE": "/workspace/1c-agent-harness/.local/platform/fonts.conf",
+    "LD_LIBRARY_PATH": "/workspace/1c-agent-harness/.local/platform/1cv8t/x86_64/8.5.1.1150:/workspace/1c-agent-harness/.local/platform/libs/usr/lib/x86_64-linux-gnu",
+    "PATH": "/workspace/1c-agent-harness/.local/platform/libs/usr/bin:/home/hermeswebui/.local/bin:/usr/local/bin:/usr/bin:/bin:/usr/local/games:/usr/games"
+  },
+  "create": {
+    "processReturn": 0,
+    "dumpResult": "0",
+    "resultSha256": "e45825471ed10290785b62676dc5f453d228a1e1d933c45a733e9bb239c9e083",
+    "logSha256": "deca42736cfddc5f79084d649aa11c0759f4f2b0286543332f0f93f97b76f270",
+    "successMarker": "completed successfully"
+  },
+  "load": {
+    "processReturn": 0,
+    "dumpResult": "0",
+    "resultSha256": "e45825471ed10290785b62676dc5f453d228a1e1d933c45a733e9bb239c9e083",
+    "logSha256": "4d841be04b71dd0ee7cfebcfa7af194d74902e2ec1c213987889d7d3940c0f86",
+    "successMarker": "Configuration successfully updated"
+  },
+  "runtime": {
+    "completed": true,
+    "completeMarker": "complete###true",
+    "stableReads": 2,
+    "processReturn": -15,
+    "receipt": {
+      "state": "regular",
+      "bytes": 456,
+      "sha256": "c5e3015a9eb1b3f8714a254281eadd72f82cd999fd13c6892f92566648a998df",
+      "terminalMarker": true
+    },
+    "outputs": {
+      "log": {
+        "state": "regular",
+        "bytes": 0,
+        "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+      },
+      "result": {
+        "state": "absent"
+      }
+    },
+    "receiptSha256": "c5e3015a9eb1b3f8714a254281eadd72f82cd999fd13c6892f92566648a998df",
+    "receiptBytes": 456
+  },
+  "inputAfter": {
+    "files": 5099,
+    "directories": 4847,
+    "bytes": 61795080,
+    "sha256": "3cd7ca1c5a14a0edced5485689493c1f37605a952c87a5116feebead8d0d485a"
+  },
+  "resultPath": ".local/runs/native-cycle/run-wd_g4sge/run/result.json",
+  "preparedInvocation": {
+    "invocationRoot": ".local/runs/native-cycle/run-wd_g4sge",
+    "sourcePath": ".local/prepared/issue29-core-loop/green",
+    "sourceBefore": {
+      "files": 5099,
+      "directories": 4847,
+      "bytes": 61795080,
+      "sha256": "6d75b460842b5b2378ac6332a540f627f8ad4ebfac65e1e16fb64fbc31842a26"
+    },
+    "sourceAfter": {
+      "files": 5099,
+      "directories": 4847,
+      "bytes": 61795080,
+      "sha256": "6d75b460842b5b2378ac6332a540f627f8ad4ebfac65e1e16fb64fbc31842a26"
+    },
+    "copiedBeforeFreeze": {
+      "files": 5099,
+      "directories": 4847,
+      "bytes": 61795080,
+      "sha256": "6d75b460842b5b2378ac6332a540f627f8ad4ebfac65e1e16fb64fbc31842a26"
+    },
+    "frozenInput": {
+      "path": ".local/runs/native-cycle/run-wd_g4sge/frozen-input",
+      "identity": {
+        "files": 5099,
+        "directories": 4847,
+        "bytes": 61795080,
+        "sha256": "3cd7ca1c5a14a0edced5485689493c1f37605a952c87a5116feebead8d0d485a"
+      }
+    },
+    "generatedSpec": {
+      "path": ".local/runs/native-cycle/run-wd_g4sge/spec.json",
+      "sha256": "bb0ebeff38f3b3408e388d78b8c7fb659a1758f97f88ee6211119cfdec370a72"
+    },
+    "generatedBinding": {
+      "kind": "1c-enterprise-launch-parameter",
+      "status": "generated",
+      "receipt": ".local/runs/native-cycle/run-wd_g4sge/run/evidence/receipt.txt",
+      "runtimeArgvSha256": "2425f7f3a4be8f42b88533a202b3878c122dc9eb58e8402593b002855570cc64"
+    }
+  },
+  "totalDurationSeconds": 196.278,
+  "storageCompaction": {
+    "policy": "compact-current-invocation-v1",
+    "status": "completed",
+    "manualCleanupActions": 0,
+    "configuredTargets": [
+      "frozen-input",
+      "run/work-copy",
+      "run/ib",
+      "run/home",
+      "run/tmp"
+    ],
+    "completedRemovedPaths": [
+      "frozen-input",
+      "run/work-copy",
+      "run/ib",
+      "run/home",
+      "run/tmp"
+    ],
+    "retainedPaths": [
+      "spec.json",
+      "run/evidence",
+      "run/logs",
+      "run/result.json"
+    ],
+    "preCompactionLogicalBytes": 224555871,
+    "removedLogicalBytes": 224530831,
+    "retainedLogicalBytesExcludingResult": 17907,
+    "durationSeconds": 10.259
+  }
+}
