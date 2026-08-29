@@ -2,36 +2,30 @@
   "schemaVersion": 1,
   "task": "Apply a discount only when the order amount is at least 100; retain full price below 100.",
   "clauses": [
-    {
-      "id": "threshold",
-      "statement": "The discount is accepted at 100 and rejected at 99.",
-      "basis": "user-task",
-      "taskQuote": "only when the order amount is at least 100"
-    },
-    {
-      "id": "preservation",
-      "statement": "An amount below 100 retains full price.",
-      "basis": "user-task",
-      "taskQuote": "retain full price below 100"
-    }
+    {"id": "threshold", "statement": "The discount applies at 100 and above.", "basis": "user-task", "taskQuote": "only when the order amount is at least 100"},
+    {"id": "preservation", "statement": "An amount below 100 retains full price.", "basis": "user-task", "taskQuote": "retain full price below 100"}
   ],
   "observations": [
     {"id": "discountAccepted", "description": "The external scalar receipt says whether a discount was applied.", "clauses": ["threshold", "preservation"], "externallyCheckable": true, "scalar": true}
   ],
   "cases": [
     {"id": "amount99", "clauses": ["threshold", "preservation"], "expected": {"discountAccepted": "No"}},
-    {"id": "amount100", "clauses": ["threshold"], "expected": {"discountAccepted": "Yes"}}
+    {"id": "amount100", "clauses": ["threshold"], "expected": {"discountAccepted": "Yes"}},
+    {"id": "amount101", "clauses": ["threshold"], "expected": {"discountAccepted": "Yes"}}
   ],
   "countermodels": [
-    {"id": "strictly-over-100", "rationale": "A boundary implementation may use > instead of >=.", "predictions": {"amount99": {"discountAccepted": "No"}, "amount100": {"discountAccepted": "No"}}},
-    {"id": "always-discount", "rationale": "A promotion guard may be skipped.", "predictions": {"amount99": {"discountAccepted": "Yes"}, "amount100": {"discountAccepted": "Yes"}}}
+    {"id": "strictly-over-100", "rationale": "A boundary implementation may use > instead of >=.", "predictions": {"amount99": {"discountAccepted": "No"}, "amount100": {"discountAccepted": "No"}, "amount101": {"discountAccepted": "Yes"}}},
+    {"id": "exactly-100", "rationale": "A narrow boundary implementation may accept only the literal threshold.", "predictions": {"amount99": {"discountAccepted": "No"}, "amount100": {"discountAccepted": "Yes"}, "amount101": {"discountAccepted": "No"}}},
+    {"id": "always-discount", "rationale": "A promotion guard may be skipped.", "predictions": {"amount99": {"discountAccepted": "Yes"}, "amount100": {"discountAccepted": "Yes"}, "amount101": {"discountAccepted": "Yes"}}},
+    {"id": "never-discount", "rationale": "The promotion may never be applied.", "predictions": {"amount99": {"discountAccepted": "No"}, "amount100": {"discountAccepted": "No"}, "amount101": {"discountAccepted": "No"}}},
+    {"id": "at-most-100", "rationale": "The comparison direction may be reversed.", "predictions": {"amount99": {"discountAccepted": "Yes"}, "amount100": {"discountAccepted": "Yes"}, "amount101": {"discountAccepted": "No"}}}
   ],
   "receipts": {
     "policy": "exact",
     "delimiter": "###",
     "phases": {
-      "red": {"path": "fresh-red-receipt.txt", "expected": [["case", "fresh-red"], ["amount99Accepted", "Yes"], ["amount100Accepted", "Yes"], ["complete", "true"]], "bindings": [["amount99", "discountAccepted", "amount99Accepted"], ["amount100", "discountAccepted", "amount100Accepted"]], "controls": ["case", "complete"]},
-      "green": {"path": "fresh-green-receipt.txt", "expected": [["case", "fresh-green"], ["amount99Accepted", "No"], ["amount100Accepted", "Yes"], ["complete", "true"]], "bindings": [["amount99", "discountAccepted", "amount99Accepted"], ["amount100", "discountAccepted", "amount100Accepted"]], "controls": ["case", "complete"]}
+      "red": {"path": "fresh-red-receipt.txt", "expected": [["case", "fresh-red"], ["amount99Accepted", "Yes"], ["amount100Accepted", "No"], ["amount101Accepted", "No"], ["complete", "true"]], "bindings": [["amount99", "discountAccepted", "amount99Accepted"], ["amount100", "discountAccepted", "amount100Accepted"], ["amount101", "discountAccepted", "amount101Accepted"]], "controls": ["case", "complete"]},
+      "green": {"path": "fresh-green-receipt.txt", "expected": [["case", "fresh-green"], ["amount99Accepted", "No"], ["amount100Accepted", "Yes"], ["amount101Accepted", "Yes"], ["complete", "true"]], "bindings": [["amount99", "discountAccepted", "amount99Accepted"], ["amount100", "discountAccepted", "amount100Accepted"], ["amount101", "discountAccepted", "amount101Accepted"]], "controls": ["case", "complete"]}
     }
   }
 }

@@ -67,6 +67,16 @@ class SemanticPreflightTests(unittest.TestCase):
         self.assertEqual(completed.returncode, 0, completed.stdout)
         self.assertEqual(json.loads(completed.stdout)["verdict"], "FORMAL COHERENCE READY")
 
+    def test_fresh_discount_challenge_kills_retained_threshold_countermodels(self) -> None:
+        plan = json.loads(FRESH.read_text(encoding="utf-8"))
+        self.assertEqual([case["id"] for case in plan["cases"]], ["amount99", "amount100", "amount101"])
+        models = {model["id"]: model["predictions"] for model in plan["countermodels"]}
+        self.assertEqual(models["strictly-over-100"]["amount100"], {"discountAccepted": "No"})
+        self.assertEqual(models["exactly-100"]["amount101"], {"discountAccepted": "No"})
+        self.assertEqual(models["always-discount"]["amount99"], {"discountAccepted": "Yes"})
+        self.assertEqual(models["never-discount"]["amount100"], {"discountAccepted": "No"})
+        self.assertEqual(models["at-most-100"]["amount101"], {"discountAccepted": "No"})
+
     def test_blocks_owner_false_positive_task_provenance_and_omission_shapes(self) -> None:
         mutations = {
             "opposite-task": lambda plan: plan.update(task="Reject every quantity, including positive quantities."),
