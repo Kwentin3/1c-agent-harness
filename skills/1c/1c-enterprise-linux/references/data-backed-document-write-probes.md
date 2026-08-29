@@ -18,6 +18,12 @@ Use this reference when a write-cycle issue must prove server-side document post
    - before/after balances from native virtual tables such as `AccumulationRegister.<Register>.Balance(...)`.
 6. Use a terminal receipt marker (`complete###true`) and a run nonce. A nonempty receipt is not enough; the client often stays open after the probe completes, so the external runner should wait for the marker and then terminate only its own process group.
 
+## Pre-native 1C observation check
+
+- Treat posting cancellation and exception behavior as separate observations. `Cancel = True` may surface through a client exception depending on the entry point and platform behavior; absence or presence of that exception is not an acceptance requirement unless the user task or a cited, pre-established 1C semantic source requires it. Unknown exception behavior must remain explicit and block any oracle clause that depends on it.
+- Emit register state as scalar values for every relevant dimension and resource, for example quantity and amount before/after or their exact deltas. Do not compare separate 1C `Structure` instances with `=` and label the boolean as “balance unchanged”: that operator result is not externally regradable evidence of the contained balances.
+- Before 1C, feed artificial complete RED/GREEN scalar receipts to the external oracle and apply the generic missing/extra/duplicate/wrong-value mutation checks from `semantic-contract-testing`.
+
 ## Distinguishing good evidence from false RED/GREEN
 
 - A stage marker that stops immediately before `Document.Write()` is diagnostic only, not RED.

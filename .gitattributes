@@ -1,3 +1,5 @@
 # Frozen unified-diff evidence contains literal context marker + source tabs.
 experiments/issue12-narrow-context-20260826/diffs/*.diff whitespace=-space-before-tab,-trailing-space
 experiments/issue12-narrow-context-20260826/patches/*.patch whitespace=-space-before-tab,-trailing-space
+# Byte-identical issue #29 receipt copies retain their native BOM + CRLF.
+experiments/issue31-semantic-preflight/issue29-*-receipt.txt whitespace=-trailing-space

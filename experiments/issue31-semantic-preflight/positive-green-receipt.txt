@@ -1,0 +1,4 @@
+case###synthetic-green
+zeroAccepted###No
+positiveAccepted###Yes
+complete###true

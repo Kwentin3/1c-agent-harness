@@ -1,7 +1,7 @@
 ---
 name: 1c-enterprise-linux
 description: "Use when running or automating 1C:Enterprise on Linux."
-version: 1.2.0
+version: 1.3.0
 author: Hermes Agent
 license: MIT
 metadata:

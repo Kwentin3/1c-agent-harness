@@ -1,0 +1,46 @@
+{
+  "schemaVersion": 1,
+
+  "task": "Accept positive quantities and reject zero quantities.",
+  "clauses": [
+    {"id": "positive-only", "statement": "A quantity is accepted exactly when it is greater than zero.", "basis": "user-task"}
+  ],
+  "observations": [
+    {"id": "accepted", "description": "Boolean acceptance result emitted as Yes or No.", "externallyCheckable": true, "scalar": true}
+  ],
+  "cases": [
+    {"id": "zero", "expected": {"accepted": "No"}},
+    {"id": "positive", "expected": {"accepted": "Yes"}}
+  ],
+  "countermodels": [
+    {
+      "id": "non-negative",
+      "rationale": "Using >= instead of > is a plausible boundary error.",
+      "predictions": {"zero": {"accepted": "Yes"}, "positive": {"accepted": "Yes"}}
+    },
+    {
+      "id": "reject-all",
+      "rationale": "A guard may reject every input.",
+      "predictions": {"zero": {"accepted": "No"}, "positive": {"accepted": "No"}}
+    }
+  ],
+  "closureExplanation": "The two retained plausible boundary/control countermodels are distinguished by the zero and positive cases.",
+  "receipts": {
+    "policy": "exact",
+    "delimiter": "###",
+    "phases": {
+      "red": {
+        "path": "positive-red-receipt.txt",
+        "expected": [["case", "synthetic-red"], ["zeroAccepted", "Yes"], ["positiveAccepted", "Yes"], ["complete", "true"]],
+        "bindings": [["zero", "accepted", "zeroAccepted"], ["positive", "accepted", "positiveAccepted"]],
+        "controls": ["case", "complete"]
+      },
+      "green": {
+        "path": "positive-green-receipt.txt",
+        "expected": [["case", "synthetic-green"], ["zeroAccepted", "No"], ["positiveAccepted", "Yes"], ["complete", "true"]],
+        "bindings": [["zero", "accepted", "zeroAccepted"], ["positive", "accepted", "positiveAccepted"]],
+        "controls": ["case", "complete"]
+      }
+    }
+  }
+}

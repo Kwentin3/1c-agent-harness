@@ -77,6 +77,19 @@ Ask:
 
 If one survives, add the smallest distinguishing observation/case or narrow the claim. Require RED to differ because the production behavior is absent, not because the fixture, parser, or probe is broken. A probe that succeeds without the production patch is not mutation-power evidence.
 
+Mechanically tabulate each retained counterimplementation as `case × observation → predicted value` and compare that complete vector with the required vector. Do not rely on a prose claim that a case “covers” first/last/aggregate shortcuts. A counterimplementation survives when all of its predictions match, even if it was accidentally omitted from the prose checklist.
+
+### 5a. Oracle coherence before execution
+
+Create artificial complete RED and GREEN receipts before spending the execution budget. Run the same external oracle that will grade native output and require it to accept both declared full results. Then verify that missing, extra, duplicate, and wrong-value observations are rejected under an explicit policy:
+
+- **exact:** actual and expected key sets must be identical;
+- **declared-key subset:** every declared key must match, while the contract states whether and how extra keys are retained or rejected.
+
+Expected partial data must not be compared as a whole dictionary to a complete receipt. Observation keys must be unique before conversion to a dictionary, otherwise duplicate evidence is silently overwritten. This mechanical check proves parser/oracle coherence only; it cannot decide whether the selected observations express the user's business rule.
+
+Every acceptance clause must also name its basis: user task, established domain semantics with a locator, or unknown. Unknown behavior stays outside acceptance until the user or an authoritative domain source resolves it.
+
 ### 6. Transparent freeze and amendment
 
 Freeze predicted behavior before production code. If review finds an incomplete contract:

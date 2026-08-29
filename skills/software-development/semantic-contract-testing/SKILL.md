@@ -1,7 +1,7 @@
 ---
 name: semantic-contract-testing
 description: Design semantic business-rule contracts before coding.
-version: 0.1.0
+version: 0.2.0
 author: Kwentin3, Hermes Agent
 license: UNLICENSED
 platforms: [linux, macos, windows]
@@ -53,6 +53,18 @@ Project docs own capability status, measured cost, candidates, and the next gate
 8. Then use the domain execution skill and ordinary RED/GREEN implementation loop.
 
 Read `references/semantic-business-rule-contracts.md` for the detailed model and verification checklist.
+
+## Cheap Preflight Before Expensive Execution
+
+Before the first expensive or native run, dry-run the measuring instrument itself:
+
+1. Mark every acceptance clause as coming from the user task, established domain semantics, or unknown. Unknown behavior remains an unknown; it blocks any criterion that depends on it.
+2. Tabulate each retained countermodel's predicted observation vector across the whole case matrix. If it matches the required vector, report the survivor and stop.
+3. Emit artificial complete RED and GREEN receipts and run the external oracle against both. Choose and state one comparison policy: exact key set, or declared-key subset with explicit handling of extra keys.
+4. Mutate one receipt at a time with a missing, extra, duplicate, and wrong-value observation. The oracle must reject each mutation according to that policy.
+5. Confirm each observation is externally checkable at the domain seam. A convenient process marker or opaque object comparison is not automatically a business-state observation.
+
+Return **READY FOR NATIVE** only when the declared matrix has no surviving retained countermodel, receipt/oracle dry-runs are coherent, and no unknown has been promoted into acceptance. Otherwise return **CONTRACT BLOCKED** with concrete survivors or contradictions. This preflight validates the declared instrument, not the business rule, and does not require an independent reviewer in the ordinary developer loop.
 
 ## Core Loop vs Milestone Acceptance
 

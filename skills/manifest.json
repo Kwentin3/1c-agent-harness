@@ -6,12 +6,12 @@
     {
       "install_root": "skills/1c/1c-enterprise-linux",
       "name": "1c-enterprise-linux",
-      "resource_manifest_sha256": "960ad98f4dad17e0f016c233fdea188696ecae41732d92b759b03a87263e2fa9",
+      "resource_manifest_sha256": "4fc3ab8cb92983f67559608d666103a723d306d35f389805bd6ae938811989b5",
       "resources": [
         {
           "bytes": 19181,
           "path": "SKILL.md",
-          "sha256": "98aee79359da9a651c76ee00d574acb6c8b311b0586848acfba3d4862be05a9e"
+          "sha256": "ee6af1b510f51ca021c1b43fc829382df5a732daee53aa0d43e1507efb3e6a15"
         },
         {
           "bytes": 4329,
@@ -29,9 +29,9 @@
           "sha256": "46636a78f8c07145fbe1a36be108b371a8e4ab472fa0c74e25b8905c84b81275"
         },
         {
-          "bytes": 4139,
+          "bytes": 5148,
           "path": "references/data-backed-document-write-probes.md",
-          "sha256": "52ba0c02bbc378d0585136f4b01dd6275c4dd2a6679c7950dcbc98653d74e3eb"
+          "sha256": "672ed60244f32607e6f9eb78ff7a49cb7914c601d1d977ed4ea0e7766eec6546"
         },
         {
           "bytes": 3357,
@@ -110,26 +110,26 @@
         }
       ],
       "source_root": "skills/1c/1c-enterprise-linux",
-      "version": "1.2.0"
+      "version": "1.3.0"
     },
     {
       "install_root": "skills/software-development/semantic-contract-testing",
       "name": "semantic-contract-testing",
-      "resource_manifest_sha256": "8eada9451258b9c7c392073842c7b5532ba38ca674a849f353863bd336781bcf",
+      "resource_manifest_sha256": "cd30b6b1cbb9eed52143dbe21afa9da3c3961750bf2a680ddbbb0048f78ab3fb",
       "resources": [
         {
-          "bytes": 4678,
+          "bytes": 6124,
           "path": "SKILL.md",
-          "sha256": "52ab62f828c2c5686dcd7cc9861d4f68c502ee8be01c8d0fe56e3b4932542986"
+          "sha256": "8b130cc4229b2ad89523126d970a7f45939873d96f3c5d30943a018335b1148e"
         },
         {
-          "bytes": 6493,
+          "bytes": 8004,
           "path": "references/semantic-business-rule-contracts.md",
-          "sha256": "88b57c1fdf678ac7bac2d177c50476403e822dd943d182aee3ab0dfa2bb57178"
+          "sha256": "d8b13ba0abf2526301b3ac02e0bf592f92221b5861f80dd0cde42c19286da216"
         }
       ],
       "source_root": "skills/software-development/semantic-contract-testing",
-      "version": "0.1.0"
+      "version": "0.2.0"
     }
   ],
   "schema_version": 1
