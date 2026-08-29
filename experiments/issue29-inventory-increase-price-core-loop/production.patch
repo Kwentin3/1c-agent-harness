@@ -1,0 +1,18 @@
+diff --git a/Documents/InventoryIncrease/Ext/ObjectModule.bsl b/Documents/InventoryIncrease/Ext/ObjectModule.bsl
+index 38bfe2e..0025105 100644
+--- a/Documents/InventoryIncrease/Ext/ObjectModule.bsl
++++ b/Documents/InventoryIncrease/Ext/ObjectModule.bsl
+@@ -10,6 +10,13 @@ EndProcedure
+ 
+ Procedure Posting(Cancel, PostingMode)
+ 	
++	For Each InventoryRow In Inventory Do
++		If InventoryRow.Price <= 0 Then
++			Cancel = True;
++			Return;
++		EndIf;
++	EndDo;
++	
+ 	// Initialization of additional properties for document posting.
+ 	PostingManagement.InitializeAdditionalPropertiesForPosting(Ref, AdditionalProperties);
+ 	
