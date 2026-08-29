@@ -113,7 +113,7 @@ def validate(plan_path: Path) -> dict[str, Any]:
             locator, quote = text(source["locator"], "source locator"), text(source["quote"], "source quote")
             parts = locator.split(":"); valid = len(parts) == 2 and parts[0] == "line" and parts[1].isdigit()
             lines = safe_read(REPO, source["path"], f"clause {identifier} source").splitlines()
-            if not valid or quote not in lines[int(parts[1]) - 1:int(parts[1])]:
+            if not valid or int(parts[1]) < 1 or int(parts[1]) > len(lines) or quote not in lines[int(parts[1]) - 1]:
                 findings.append(finding("UNVERIFIED_DOMAIN_SOURCE", f"clause {identifier!r} quote is absent at locator", clause=identifier, locator=locator))
         else:
             text(clause["taskQuote"], f"clause {identifier} taskQuote", empty=True)

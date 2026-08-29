@@ -98,7 +98,7 @@ class SemanticPreflightTests(unittest.TestCase):
     def test_validates_established_domain_quote_at_declared_line(self) -> None:
         plan = json.loads(CONTROL.read_text(encoding="utf-8"))
         clause = plan["clauses"][0]
-        clause.clear(); clause.update({"id": "positive-only", "statement": "A quantity is accepted exactly when it is greater than zero.", "basis": "established-domain", "source": {"path": "README.md", "locator": "line:1", "quote": "# 1C Agent Harness"}})
+        clause.clear(); clause.update({"id": "positive-only", "statement": "A quantity is accepted exactly when it is greater than zero.", "basis": "established-domain", "source": {"path": "README.md", "locator": "line:1", "quote": "1C Agent Harness"}})
         temporary, path = temporary_plan(plan); self.addCleanup(temporary.cleanup)
         self.assertEqual(run_preflight(path).returncode, 0)
         clause["source"]["locator"] = "line:999999"
