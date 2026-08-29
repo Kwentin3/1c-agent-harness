@@ -1,0 +1,8 @@
+{
+  "nativeRun": false,
+  "results": {
+    "below-availability###reservation_status": "confirmed",
+    "at-availability###reservation_status": "confirmed",
+    "above-availability###reservation_status": "rejected"
+  }
+}

@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+import hashlib
 import json
 import os
 from pathlib import Path
@@ -14,6 +15,7 @@ CLI = ROOT / "scripts" / "semantic_preflight.py"
 ISSUE29 = ROOT / "experiments" / "issue31-semantic-preflight" / "issue29-plan.json"
 CONTROL = ROOT / "experiments" / "issue31-semantic-preflight" / "positive-control.json"
 FRESH = ROOT / "experiments" / "issue31-semantic-preflight" / "fresh-discount-plan.json"
+FINAL_FRESH = ROOT / "experiments" / "issue31-semantic-preflight" / "final-fresh-attempt-20260829-reservation"
 
 
 def run_preflight(plan: Path) -> subprocess.CompletedProcess[str]:
@@ -76,6 +78,69 @@ class SemanticPreflightTests(unittest.TestCase):
         self.assertEqual(models["always-discount"]["amount99"], {"discountAccepted": "Yes"})
         self.assertEqual(models["never-discount"]["amount100"], {"discountAccepted": "No"})
         self.assertEqual(models["at-most-100"]["amount101"], {"discountAccepted": "No"})
+
+    def test_final_fresh_attempt_receipt_is_bound_and_honest_failure(self) -> None:
+        manifest = json.loads((FINAL_FRESH / "manifest.json").read_text(encoding="utf-8"))
+        expected_files = {
+            path.relative_to(FINAL_FRESH).as_posix()
+            for path in FINAL_FRESH.rglob("*") if path.is_file()
+        } - {"manifest.json"}
+        self.assertEqual(set(manifest["artifacts"]), expected_files)
+        self.assertEqual(manifest["artifactInventory"], "all package files except this self-describing manifest")
+        self.assertEqual(manifest["verdict"], "PREFLIGHT FAIL / FORMAL TOOL ONLY")
+        self.assertEqual(manifest["formalVerdict"], "CONTRACT BLOCKED")
+        self.assertEqual(manifest["formalExitCode"], 1)
+        self.assertEqual(manifest["nativeAttempts"], 0)
+        self.assertEqual(manifest["ownerInterventions"], 0)
+        for name, digest in manifest["artifacts"].items():
+            self.assertEqual(hashlib.sha256((FINAL_FRESH / name).read_bytes()).hexdigest(), digest)
+        report = json.loads((FINAL_FRESH / "verbatim-result.json").read_text(encoding="utf-8"))
+        retained = run_preflight(FINAL_FRESH / "issue31-reservation-plan.json")
+        self.assertEqual(retained.returncode, report["formal_exit_code"])
+        self.assertEqual(retained.stdout.rstrip(), report["formal_stdout"])
+        self.assertEqual(retained.stderr, report["formal_stderr"])
+        self.assertEqual(json.loads(retained.stdout)["verdict"], report["verdict"])
+        self.assertEqual(report["task"], manifest["task"])
+        self.assertEqual(report["candidate_identity"]["head"], manifest["candidateAtAttemptStart"]["head"])
+        self.assertEqual(report["candidate_identity"]["tree"], manifest["candidateAtAttemptStart"]["tree"])
+        self.assertEqual(report["candidate_identity"]["skill_name"], manifest["skill"]["name"])
+        self.assertEqual(report["candidate_identity"]["skill_version"], manifest["skill"]["version"])
+        self.assertEqual(report["candidate_identity"]["skill_manifest_sha256"], manifest["skill"]["resourceManifestSha256"])
+        self.assertTrue(report["executor_identity"])
+        self.assertTrue(report["allowed_context"])
+        self.assertTrue(report["forbidden_context"])
+        self.assertTrue(report["semantic_challenge"]["clauses"])
+        self.assertTrue(report["semantic_challenge"]["observations"])
+        self.assertTrue(report["semantic_challenge"]["cases"])
+        self.assertTrue(report["semantic_challenge"]["countermodels"])
+        plan = json.loads((FINAL_FRESH / "issue31-reservation-plan.json").read_text(encoding="utf-8"))
+        self.assertEqual(plan["task"], report["task"])
+        self.assertEqual(
+            plan["observations"],
+            [{"id": "reservation_status", "clauseIds": ["C1"], "kind": "scalar", "description": "The externally observable scalar reservation status after the request: confirmed or rejected."}],
+        )
+        self.assertEqual(
+            [(case["id"], case["inputs"], case["expected"]["reservation_status"]) for case in plan["cases"]],
+            [("below-availability", {"requested_units": 4, "available_units": 5}, "confirmed"),
+             ("at-availability", {"requested_units": 5, "available_units": 5}, "confirmed"),
+             ("above-availability", {"requested_units": 6, "available_units": 5}, "rejected")],
+        )
+        models = {model["id"]: model["predictions"] for model in plan["countermodels"]}
+        self.assertEqual(set(models), {"strict-less-than", "unconditional-confirm", "equality-only-confirm"})
+        self.assertEqual(models["strict-less-than"]["at-availability"], {"reservation_status": "rejected"})
+        self.assertEqual(models["unconditional-confirm"]["above-availability"], {"reservation_status": "confirmed"})
+        self.assertEqual(models["equality-only-confirm"]["below-availability"], {"reservation_status": "rejected"})
+        self.assertEqual(report["end_monotonic_ns"] - report["start_monotonic_ns"], round(report["elapsed_ms"] * 1_000_000))
+        self.assertEqual(report["verdict"], "CONTRACT BLOCKED")
+        self.assertEqual(report["formal_exit_code"], 1)
+        self.assertIn('"verdict": "CONTRACT BLOCKED"', report["formal_stdout"])
+        self.assertEqual(report["formal_stderr"], "")
+        self.assertEqual(report["native_attempts"], 0)
+        self.assertEqual(report["owner_interventions"], 0)
+        transcript = (FINAL_FRESH / "executor-transcript.log").read_text(encoding="utf-8")
+        self.assertEqual(transcript.count("python3 scripts/semantic_preflight.py"), 2)
+        self.assertEqual(transcript.count("-> patch("), 1)
+        self.assertIn("renderer-truncated/ellipsized", (FINAL_FRESH / "README.md").read_text(encoding="utf-8"))
 
     def test_blocks_owner_false_positive_task_provenance_and_omission_shapes(self) -> None:
         mutations = {

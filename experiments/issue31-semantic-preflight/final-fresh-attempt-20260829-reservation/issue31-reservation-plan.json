@@ -1,0 +1,72 @@
+{
+  "schemaVersion": 1,
+  "task": "Confirm a reservation only when requested units do not exceed available units; reject a request above availability.",
+  "clauses": [
+    {
+      "id": "C1",
+      "kind": "user-task",
+      "taskQuote": "Confirm a reservation only when requested units do not exceed available units; reject a request above availability."
+    }
+  ],
+  "observations": [
+    {
+      "id": "reservation_status",
+      "clauseIds": ["C1"],
+      "kind": "scalar",
+      "description": "The externally observable scalar reservation status after the request: confirmed or rejected."
+    }
+  ],
+  "cases": [
+    {
+      "id": "below-availability",
+      "clauseIds": ["C1"],
+      "inputs": {"requested_units": 4, "available_units": 5},
+      "expected": {"reservation_status": "confirmed"}
+    },
+    {
+      "id": "at-availability",
+      "clauseIds": ["C1"],
+      "inputs": {"requested_units": 5, "available_units": 5},
+      "expected": {"reservation_status": "confirmed"}
+    },
+    {
+      "id": "above-availability",
+      "clauseIds": ["C1"],
+      "inputs": {"requested_units": 6, "available_units": 5},
+      "expected": {"reservation_status": "rejected"}
+    }
+  ],
+  "countermodels": [
+    {
+      "id": "strict-less-than",
+      "description": "Plausible boundary error: confirm only when requested units are strictly less than available units.",
+      "predictions": {
+        "below-availability": {"reservation_status": "confirmed"},
+        "at-availability": {"reservation_status": "rejected"},
+        "above-availability": {"reservation_status": "rejected"}
+      }
+    },
+    {
+      "id": "unconditional-confirm",
+      "description": "Plausible omission: confirm every request without comparing requested and available units.",
+      "predictions": {
+        "below-availability": {"reservation_status": "confirmed"},
+        "at-availability": {"reservation_status": "confirmed"},
+        "above-availability": {"reservation_status": "confirmed"}
+      }
+    },
+    {
+      "id": "equality-only-confirm",
+      "description": "Plausible overfit: confirm only exactly equal quantities rather than all requests within availability.",
+      "predictions": {
+        "below-availability": {"reservation_status": "rejected"},
+        "at-availability": {"reservation_status": "confirmed"},
+        "above-availability": {"reservation_status": "rejected"}
+      }
+    }
+  ],
+  "receipts": {
+    "red": ".local/issue31-final-fresh/issue31-reservation-red.json",
+    "green": ".local/issue31-final-fresh/issue31-reservation-green.json"
+  }
+}

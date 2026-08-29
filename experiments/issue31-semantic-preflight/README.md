@@ -52,7 +52,9 @@ The validator contains no issue-29-specific branch. This control is a regression
 
 ## Fresh no-native acceptance
 
-[`fresh-acceptance.md`](fresh-acceptance.md) records a separate small discount-threshold task, a reproducible formal matrix, plan, and artificial receipts. Its plan returns `FORMAL COHERENCE READY`; no 1C, snapshot, infobase, dependency, daemon, service, or GUI is used. Historical fresh-executor chronology is explicitly marked **unproven** unless a reviewable report binds the exact task, allowed context, executor identity, full result, duration, and candidate identity.
+[`fresh-acceptance.md`](fresh-acceptance.md) records a separate small discount-threshold task, a reproducible formal matrix, plan, and artificial receipts. Its plan returns `FORMAL COHERENCE READY`; no 1C, snapshot, infobase, dependency, daemon, service, or GUI is used. Historical fresh-executor chronology is explicitly marked **unproven**.
+
+The one owner-authorized observable fresh attempt is retained separately in [`final-fresh-attempt-20260829-reservation/`](final-fresh-attempt-20260829-reservation/). It is an honest **`PREFLIGHT FAIL / FORMAL TOOL ONLY`**: the executor's three-case semantic challenge was preserved with identity, allowed context, verbatim report, transcript, hashes, duration, and formal output, but one permitted correction/re-check ended in `CONTRACT BLOCKED` on an undocumented clause schema. No second attempt was made.
 
 ## Limits
 

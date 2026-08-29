@@ -1,0 +1,28 @@
+{
+  "schemaVersion": 1,
+  "attemptId": "issue31-final-fresh-537835736969938",
+  "candidateAtAttemptStart": {
+    "head": "5ef41ff0e5b3671d7c899114ca199cf0f73a3d67",
+    "tree": "08c3704058b46083e6a36fe8688e970999f23bb8"
+  },
+  "skill": {
+    "name": "semantic-contract-testing",
+    "version": "0.3.0",
+    "resourceManifestSha256": "f63f51f84786b3287cc2265089d4d6264b97baa7e4d193c7808efef67c75129c"
+  },
+  "task": "Confirm a reservation only when requested units do not exceed available units; reject a request above availability.",
+  "verdict": "PREFLIGHT FAIL / FORMAL TOOL ONLY",
+  "formalVerdict": "CONTRACT BLOCKED",
+  "formalExitCode": 1,
+  "nativeAttempts": 0,
+  "ownerInterventions": 0,
+  "artifactInventory": "all package files except this self-describing manifest",
+  "artifacts": {
+    "README.md": "ffafbb30c191e4dcf7441f6489cb0f04770909f6c0b50eb3f63f399a1150f4dd",
+    "executor-transcript.log": "6f3e29dedbdf63249f204179f91751dd2efdc9682da36b208c09862a824d9269",
+    "issue31-reservation-green.json": "207f1e4869033a16774b1957e7f0e2a0c4f38db367c0687840f980f38d168b9a",
+    "issue31-reservation-plan.json": "d52608a0a2fe75378db94815a9ac0817d09ad8fb29ac9f1d75ed752c94cf0b9e",
+    "issue31-reservation-red.json": "44a51920f0526fb39fbade2484ca1812beeeaafbe5b7dc83e70d40b09e1f170e",
+    "verbatim-result.json": "18d0fe298dc0d914b1521b7d647e06d8152ef552a1776d67937548c9683ed527"
+  }
+}
