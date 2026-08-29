@@ -1,7 +1,7 @@
 {
   "schemaVersion": 1,
   "verdict": "FUNCTIONAL PASS / BUDGET FAIL",
-  "immutableSource": {
+  "frozenInputBaseline": {
     "files": 5002,
     "directories": 4744,
     "bytes": 72790943,
