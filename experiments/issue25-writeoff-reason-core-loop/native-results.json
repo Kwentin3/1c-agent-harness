@@ -1,6 +1,7 @@
 {
   "schemaVersion": 1,
-  "verdict": "FUNCTIONAL PASS / BUDGET FAIL",
+  "verdict": "FUNCTIONAL FAIL — partial feature proof on a non-canonical fixture / fresh-agent end-to-end goal not proven",
+  "budgetVerdict": "FAIL",
   "frozenInputBaseline": {
     "files": 5002,
     "directories": 4744,

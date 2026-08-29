@@ -2,7 +2,9 @@
 
 ## Status
 
-`DONE` — **FUNCTIONAL PASS / BUDGET FAIL**, scoped to the exact frozen 5,002-file Jet `1.0.2.1` source tree described below. PR: https://github.com/Kwentin3/1c-agent-harness/pull/26 (open and unmerged; live CI and review state are external GitHub records).
+`DONE` — **FUNCTIONAL FAIL — partial feature proof on a non-canonical fixture / fresh-agent end-to-end goal not proven**. The separate budget result is also FAIL. PR: https://github.com/Kwentin3/1c-agent-harness/pull/26 (open and unmerged; live CI and review state are external GitHub records).
+
+This is an issue-level product verdict, not a claim that the BSL feature itself failed. The preserved partial result is: feature behavior passed natively on the frozen 5,002-file Jet `1.0.2.1` tree; `production.patch` applies statically to the canonical 5,099-file JetTr `1.0.3.1` snapshot; canonical native behavior is unproven.
 
 - Branch: `product/issue-25-writeoff-reason-core-loop`
 - Evidence commit opened as PR: `86a23684bcb9c4dcad803af678ee48d424e63279`
@@ -50,9 +52,9 @@ The fresh delegated executor ran from `2026-08-28T21:52:47Z` until its timeout a
 
 After that executor timed out, the parent continuation read an **installed, non-repository** reference at `/data/hermes-home/skills/1c/1c-enterprise-linux/references/bounded-prepared-run-lifecycle.md`. The exact returned content is durably recorded in Hermes session `6b8b73fbaf97`, message `109132`, tool call `call_52XuX6qxrlQRkjgJPKc7GXvb`, timestamp `2026-08-28T22:03:09.3163786Z`: `4,130` UTF-8 bytes, SHA-256 `5c0a94e5cf9839a5165ce7d0418b7beb446c02a414299ea7b39250464f32dc81`, first line `# Bounded prepared-run lifecycle and goal-loop continuity`. The installed file was later changed, so its current hash is not evidence of the bytes read then. Consequently, the original “repository docs/canonical skills only” statement describes the fresh delegated executor's initial boundary, not the complete parent continuation.
 
-The fresh executor independently found `Document.InventoryWriteOff`, its metadata and object-module posting boundary, and derived the builder/probe before timeout. The parent continuation preserved that work and completed the goal loop. The concrete procedural failure remained the two low-level `run` calls before the accepted `run-prepared` calls; no requirement conflict justified them.
+The fresh executor independently found `Document.InventoryWriteOff`, its metadata and object-module posting boundary, and derived the builder/probe before timeout. It did not complete the required end-to-end `understand → locate → contract → RED → patch → GREEN → PR` goal. The parent continuation preserved that work and completed the remaining stages after reading the installed non-repository reference described above. Therefore the fresh-agent end-to-end product claim is not proven. The two low-level `run` calls before the accepted `run-prepared` calls additionally preserve the budget failure; no requirement conflict justified them.
 
-Compared with issue #23: wall time `1784` vs `28294` seconds; native attempts `4` vs `4`; owner interventions `0` vs `1`; tracked evidence remains far smaller than issue #23's 15-file/3115-line package, although the two erroneous low-level calls prevent a budget PASS.
+Compared with issue #23: wall time `1784` vs `28294` seconds; native attempts `4` vs `4`; owner interventions `0` vs `1`; tracked evidence remains far smaller than issue #23's 15-file/3115-line package. The two erroneous low-level calls prevent a budget PASS independently of the issue-level functional failure.
 
 ## Source identity and canonical-snapshot boundary
 
