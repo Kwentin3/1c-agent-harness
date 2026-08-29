@@ -23,7 +23,9 @@ def run_preflight(plan: Path) -> subprocess.CompletedProcess[str]:
 
 
 def temporary_plan(plan: dict, receipt: str | None = None) -> tuple[tempfile.TemporaryDirectory[str], Path]:
-    temporary = tempfile.TemporaryDirectory(dir=ROOT / ".local")
+    local_root = ROOT / ".local"
+    local_root.mkdir(exist_ok=True)
+    temporary = tempfile.TemporaryDirectory(dir=local_root)
     root = Path(temporary.name)
     if "receipts" in plan:
         for phase, declared in plan["receipts"]["phases"].items():
