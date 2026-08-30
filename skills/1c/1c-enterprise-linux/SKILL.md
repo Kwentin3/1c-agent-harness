@@ -1,6 +1,6 @@
 ---
 name: 1c-enterprise-linux
-description: "Use when investigating or planning a 1C XML/BSL change."
+description: "Use when investigating/planning 1C XML/BSL changes or running/automating 1C:Enterprise on Linux."
 version: 1.5.0
 author: Hermes Agent
 license: MIT
