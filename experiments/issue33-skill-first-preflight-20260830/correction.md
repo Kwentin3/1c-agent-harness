@@ -9,7 +9,7 @@ The initial preflight remains unchanged. This is the single permitted correction
 - **Persisted-state matrix, with explicit pre-state:**
   1. existing `20`, explicit `10` → persisted `20`;
   2. existing `20`, explicit `25` → persisted `25`;
-  3. existing `20`, explicit `20` → persisted `20` (business no-op means unchanged persisted state; no physical write-count claim is made);
+  3. existing `20`, explicit `20` → persisted `20`, with the task's no-write preservation retained as a static acceptance constraint for this manager API: `WritingRequired` starts `False` (`ManagerModule.bsl:61`), is set only inside the unequal-value branch (`:72-77`), and `RecordSet.Write()` is guarded by it (`:89-91`). A runtime side-effect witness remains unknown; this claim does not cover direct record-set writers outside the API scope);
   4. no record, explicit `15` → exactly one record with persisted `15`;
   5. existing date older than current session day, omitted input → persisted `BegOfDay(CurrentSessionDate())`;
   6. existing date equal to current session day, omitted input → persisted date unchanged;

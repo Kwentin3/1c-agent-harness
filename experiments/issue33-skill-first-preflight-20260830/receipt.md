@@ -49,20 +49,20 @@ The reviewer auto-loaded global procedural skills before the source phase. This 
 
 ## Single transparent correction
 
-The initial result was not rewritten. The only semantic correction is `correction.md`, SHA-256 `1ce70cb03f9dc652b65d34046703de32cf039c0ea26cb18156fb9bb4b1a48ad1` after an evidence-only metadata repair.
+The initial result was not rewritten. The one transparent correction is `correction.md`; its final SHA-256 is bound by the final manifest/review rather than copied here before the final exact-HEAD check.
 
 It:
 
 - adds explicit existing-older/equal/future pre-states for omitted input;
 - applies normalization before the monotonic comparison;
-- replaces the unsupported physical write-count claim with observable persisted-state semantics;
+- preserves equal-date no-write as a static acceptance constraint for the investigated manager API (`WritingRequired`/guarded `RecordSet.Write()`), while keeping runtime side-effect absence and out-of-scope direct writers explicit unknowns;
 - limits the claim to the exported manager API rather than all possible writers;
 - records the generic safe-mode `BeforeWrite` subscription and preserves it as an adjacent invariant;
 - retains at least two independently killed counterimplementations.
 
 No second reviewer was introduced: the issue budget allowed one final reviewer and one transparent correction. Therefore the recorded independent verdict remains `CHECKLIST FAIL` on the initial result; the master adjudication after the single correction is `READY FOR NATIVE` for one bounded future experiment, not authorization for a production patch or native loop.
 
-The correction was performed by the master Hermes Agent (`gpt-5.6-sol`, `openai-codex`) from `2026-08-30T11:14:43Z` to `11:16:24Z` (`101 s`), with `0` native attempts and `0` owner interventions. A later frozen-candidate dual review correctly found that this interval was missing from the original KISS total. Adding this executor/time metadata did not change the semantic correction.
+The correction was performed by the master Hermes Agent (`gpt-5.6-sol`, `openai-codex`) from `2026-08-30T11:14:43Z` to `11:16:24Z` (`101 s`), with `0` native attempts and `0` owner interventions. A later frozen-candidate dual review correctly found that this interval was missing from the original KISS total. Adding executor/time metadata and restoring the task's no-write acceptance constraint did not rewrite the immutable initial result.
 
 ## Recovery accounting, separate from the experiment
 
@@ -76,6 +76,7 @@ Canonical recovery happened before the fresh experiment and is not counted as an
 ## KISS and final verdict
 
 - Full skill-first cycle including the master correction: `178 + 387 + 101 = 666 s` (`11 min 6 s`), which misses the `10 min` target by `66 s`.
+- Full observed path from fresh start `2026-08-30T11:02:43Z` to PR opening `2026-08-30T11:40:00Z`: at least `2,237 s` (`37 min 17 s`). This is a distinct delivery metric, not a redefinition of the `666 s` semantic core.
 - Experiment native attempts: `0`.
 - Experiment owner interventions: `0`.
 - New runtime components, parsers, indexes, schemas, validators or generic frameworks: `0`.
