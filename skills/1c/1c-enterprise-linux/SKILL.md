@@ -1,12 +1,12 @@
 ---
 name: 1c-enterprise-linux
-description: "Use when running or automating 1C:Enterprise on Linux."
-version: 1.2.0
+description: "Use when investigating/planning 1C XML/BSL changes or running/automating 1C:Enterprise on Linux."
+version: 1.5.0
 author: Hermes Agent
 license: MIT
 metadata:
   hermes:
-    tags: [1c, 1c-enterprise, linux, designer, config-dump, infobase]
+    tags: [1c, 1c-enterprise, linux, xml, bsl, configuration-analysis, designer, config-dump, infobase]
     related_skills: [systematic-debugging, semantic-contract-testing]
 ---
 
@@ -19,8 +19,22 @@ harness that lets a coding agent explore 1C configurations via a native file sna
 ## When to Use
 
 - Setting up, running, or automating the 1C:Enterprise platform on Linux (server/client/Designer).
+- Investigating or planning a 1C configuration/business-rule change from XML/BSL before any platform launch or production edit.
 - Producing a native file snapshot of a 1C config (`/DumpConfigToFiles`) without GUI automation.
 - Choosing a platform version, acquiring a distribution, or diagnosing headless/batch startup.
+
+## 1C pre-native context gathering
+
+For a new business-rule task, load `semantic-contract-testing` and investigate the real XML/BSL snapshot before launching 1C. Keep the search bounded by the task and feed only relevant 1C facts into the generic pre-native Markdown gate:
+
+1. Identify the actual execution layer: form/client handler, server common module, object or record-set module, manager module, posting handler, or background/integration entry point. A name match is only a lead.
+2. Trace one current scenario from its callable entry point through normalization, predicates, reads/writes and observable business state. Cite repository-relative paths and line ranges for every material step. For every distinguishing case feed the semantic gate an explicit **pre-state → input/action → expected persisted/business post-state**.
+3. Trace omitted/default values and their normalization to the predicate that consumes them. A default branch without a relevant pre-state is not a distinguishing case.
+4. Inspect the nearest bypass and preservation surfaces: direct server calls that bypass UI checks, transaction and lock boundaries, write/posting hooks, existing validations, and one similar neighboring object or caller when it can change the conclusion. Limit the conclusion to the actually investigated API/execution layer and name nearby writers it does not cover.
+5. Include types, units, rounding, tax, currency, dates, posting movements, or register balances only when the task or sources make them relevant. For persisted behavior, observe the resulting object/register state rather than only messages or process exit. If task language requires no physical write or side effect, identify a reproducible witness or a static acceptance constraint; unchanged scalar alone does not prove that no-op.
+6. Stop when the current path, two plausible wrong implementations, distinguishing observations, preserved behavior, required no-op witnesses or constraints, and material unknowns are supported. Do not survey the whole configuration and do not invent a requirement from an object name.
+
+If the apparent rule exists only in a form while a server path can still write the data, report that gap and use `CONTEXT BLOCKED` unless the task explicitly concerns UI behavior. Likewise, if a required no-write/no-side-effect no-op lacks a witness or static acceptance constraint, retain it as unknown and use `CONTEXT BLOCKED`; do not redefine no-op as unchanged persisted state. This gate authorizes only the next bounded native experiment; it does not authorize a production patch or claim semantic correctness.
 
 ## Component map — what "1C on Linux" actually means
 

@@ -6,12 +6,12 @@
     {
       "install_root": "skills/1c/1c-enterprise-linux",
       "name": "1c-enterprise-linux",
-      "resource_manifest_sha256": "960ad98f4dad17e0f016c233fdea188696ecae41732d92b759b03a87263e2fa9",
+      "resource_manifest_sha256": "bd4ec84fe124bdfddc4a44ba4ea59e5d9f5a4e0e7f5cfbde7ea475051ec87a4f",
       "resources": [
         {
-          "bytes": 19181,
+          "bytes": 22001,
           "path": "SKILL.md",
-          "sha256": "98aee79359da9a651c76ee00d574acb6c8b311b0586848acfba3d4862be05a9e"
+          "sha256": "2ac7e9f30f8fc172a37f816973f34ff8d38718d090cd27091ca5690b5eee788e"
         },
         {
           "bytes": 4329,
@@ -110,17 +110,17 @@
         }
       ],
       "source_root": "skills/1c/1c-enterprise-linux",
-      "version": "1.2.0"
+      "version": "1.5.0"
     },
     {
       "install_root": "skills/software-development/semantic-contract-testing",
       "name": "semantic-contract-testing",
-      "resource_manifest_sha256": "8eada9451258b9c7c392073842c7b5532ba38ca674a849f353863bd336781bcf",
+      "resource_manifest_sha256": "5173d7314cab5904bb879cae0169a8a9ec5ffb8b701280f60b45253c72cedfa4",
       "resources": [
         {
-          "bytes": 4678,
+          "bytes": 7767,
           "path": "SKILL.md",
-          "sha256": "52ab62f828c2c5686dcd7cc9861d4f68c502ee8be01c8d0fe56e3b4932542986"
+          "sha256": "05bbbb0ba2d0c47e4a89a43abba312a74213fa62cd5fcc076e2da9ef06008100"
         },
         {
           "bytes": 6493,
@@ -129,7 +129,7 @@
         }
       ],
       "source_root": "skills/software-development/semantic-contract-testing",
-      "version": "0.1.0"
+      "version": "0.3.0"
     }
   ],
   "schema_version": 1
