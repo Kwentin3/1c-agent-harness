@@ -49,7 +49,7 @@ The reviewer auto-loaded global procedural skills before the source phase. This 
 
 ## Single transparent correction
 
-The initial result was not rewritten. The only correction is `correction.md`, SHA-256 `9ca25e8f8377f41d2090fc0c046ea728105c118bfed1d697679e268477f4a2a1`.
+The initial result was not rewritten. The only semantic correction is `correction.md`, SHA-256 `1ce70cb03f9dc652b65d34046703de32cf039c0ea26cb18156fb9bb4b1a48ad1` after an evidence-only metadata repair.
 
 It:
 
@@ -62,6 +62,8 @@ It:
 
 No second reviewer was introduced: the issue budget allowed one final reviewer and one transparent correction. Therefore the recorded independent verdict remains `CHECKLIST FAIL` on the initial result; the master adjudication after the single correction is `READY FOR NATIVE` for one bounded future experiment, not authorization for a production patch or native loop.
 
+The correction was performed by the master Hermes Agent (`gpt-5.6-sol`, `openai-codex`) from `2026-08-30T11:14:43Z` to `11:16:24Z` (`101 s`), with `0` native attempts and `0` owner interventions. A later frozen-candidate dual review correctly found that this interval was missing from the original KISS total. Adding this executor/time metadata did not change the semantic correction.
+
 ## Recovery accounting, separate from the experiment
 
 Canonical recovery happened before the fresh experiment and is not counted as an experiment native attempt.
@@ -73,7 +75,7 @@ Canonical recovery happened before the fresh experiment and is not counted as an
 
 ## KISS and final verdict
 
-- Full fresh-executor plus reviewer orchestration: `178 + 387 = 565 s`, below the `10 min` target.
+- Full skill-first cycle including the master correction: `178 + 387 + 101 = 666 s` (`11 min 6 s`), which misses the `10 min` target by `66 s`.
 - Experiment native attempts: `0`.
 - Experiment owner interventions: `0`.
 - New runtime components, parsers, indexes, schemas, validators or generic frameworks: `0`.
@@ -84,5 +86,5 @@ Final evidence-based verdict:
 
 - `CONTEXT VALUE: YES` — the checklist exposed the actual server/register execution path and neighboring invariants before implementation.
 - `ROBUSTNESS: INITIAL FAIL, ONE CORRECTION` — the independent counterexample materially improved the contract.
-- `KISS PASS` — the full experiment completed in `565 s` with no native experiment attempt or owner intervention.
+- `KISS TIME FAIL` — scope remained minimal and required no native experiment attempt or owner intervention, but the complete cycle took `666 s`, not less than `10 min`.
 - `MERGE AUTHORIZATION: NO` — this package does not authorize a production BSL patch, native loop or merge.

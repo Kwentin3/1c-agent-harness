@@ -19,6 +19,13 @@ The initial preflight remains unchanged. This is the single permitted correction
 - **Adjacent write mechanism:** a generic `BeforeWrite` subscription includes this record set (`EventSubscriptions/CheckSafeModeBeforeRecordingRecordingSet.xml:17-54`) and calls `CommonModules/StandardSubsystemsServer/Ext/Module.bsl:2045-2071`. It enforces safe-mode behavior but does not implement the scalar rule. A later native observation must use an admitted non-safe-mode context and must not bypass or alter this subscription.
 - **Remaining unknown:** the persisted-state matrix is a pre-native contract, not runtime proof. Current production callers found at `CommonModules/EmailManagement/Ext/Module.bsl:221-230,712-727` and `Documents/OutgoingEmail/Ext/ObjectModule.bsl:133-143` omit the explicit date, so any later bounded experiment for explicit older/newer values must call the exported entry point directly.
 
+## Correction metadata
+
+- Executor: master Hermes Agent, model `gpt-5.6-sol`, provider `openai-codex`.
+- Interval: `2026-08-30T11:14:43Z`–`11:16:24Z` (`101 s`).
+- Native attempts: `0`; owner interventions: `0`.
+- This metadata was added after final dual review identified that correction time had been omitted from the KISS accounting; the semantic contract above was not changed.
+
 ## Corrected verdict
 
 `READY FOR NATIVE` for one bounded experiment against this manager API. This correction does not authorize a production BSL patch, native loop, or merge.
