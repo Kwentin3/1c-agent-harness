@@ -1,7 +1,7 @@
 ---
 name: semantic-contract-testing
 description: Design semantic business-rule contracts before coding.
-version: 0.1.0
+version: 0.2.0
 author: Kwentin3, Hermes Agent
 license: UNLICENSED
 platforms: [linux, macos, windows]
@@ -40,6 +40,20 @@ A domain skill owns:
 - environment cleanup and runtime pitfalls.
 
 Project docs own capability status, measured cost, candidates, and the next gate. Run evidence owns exact commands, hashes, receipts, identities, and chronology.
+
+## Pre-native context gate
+
+Before spending a native/runtime budget on a small change in an unfamiliar codebase, publish a short human-readable Markdown preflight. It is an orientation aid, not a schema or a proof of correct understanding. Show only the structure needed for this task:
+
+- **Change:** one sentence, current behavior → required behavior.
+- **Context:** concrete objects, entry points, data path, and reproducible source locators.
+- **Current scenario:** one explained scenario grounded in the current sources.
+- **Preserved behavior:** neighboring rules or valid shapes the change must not break.
+- **Wrong implementations:** at least two plausible changes that could look correct while violating the task.
+- **Observations:** scalar or business-state values that distinguish current, required, and wrong behavior; command success alone is not enough.
+- **Unknowns and verdict:** state material unknowns, then finish with exactly `READY FOR NATIVE` or `CONTEXT BLOCKED`.
+
+Do not force seven identical sections when some items combine naturally, and do not add irrelevant domain ceremony. Use `READY FOR NATIVE` only when every retained wrong implementation is distinguished and the cited context is sufficient for the next bounded experiment. Otherwise name the missing evidence and use `CONTEXT BLOCKED`. Do not run the native loop merely to compensate for missing source understanding.
 
 ## Procedure
 
