@@ -69,6 +69,10 @@ A nominal result state is `runtime_contract_completed`. This means only that the
 
 Closed failure states include `precheck_failed`, `copy_failed`, `create_failed`, `load_failed`, `runtime_timeout`, `runtime_exited_before_completion`, `input_changed` and `internal_error`. The CLI returns non-zero on every failure and preserves completed-stage diagnostics when a run root exists. Runtime success and failure both publish a machine-readable `runtime` object after cleanup: process return, completion/failure kind, receipt state and exact presence/size/SHA-256 state for `run.log` and `run.result`. These are mechanical platform diagnostics, not a semantic oracle.
 
+### Headless probe boundary
+
+A successful Designer load is not proof that a task-specific managed-client probe compiled or executed at `ENTERPRISE` runtime. In particular, a probe placed after `StandardSubsystemsClient.OnStart()` can remain unreachable in headless startup and emit no receipt. For the verified early-`OnStart`/server-call preparation pattern, case-isolated receipt observations, and the rule that a failed frozen attempt requires a fresh contract rather than a retry, see [Headless probe observability (issue #37)](issue-37-headless-probe-observability.md).
+
 ## Repeat and bounded current-invocation cleanup
 
 For a repeat through the supported path, invoke the exact same `run-prepared` command again. The command generates a new frozen input, fingerprint, spec, run root, receipt binding and result location without caller edits. The task-specific preparation that produced the supplied tree remains outside the capability.
