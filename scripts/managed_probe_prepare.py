@@ -102,6 +102,10 @@ def _onstart_bounds(payload: bytes) -> tuple[int, int, int]:
 
 
 def _ensure_server_call_metadata(payload: bytes) -> None:
+    if len(payload) > 1_048_576:
+        raise ValueError("JetServerCall metadata exceeds 1 MiB safety limit")
+    if re.search(rb"(?i)<![ \t\r\n]*(?:doctype|entity)\b", payload):
+        raise ValueError("JetServerCall metadata must not contain a DTD or entity declaration")
     try:
         root = ElementTree.fromstring(payload)
     except ElementTree.ParseError as exc:

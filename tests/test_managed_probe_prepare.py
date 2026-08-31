@@ -246,6 +246,41 @@ class ManagedProbePreparationTests(unittest.TestCase):
 
             self.assertTrue((prepared / MANAGED).is_file())
 
+    def test_preparation_rejects_metadata_dtd_before_xml_parse(self) -> None:
+        tool = load_tool()
+        with tempfile.TemporaryDirectory() as tmp:
+            repo = Path(tmp)
+            snapshot = repo / "snapshot"
+            prepared = repo / ".local" / "prepared" / "case-metadata-dtd"
+            write_snapshot(snapshot)
+            (snapshot / "CommonModules" / "JetServerCall.xml").write_text(
+                "<!DOCTYPE CommonModule [<!ENTITY enabled \"true\">]>\n"
+                "<CommonModule><Server>&enabled;</Server><ServerCall>true</ServerCall></CommonModule>\n",
+                encoding="utf-8",
+            )
+
+            with self.assertRaisesRegex(ValueError, "metadata"):
+                self.prepare(tool, repo, snapshot, prepared)
+            self.assertFalse(prepared.exists())
+
+    def test_discard_rejects_symlink_root_without_touching_target(self) -> None:
+        tool = load_tool()
+        with tempfile.TemporaryDirectory() as tmp:
+            repo = Path(tmp)
+            prepared_parent = repo / ".local" / "prepared"
+            prepared_parent.mkdir(parents=True)
+            outside = repo / "outside"
+            outside.mkdir()
+            outside_file = outside / "read-only.txt"
+            outside_file.write_text("outside", encoding="utf-8")
+            outside_file.chmod(0o444)
+            prepared = prepared_parent / "case-link"
+            prepared.symlink_to(outside, target_is_directory=True)
+
+            with self.assertRaisesRegex(ValueError, "symlink"):
+                tool.discard_prepared_tree(repo_root=repo, prepared_root=prepared)
+            self.assertEqual(stat.S_IMODE(outside_file.stat().st_mode), 0o444)
+
     def test_discard_makes_read_only_files_writable_before_deletion(self) -> None:
         tool = load_tool()
         with tempfile.TemporaryDirectory() as tmp:
