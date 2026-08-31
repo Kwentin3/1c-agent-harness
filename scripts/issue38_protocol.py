@@ -17,6 +17,7 @@ OPERATION: Final = "serverWitness"
 _DELIMITER: Final = "###"
 _SAFE_VALUE: Final = re.compile(r"^[A-Za-z0-9._:-]+$")
 _HEADERS: Final = ("protocolVersion", "runId", "caseId", "nonce", "operation")
+_REQUEST_KEYS: Final = frozenset((*_HEADERS, "requiresServer"))
 _CLIENT_ROWS: Final = (
     ("runtimeStarted", "true", "Boolean"),
     ("probeEntered", "true", "Boolean"),
@@ -84,6 +85,12 @@ def _decode_receipt(label: str, payload: bytes | None) -> list[tuple[str, str, s
 
 
 def _identity_rows(request: dict[str, object]) -> tuple[tuple[str, str, str], ...]:
+    unknown_keys = set(request).difference(_REQUEST_KEYS)
+    if unknown_keys:
+        raise ProtocolError(f"request has unknown key: {sorted(unknown_keys)[0]}")
+    missing_keys = _REQUEST_KEYS.difference(request)
+    if missing_keys:
+        raise ProtocolError(f"request is missing key: {sorted(missing_keys)[0]}")
     values: list[tuple[str, str, str]] = []
     expected = {
         "protocolVersion": PROTOCOL_VERSION,
@@ -129,10 +136,28 @@ def _validate_receipt(
     return result[1]
 
 
+def _validate_task_exception_witness(
+    request: dict[str, object], server_receipt: bytes | None,
+) -> str | None:
+    """Require a server-authored started/failure receipt for task exceptions."""
+    identity = _identity_rows(request)
+    rows = _decode_receipt("server", server_receipt)
+    prefix = identity + _SERVER_ROWS + (("failureClass", "taskException", "String"),)
+    if tuple(rows[:len(prefix)]) != prefix:
+        raise ProtocolError("server receipt has invalid task exception sequence")
+    remaining = rows[len(prefix):]
+    detail: str | None = None
+    if remaining and remaining[0][0] == "failureDetail" and remaining[0][2] == "String":
+        detail = remaining.pop(0)[1]
+    if remaining != [("complete", "true", "Boolean")]:
+        raise ProtocolError("server receipt has invalid task exception completion")
+    return detail
+
+
 def validate_terminal(
     request: dict[str, object], client_receipt: bytes | None, server_receipt: bytes | None,
 ) -> dict[str, str]:
-    """Validate either the sole success result or a typed client-side failure."""
+    """Validate success or a typed failure with the evidence it claims."""
     identity = _identity_rows(request)
     client_rows = _decode_receipt("client", client_receipt)
     prefix_size = len(identity)
@@ -162,8 +187,13 @@ def validate_terminal(
         detail = remaining.pop(0)[1]
     if remaining != [("complete", "true", "Boolean")]:
         raise ProtocolError("client receipt has invalid typed failure completion")
-    if server_receipt is not None:
-        raise ProtocolError("server receipt is forbidden on typed client failure")
+    if failure_class == "serverCallFailure":
+        if server_receipt is not None:
+            raise ProtocolError("server receipt is forbidden on server call failure")
+    else:
+        server_detail = _validate_task_exception_witness(request, server_receipt)
+        if server_detail != detail:
+            raise ProtocolError("client and server task exception details differ")
     response = {"status": "failure", "failureClass": failure_class}
     if detail is not None:
         response["failureDetail"] = detail

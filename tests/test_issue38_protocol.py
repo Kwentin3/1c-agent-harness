@@ -1,5 +1,8 @@
 from __future__ import annotations
 
+import base64
+import difflib
+import hashlib
 import importlib.util
 import json
 from pathlib import Path
@@ -11,6 +14,7 @@ import uuid
 
 ROOT = Path(__file__).resolve().parents[1]
 MODULE_PATH = ROOT / "scripts" / "issue38_protocol.py"
+FRONTDOOR_PATH = ROOT / "scripts" / "issue38_frontdoor.py"
 
 
 def load_module() -> object:
@@ -181,6 +185,74 @@ class Issue38ProtocolTests(unittest.TestCase):
         self.assertIn("duplicate request key", completed.stderr)
 
 
+    def test_retained_a_success_packet_validates_and_keeps_remote_hashes(self) -> None:
+        packet = ROOT / "tests/fixtures/issue38-a-metadata-read-v1"
+        request = json.loads((packet / "request.reconstructed.json").read_text(encoding="utf-8"))
+        summary = json.loads((packet / "result-summary.json").read_text(encoding="utf-8"))
+        client = base64.b64decode((packet / "client-receipt.base64").read_text(encoding="ascii"))
+        server = base64.b64decode((packet / "server-receipt.base64").read_text(encoding="ascii"))
+
+        self.assertEqual(hashlib.sha256(client).hexdigest(), summary["trackedPacket"]["clientReceiptSha256"])
+        self.assertEqual(hashlib.sha256(server).hexdigest(), summary["trackedPacket"]["serverReceiptSha256"])
+        self.assertEqual(load_module().validate_terminal(request, client, server), {
+            "status": "success", "serverToken": "SalesInvoice",
+        })
+
+    def test_frontdoor_prepare_generates_one_request_and_two_file_closure(self) -> None:
+        with tempfile.TemporaryDirectory() as tmp:
+            root = Path(tmp)
+            source = root / "snapshot"
+            (source / "Ext").mkdir(parents=True)
+            (source / "CommonModules/JetServerCall/Ext").mkdir(parents=True)
+            (source / "Ext/ManagedApplicationModule.bsl").write_text(_managed_module(), encoding="utf-8")
+            (source / "CommonModules/JetServerCall/Ext/Module.bsl").write_text(
+                "#Region Public\nEndRegion\n", encoding="utf-8",
+            )
+            prepared = root / "prepared"
+            request_path = root / "evidence/request.json"
+            completed = subprocess.run(
+                [
+                    sys.executable, str(FRONTDOOR_PATH), "prepare",
+                    "--input-tree", str(source),
+                    "--prepared-tree", str(prepared),
+                    "--request", str(request_path),
+                ],
+                text=True,
+                capture_output=True,
+                timeout=10,
+            )
+
+            self.assertEqual(completed.returncode, 0, completed.stderr)
+            prepared_result = json.loads(completed.stdout)
+            self.assertEqual(prepared_result["status"], "prepared")
+            self.assertEqual(prepared_result["changedFiles"], [
+                "CommonModules/JetServerCall/Ext/Module.bsl", "Ext/ManagedApplicationModule.bsl",
+            ])
+            request = json.loads(request_path.read_text(encoding="utf-8"))
+            self.assertEqual(set(request), {
+                "protocolVersion", "runId", "caseId", "nonce", "operation", "requiresServer",
+            })
+            client = (prepared / "Ext/ManagedApplicationModule.bsl").read_text(encoding="utf-8")
+            server = (prepared / "CommonModules/JetServerCall/Ext/Module.bsl").read_text(encoding="utf-8")
+            self.assertIn('JetServerCall.Issue38ServerWitness(', client)
+            self.assertIn('LaunchParameter + ".server"', client)
+            self.assertIn("Function Issue38ServerWitness", server)
+            self.assertNotIn("BankReceipt", client + server)
+            self.assertNotIn("Issue36", client + server)
+            generated_lines = "\n".join(
+                line[1:] for line in difflib.ndiff(
+                    (source / "Ext/ManagedApplicationModule.bsl").read_text(encoding="utf-8").splitlines(),
+                    client.splitlines(),
+                ) if line.startswith("+ ")
+            ) + "\n".join(
+                line[1:] for line in difflib.ndiff(
+                    (source / "CommonModules/JetServerCall/Ext/Module.bsl").read_text(encoding="utf-8").splitlines(),
+                    server.splitlines(),
+                ) if line.startswith("+ ")
+            )
+            for forbidden in ("Execute(", "Eval(", "ErrorDescription", "ErrorInfo", "Chr("):
+                self.assertNotIn(forbidden, generated_lines)
+
     def test_new_request_uses_v5_and_three_fresh_uuid4_identifiers(self) -> None:
         protocol = load_module()
 
@@ -301,6 +373,29 @@ class Issue38ProtocolTests(unittest.TestCase):
             "status": "failure", "failureClass": "serverCallFailure", "failureDetail": "call-failed",
         })
 
+    def test_validate_terminal_rejects_extra_request_key_even_with_old_valid_receipts(self) -> None:
+        protocol = load_module()
+        request = _request()
+        client, server = _success_receipts(request)
+        request["taskInput"] = "mutated-after-freeze"
+
+        with self.assertRaisesRegex(protocol.ProtocolError, "unknown key: taskInput"):
+            protocol.validate_terminal(request, client, server)
+
+    def test_validate_terminal_rejects_mutated_fixed_request_fields_even_with_old_valid_receipts(self) -> None:
+        protocol = load_module()
+        request = _request()
+        client, server = _success_receipts(request)
+        request["operation"] = "anotherOperation"
+
+        with self.assertRaisesRegex(protocol.ProtocolError, "unsupported operation"):
+            protocol.validate_terminal(request, client, server)
+
+        request = _request()
+        request["requiresServer"] = False
+        with self.assertRaisesRegex(protocol.ProtocolError, "must require server"):
+            protocol.validate_terminal(request, client, server)
+
     def test_validate_terminal_rejects_task_exception_before_case_start(self) -> None:
         protocol = load_module()
         request = _request()
@@ -323,7 +418,7 @@ class Issue38ProtocolTests(unittest.TestCase):
         with self.assertRaisesRegex(protocol.ProtocolError, "runId"):
             protocol.validate_terminal(request, None, None)
 
-    def test_validate_terminal_accepts_task_exception_after_case_start_without_detail(self) -> None:
+    def test_validate_terminal_rejects_client_only_task_exception(self) -> None:
         protocol = load_module()
         request = _request()
         client = _receipt([
@@ -337,8 +432,35 @@ class Issue38ProtocolTests(unittest.TestCase):
             ("complete", "true", "Boolean"),
         ])
 
-        self.assertEqual(protocol.validate_terminal(request, client, None), {
+        with self.assertRaisesRegex(protocol.ProtocolError, "server receipt is absent"):
+            protocol.validate_terminal(request, client, None)
+
+    def test_validate_terminal_accepts_server_witnessed_task_exception_after_case_start(self) -> None:
+        protocol = load_module()
+        request = _request()
+        client = _receipt([
+            *_headers(request),
+            ("runtimeStarted", "true", "Boolean"),
+            ("probeEntered", "true", "Boolean"),
+            ("serverCallIssued", "true", "Boolean"),
+            ("serverReached", "true", "Boolean"),
+            ("caseStarted", "true", "Boolean"),
+            ("failureClass", "taskException", "String"),
+            ("failureDetail", "controlled-server-task-exception", "String"),
+            ("complete", "true", "Boolean"),
+        ])
+        server = _receipt([
+            *_headers(request),
+            ("serverReached", "true", "Boolean"),
+            ("caseStarted", "true", "Boolean"),
+            ("failureClass", "taskException", "String"),
+            ("failureDetail", "controlled-server-task-exception", "String"),
+            ("complete", "true", "Boolean"),
+        ])
+
+        self.assertEqual(protocol.validate_terminal(request, client, server), {
             "status": "failure", "failureClass": "taskException",
+            "failureDetail": "controlled-server-task-exception",
         })
 
     def test_validate_terminal_rejects_runner_level_timeout_claimed_by_client(self) -> None:
@@ -380,6 +502,42 @@ class Issue38ProtocolTests(unittest.TestCase):
 
         with self.assertRaisesRegex(protocol.ProtocolError, "line delimiters"):
             protocol.validate_terminal(request, payload, None)
+
+
+def _managed_module() -> str:
+    return '''Procedure OnStart()
+	// StandardSubsystems
+#If MobileClient Then
+	Execute("StandardSubsystemsClient.OnStart()");
+#Else
+	StandardSubsystemsClient.OnStart();
+#EndIf
+	// End StandardSubsystems
+EndProcedure
+'''
+
+
+def _success_receipts(request: dict[str, object]) -> tuple[bytes, bytes]:
+    token = "server-token-01"
+    return (
+        _receipt([
+            *_headers(request),
+            ("runtimeStarted", "true", "Boolean"),
+            ("probeEntered", "true", "Boolean"),
+            ("serverCallIssued", "true", "Boolean"),
+            ("serverReached", "true", "Boolean"),
+            ("caseStarted", "true", "Boolean"),
+            ("businessResult", token, "String"),
+            ("complete", "true", "Boolean"),
+        ]),
+        _receipt([
+            *_headers(request),
+            ("serverReached", "true", "Boolean"),
+            ("caseStarted", "true", "Boolean"),
+            ("businessResult", token, "String"),
+            ("complete", "true", "Boolean"),
+        ]),
+    )
 
 
 def _request() -> dict[str, object]:

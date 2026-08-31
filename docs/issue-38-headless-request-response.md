@@ -1,90 +1,131 @@
-# Headless request/response: narrow baseline (issue #38)
+# Headless request/response: A-baseline partial proof (issue #38)
 
-## Decision
+## Current verdict
 
-The retained headless interface is the smallest proven baseline:
+> **A BASELINE PARTIAL PASS / NO CLEAR WINNER**
+
+The retained evidence proves that the narrow `OnStart → exported server call →
+linked receipts` route can carry one harmless server result on the exact training
+runtime. It does **not** prove that this route wins a transport tournament:
+only A has native evidence, the pre-run freezes were not published before the
+runs, B/C were not scored, and D has no complete public disposition.
+
+This document is a bounded correction to PR #40, not a replacement chronology.
+The exact post-hoc inventory is [issue-38-posthoc-evidence-inventory.md](issue-38-posthoc-evidence-inventory.md).
+No new native run is authorized by this document.
+
+## Current fail-closed response grammar
+
+`scripts/issue38_protocol.py` implements the fixed `issue38-v5` request shape.
+It accepts **only** these JSON keys:
 
 ```text
-frozen request → ENTERPRISE /C receipt path → early OnStart probe
-               → exported server call → client receipt + server witness
-               → strict local validator
+protocolVersion, runId, caseId, nonce, operation, requiresServer
 ```
 
-It is a task preparation pattern, not a permanent 1C API. Every native task still
-uses a read-only canonical source, a named writable prepared copy, and a disposable
-file infobase through `scripts/native_cycle.py run-prepared`.
+`runId`, `caseId`, and `nonce` are fresh UUIDv4 strings; the only supported
+operation is `serverWitness`, and `requiresServer` is `true`. An extra request
+field is rejected, so a receipt cannot silently validate a request whose task
+input changed after the request was frozen.
 
-## Frozen response contract
+A success needs both client and server receipts, with the same request identity,
+ordered milestones, matching `businessResult`, and a result different from the
+nonce:
 
-`scripts/issue38_protocol.py` implements `issue38-v5`.
+```text
+client: runtimeStarted → probeEntered → serverCallIssued →
+        serverReached → caseStarted → businessResult → complete
+server: serverReached → caseStarted → businessResult → complete
+```
 
-A request contains fresh UUIDv4 `runId`, `caseId`, and `nonce`, with the fixed
-`operation=serverWitness` and `requiresServer=true`. A successful client receipt
-must record, in order:
+There are two separate typed failures:
 
-1. the exact request identity;
-2. `runtimeStarted`, `probeEntered`, and `serverCallIssued`;
-3. `serverReached` and `caseStarted`;
-4. a server-derived `businessResult`; and
-5. `complete`.
+- `serverCallFailure` is client-only and stops exactly after `serverCallIssued`.
+  A server receipt is forbidden because server reach is not claimed.
+- `taskException` claims `serverReached` and `caseStarted`, so it now requires a
+  matching **server-authored** receipt through `failureClass=taskException` and
+  `complete`. If a detail is present, client and server details must match.
 
-The server-only witness has the same identity, server milestones, result, and
-completion. Both result values must match and must differ from the request nonce.
+Runner create/load failure, exit before probe, timeout, stale/foreign/malformed
+response, and cleanup failure remain runner evidence; a client receipt cannot
+rename them into an application result.
 
-A typed task failure is a different terminal response: it contains the identity and
-reached client milestones followed by one allowed `failureClass`, optional
-`failureDetail`, and `complete`; a server witness is forbidden for that outcome.
+## Reproducible A front door
 
-The validator rejects absent, stale, foreign, reordered, duplicate, malformed, or
-post-completion records. It does not convert a runner timeout, an early runtime
-exit, or cleanup failure into an application-level result.
+`issue38_frontdoor.py` is the small, task-specific adapter around the existing
+`native_cycle.py run-prepared` lifecycle. It does not create a service or change
+the canonical snapshot.
 
-## Normal validation step
+`prepare` is non-native: it creates a fresh request outside the input tree,
+copies the named input tree to a named disposable prepared tree, and changes
+only these two BSL files:
 
-After `native_cycle.py` has retained its evidence, validate the request and the
-receipt paths explicitly:
+```text
+Ext/ManagedApplicationModule.bsl
+CommonModules/JetServerCall/Ext/Module.bsl
+```
+
+The generated client probe receives the runner's `/C` receipt path, crosses to
+`JetServerCall.Issue38ServerWitness`, and the server function writes the sibling
+`<receipt>.server` witness before returning its token. The fresh request identity
+is embedded as safe literals in this disposable probe closure; it is never
+inserted into canonical source.
 
 ```bash
-python3 scripts/issue38_protocol.py \
-  --request .local/issue38/request.json \
-  --client-receipt .local/runs/native-cycle/<run>/run/evidence/receipt.txt \
-  --server-receipt .local/runs/native-cycle/<run>/run/evidence/receipt.txt.server
+python3 scripts/issue38_frontdoor.py prepare \
+  --input-tree .local/runs/training-jet-review-final/snapshot \
+  --prepared-tree .local/prepared/issue38-a-next \
+  --request .local/issue38-next/request.json
 ```
 
-The command writes one sorted JSON object to stdout and returns zero only for a
-valid protocol result. A declared successful client receipt without the corresponding
-server witness is rejected.
+The `run` form performs that preparation, invokes the existing bounded
+`native_cycle.py run-prepared` (`120` seconds, `complete###true`), locates the
+current invocation receipts, and calls `validate_terminal`:
 
-## Native evidence
+```bash
+python3 scripts/issue38_frontdoor.py run \
+  --repo-root . \
+  --input-tree .local/runs/training-jet-review-final/snapshot \
+  --prepared-tree .local/prepared/issue38-a-next \
+  --request .local/issue38-next/request.json
+```
 
-On the owner-controlled HOME executor using training 1C `8.5.1.1150`, the A arm
-passed one bounded harmless smoke. The request IDs were fresh; client and server
-receipts contained the same server-generated UUID token; the portable validator
-accepted the pair; the immutable source tree remained unchanged; and no owned 1C
-process remained after cleanup.
+**Do not run the second command while the owner HOLD is active.** It exists so a
+future separately authorized A run has one clear `request → disposable 1C →
+validated response` entry point rather than a post-hoc checker.
 
-Winner validation then proved two distinct outcomes from clean disposable state:
+## Compact retained A evidence
 
-| Scenario | Result |
-|---|---|
-| Server reads `Metadata.Documents.SalesInvoice.Name` | Linked client/server receipts validate as `success` with `SalesInvoice`. |
-| Server raises a fixed task exception | Client receipt validates as typed `taskException`; server witness is absent as required. |
+`tests/fixtures/issue38-a-metadata-read-v1/` contains Base64-encoded exact retained
+receipt bytes from `run-kmqsmjkt` and a compact result summary. The original request JSON
+was not retained, so `request.reconstructed.json` is explicitly reconstructed
+from the retained identity fields and generated probe; it is not presented as a
+pre-run request artifact.
 
-The probes do not call `BankReceipt`, create/post business objects, or modify the
-canonical snapshot, CF, manifest, or live infobase.
+The test checks both receipt SHA-256 values and validates the real linked pair:
 
-## Other arms
+```bash
+python3 -m unittest \
+  tests.test_issue38_protocol.Issue38ProtocolTests.test_retained_a_success_packet_validates_and_keeps_remote_hashes -v
+```
 
-- **External EPF `/Execute`: `CONTEXT BLOCKED`.** There is no existing EPF,
-  reproducible authorized export path, or supported runner seam for the exact
-  training runtime. This is not a scored platform failure.
-- **Test Manager/Test Client: `CONTEXT BLOCKED`.** The platform components exist,
-  but there is no task-specific manager algorithm, target/test-client route, or
-  bounded two-client supervisor. This is not a scored platform failure.
+It yields `{"status":"success","serverToken":"SalesInvoice"}`. This proves
+one bounded server metadata-read result, not a general business API or a winner.
 
-## Limits
+## Limits and next owner decision
 
-The two receipts are strong evidence against accidental client-only success, but not
-cryptographic writer attestation against a hostile same-UID process. This mechanism
-proves only the generated task route and does not make a general write API or replace
-business-specific semantic tests.
+- A controlled historical `taskException` receipt was client-only under the old
+  grammar. It is **not** accepted as a server-proven task exception by the
+  corrected validator and is retained only as historical evidence.
+- B (`EPF /Execute`) and C (Test Manager/Test Client) are unscored prerequisites,
+  not platform failures. Their build/supervision cost must be measured only in a
+  future authorized comparison.
+- D (`1cecla`) was locally excluded from the exact runtime but was not carried
+  through the required public research comparison. It cannot be silently treated
+  as a tournament loss.
+- No integration winner, no clean repeat, and no closing claim exist yet.
+
+The next legitimate product decision is whether to authorize one bounded B smoke
+with a published research/protocol freeze and, if comparison becomes possible, a
+clean repeat of the selected arm. That decision is intentionally left to the
+owner.
