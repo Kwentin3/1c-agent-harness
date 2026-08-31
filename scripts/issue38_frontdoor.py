@@ -1,10 +1,10 @@
 #!/usr/bin/env python3
 """Prepare or run the bounded Issue #38 A-baseline request/response path.
 
-`prepare` is deliberately non-native: it creates one fresh request outside the
-prepared configuration copy and writes only the two declared probe closures into
-that copy. `run` performs the existing `native_cycle.py run-prepared` lifecycle
-and validates its bound receipts. It is intentionally not invoked by tests.
+`prepare` is deliberately non-native. It owns the Issue #38 request and receipt
+shape, then delegates all disposable-tree copying, splice, closure and freeze
+work to `managed_probe_prepare`. `run` remains separately owner-gated while the
+Issue #38 HOLD is active.
 """
 
 from __future__ import annotations
@@ -12,26 +12,21 @@ from __future__ import annotations
 import argparse
 import hashlib
 import json
-import os
 from pathlib import Path
-import shutil
-import stat
 import subprocess
 import sys
 from typing import Final
 
 import issue38_protocol
+import managed_probe_prepare
 
 
-_CLIENT_MODULE: Final = Path("Ext/ManagedApplicationModule.bsl")
-_SERVER_MODULE: Final = Path("CommonModules/JetServerCall/Ext/Module.bsl")
-_ALLOWED_CHANGED: Final = frozenset((_CLIENT_MODULE, _SERVER_MODULE))
 _COMPLETE_MARKER: Final = "complete###true"
 _TIMEOUT_SECONDS: Final = 120
 
 
 class FrontDoorError(ValueError):
-    """The A-baseline source closure could not be prepared or run safely."""
+    """The A-baseline request/response path could not be prepared or run safely."""
 
 
 def _bsl_string(value: object, field: str) -> str:
@@ -45,40 +40,41 @@ def _request_headers(request: dict[str, object]) -> list[tuple[str, str]]:
     return [(key, _bsl_string(request[key], key)) for key in issue38_protocol._HEADERS]
 
 
-def _client_probe(request: dict[str, object]) -> str:
+def _client_probe(request: dict[str, object]) -> bytes:
     rows = "\n".join(
-        f'		Writer.WriteLine("{key}###{value}###String");'
+        f'\t\tWriter.WriteLine("{key}###{value}###String");'
         for key, value in _request_headers(request)
     )
-    return f'''\n	If Not IsBlankString(LaunchParameter) Then
-		Writer = New TextWriter(LaunchParameter, TextEncoding.UTF8);
+    probe = f'''\n\tIf Not IsBlankString(LaunchParameter) Then
+
+\t\tWriter = New TextWriter(LaunchParameter, TextEncoding.UTF8);
 {rows}
-		Writer.WriteLine("runtimeStarted###true###Boolean");
-		Writer.WriteLine("probeEntered###true###Boolean");
-		Writer.WriteLine("serverCallIssued###true###Boolean");
-		Writer.Close();
-		ServerToken = JetServerCall.Issue38ServerWitness(
-			LaunchParameter + ".server",
-			"{_bsl_string(request['runId'], 'runId')}",
-			"{_bsl_string(request['caseId'], 'caseId')}",
-			"{_bsl_string(request['nonce'], 'nonce')}");
-		Writer = New TextWriter(LaunchParameter, TextEncoding.UTF8, Chars.LF, True);
-		Writer.WriteLine("serverReached###true###Boolean");
-		Writer.WriteLine("caseStarted###true###Boolean");
-		Writer.WriteLine("businessResult###" + ServerToken + "###String");
-		Writer.WriteLine("complete###true###Boolean");
-		Writer.Close();
-		Return;
-	EndIf;
+\t\tWriter.WriteLine("runtimeStarted###true###Boolean");
+\t\tWriter.WriteLine("probeEntered###true###Boolean");
+\t\tWriter.WriteLine("serverCallIssued###true###Boolean");
+\t\tWriter.Close();
+\t\tServerToken = JetServerCall.Issue38ServerWitness(
+\t\t\tLaunchParameter + ".server",
+\t\t\t"{_bsl_string(request['runId'], 'runId')}",
+\t\t\t"{_bsl_string(request['caseId'], 'caseId')}",
+\t\t\t"{_bsl_string(request['nonce'], 'nonce')}");
+\t\tWriter = New TextWriter(LaunchParameter, TextEncoding.UTF8, Chars.LF, True);
+\t\tWriter.WriteLine("serverReached###true###Boolean");
+\t\tWriter.WriteLine("caseStarted###true###Boolean");
+\t\tWriter.WriteLine("businessResult###" + ServerToken + "###String");
+\t\tWriter.WriteLine("complete###true###Boolean");
+\t\tWriter.Close();
+\t\tReturn;
+\tEndIf;
 '''
+    return probe.encode("ascii")
 
 
-def _server_probe(request: dict[str, object]) -> str:
+def _server_probe(request: dict[str, object]) -> bytes:
     rows = "\n".join(
         f'\tWriter.WriteLine("{key}###" + {key[0].upper() + key[1:]} + "###String");'
         for key, _ in _request_headers(request)
     )
-    # protocolVersion and operation are fixed BSL literals; identity values are supplied by client.
     rows = rows.replace(
         '\tWriter.WriteLine("protocolVersion###" + ProtocolVersion + "###String");',
         '\tWriter.WriteLine("protocolVersion###issue38-v5###String");',
@@ -86,47 +82,21 @@ def _server_probe(request: dict[str, object]) -> str:
         '\tWriter.WriteLine("operation###" + Operation + "###String");',
         '\tWriter.WriteLine("operation###serverWitness###String");',
     )
-    return f'''\n#Region Issue38FrontDoorProbe
+    probe = f'''\n#Region Issue38FrontDoorProbe
 Function Issue38ServerWitness(ServerWitnessPath, RunId, CaseId, Nonce) Export
-	ServerToken = String(New UUID);
-	Writer = New TextWriter(ServerWitnessPath, TextEncoding.UTF8);
+\tServerToken = String(New UUID);
+\tWriter = New TextWriter(ServerWitnessPath, TextEncoding.UTF8);
 {rows}
-	Writer.WriteLine("serverReached###true###Boolean");
-	Writer.WriteLine("caseStarted###true###Boolean");
-	Writer.WriteLine("businessResult###" + ServerToken + "###String");
-	Writer.WriteLine("complete###true###Boolean");
-	Writer.Close();
-	Return ServerToken;
+\tWriter.WriteLine("serverReached###true###Boolean");
+\tWriter.WriteLine("caseStarted###true###Boolean");
+\tWriter.WriteLine("businessResult###" + ServerToken + "###String");
+\tWriter.WriteLine("complete###true###Boolean");
+\tWriter.Close();
+\tReturn ServerToken;
 EndFunction
 #EndRegion
 '''
-
-
-def _insert_on_start_probe(source: str, probe: str) -> str:
-    anchor = "Procedure OnStart()"
-    start = source.find(anchor)
-    if start < 0:
-        raise FrontDoorError("managed application OnStart anchor is absent")
-    end = source.find("EndProcedure", start)
-    if end < 0:
-        raise FrontDoorError("managed application OnStart end anchor is absent")
-    original = source[start:end]
-    if "// StandardSubsystems" not in original:
-        raise FrontDoorError("managed application OnStart has unexpected shape")
-    insertion = start + len(anchor)
-    return source[:insertion] + probe + source[insertion:]
-
-
-def _changed_files(source_tree: Path, prepared_tree: Path) -> set[Path]:
-    changed: set[Path] = set()
-    for path in prepared_tree.rglob("*"):
-        if not path.is_file():
-            continue
-        relative = path.relative_to(prepared_tree)
-        source = source_tree / relative
-        if not source.is_file() or path.read_bytes() != source.read_bytes():
-            changed.add(relative)
-    return changed
+    return probe.encode("ascii")
 
 
 def _write_json_new(path: Path, value: object) -> None:
@@ -136,57 +106,45 @@ def _write_json_new(path: Path, value: object) -> None:
     path.write_text(json.dumps(value, sort_keys=True, separators=(",", ":")) + "\n", encoding="utf-8")
 
 
-def prepare(source_tree: Path, prepared_tree: Path, request_path: Path) -> dict[str, object]:
+def prepare(repo_root: Path, source_tree: Path, prepared_tree: Path, request_path: Path) -> dict[str, object]:
+    repo_root = repo_root.resolve()
     source_tree = source_tree.resolve()
     prepared_tree = prepared_tree.resolve()
     request_path = request_path.resolve()
     if not source_tree.is_dir():
         raise FrontDoorError(f"input tree is absent: {source_tree}")
-    if prepared_tree.exists():
-        raise FrontDoorError(f"prepared tree already exists: {prepared_tree}")
-    if prepared_tree == source_tree or source_tree in prepared_tree.parents:
-        raise FrontDoorError("prepared tree must be outside input tree")
     if request_path == source_tree or source_tree in request_path.parents:
         raise FrontDoorError("request must be outside input tree")
     if request_path == prepared_tree or prepared_tree in request_path.parents:
         raise FrontDoorError("request must be outside prepared tree")
+    if request_path.exists():
+        raise FrontDoorError(f"refusing to replace existing request: {request_path}")
 
     request = issue38_protocol.new_request()
     _request_headers(request)
     try:
-        shutil.copytree(source_tree, prepared_tree)
-        client_path = prepared_tree / _CLIENT_MODULE
-        server_path = prepared_tree / _SERVER_MODULE
-        for path in (client_path, server_path):
-            if not path.is_file():
-                raise FrontDoorError(f"required module is absent: {path.relative_to(prepared_tree)}")
-            os.chmod(path, path.stat().st_mode | stat.S_IWUSR)
-        client_path.write_text(
-            _insert_on_start_probe(client_path.read_text(encoding="utf-8-sig"), _client_probe(request)),
-            encoding="utf-8",
+        preparation_audit = managed_probe_prepare.prepare_probe(
+            repo_root=repo_root,
+            snapshot_root=source_tree,
+            prepared_root=prepared_tree,
+            client_block=_client_probe(request),
+            server_block=_server_probe(request),
         )
-        server_path.write_text(
-            server_path.read_text(encoding="utf-8-sig") + _server_probe(request), encoding="utf-8",
-        )
-        changed = _changed_files(source_tree, prepared_tree)
-        if changed != _ALLOWED_CHANGED:
-            raise FrontDoorError(f"prepared tree changed outside closure: {sorted(map(str, changed))}")
-        for path in (client_path, server_path):
-            text = path.read_text(encoding="utf-8")
-            if "BankReceipt" in text or "Issue36" in text:
-                raise FrontDoorError("generated closure mentions forbidden business scope")
         _write_json_new(request_path, request)
-    except Exception:
-        if prepared_tree.exists():
-            shutil.rmtree(prepared_tree)
-        raise
+    except (OSError, ValueError, RuntimeError) as exc:
+        try:
+            managed_probe_prepare.discard_prepared_tree(repo_root=repo_root, prepared_root=prepared_tree)
+        except (OSError, ValueError):
+            pass
+        raise FrontDoorError(str(exc)) from exc
 
     return {
         "status": "prepared",
         "requestPath": str(request_path),
         "requestSha256": hashlib.sha256(request_path.read_bytes()).hexdigest(),
         "preparedTree": str(prepared_tree),
-        "changedFiles": sorted(map(str, changed)),
+        "changedFiles": preparation_audit["changedPaths"],
+        "preparationAudit": preparation_audit,
         "completeMarker": _COMPLETE_MARKER,
         "timeoutSeconds": _TIMEOUT_SECONDS,
     }
@@ -205,7 +163,7 @@ def _native_command(repo_root: Path, prepared_tree: Path) -> list[str]:
 
 
 def run(repo_root: Path, source_tree: Path, prepared_tree: Path, request_path: Path) -> dict[str, object]:
-    prepared = prepare(source_tree, prepared_tree, request_path)
+    prepared = prepare(repo_root, source_tree, prepared_tree, request_path)
     completed = subprocess.run(
         _native_command(repo_root, prepared_tree), text=True, capture_output=True, timeout=_TIMEOUT_SECONDS + 90,
     )
@@ -235,7 +193,7 @@ def main(argv: list[str] | None = None) -> int:
     args = parser.parse_args(argv)
     try:
         if args.command == "prepare":
-            result = prepare(args.input_tree, args.prepared_tree, args.request)
+            result = prepare(args.repo_root, args.input_tree, args.prepared_tree, args.request)
         else:
             result = run(args.repo_root.resolve(), args.input_tree, args.prepared_tree, args.request)
     except (OSError, json.JSONDecodeError, FrontDoorError, issue38_protocol.ProtocolError) as exc:

@@ -208,11 +208,16 @@ class Issue38ProtocolTests(unittest.TestCase):
             (source / "CommonModules/JetServerCall/Ext/Module.bsl").write_text(
                 "#Region Public\nEndRegion\n", encoding="utf-8",
             )
-            prepared = root / "prepared"
+            (source / "CommonModules/JetServerCall.xml").write_text(
+                "<CommonModule><Server>true</Server><ServerCall>true</ServerCall></CommonModule>\n",
+                encoding="utf-8",
+            )
+            prepared = root / ".local/prepared" / "issue38-a-next"
             request_path = root / "evidence/request.json"
             completed = subprocess.run(
                 [
                     sys.executable, str(FRONTDOOR_PATH), "prepare",
+                    "--repo-root", str(root),
                     "--input-tree", str(source),
                     "--prepared-tree", str(prepared),
                     "--request", str(request_path),
@@ -228,6 +233,10 @@ class Issue38ProtocolTests(unittest.TestCase):
             self.assertEqual(prepared_result["changedFiles"], [
                 "CommonModules/JetServerCall/Ext/Module.bsl", "Ext/ManagedApplicationModule.bsl",
             ])
+            self.assertEqual(prepared_result["preparationAudit"]["staticCheck"], "pass")
+            self.assertEqual(prepared_result["preparationAudit"]["changedPaths"], prepared_result["changedFiles"])
+            self.assertEqual(prepared_result["preparationAudit"]["forbiddenAddedMatches"], [])
+            self.assertTrue(all(not (path.stat().st_mode & 0o222) for path in (prepared, *prepared.rglob("*"))))
             request = json.loads(request_path.read_text(encoding="utf-8"))
             self.assertEqual(set(request), {
                 "protocolVersion", "runId", "caseId", "nonce", "operation", "requiresServer",
@@ -252,6 +261,17 @@ class Issue38ProtocolTests(unittest.TestCase):
             )
             for forbidden in ("Execute(", "Eval(", "ErrorDescription", "ErrorInfo", "Chr("):
                 self.assertNotIn(forbidden, generated_lines)
+
+    def test_frontdoor_has_no_second_prepared_tree_mechanism(self) -> None:
+        source = FRONTDOOR_PATH.read_text(encoding="utf-8")
+        self.assertIn("managed_probe_prepare.prepare_probe(", source)
+        for duplicate_mechanic in (
+            "shutil.copytree(",
+            "os.chmod(",
+            "def _insert_on_start_probe(",
+            "def _changed_files(",
+        ):
+            self.assertNotIn(duplicate_mechanic, source)
 
     def test_new_request_uses_v5_and_three_fresh_uuid4_identifiers(self) -> None:
         protocol = load_module()

@@ -53,12 +53,22 @@ rename them into an application result.
 ## Reproducible A front door
 
 `issue38_frontdoor.py` is the small, task-specific adapter around the existing
-`native_cycle.py run-prepared` lifecycle. It does not create a service or change
+`native_cycle.py run-prepared` lifecycle. It owns only the Issue #38 request,
+receipt templates and validation order; it does not create a service or change
 the canonical snapshot.
 
-`prepare` is non-native: it creates a fresh request outside the input tree,
-copies the named input tree to a named disposable prepared tree, and changes
-only these two BSL files:
+Its sole prepared-tree primitive is `scripts/managed_probe_prepare.py`. That
+primitive copies the input into a fresh child of `.local/prepared/`, preserves
+the complete managed-application module, splices the supplied early client
+block after any initial `Var` declarations, appends the supplied server block,
+checks that exactly the two declared BSL files changed, and freezes the copy.
+It rejects symlink path components, missing `ServerCall=true` metadata and
+forbidden dynamic/business tokens in the generated blocks. The front door does
+not implement a second copy/splice/freeze path.
+
+`prepare` is non-native: it creates a fresh request outside the input tree and
+asks that primitive to create the named disposable prepared tree. The resulting
+closure changes only these two BSL files:
 
 ```text
 Ext/ManagedApplicationModule.bsl
