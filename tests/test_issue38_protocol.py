@@ -5,6 +5,7 @@ import difflib
 import hashlib
 import importlib.util
 import json
+import os
 from pathlib import Path
 import subprocess
 import sys
@@ -308,8 +309,16 @@ class Issue38ProtocolTests(unittest.TestCase):
             request_path = root / "evidence/request.json"
             original_run = frontdoor.subprocess.run
 
+            invocation_root = root / ".local/runs/native-cycle/run-runner-failure"
+
             def failing_runner(*args: object, **kwargs: object) -> subprocess.CompletedProcess[str]:
-                return subprocess.CompletedProcess(args=args, returncode=1, stdout="{}", stderr="runner failed")
+                invocation_root.mkdir(parents=True)
+                return subprocess.CompletedProcess(
+                    args=args,
+                    returncode=1,
+                    stdout=json.dumps({"preparedInvocation": {"invocationRoot": ".local/runs/native-cycle/run-runner-failure"}}),
+                    stderr="runner failed",
+                )
 
             frontdoor.subprocess.run = failing_runner
             try:
@@ -401,6 +410,46 @@ class Issue38ProtocolTests(unittest.TestCase):
             finally:
                 frontdoor.subprocess.run = original_run
             self.assertFalse(prepared.exists())
+
+    def test_frontdoor_run_rejects_unsafe_runner_failure_invocation_root_and_discards_prepared_tree(self) -> None:
+        frontdoor = load_frontdoor()
+        with tempfile.TemporaryDirectory() as tmp:
+            root = Path(tmp)
+            source = root / "snapshot"
+            prepared = root / ".local/prepared" / "unsafe-runner-failure"
+            request_path = root / "evidence/request.json"
+            write_frontdoor_snapshot(source)
+            original_run = frontdoor.subprocess.run
+            frontdoor.subprocess.run = lambda *args, **kwargs: subprocess.CompletedProcess(
+                [], 1, json.dumps({"preparedInvocation": {"invocationRoot": "/outside/run-x"}}), "",
+            )
+            try:
+                with self.assertRaisesRegex(frontdoor.FrontDoorError, "unsafe invocationRoot"):
+                    frontdoor.run(root, source, prepared, request_path)
+            finally:
+                frontdoor.subprocess.run = original_run
+            self.assertFalse(prepared.exists())
+
+    def test_frontdoor_resolves_relative_paths_against_repo_root(self) -> None:
+        frontdoor = load_frontdoor()
+        with tempfile.TemporaryDirectory() as tmp, tempfile.TemporaryDirectory() as elsewhere:
+            root = Path(tmp)
+            source = root / "snapshot"
+            write_frontdoor_snapshot(source)
+            previous_cwd = Path.cwd()
+            os.chdir(elsewhere)
+            try:
+                result = frontdoor.prepare(
+                    root,
+                    Path("snapshot"),
+                    Path(".local/prepared/repo-relative"),
+                    Path("evidence/request.json"),
+                )
+            finally:
+                os.chdir(previous_cwd)
+            self.assertEqual(result["preparedTree"], str(root / ".local/prepared/repo-relative"))
+            self.assertTrue((root / ".local/prepared/repo-relative/Ext/ManagedApplicationModule.bsl").is_file())
+            self.assertTrue((root / "evidence/request.json").is_file())
 
     def test_frontdoor_run_discards_prepared_tree_after_validated_response(self) -> None:
         frontdoor = load_frontdoor()

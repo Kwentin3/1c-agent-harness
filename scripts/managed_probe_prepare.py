@@ -80,6 +80,25 @@ def _line_ending(payload: bytes) -> bytes:
     return b"\r\n" if b"\r\n" in payload else b"\n"
 
 
+def _has_unquoted_semicolon(line: bytes) -> bool:
+    in_string = False
+    index = 0
+    while index < len(line):
+        current = line[index]
+        following = line[index + 1] if index + 1 < len(line) else None
+        if current == ord('"'):
+            if in_string and following == ord('"'):
+                index += 2
+                continue
+            in_string = not in_string
+        elif not in_string and current == ord('/') and following == ord('/'):
+            return False
+        elif not in_string and current == ord(';'):
+            return True
+        index += 1
+    return False
+
+
 def _onstart_bounds(payload: bytes) -> tuple[int, int, int]:
     starts = list(re.finditer(
         rb"(?im)^(?:\xef\xbb\xbf)?[ \t]*Procedure[ \t]+OnStart[ \t]*\([ \t]*\)[ \t]*(?://[^\r\n]*)?\r?\n",
@@ -96,17 +115,17 @@ def _onstart_bounds(payload: bytes) -> tuple[int, int, int]:
     awaiting_var_terminator = False
     for line in payload[start.end():end_at].splitlines(keepends=True):
         stripped = line.strip()
-        uncommented = line.split(b"//", 1)[0]
+        has_terminator = _has_unquoted_semicolon(line)
         if awaiting_var_terminator:
             insertion_at += len(line)
-            awaiting_var_terminator = b";" not in uncommented
+            awaiting_var_terminator = not has_terminator
             continue
         if not stripped or stripped.startswith(b"//"):
             insertion_at += len(line)
             continue
         if re.match(rb"(?i)^Var\b", stripped):
             insertion_at += len(line)
-            awaiting_var_terminator = b";" not in uncommented
+            awaiting_var_terminator = not has_terminator
             continue
         break
     if awaiting_var_terminator:
@@ -264,10 +283,10 @@ def prepare_probe(
         )
         if tuple(changed_paths) != _ALLOWED_CHANGED:
             raise RuntimeError(f"changed path closure mismatch: {changed_paths}")
-    except Exception as primary_exc:
+    except BaseException as primary_exc:
         try:
             _remove_prepared_tree(prepared_root)
-        except Exception as cleanup_exc:
+        except BaseException as cleanup_exc:
             raise RuntimeError(
                 f"preparation failed: {primary_exc}; prepared cleanup failed: {cleanup_exc}"
             ) from cleanup_exc

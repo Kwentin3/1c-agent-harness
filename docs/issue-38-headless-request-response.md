@@ -62,7 +62,8 @@ primitive owns only technical tree lifecycle: it requires source and prepared
 roots to be disjoint, atomically claims its named output root before copying, and
 copies the input into that fresh `.local/prepared/` tree. It preserves the
 complete managed-application module, splices the supplied early client block
-after any initial `Var` declarations (including a UTF-8 BOM before `OnStart`),
+after any initial `Var` declarations (including a UTF-8 BOM before `OnStart`
+and `//` inside quoted string literals),
 appends the supplied server block, checks that exactly the two declared BSL files
 changed, freezes the copy, and performs safe explicit discard. A collision at an
 existing output is refused without deletion; failure cleanup applies only after
@@ -74,8 +75,10 @@ and missing `ServerCall=true` metadata. Its bounded token scan is input hygiene,
 not implement a second copy/splice/freeze path.
 
 `prepare` is non-native: it creates a fresh request outside the input tree and
-asks that primitive to create the named disposable prepared tree. A standalone
-prepared tree is retained only until its caller explicitly discards it; use:
+asks that primitive to create the named disposable prepared tree. Every relative
+`--input-tree`, `--prepared-tree`, and `--request` path is interpreted relative
+to `--repo-root`, never the caller's current directory. A standalone prepared
+tree is retained only until its caller explicitly discards it; use:
 
 ```bash
 python3 scripts/issue38_frontdoor.py discard \

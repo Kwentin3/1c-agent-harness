@@ -29,8 +29,8 @@ class FrontDoorError(ValueError):
     """The A-baseline request/response path could not be prepared or run safely."""
 
 
-def _lexical_absolute(path: Path) -> Path:
-    return path if path.is_absolute() else Path.cwd() / path
+def _lexical_absolute(repo_root: Path, path: Path) -> Path:
+    return path if path.is_absolute() else repo_root / path
 
 
 def _bsl_string(value: object, field: str) -> str:
@@ -112,9 +112,9 @@ def _write_json_new(path: Path, value: object) -> None:
 
 def prepare(repo_root: Path, source_tree: Path, prepared_tree: Path, request_path: Path) -> dict[str, object]:
     repo_root = repo_root.resolve()
-    source_tree = _lexical_absolute(source_tree)
-    prepared_tree = _lexical_absolute(prepared_tree)
-    request_path = request_path.resolve()
+    source_tree = _lexical_absolute(repo_root, source_tree)
+    prepared_tree = _lexical_absolute(repo_root, prepared_tree)
+    request_path = _lexical_absolute(repo_root, request_path).resolve()
     if not source_tree.is_dir():
         raise FrontDoorError(f"input tree is absent: {source_tree}")
     if request_path == source_tree or source_tree in request_path.parents:
@@ -179,7 +179,7 @@ def _regular_child(root: Path, relative: Path, *, field: str) -> Path:
     return candidate
 
 
-def _runner_receipts(repo_root: Path, runner_result: object) -> tuple[Path, Path]:
+def _runner_invocation_root(repo_root: Path, runner_result: object) -> Path:
     if not isinstance(runner_result, dict):
         raise FrontDoorError("native cycle result must be a JSON object")
     prepared_invocation = runner_result.get("preparedInvocation")
@@ -206,6 +206,11 @@ def _runner_receipts(repo_root: Path, runner_result: object) -> tuple[Path, Path
         candidate = candidate / part
         if candidate.is_symlink():
             raise FrontDoorError(f"native invocationRoot contains a symlink: {candidate}")
+    return invocation_root
+
+
+def _runner_receipts(repo_root: Path, runner_result: object) -> tuple[Path, Path]:
+    invocation_root = _runner_invocation_root(repo_root, runner_result)
     receipt = _regular_child(invocation_root, Path("run/evidence/receipt.txt"), field="client receipt")
     server = _regular_child(invocation_root, Path("run/evidence/receipt.txt.server"), field="server receipt")
     return receipt, server
@@ -222,7 +227,7 @@ def _discard_after_run(repo_root: Path, prepared_tree: Path, terminal_error: Bas
 
 def run(repo_root: Path, source_tree: Path, prepared_tree: Path, request_path: Path) -> dict[str, object]:
     repo_root = repo_root.resolve()
-    prepared_tree = _lexical_absolute(prepared_tree)
+    prepared_tree = _lexical_absolute(repo_root, prepared_tree)
     prepared = prepare(repo_root, source_tree, prepared_tree, request_path)
     terminal_error: BaseException | None = None
     try:
@@ -239,6 +244,7 @@ def run(repo_root: Path, source_tree: Path, prepared_tree: Path, request_path: P
         if not isinstance(runner_result, dict):
             raise FrontDoorError("native cycle result must be a JSON object")
         if completed.returncode != 0:
+            _runner_invocation_root(repo_root, runner_result)
             result: dict[str, object] = {"status": "runnerFailure", "prepared": prepared, "runner": runner_result}
         else:
             receipt, server = _runner_receipts(repo_root, runner_result)
@@ -256,7 +262,7 @@ def run(repo_root: Path, source_tree: Path, prepared_tree: Path, request_path: P
 
 def discard(repo_root: Path, prepared_tree: Path) -> dict[str, object]:
     repo_root = repo_root.resolve()
-    prepared_tree = _lexical_absolute(prepared_tree)
+    prepared_tree = _lexical_absolute(repo_root, prepared_tree)
     try:
         managed_probe_prepare.discard_prepared_tree(repo_root=repo_root, prepared_root=prepared_tree)
     except (OSError, ValueError) as exc:

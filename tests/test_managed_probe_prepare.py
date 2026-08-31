@@ -232,6 +232,40 @@ class ManagedProbePreparationTests(unittest.TestCase):
                 tool.shutil.copytree = original_copytree
                 tool._remove_prepared_tree = original_remove
 
+    def test_preparation_keeps_url_string_var_before_probe(self) -> None:
+        tool = load_tool()
+        with tempfile.TemporaryDirectory() as tmp:
+            repo = Path(tmp)
+            snapshot = repo / "snapshot"
+            prepared = repo / ".local" / "prepared" / "case-url-var"
+            write_snapshot(snapshot)
+            module = snapshot / MANAGED
+            module.write_bytes(
+                b'Procedure OnStart()\nVar BaseURL = "https://example.com";\n\tReturn;\nEndProcedure\n'
+            )
+
+            self.prepare(tool, repo, snapshot, prepared)
+
+            client = (prepared / MANAGED).read_bytes()
+            self.assertLess(client.index(b'Var BaseURL = "https://example.com";'), client.index(client_block()))
+            self.assertLess(client.index(client_block()), client.index(b"\tReturn;"))
+
+    def test_preparation_discards_claimed_output_after_keyboard_interrupt(self) -> None:
+        tool = load_tool()
+        with tempfile.TemporaryDirectory() as tmp:
+            repo = Path(tmp)
+            snapshot = repo / "snapshot"
+            prepared = repo / ".local" / "prepared" / "case-interrupt"
+            write_snapshot(snapshot)
+            original_copytree = tool.shutil.copytree
+            tool.shutil.copytree = lambda *args, **kwargs: (_ for _ in ()).throw(KeyboardInterrupt())
+            try:
+                with self.assertRaises(KeyboardInterrupt):
+                    self.prepare(tool, repo, snapshot, prepared)
+            finally:
+                tool.shutil.copytree = original_copytree
+            self.assertFalse(prepared.exists())
+
     def test_preparation_rejects_dangling_symlink_output(self) -> None:
         tool = load_tool()
         with tempfile.TemporaryDirectory() as tmp:
