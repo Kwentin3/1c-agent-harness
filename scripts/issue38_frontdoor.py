@@ -29,6 +29,10 @@ class FrontDoorError(ValueError):
     """The A-baseline request/response path could not be prepared or run safely."""
 
 
+def _lexical_absolute(path: Path) -> Path:
+    return path if path.is_absolute() else Path.cwd() / path
+
+
 def _bsl_string(value: object, field: str) -> str:
     if not isinstance(value, str) or not issue38_protocol._SAFE_VALUE.fullmatch(value):
         raise FrontDoorError(f"request has unsafe {field}")
@@ -108,8 +112,8 @@ def _write_json_new(path: Path, value: object) -> None:
 
 def prepare(repo_root: Path, source_tree: Path, prepared_tree: Path, request_path: Path) -> dict[str, object]:
     repo_root = repo_root.resolve()
-    source_tree = source_tree.resolve()
-    prepared_tree = prepared_tree.resolve()
+    source_tree = _lexical_absolute(source_tree)
+    prepared_tree = _lexical_absolute(prepared_tree)
     request_path = request_path.resolve()
     if not source_tree.is_dir():
         raise FrontDoorError(f"input tree is absent: {source_tree}")
@@ -122,6 +126,7 @@ def prepare(repo_root: Path, source_tree: Path, prepared_tree: Path, request_pat
 
     request = issue38_protocol.new_request()
     _request_headers(request)
+    preparation_audit: dict[str, object] | None = None
     try:
         preparation_audit = managed_probe_prepare.prepare_probe(
             repo_root=repo_root,
@@ -132,10 +137,11 @@ def prepare(repo_root: Path, source_tree: Path, prepared_tree: Path, request_pat
         )
         _write_json_new(request_path, request)
     except (OSError, ValueError, RuntimeError) as exc:
-        try:
-            managed_probe_prepare.discard_prepared_tree(repo_root=repo_root, prepared_root=prepared_tree)
-        except (OSError, ValueError):
-            pass
+        if preparation_audit is not None:
+            try:
+                managed_probe_prepare.discard_prepared_tree(repo_root=repo_root, prepared_root=prepared_tree)
+            except (OSError, ValueError) as cleanup_exc:
+                raise FrontDoorError(f"preparation failed: {exc}; prepared cleanup failed: {cleanup_exc}") from cleanup_exc
         raise FrontDoorError(str(exc)) from exc
 
     return {
@@ -162,40 +168,78 @@ def _native_command(repo_root: Path, prepared_tree: Path) -> list[str]:
     ]
 
 
-def run(repo_root: Path, source_tree: Path, prepared_tree: Path, request_path: Path) -> dict[str, object]:
-    prepared = prepare(repo_root, source_tree, prepared_tree, request_path)
-    completed = subprocess.run(
-        _native_command(repo_root, prepared_tree), text=True, capture_output=True, timeout=_TIMEOUT_SECONDS + 90,
-    )
+def _discard_after_run(repo_root: Path, prepared_tree: Path, terminal_error: BaseException | None) -> None:
     try:
-        runner_result = json.loads(completed.stdout)
-    except json.JSONDecodeError as exc:
-        raise FrontDoorError("native cycle did not return one JSON result") from exc
-    if completed.returncode != 0:
-        return {"status": "runnerFailure", "prepared": prepared, "runner": runner_result}
-    invocation = runner_result.get("preparedInvocation", {}).get("invocationRoot")
-    if not isinstance(invocation, str):
-        raise FrontDoorError("native result omitted prepared invocation root")
-    receipt = repo_root / invocation / "run/evidence/receipt.txt"
-    server = receipt.with_name(receipt.name + ".server")
-    request = json.loads(request_path.read_text(encoding="utf-8"))
-    response = issue38_protocol.validate_terminal(request, receipt.read_bytes(), server.read_bytes())
-    return {"status": "validated", "prepared": prepared, "runner": runner_result, "response": response}
+        managed_probe_prepare.discard_prepared_tree(repo_root=repo_root, prepared_root=prepared_tree)
+    except (OSError, ValueError) as cleanup_exc:
+        if terminal_error is None:
+            raise FrontDoorError(f"prepared cleanup failed: {cleanup_exc}") from cleanup_exc
+        raise FrontDoorError(f"run failed: {terminal_error}; prepared cleanup failed: {cleanup_exc}") from cleanup_exc
+
+
+def run(repo_root: Path, source_tree: Path, prepared_tree: Path, request_path: Path) -> dict[str, object]:
+    repo_root = repo_root.resolve()
+    prepared_tree = _lexical_absolute(prepared_tree)
+    prepared = prepare(repo_root, source_tree, prepared_tree, request_path)
+    terminal_error: BaseException | None = None
+    try:
+        try:
+            completed = subprocess.run(
+                _native_command(repo_root, prepared_tree), text=True, capture_output=True, timeout=_TIMEOUT_SECONDS + 90,
+            )
+        except subprocess.TimeoutExpired as exc:
+            raise FrontDoorError("native cycle timed out") from exc
+        try:
+            runner_result = json.loads(completed.stdout)
+        except json.JSONDecodeError as exc:
+            raise FrontDoorError("native cycle did not return one JSON result") from exc
+        if completed.returncode != 0:
+            result: dict[str, object] = {"status": "runnerFailure", "prepared": prepared, "runner": runner_result}
+        else:
+            invocation = runner_result.get("preparedInvocation", {}).get("invocationRoot")
+            if not isinstance(invocation, str):
+                raise FrontDoorError("native result omitted prepared invocation root")
+            receipt = repo_root / invocation / "run/evidence/receipt.txt"
+            server = receipt.with_name(receipt.name + ".server")
+            request = json.loads(request_path.read_text(encoding="utf-8"))
+            response = issue38_protocol.validate_terminal(request, receipt.read_bytes(), server.read_bytes())
+            result = {"status": "validated", "prepared": prepared, "runner": runner_result, "response": response}
+    except BaseException as exc:
+        terminal_error = exc
+        raise
+    finally:
+        _discard_after_run(repo_root, prepared_tree, terminal_error)
+    result["cleanup"] = "discarded"
+    return result
+
+
+def discard(repo_root: Path, prepared_tree: Path) -> dict[str, object]:
+    repo_root = repo_root.resolve()
+    prepared_tree = _lexical_absolute(prepared_tree)
+    try:
+        managed_probe_prepare.discard_prepared_tree(repo_root=repo_root, prepared_root=prepared_tree)
+    except (OSError, ValueError) as exc:
+        raise FrontDoorError(f"prepared cleanup failed: {exc}") from exc
+    return {"status": "discarded", "preparedTree": str(prepared_tree)}
 
 
 def main(argv: list[str] | None = None) -> int:
     parser = argparse.ArgumentParser(description=__doc__)
-    parser.add_argument("command", choices=("prepare", "run"))
+    parser.add_argument("command", choices=("prepare", "run", "discard"))
     parser.add_argument("--repo-root", type=Path, default=Path.cwd())
-    parser.add_argument("--input-tree", required=True, type=Path)
+    parser.add_argument("--input-tree", type=Path)
     parser.add_argument("--prepared-tree", required=True, type=Path)
-    parser.add_argument("--request", required=True, type=Path)
+    parser.add_argument("--request", type=Path)
     args = parser.parse_args(argv)
+    if args.command in ("prepare", "run") and (args.input_tree is None or args.request is None):
+        parser.error("--input-tree and --request are required for prepare and run")
     try:
         if args.command == "prepare":
             result = prepare(args.repo_root, args.input_tree, args.prepared_tree, args.request)
-        else:
+        elif args.command == "run":
             result = run(args.repo_root.resolve(), args.input_tree, args.prepared_tree, args.request)
+        else:
+            result = discard(args.repo_root, args.prepared_tree)
     except (OSError, json.JSONDecodeError, FrontDoorError, issue38_protocol.ProtocolError) as exc:
         print(str(exc), file=sys.stderr)
         return 1

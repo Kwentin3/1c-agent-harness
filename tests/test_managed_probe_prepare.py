@@ -144,6 +144,35 @@ class ManagedProbePreparationTests(unittest.TestCase):
                 source_modes,
             )
 
+    def test_preparation_rejects_overlapping_source_and_prepared_before_copy(self) -> None:
+        tool = load_tool()
+        with tempfile.TemporaryDirectory() as tmp:
+            repo = Path(tmp)
+            prepared_base = repo / ".local" / "prepared"
+            cases = (
+                (repo / ".local", prepared_base / "source-ancestor"),
+                (prepared_base / "prepared-ancestor" / "source", prepared_base / "prepared-ancestor"),
+                (prepared_base / "same", prepared_base / "same"),
+            )
+            original_copytree = tool.shutil.copytree
+            copy_called = False
+
+            def fail_if_copy_called(*args: object, **kwargs: object) -> None:
+                nonlocal copy_called
+                copy_called = True
+                raise AssertionError("copytree must not run for overlapping roots")
+
+            tool.shutil.copytree = fail_if_copy_called
+            try:
+                for snapshot, prepared in cases:
+                    write_snapshot(snapshot)
+                    with self.subTest(snapshot=snapshot, prepared=prepared):
+                        with self.assertRaisesRegex(ValueError, "disjoint"):
+                            self.prepare(tool, repo, snapshot, prepared)
+                        self.assertFalse(copy_called)
+            finally:
+                tool.shutil.copytree = original_copytree
+
     def test_preparation_rejects_dangling_symlink_output(self) -> None:
         tool = load_tool()
         with tempfile.TemporaryDirectory() as tmp:

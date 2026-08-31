@@ -63,6 +63,19 @@ def _repo_relative(repo_root: Path, candidate: Path, *, field: str, inside: Path
     return raw
 
 
+def _disjoint(first: Path, second: Path) -> bool:
+    first = first.resolve(strict=False)
+    second = second.resolve(strict=False)
+    try:
+        first.relative_to(second)
+    except ValueError:
+        try:
+            second.relative_to(first)
+        except ValueError:
+            return True
+    return False
+
+
 def _line_ending(payload: bytes) -> bytes:
     return b"\r\n" if b"\r\n" in payload else b"\n"
 
@@ -210,6 +223,8 @@ def prepare_probe(
     prepared_root = _repo_relative(repo_root, prepared_root, field="preparedRoot", inside=prepared_base)
     if prepared_root == prepared_base:
         raise ValueError("preparedRoot must be a strict child of .local/prepared")
+    if not _disjoint(snapshot_root, prepared_root):
+        raise ValueError("snapshotRoot and preparedRoot must be disjoint")
     if not snapshot_root.is_dir() or snapshot_root.is_symlink():
         raise ValueError("snapshotRoot must be a non-symlink directory")
     if prepared_root.exists() or prepared_root.is_symlink():

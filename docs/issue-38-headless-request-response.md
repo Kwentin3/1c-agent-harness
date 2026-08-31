@@ -58,17 +58,28 @@ receipt templates and validation order; it does not create a service or change
 the canonical snapshot.
 
 Its sole prepared-tree primitive is `scripts/managed_probe_prepare.py`. That
-primitive copies the input into a fresh child of `.local/prepared/`, preserves
-the complete managed-application module, splices the supplied early client
-block after any initial `Var` declarations, appends the supplied server block,
-checks that exactly the two declared BSL files changed, and freezes the copy.
-It rejects symlink path components, missing `ServerCall=true` metadata and
-forbidden dynamic/business tokens in the generated blocks. The front door does
+primitive owns only technical tree lifecycle: it requires source and prepared
+roots to be disjoint, copies the input into a fresh child of `.local/prepared/`,
+preserves the complete managed-application module, splices the supplied early
+client block after any initial `Var` declarations, appends the supplied server
+block, checks that exactly the two declared BSL files changed, freezes the copy,
+and performs safe explicit discard. It rejects unsafe path/symlink components
+and missing `ServerCall=true` metadata. Its bounded token scan is input hygiene,
+**not** a proof that arbitrary supplied BSL has no business effect; the Issue
+#38 adapter and its semantic task contract own that meaning. The front door does
 not implement a second copy/splice/freeze path.
 
 `prepare` is non-native: it creates a fresh request outside the input tree and
-asks that primitive to create the named disposable prepared tree. The resulting
-closure changes only these two BSL files:
+asks that primitive to create the named disposable prepared tree. A standalone
+prepared tree is retained only until its caller explicitly discards it; use:
+
+```bash
+python3 scripts/issue38_frontdoor.py discard \
+  --repo-root . \
+  --prepared-tree .local/prepared/issue38-a-next
+```
+
+The resulting closure changes only these two BSL files:
 
 ```text
 Ext/ManagedApplicationModule.bsl
@@ -90,7 +101,9 @@ python3 scripts/issue38_frontdoor.py prepare \
 
 The `run` form performs that preparation, invokes the existing bounded
 `native_cycle.py run-prepared` (`120` seconds, `complete###true`), locates the
-current invocation receipts, and calls `validate_terminal`:
+current invocation receipts, and calls `validate_terminal`. It discards the
+prepared tree on every terminal runner, receipt, timeout, validation, and
+success path; a cleanup failure is returned explicitly rather than suppressed:
 
 ```bash
 python3 scripts/issue38_frontdoor.py run \

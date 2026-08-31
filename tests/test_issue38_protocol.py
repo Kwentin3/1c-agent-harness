@@ -26,6 +26,33 @@ def load_module() -> object:
     return module
 
 
+def load_frontdoor() -> object:
+    scripts = str(ROOT / "scripts")
+    sys.path.insert(0, scripts)
+    try:
+        spec = importlib.util.spec_from_file_location("issue38_frontdoor_under_test", FRONTDOOR_PATH)
+        if spec is None or spec.loader is None:
+            raise AssertionError("cannot load Issue 38 front door")
+        module = importlib.util.module_from_spec(spec)
+        spec.loader.exec_module(module)
+        return module
+    finally:
+        sys.path.remove(scripts)
+
+
+def write_frontdoor_snapshot(source: Path) -> None:
+    (source / "Ext").mkdir(parents=True)
+    (source / "CommonModules/JetServerCall/Ext").mkdir(parents=True)
+    (source / "Ext/ManagedApplicationModule.bsl").write_text(_managed_module(), encoding="utf-8")
+    (source / "CommonModules/JetServerCall/Ext/Module.bsl").write_text(
+        "#Region Public\nEndRegion\n", encoding="utf-8",
+    )
+    (source / "CommonModules/JetServerCall.xml").write_text(
+        "<CommonModule><Server>true</Server><ServerCall>true</ServerCall></CommonModule>\n",
+        encoding="utf-8",
+    )
+
+
 class Issue38ProtocolTests(unittest.TestCase):
     def test_cli_returns_validated_success_from_bound_receipts(self) -> None:
         request = _request()
@@ -261,6 +288,284 @@ class Issue38ProtocolTests(unittest.TestCase):
             )
             for forbidden in ("Execute(", "Eval(", "ErrorDescription", "ErrorInfo", "Chr("):
                 self.assertNotIn(forbidden, generated_lines)
+
+    def test_frontdoor_run_discards_prepared_tree_after_runner_failure(self) -> None:
+        frontdoor = load_frontdoor()
+        with tempfile.TemporaryDirectory() as tmp:
+            root = Path(tmp)
+            source = root / "snapshot"
+            (source / "Ext").mkdir(parents=True)
+            (source / "CommonModules/JetServerCall/Ext").mkdir(parents=True)
+            (source / "Ext/ManagedApplicationModule.bsl").write_text(_managed_module(), encoding="utf-8")
+            (source / "CommonModules/JetServerCall/Ext/Module.bsl").write_text(
+                "#Region Public\nEndRegion\n", encoding="utf-8",
+            )
+            (source / "CommonModules/JetServerCall.xml").write_text(
+                "<CommonModule><Server>true</Server><ServerCall>true</ServerCall></CommonModule>\n",
+                encoding="utf-8",
+            )
+            prepared = root / ".local/prepared" / "runner-failure"
+            request_path = root / "evidence/request.json"
+            original_run = frontdoor.subprocess.run
+
+            def failing_runner(*args: object, **kwargs: object) -> subprocess.CompletedProcess[str]:
+                return subprocess.CompletedProcess(args=args, returncode=1, stdout="{}", stderr="runner failed")
+
+            frontdoor.subprocess.run = failing_runner
+            try:
+                result = frontdoor.run(root, source, prepared, request_path)
+            finally:
+                frontdoor.subprocess.run = original_run
+
+            self.assertEqual(result["status"], "runnerFailure")
+            self.assertEqual(result["cleanup"], "discarded")
+            self.assertFalse(prepared.exists())
+
+    def test_frontdoor_run_discards_prepared_tree_after_terminal_errors(self) -> None:
+        frontdoor = load_frontdoor()
+        scenarios = (
+            ("malformed-output", lambda _: subprocess.CompletedProcess([], 0, "not-json", "")),
+            ("timeout", lambda _: (_ for _ in ()).throw(subprocess.TimeoutExpired(["native"], 1))),
+            (
+                "protocol-error",
+                lambda root: _runner_with_invalid_receipts(root),
+            ),
+        )
+        with tempfile.TemporaryDirectory() as tmp:
+            root = Path(tmp)
+            original_run = frontdoor.subprocess.run
+            try:
+                for name, outcome in scenarios:
+                    with self.subTest(name=name):
+                        source = root / name / "snapshot"
+                        prepared = root / name / ".local/prepared" / "case"
+                        request_path = root / name / "evidence/request.json"
+                        write_frontdoor_snapshot(source)
+                        frontdoor.subprocess.run = lambda *args, _root=root / name, **kwargs: outcome(_root)
+                        with self.assertRaises((frontdoor.FrontDoorError, frontdoor.issue38_protocol.ProtocolError)):
+                            frontdoor.run(root / name, source, prepared, request_path)
+                        self.assertFalse(prepared.exists())
+            finally:
+                frontdoor.subprocess.run = original_run
+
+    def test_frontdoor_run_discards_prepared_tree_after_validated_response(self) -> None:
+        frontdoor = load_frontdoor()
+        with tempfile.TemporaryDirectory() as tmp:
+            root = Path(tmp)
+            source = root / "snapshot"
+            prepared = root / ".local/prepared" / "validated"
+            request_path = root / "evidence/request.json"
+            write_frontdoor_snapshot(source)
+            original_run = frontdoor.subprocess.run
+
+            def validated_runner(*args: object, **kwargs: object) -> subprocess.CompletedProcess[str]:
+                request = json.loads(request_path.read_text(encoding="utf-8"))
+                client, server = _success_receipts(request)
+                evidence = root / ".local/runs/validated/run/evidence"
+                evidence.mkdir(parents=True)
+                receipt = evidence / "receipt.txt"
+                receipt.write_bytes(client)
+                receipt.with_name("receipt.txt.server").write_bytes(server)
+                result = {"preparedInvocation": {"invocationRoot": ".local/runs/validated"}}
+                return subprocess.CompletedProcess([], 0, json.dumps(result), "")
+
+            frontdoor.subprocess.run = validated_runner
+            try:
+                result = frontdoor.run(root, source, prepared, request_path)
+            finally:
+                frontdoor.subprocess.run = original_run
+
+            self.assertEqual(result["status"], "validated")
+            self.assertEqual(result["cleanup"], "discarded")
+            self.assertFalse(prepared.exists())
+
+    def test_frontdoor_run_reports_prepared_cleanup_failure(self) -> None:
+        frontdoor = load_frontdoor()
+        with tempfile.TemporaryDirectory() as tmp:
+            root = Path(tmp)
+            source = root / "snapshot"
+            prepared = root / ".local/prepared" / "cleanup-failure"
+            request_path = root / "evidence/request.json"
+            write_frontdoor_snapshot(source)
+            original_run = frontdoor.subprocess.run
+            original_discard = frontdoor.managed_probe_prepare.discard_prepared_tree
+            frontdoor.subprocess.run = lambda *args, **kwargs: subprocess.CompletedProcess([], 1, "{}", "")
+            frontdoor.managed_probe_prepare.discard_prepared_tree = (
+                lambda **kwargs: (_ for _ in ()).throw(ValueError("simulated cleanup refusal"))
+            )
+            try:
+                with self.assertRaisesRegex(frontdoor.FrontDoorError, "prepared cleanup failed"):
+                    frontdoor.run(root, source, prepared, request_path)
+            finally:
+                frontdoor.subprocess.run = original_run
+                frontdoor.managed_probe_prepare.discard_prepared_tree = original_discard
+                original_discard(repo_root=root, prepared_root=prepared)
+
+    def test_frontdoor_cli_discard_removes_standalone_prepared_tree(self) -> None:
+        frontdoor = load_frontdoor()
+        with tempfile.TemporaryDirectory() as tmp:
+            root = Path(tmp)
+            source = root / "snapshot"
+            prepared = root / ".local/prepared" / "standalone"
+            request_path = root / "evidence/request.json"
+            write_frontdoor_snapshot(source)
+            frontdoor.prepare(root, source, prepared, request_path)
+
+            completed = subprocess.run(
+                [
+                    sys.executable, str(FRONTDOOR_PATH), "discard",
+                    "--repo-root", str(root),
+                    "--prepared-tree", str(prepared),
+                ],
+                text=True,
+                capture_output=True,
+                timeout=10,
+            )
+
+            self.assertEqual(completed.returncode, 0, completed.stderr)
+            self.assertEqual(json.loads(completed.stdout)["status"], "discarded")
+            self.assertFalse(prepared.exists())
+
+    def test_frontdoor_preserves_prepared_path_for_symlink_rejection(self) -> None:
+        frontdoor = load_frontdoor()
+        with tempfile.TemporaryDirectory() as tmp:
+            root = Path(tmp)
+            source = root / "snapshot"
+            prepared_base = root / ".local/prepared"
+            prepared_base.mkdir(parents=True)
+            prepared_link = prepared_base / "link"
+            prepared_target = prepared_base / "target"
+            prepared_link.symlink_to(prepared_target, target_is_directory=True)
+            request_path = root / "evidence/request.json"
+            write_frontdoor_snapshot(source)
+
+            with self.assertRaisesRegex(frontdoor.FrontDoorError, "symlink"):
+                frontdoor.prepare(root, source, prepared_link, request_path)
+            self.assertTrue(prepared_link.is_symlink())
+            self.assertFalse(prepared_target.exists())
+
+    def test_frontdoor_preserves_source_path_for_symlink_rejection(self) -> None:
+        frontdoor = load_frontdoor()
+        with tempfile.TemporaryDirectory() as tmp:
+            root = Path(tmp)
+            source_target = root / "snapshot-target"
+            source_link = root / "snapshot-link"
+            prepared = root / ".local/prepared" / "case"
+            request_path = root / "evidence/request.json"
+            write_frontdoor_snapshot(source_target)
+            source_link.symlink_to(source_target, target_is_directory=True)
+
+            with self.assertRaisesRegex(frontdoor.FrontDoorError, "symlink"):
+                frontdoor.prepare(root, source_link, prepared, request_path)
+            self.assertTrue(source_link.is_symlink())
+            self.assertFalse(prepared.exists())
+
+    def test_frontdoor_discard_preserves_symlink_target(self) -> None:
+        frontdoor = load_frontdoor()
+        with tempfile.TemporaryDirectory() as tmp:
+            root = Path(tmp)
+            prepared_base = root / ".local/prepared"
+            prepared_base.mkdir(parents=True)
+            target = prepared_base / "target"
+            target.mkdir()
+            sentinel = target / "sentinel.txt"
+            sentinel.write_text("must-survive", encoding="utf-8")
+            link = prepared_base / "link"
+            link.symlink_to(target, target_is_directory=True)
+
+            with self.assertRaisesRegex(frontdoor.FrontDoorError, "symlink"):
+                frontdoor.discard(root, link)
+            self.assertTrue(link.is_symlink())
+            self.assertEqual(sentinel.read_text(encoding="utf-8"), "must-survive")
+
+    def test_frontdoor_prepare_keeps_existing_prepared_tree_on_rejection(self) -> None:
+        frontdoor = load_frontdoor()
+        with tempfile.TemporaryDirectory() as tmp:
+            root = Path(tmp)
+            source = root / "snapshot"
+            prepared = root / ".local/prepared" / "existing"
+            write_frontdoor_snapshot(source)
+            frontdoor.prepare(root, source, prepared, root / "evidence/first.json")
+
+            with self.assertRaisesRegex(frontdoor.FrontDoorError, "already exists"):
+                frontdoor.prepare(root, source, prepared, root / "evidence/second.json")
+            self.assertTrue((prepared / "Ext/ManagedApplicationModule.bsl").is_file())
+
+    def test_frontdoor_prepare_keeps_source_owned_prepared_descendant_on_rejection(self) -> None:
+        frontdoor = load_frontdoor()
+        with tempfile.TemporaryDirectory() as tmp:
+            root = Path(tmp)
+            source = root / ".local"
+            prepared = source / "prepared" / "case"
+            write_frontdoor_snapshot(source)
+            prepared.mkdir(parents=True)
+            sentinel = prepared / "sentinel.txt"
+            sentinel.write_text("must-survive", encoding="utf-8")
+
+            with self.assertRaisesRegex(frontdoor.FrontDoorError, "disjoint"):
+                frontdoor.prepare(root, source, prepared, root / "evidence/request.json")
+            self.assertEqual(sentinel.read_text(encoding="utf-8"), "must-survive")
+
+    def test_frontdoor_run_reports_successful_cleanup_failure_without_false_run_failure(self) -> None:
+        frontdoor = load_frontdoor()
+        with tempfile.TemporaryDirectory() as tmp:
+            root = Path(tmp)
+            source = root / "snapshot"
+            prepared = root / ".local/prepared" / "cleanup-after-success"
+            request_path = root / "evidence/request.json"
+            write_frontdoor_snapshot(source)
+            original_run = frontdoor.subprocess.run
+            original_discard = frontdoor.managed_probe_prepare.discard_prepared_tree
+
+            def validated_runner(*args: object, **kwargs: object) -> subprocess.CompletedProcess[str]:
+                request = json.loads(request_path.read_text(encoding="utf-8"))
+                client, server = _success_receipts(request)
+                evidence = root / ".local/runs/cleanup-success/run/evidence"
+                evidence.mkdir(parents=True)
+                receipt = evidence / "receipt.txt"
+                receipt.write_bytes(client)
+                receipt.with_name("receipt.txt.server").write_bytes(server)
+                return subprocess.CompletedProcess(
+                    [], 0, json.dumps({"preparedInvocation": {"invocationRoot": ".local/runs/cleanup-success"}}), "",
+                )
+
+            frontdoor.subprocess.run = validated_runner
+            frontdoor.managed_probe_prepare.discard_prepared_tree = (
+                lambda **kwargs: (_ for _ in ()).throw(ValueError("simulated cleanup refusal"))
+            )
+            try:
+                with self.assertRaisesRegex(frontdoor.FrontDoorError, "^prepared cleanup failed") as raised:
+                    frontdoor.run(root, source, prepared, request_path)
+                self.assertNotIn("run failed", str(raised.exception))
+            finally:
+                frontdoor.subprocess.run = original_run
+                frontdoor.managed_probe_prepare.discard_prepared_tree = original_discard
+                original_discard(repo_root=root, prepared_root=prepared)
+
+    def test_frontdoor_run_reports_terminal_and_cleanup_failure_together(self) -> None:
+        frontdoor = load_frontdoor()
+        with tempfile.TemporaryDirectory() as tmp:
+            root = Path(tmp)
+            source = root / "snapshot"
+            prepared = root / ".local/prepared" / "cleanup-after-terminal-error"
+            request_path = root / "evidence/request.json"
+            write_frontdoor_snapshot(source)
+            original_run = frontdoor.subprocess.run
+            original_discard = frontdoor.managed_probe_prepare.discard_prepared_tree
+            frontdoor.subprocess.run = lambda *args, **kwargs: subprocess.CompletedProcess([], 0, "not-json", "")
+            frontdoor.managed_probe_prepare.discard_prepared_tree = (
+                lambda **kwargs: (_ for _ in ()).throw(ValueError("simulated cleanup refusal"))
+            )
+            try:
+                with self.assertRaisesRegex(
+                    frontdoor.FrontDoorError,
+                    "^run failed: native cycle did not return one JSON result; prepared cleanup failed",
+                ):
+                    frontdoor.run(root, source, prepared, request_path)
+            finally:
+                frontdoor.subprocess.run = original_run
+                frontdoor.managed_probe_prepare.discard_prepared_tree = original_discard
+                original_discard(repo_root=root, prepared_root=prepared)
 
     def test_frontdoor_has_no_second_prepared_tree_mechanism(self) -> None:
         source = FRONTDOOR_PATH.read_text(encoding="utf-8")
@@ -557,6 +862,17 @@ def _success_receipts(request: dict[str, object]) -> tuple[bytes, bytes]:
             ("businessResult", token, "String"),
             ("complete", "true", "Boolean"),
         ]),
+    )
+
+
+def _runner_with_invalid_receipts(root: Path) -> subprocess.CompletedProcess[str]:
+    evidence = root / ".local/runs/protocol-error/run/evidence"
+    evidence.mkdir(parents=True)
+    receipt = evidence / "receipt.txt"
+    receipt.write_bytes(b"invalid\r\n")
+    receipt.with_name("receipt.txt.server").write_bytes(b"invalid\r\n")
+    return subprocess.CompletedProcess(
+        [], 0, json.dumps({"preparedInvocation": {"invocationRoot": ".local/runs/protocol-error"}}), "",
     )
 
 
