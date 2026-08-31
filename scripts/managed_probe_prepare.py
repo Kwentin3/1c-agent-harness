@@ -104,10 +104,16 @@ def _onstart_bounds(payload: bytes) -> tuple[int, int, int]:
 def _ensure_server_call_metadata(payload: bytes) -> None:
     if len(payload) > 1_048_576:
         raise ValueError("JetServerCall metadata exceeds 1 MiB safety limit")
-    if re.search(rb"(?i)<![ \t\r\n]*(?:doctype|entity)\b", payload):
+    try:
+        text = payload.decode("utf-8-sig")
+    except UnicodeDecodeError as exc:
+        raise ValueError("JetServerCall metadata must be UTF-8") from exc
+    if "\x00" in text:
+        raise ValueError("JetServerCall metadata must not contain NUL")
+    if re.search(r"(?i)<![ \t\r\n]*(?:doctype|entity)\b", text):
         raise ValueError("JetServerCall metadata must not contain a DTD or entity declaration")
     try:
-        root = ElementTree.fromstring(payload)
+        root = ElementTree.fromstring(text)
     except ElementTree.ParseError as exc:
         raise ValueError("JetServerCall metadata is not valid XML") from exc
 

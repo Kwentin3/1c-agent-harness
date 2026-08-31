@@ -263,6 +263,23 @@ class ManagedProbePreparationTests(unittest.TestCase):
                 self.prepare(tool, repo, snapshot, prepared)
             self.assertFalse(prepared.exists())
 
+    def test_preparation_rejects_utf16_dtd_before_xml_parse(self) -> None:
+        tool = load_tool()
+        with tempfile.TemporaryDirectory() as tmp:
+            repo = Path(tmp)
+            snapshot = repo / "snapshot"
+            prepared = repo / ".local" / "prepared" / "case-metadata-utf16-dtd"
+            write_snapshot(snapshot)
+            dtd = (
+                "<!DOCTYPE CommonModule [<!ENTITY enabled \"true\">]>\n"
+                "<CommonModule><Server>&enabled;</Server><ServerCall>true</ServerCall></CommonModule>\n"
+            )
+            (snapshot / "CommonModules" / "JetServerCall.xml").write_bytes(dtd.encode("utf-16"))
+
+            with self.assertRaisesRegex(ValueError, "UTF-8"):
+                self.prepare(tool, repo, snapshot, prepared)
+            self.assertFalse(prepared.exists())
+
     def test_discard_rejects_symlink_root_without_touching_target(self) -> None:
         tool = load_tool()
         with tempfile.TemporaryDirectory() as tmp:
