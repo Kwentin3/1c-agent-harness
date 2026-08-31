@@ -14,6 +14,7 @@ import re
 import shutil
 import stat
 from typing import Any
+from xml.etree import ElementTree
 
 
 MANAGED_RELATIVE = Path("Ext/ManagedApplicationModule.bsl")
@@ -67,11 +68,14 @@ def _line_ending(payload: bytes) -> bytes:
 
 
 def _onstart_bounds(payload: bytes) -> tuple[int, int, int]:
-    starts = list(re.finditer(rb"(?m)^Procedure OnStart\(\)[ \t]*(?://[^\r\n]*)?\r?\n", payload))
+    starts = list(re.finditer(
+        rb"(?im)^[ \t]*Procedure[ \t]+OnStart[ \t]*\([ \t]*\)[ \t]*(?://[^\r\n]*)?\r?\n",
+        payload,
+    ))
     if len(starts) != 1:
         raise ValueError(f"expected exactly one Procedure OnStart(), found {len(starts)}")
     start = starts[0]
-    end = re.search(rb"(?m)^EndProcedure\r?(?:\n|$)", payload[start.end():])
+    end = re.search(rb"(?im)^[ \t]*EndProcedure[ \t]*(?://[^\r\n]*)?\r?(?:\n|$)", payload[start.end():])
     if end is None:
         raise ValueError("OnStart has no matching EndProcedure")
     end_at = start.end() + end.end()
@@ -98,7 +102,22 @@ def _onstart_bounds(payload: bytes) -> tuple[int, int, int]:
 
 
 def _ensure_server_call_metadata(payload: bytes) -> None:
-    if b"<Server>true</Server>" not in payload or b"<ServerCall>true</ServerCall>" not in payload:
+    try:
+        root = ElementTree.fromstring(payload)
+    except ElementTree.ParseError as exc:
+        raise ValueError("JetServerCall metadata is not valid XML") from exc
+
+    def value(name: str) -> str:
+        matches = [
+            (element.text or "").strip()
+            for element in root.iter()
+            if element.tag.rsplit("}", 1)[-1] == name
+        ]
+        if len(matches) != 1:
+            raise ValueError(f"JetServerCall metadata must declare exactly one {name}")
+        return matches[0]
+
+    if value("Server") != "true" or value("ServerCall") != "true":
         raise ValueError("JetServerCall metadata must declare Server=true and ServerCall=true")
 
 
@@ -141,13 +160,14 @@ def _remove_prepared_tree(prepared_root: Path) -> None:
         return
     if prepared_root.is_symlink() or not prepared_root.is_dir():
         raise ValueError(f"refusing to remove non-directory preparedRoot: {prepared_root}")
-    for directory in sorted(
-        (path for path in prepared_root.rglob("*") if path.is_dir()),
-        key=lambda item: len(item.parts),
-        reverse=True,
-    ):
-        directory.chmod(directory.stat().st_mode | stat.S_IRWXU)
-    prepared_root.chmod(prepared_root.stat().st_mode | stat.S_IRWXU)
+    for path in sorted((prepared_root, *prepared_root.rglob("*")), key=lambda item: len(item.parts), reverse=True):
+        if path.is_symlink():
+            raise ValueError(f"refusing to remove prepared tree containing symlink: {path}")
+        mode = path.stat().st_mode
+        if path.is_dir():
+            path.chmod(mode | stat.S_IRWXU)
+        else:
+            path.chmod(mode | stat.S_IWUSR)
     shutil.rmtree(prepared_root)
 
 

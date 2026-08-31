@@ -205,6 +205,73 @@ class ManagedProbePreparationTests(unittest.TestCase):
             client = (prepared / MANAGED).read_bytes()
             self.assertLess(client.index(b"AnotherValue;"), client.index(client_block()))
 
+    def test_preparation_accepts_case_insensitive_indented_onstart(self) -> None:
+        tool = load_tool()
+        with tempfile.TemporaryDirectory() as tmp:
+            repo = Path(tmp)
+            snapshot = repo / "snapshot"
+            prepared = repo / ".local" / "prepared" / "case-indented-onstart"
+            write_snapshot(snapshot)
+            module = snapshot / MANAGED
+            module.write_text(
+                module.read_text(encoding="utf-8").replace(
+                    "Procedure OnStart()\n",
+                    "  procedure OnStart()\n",
+                    1,
+                ).replace(
+                    "\t// End StandardSubsystems\nEndProcedure\n\nProcedure BeforeExit",
+                    "\t// End StandardSubsystems\n    endprocedure\n\nProcedure BeforeExit",
+                    1,
+                ),
+                encoding="utf-8",
+            )
+
+            self.prepare(tool, repo, snapshot, prepared)
+
+            self.assertTrue((prepared / MANAGED).is_file())
+
+    def test_preparation_accepts_pretty_printed_server_metadata(self) -> None:
+        tool = load_tool()
+        with tempfile.TemporaryDirectory() as tmp:
+            repo = Path(tmp)
+            snapshot = repo / "snapshot"
+            prepared = repo / ".local" / "prepared" / "case-pretty-metadata"
+            write_snapshot(snapshot)
+            (snapshot / "CommonModules" / "JetServerCall.xml").write_text(
+                "<CommonModule>\n  <Server>\n    true\n  </Server>\n  <ServerCall>true</ServerCall>\n</CommonModule>\n",
+                encoding="utf-8",
+            )
+
+            self.prepare(tool, repo, snapshot, prepared)
+
+            self.assertTrue((prepared / MANAGED).is_file())
+
+    def test_discard_makes_read_only_files_writable_before_deletion(self) -> None:
+        tool = load_tool()
+        with tempfile.TemporaryDirectory() as tmp:
+            repo = Path(tmp)
+            snapshot = repo / "snapshot"
+            prepared = repo / ".local" / "prepared" / "case-cleanup"
+            write_snapshot(snapshot)
+            self.prepare(tool, repo, snapshot, prepared)
+            original_rmtree = tool.shutil.rmtree
+
+            def strict_rmtree(root: Path) -> None:
+                read_only_files = [
+                    path for path in root.rglob("*")
+                    if path.is_file() and not (path.stat().st_mode & stat.S_IWUSR)
+                ]
+                if read_only_files:
+                    raise AssertionError(f"read-only files passed to rmtree: {read_only_files}")
+                original_rmtree(root)
+
+            tool.shutil.rmtree = strict_rmtree
+            try:
+                tool.discard_prepared_tree(repo_root=repo, prepared_root=prepared)
+            finally:
+                tool.shutil.rmtree = original_rmtree
+            self.assertFalse(prepared.exists())
+
     def test_preparation_rejects_missing_onstart_without_output(self) -> None:
         tool = load_tool()
         with tempfile.TemporaryDirectory() as tmp:
