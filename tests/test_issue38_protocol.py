@@ -348,6 +348,60 @@ class Issue38ProtocolTests(unittest.TestCase):
             finally:
                 frontdoor.subprocess.run = original_run
 
+    def test_frontdoor_run_rejects_external_invocation_root_and_discards_prepared_tree(self) -> None:
+        frontdoor = load_frontdoor()
+        with tempfile.TemporaryDirectory() as tmp:
+            root = Path(tmp)
+            source = root / "snapshot"
+            prepared = root / ".local/prepared" / "external-invocation"
+            request_path = root / "evidence/request.json"
+            outside = root.parent / f"issue38-external-{uuid.uuid4()}"
+            write_frontdoor_snapshot(source)
+            original_run = frontdoor.subprocess.run
+
+            def external_runner(*args: object, **kwargs: object) -> subprocess.CompletedProcess[str]:
+                request = json.loads(request_path.read_text(encoding="utf-8"))
+                client, server = _success_receipts(request)
+                evidence = outside / "run/evidence"
+                evidence.mkdir(parents=True)
+                receipt = evidence / "receipt.txt"
+                receipt.write_bytes(client)
+                receipt.with_name("receipt.txt.server").write_bytes(server)
+                return subprocess.CompletedProcess(
+                    [], 0, json.dumps({"preparedInvocation": {"invocationRoot": str(outside)}}), "",
+                )
+
+            frontdoor.subprocess.run = external_runner
+            try:
+                with self.assertRaisesRegex(frontdoor.FrontDoorError, "invocationRoot"):
+                    frontdoor.run(root, source, prepared, request_path)
+            finally:
+                frontdoor.subprocess.run = original_run
+                if outside.exists():
+                    for path in sorted((outside, *outside.rglob("*")), key=lambda item: len(item.parts), reverse=True):
+                        if path.is_file():
+                            path.unlink()
+                        else:
+                            path.rmdir()
+            self.assertFalse(prepared.exists())
+
+    def test_frontdoor_run_rejects_non_object_runner_result_and_discards_prepared_tree(self) -> None:
+        frontdoor = load_frontdoor()
+        with tempfile.TemporaryDirectory() as tmp:
+            root = Path(tmp)
+            source = root / "snapshot"
+            prepared = root / ".local/prepared" / "scalar-runner-result"
+            request_path = root / "evidence/request.json"
+            write_frontdoor_snapshot(source)
+            original_run = frontdoor.subprocess.run
+            frontdoor.subprocess.run = lambda *args, **kwargs: subprocess.CompletedProcess([], 0, "null", "")
+            try:
+                with self.assertRaisesRegex(frontdoor.FrontDoorError, "JSON object"):
+                    frontdoor.run(root, source, prepared, request_path)
+            finally:
+                frontdoor.subprocess.run = original_run
+            self.assertFalse(prepared.exists())
+
     def test_frontdoor_run_discards_prepared_tree_after_validated_response(self) -> None:
         frontdoor = load_frontdoor()
         with tempfile.TemporaryDirectory() as tmp:
@@ -361,12 +415,12 @@ class Issue38ProtocolTests(unittest.TestCase):
             def validated_runner(*args: object, **kwargs: object) -> subprocess.CompletedProcess[str]:
                 request = json.loads(request_path.read_text(encoding="utf-8"))
                 client, server = _success_receipts(request)
-                evidence = root / ".local/runs/validated/run/evidence"
+                evidence = root / ".local/runs/native-cycle/run-validated/run/evidence"
                 evidence.mkdir(parents=True)
                 receipt = evidence / "receipt.txt"
                 receipt.write_bytes(client)
                 receipt.with_name("receipt.txt.server").write_bytes(server)
-                result = {"preparedInvocation": {"invocationRoot": ".local/runs/validated"}}
+                result = {"preparedInvocation": {"invocationRoot": ".local/runs/native-cycle/run-validated"}}
                 return subprocess.CompletedProcess([], 0, json.dumps(result), "")
 
             frontdoor.subprocess.run = validated_runner
@@ -520,13 +574,13 @@ class Issue38ProtocolTests(unittest.TestCase):
             def validated_runner(*args: object, **kwargs: object) -> subprocess.CompletedProcess[str]:
                 request = json.loads(request_path.read_text(encoding="utf-8"))
                 client, server = _success_receipts(request)
-                evidence = root / ".local/runs/cleanup-success/run/evidence"
+                evidence = root / ".local/runs/native-cycle/run-cleanup-success/run/evidence"
                 evidence.mkdir(parents=True)
                 receipt = evidence / "receipt.txt"
                 receipt.write_bytes(client)
                 receipt.with_name("receipt.txt.server").write_bytes(server)
                 return subprocess.CompletedProcess(
-                    [], 0, json.dumps({"preparedInvocation": {"invocationRoot": ".local/runs/cleanup-success"}}), "",
+                    [], 0, json.dumps({"preparedInvocation": {"invocationRoot": ".local/runs/native-cycle/run-cleanup-success"}}), "",
                 )
 
             frontdoor.subprocess.run = validated_runner
@@ -866,13 +920,13 @@ def _success_receipts(request: dict[str, object]) -> tuple[bytes, bytes]:
 
 
 def _runner_with_invalid_receipts(root: Path) -> subprocess.CompletedProcess[str]:
-    evidence = root / ".local/runs/protocol-error/run/evidence"
+    evidence = root / ".local/runs/native-cycle/run-protocol-error/run/evidence"
     evidence.mkdir(parents=True)
     receipt = evidence / "receipt.txt"
     receipt.write_bytes(b"invalid\r\n")
     receipt.with_name("receipt.txt.server").write_bytes(b"invalid\r\n")
     return subprocess.CompletedProcess(
-        [], 0, json.dumps({"preparedInvocation": {"invocationRoot": ".local/runs/protocol-error"}}), "",
+        [], 0, json.dumps({"preparedInvocation": {"invocationRoot": ".local/runs/native-cycle/run-protocol-error"}}), "",
     )
 
 

@@ -173,6 +173,65 @@ class ManagedProbePreparationTests(unittest.TestCase):
             finally:
                 tool.shutil.copytree = original_copytree
 
+    def test_preparation_claims_empty_output_before_copy(self) -> None:
+        tool = load_tool()
+        with tempfile.TemporaryDirectory() as tmp:
+            repo = Path(tmp)
+            snapshot = repo / "snapshot"
+            prepared = repo / ".local" / "prepared" / "claimed-output"
+            write_snapshot(snapshot)
+            original_copytree = tool.shutil.copytree
+
+            def copy_after_claim(source: Path, output: Path, **kwargs: object) -> object:
+                self.assertTrue(output.is_dir(), "preparer must atomically create its output before copy")
+                self.assertEqual(list(output.iterdir()), [])
+                self.assertIs(kwargs.get("dirs_exist_ok"), True)
+                tool.shutil.copytree = original_copytree
+                return original_copytree(source, output, **kwargs)
+
+            tool.shutil.copytree = copy_after_claim
+            try:
+                self.prepare(tool, repo, snapshot, prepared)
+            finally:
+                tool.shutil.copytree = original_copytree
+            self.assertTrue((prepared / MANAGED).is_file())
+
+    def test_preparation_accepts_utf8_bom_managed_module(self) -> None:
+        tool = load_tool()
+        with tempfile.TemporaryDirectory() as tmp:
+            repo = Path(tmp)
+            snapshot = repo / "snapshot"
+            prepared = repo / ".local" / "prepared" / "case-bom"
+            write_snapshot(snapshot)
+            module = snapshot / MANAGED
+            module.write_bytes(b"\xef\xbb\xbfProcedure OnStart()\n\tReturn;\nEndProcedure\n")
+
+            self.prepare(tool, repo, snapshot, prepared)
+
+            self.assertTrue((prepared / MANAGED).read_bytes().startswith(b"\xef\xbb\xbf"))
+            self.assertIn(client_block(), (prepared / MANAGED).read_bytes())
+
+    def test_preparation_reports_primary_and_cleanup_failure(self) -> None:
+        tool = load_tool()
+        with tempfile.TemporaryDirectory() as tmp:
+            repo = Path(tmp)
+            snapshot = repo / "snapshot"
+            prepared = repo / ".local" / "prepared" / "case-double-failure"
+            write_snapshot(snapshot)
+            original_copytree = tool.shutil.copytree
+            original_remove = tool._remove_prepared_tree
+            tool.shutil.copytree = lambda *args, **kwargs: (_ for _ in ()).throw(RuntimeError("copy primary failure"))
+            tool._remove_prepared_tree = lambda *args, **kwargs: (_ for _ in ()).throw(ValueError("cleanup failure"))
+            try:
+                with self.assertRaisesRegex(
+                    RuntimeError,
+                    "preparation failed: copy primary failure; prepared cleanup failed: cleanup failure",
+                ):
+                    self.prepare(tool, repo, snapshot, prepared)
+            finally:
+                tool.shutil.copytree = original_copytree
+                tool._remove_prepared_tree = original_remove
+
     def test_preparation_rejects_dangling_symlink_output(self) -> None:
         tool = load_tool()
         with tempfile.TemporaryDirectory() as tmp:

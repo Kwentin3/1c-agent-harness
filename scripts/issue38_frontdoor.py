@@ -168,6 +168,49 @@ def _native_command(repo_root: Path, prepared_tree: Path) -> list[str]:
     ]
 
 
+def _regular_child(root: Path, relative: Path, *, field: str) -> Path:
+    candidate = root
+    for part in relative.parts:
+        candidate = candidate / part
+        if candidate.is_symlink():
+            raise FrontDoorError(f"{field} contains a symlink: {candidate}")
+    if not candidate.is_file():
+        raise FrontDoorError(f"{field} must be a regular file: {candidate}")
+    return candidate
+
+
+def _runner_receipts(repo_root: Path, runner_result: object) -> tuple[Path, Path]:
+    if not isinstance(runner_result, dict):
+        raise FrontDoorError("native cycle result must be a JSON object")
+    prepared_invocation = runner_result.get("preparedInvocation")
+    if not isinstance(prepared_invocation, dict):
+        raise FrontDoorError("native result omitted preparedInvocation object")
+    invocation_value = prepared_invocation.get("invocationRoot")
+    if not isinstance(invocation_value, str):
+        raise FrontDoorError("native result omitted prepared invocationRoot")
+    relative = Path(invocation_value)
+    expected_parent = Path(".local/runs/native-cycle")
+    if (
+        relative.is_absolute()
+        or ".." in relative.parts
+        or len(relative.parts) != 4
+        or relative.parts[:3] != expected_parent.parts
+        or not relative.name.startswith("run-")
+    ):
+        raise FrontDoorError("native result has unsafe invocationRoot")
+    invocation_root = repo_root / relative
+    if invocation_root.is_symlink() or not invocation_root.is_dir():
+        raise FrontDoorError("native invocationRoot must be a non-symlink directory")
+    candidate = repo_root
+    for part in relative.parts:
+        candidate = candidate / part
+        if candidate.is_symlink():
+            raise FrontDoorError(f"native invocationRoot contains a symlink: {candidate}")
+    receipt = _regular_child(invocation_root, Path("run/evidence/receipt.txt"), field="client receipt")
+    server = _regular_child(invocation_root, Path("run/evidence/receipt.txt.server"), field="server receipt")
+    return receipt, server
+
+
 def _discard_after_run(repo_root: Path, prepared_tree: Path, terminal_error: BaseException | None) -> None:
     try:
         managed_probe_prepare.discard_prepared_tree(repo_root=repo_root, prepared_root=prepared_tree)
@@ -193,14 +236,12 @@ def run(repo_root: Path, source_tree: Path, prepared_tree: Path, request_path: P
             runner_result = json.loads(completed.stdout)
         except json.JSONDecodeError as exc:
             raise FrontDoorError("native cycle did not return one JSON result") from exc
+        if not isinstance(runner_result, dict):
+            raise FrontDoorError("native cycle result must be a JSON object")
         if completed.returncode != 0:
             result: dict[str, object] = {"status": "runnerFailure", "prepared": prepared, "runner": runner_result}
         else:
-            invocation = runner_result.get("preparedInvocation", {}).get("invocationRoot")
-            if not isinstance(invocation, str):
-                raise FrontDoorError("native result omitted prepared invocation root")
-            receipt = repo_root / invocation / "run/evidence/receipt.txt"
-            server = receipt.with_name(receipt.name + ".server")
+            receipt, server = _runner_receipts(repo_root, runner_result)
             request = json.loads(request_path.read_text(encoding="utf-8"))
             response = issue38_protocol.validate_terminal(request, receipt.read_bytes(), server.read_bytes())
             result = {"status": "validated", "prepared": prepared, "runner": runner_result, "response": response}

@@ -82,7 +82,7 @@ def _line_ending(payload: bytes) -> bytes:
 
 def _onstart_bounds(payload: bytes) -> tuple[int, int, int]:
     starts = list(re.finditer(
-        rb"(?im)^[ \t]*Procedure[ \t]+OnStart[ \t]*\([ \t]*\)[ \t]*(?://[^\r\n]*)?\r?\n",
+        rb"(?im)^(?:\xef\xbb\xbf)?[ \t]*Procedure[ \t]+OnStart[ \t]*\([ \t]*\)[ \t]*(?://[^\r\n]*)?\r?\n",
         payload,
     ))
     if len(starts) != 1:
@@ -227,8 +227,6 @@ def prepare_probe(
         raise ValueError("snapshotRoot and preparedRoot must be disjoint")
     if not snapshot_root.is_dir() or snapshot_root.is_symlink():
         raise ValueError("snapshotRoot must be a non-symlink directory")
-    if prepared_root.exists() or prepared_root.is_symlink():
-        raise FileExistsError(f"preparedRoot already exists: {prepared_root}")
 
     forbidden = _validate_blocks(client_block, server_block)
     if forbidden:
@@ -242,8 +240,16 @@ def prepare_probe(
     separator = b"" if source_server.endswith((b"\n", b"\r")) else _line_ending(source_server)
     prepared_server = source_server + separator + server_block
 
+    prepared_root.parent.mkdir(parents=True, exist_ok=True)
+    if prepared_root.parent.is_symlink() or not prepared_root.parent.is_dir():
+        raise ValueError("preparedRoot parent must be a non-symlink directory")
     try:
-        shutil.copytree(snapshot_root, prepared_root, copy_function=shutil.copy2)
+        prepared_root.mkdir()
+    except FileExistsError as exc:
+        raise FileExistsError(f"preparedRoot already exists: {prepared_root}") from exc
+
+    try:
+        shutil.copytree(snapshot_root, prepared_root, copy_function=shutil.copy2, dirs_exist_ok=True)
         for relative in (MANAGED_RELATIVE, SERVER_RELATIVE):
             target = prepared_root / relative
             target.chmod(target.stat().st_mode | stat.S_IWUSR)
@@ -258,8 +264,13 @@ def prepare_probe(
         )
         if tuple(changed_paths) != _ALLOWED_CHANGED:
             raise RuntimeError(f"changed path closure mismatch: {changed_paths}")
-    except Exception:
-        _remove_prepared_tree(prepared_root)
+    except Exception as primary_exc:
+        try:
+            _remove_prepared_tree(prepared_root)
+        except Exception as cleanup_exc:
+            raise RuntimeError(
+                f"preparation failed: {primary_exc}; prepared cleanup failed: {cleanup_exc}"
+            ) from cleanup_exc
         raise
 
     return {
