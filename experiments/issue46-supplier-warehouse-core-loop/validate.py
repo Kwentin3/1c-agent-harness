@@ -107,7 +107,8 @@ def validate_shallow_pr_context(root: Path, contract: dict) -> None:
         fail("GitHub PR base identity mismatch")
     current = git(root,"rev-parse","HEAD")
     if current != head_sha:
-        parents = git(root,"show","-s","--format=%P","HEAD").split()
+        raw_commit = git(root,"cat-file","-p","HEAD")
+        parents = [line.split()[1] for line in raw_commit.splitlines() if line.startswith("parent ")]
         if parents != [base_sha, head_sha]: fail("GitHub PR merge/head identity mismatch")
 
 def validate(root: Path = ROOT, check_git: bool = True) -> dict:

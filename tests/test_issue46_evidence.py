@@ -35,7 +35,8 @@ class Issue46EvidenceTest(unittest.TestCase):
             env={"GITHUB_EVENT_NAME":"pull_request","GITHUB_REPOSITORY":"Kwentin3/1c-agent-harness","GITHUB_EVENT_PATH":str(event)}
             with mock.patch.dict(os.environ,env,clear=True): V.validate_shallow_pr_context(PKG,V.FROZEN_CONTRACT)
             def merge_git(root,*args):
-                return "f"*40 if args == ("rev-parse","HEAD") else f'{V.FROZEN_CONTRACT["baseCommit"]} {head}'
+                if args == ("rev-parse","HEAD"): return "f"*40
+                return f'tree {"1"*40}\nparent {V.FROZEN_CONTRACT["baseCommit"]}\nparent {head}\n\nmerge'
             with mock.patch.dict(os.environ,env,clear=True), mock.patch.object(V,"git",side_effect=merge_git):
                 V.validate_shallow_pr_context(PKG,V.FROZEN_CONTRACT)
             with mock.patch.dict(os.environ,env,clear=True), mock.patch.object(V,"git",return_value="f"*40), self.assertRaises(ValueError):
