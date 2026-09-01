@@ -1,12 +1,6 @@
 # Headless request/response: A-baseline partial proof (issue #38)
 
-> **Current exact-head native readiness:**
-> [PRODUCT ROUTE NOT READY](issue-38-corrected-head-native-report.md). The
-> corrected A candidate reached a client→server receipt pair, but the runner
-> timed out because its literal completion marker differs from the typed receipt
-> terminal line. The report records the evidence and the minimal future proposal.
-
-## Historical baseline verdict
+## Current verdict
 
 > **A BASELINE PARTIAL PASS / NO CLEAR WINNER**
 

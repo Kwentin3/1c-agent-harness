@@ -21,7 +21,7 @@ import issue38_protocol
 import managed_probe_prepare
 
 
-_COMPLETE_MARKER: Final = "complete###true"
+_COMPLETE_MARKER: Final = "complete###true###Boolean"
 _TIMEOUT_SECONDS: Final = 120
 
 

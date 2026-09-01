@@ -95,7 +95,6 @@ MVP считается полезным не потому, что агент н�
 - [Подтверждённая граница совместимости](docs/compatibility.md)
 - [Готовность агентных клиентов](docs/client-readiness.md)
 - [Headless request/response baseline (issue #38)](docs/issue-38-headless-request-response.md)
-- [Current-head native readiness report (issue #38)](docs/issue-38-corrected-head-native-report.md)
 - [Knowledge handoff write-cycle экспериментов](docs/write-cycle-knowledge-handoff.md)
 - [Правила работы кодового агента](AGENTS.md)
 

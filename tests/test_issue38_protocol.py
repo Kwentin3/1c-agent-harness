@@ -291,6 +291,21 @@ class Issue38ProtocolTests(unittest.TestCase):
             for forbidden in ("Execute(", "Eval(", "ErrorDescription", "ErrorInfo", "Chr("):
                 self.assertNotIn(forbidden, generated_lines)
 
+    def test_frontdoor_passes_the_terminal_literal_emitted_by_both_probes(self) -> None:
+        frontdoor = load_frontdoor()
+        request = _request()
+        command = frontdoor._native_command(ROOT, ROOT / ".local/prepared/terminal-literal")
+        marker = command[command.index("--complete-marker") + 1]
+
+        for probe in (frontdoor._client_probe(request), frontdoor._server_probe(request)):
+            lines = probe.decode("ascii").splitlines()
+            terminal = next(
+                line for line in reversed(lines)
+                if 'Writer.WriteLine("complete###' in line
+            )
+            literal = terminal.split('Writer.WriteLine("', 1)[1].split('");', 1)[0]
+            self.assertEqual(marker, literal)
+
     def test_frontdoor_prepare_discards_owned_tree_after_request_write_keyboard_interrupt(self) -> None:
         frontdoor = load_frontdoor()
         with tempfile.TemporaryDirectory() as tmp:
