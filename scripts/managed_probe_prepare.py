@@ -373,7 +373,7 @@ def prepare_patched_tree(
             directory.chmod(directory.stat().st_mode | stat.S_IRWXU)
         for role, payload in normalized:
             for check_only in (True, False):
-                command = ["git", "apply", "--whitespace=nowarn"]
+                command = ["git", "apply", "--no-index", "--whitespace=nowarn"]
                 if check_only:
                     command.append("--check")
                 completed = _run(

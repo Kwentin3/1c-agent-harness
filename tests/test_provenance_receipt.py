@@ -6,6 +6,7 @@ import hashlib
 import importlib.util
 import json
 from pathlib import Path
+import subprocess
 import tempfile
 import unittest
 
@@ -85,6 +86,28 @@ class ProvenanceReceiptTests(unittest.TestCase):
             ])
             self.assertNotEqual(audit["canonicalBase"], audit["preparedInput"])
             self.assertTrue(all(not (path.stat().st_mode & 0o222) for path in (prepared, *prepared.rglob("*"))))
+
+    def test_shared_preparation_does_not_escape_to_an_enclosing_git_worktree(self) -> None:
+        with tempfile.TemporaryDirectory() as temporary:
+            repo = Path(temporary)
+            subprocess.run(["git", "init", "-q", str(repo)], check=True)
+            (repo / ".gitignore").write_text(".local/\n", encoding="utf-8")
+            source = repo / "snapshot"
+            source.mkdir()
+            (source / "A.txt").write_text("before\n", encoding="utf-8")
+            prepared = repo / ".local/prepared/task"
+            patch = b"--- a/A.txt\n+++ b/A.txt\n@@ -1 +1 @@\n-before\n+after\n"
+
+            audit = N.prepare_patched_tree(
+                repo_root=repo,
+                snapshot_root=source,
+                prepared_root=prepared,
+                patches=[("production", patch)],
+            )
+
+            self.assertEqual((source / "A.txt").read_text(), "before\n")
+            self.assertEqual((prepared / "A.txt").read_text(), "after\n")
+            self.assertEqual(audit["changedPaths"], ["A.txt"])
 
     def test_shared_preparation_rejects_a_patch_that_does_not_apply(self) -> None:
         with tempfile.TemporaryDirectory() as temporary:
