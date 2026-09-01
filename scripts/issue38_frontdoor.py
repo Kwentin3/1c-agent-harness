@@ -167,7 +167,7 @@ def _native_command(repo_root: Path, prepared_tree: Path) -> list[str]:
         str(repo_root / "scripts/native_cycle.py"),
         "run-prepared",
         "--repo-root", str(repo_root),
-        "--input-tree", str(prepared_tree),
+        "--input-tree", prepared_tree.relative_to(repo_root).as_posix(),
         "--complete-marker", _COMPLETE_MARKER,
         "--timeout-seconds", str(_TIMEOUT_SECONDS),
     ]

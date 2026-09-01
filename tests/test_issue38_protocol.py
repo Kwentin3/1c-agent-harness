@@ -16,6 +16,7 @@ import uuid
 ROOT = Path(__file__).resolve().parents[1]
 MODULE_PATH = ROOT / "scripts" / "issue38_protocol.py"
 FRONTDOOR_PATH = ROOT / "scripts" / "issue38_frontdoor.py"
+NATIVE_CYCLE_PATH = ROOT / "scripts" / "native_cycle.py"
 
 
 def load_module() -> object:
@@ -351,6 +352,51 @@ class Issue38ProtocolTests(unittest.TestCase):
                 frontdoor._write_json_new = original_write
                 frontdoor.managed_probe_prepare.discard_prepared_tree = original_discard
                 original_discard(repo_root=root, prepared_root=prepared)
+            self.assertFalse(prepared.exists())
+
+    def test_frontdoor_run_handoffs_repo_relative_prepared_tree_to_real_runner_precheck_without_1c(self) -> None:
+        frontdoor = load_frontdoor()
+        with tempfile.TemporaryDirectory() as tmp:
+            root = Path(tmp)
+            runner = root / "scripts/native_cycle.py"
+            runner.parent.mkdir(parents=True)
+            runner.write_bytes(NATIVE_CYCLE_PATH.read_bytes())
+            source = root / "snapshot"
+            prepared = root / ".local/prepared/real-seam"
+            request_path = root / "evidence/request.json"
+            write_frontdoor_snapshot(source)
+
+            platform = root / ".local/platform/1cv8t/x86_64/8.5.1.1150/1cv8t"
+            platform.parent.mkdir(parents=True)
+            platform.write_text("must-not-run\n", encoding="utf-8")
+            platform.chmod(0o644)
+            xvfb = root / ".local/platform/libs/usr/bin/xvfb-run"
+            xvfb.parent.mkdir(parents=True)
+            xvfb.write_text(
+                "#!/bin/sh\n"
+                "set -eu\n"
+                "printf '%s\\n' \"$@\" > \"$(dirname \"$0\")/../../../blocked-1c-argv.txt\"\n"
+                "exit 97\n",
+                encoding="utf-8",
+            )
+            xvfb.chmod(0o755)
+            (root / ".local/platform/fonts.conf").write_text("fonts\n", encoding="utf-8")
+            (root / ".local/platform/libs/usr/lib/x86_64-linux-gnu").mkdir(parents=True)
+
+            result = frontdoor.run(root, source, prepared, request_path)
+
+            runner_result = result["runner"]
+            self.assertEqual(result["status"], "runnerFailure")
+            self.assertEqual(runner_result["status"], "create_failed")
+            self.assertEqual(runner_result["failedStage"], "create")
+            self.assertEqual(
+                runner_result["preparedInvocation"]["sourcePath"],
+                ".local/prepared/real-seam",
+            )
+            blocked = root / ".local/platform/blocked-1c-argv.txt"
+            self.assertTrue(blocked.is_file())
+            self.assertIn("CREATEINFOBASE", blocked.read_text(encoding="utf-8"))
+            self.assertFalse(platform.stat().st_mode & 0o111)
             self.assertFalse(prepared.exists())
 
     def test_frontdoor_run_discards_prepared_tree_after_runner_failure(self) -> None:
