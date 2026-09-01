@@ -1,0 +1,33 @@
+{
+  "canonicalManifestSha256": "70972b5e11901ca31c7f7ec67dca03f78986206b024be01aeb34e0e1f3ff6691",
+  "changedFiles": {
+    "CommonModules/JetServerCall/Ext/Module.bsl": {
+      "canonicalSha256": "73c143c4efa8d1b54b68049028fb0a83c76b37320cff93c29994ed1868774ea9",
+      "patchedSha256": "de9c07a7d87f331755bbe9406a40942326d8d10f88e54dfb13301c17c6f02a37"
+    },
+    "Documents/InventoryTransfer/Ext/ObjectModule.bsl": {
+      "canonicalSha256": "a136a8ec4db7053b06c375937ccafccc6015d4398b257e78c6a6b870221a8e34",
+      "patchedSha256": "0e9644588c6ea3d3e5f78fa8b8f94b65219e5818724076c836f8cabc214ab41d"
+    },
+    "Ext/ManagedApplicationModule.bsl": {
+      "canonicalSha256": "3fefed70b4082cef6c6d090fe6fc555f0f51a0b4e8a8694a32ba8094d4af04ba",
+      "patchedSha256": "a1ae3d8a2dc0d8eb58af44f6966193c6658d7bb9322e7b1185f1c5631dadf852"
+    }
+  },
+  "frozenTree": {
+    "bytes": 61795042,
+    "directories": 4847,
+    "files": 5099,
+    "sha256": "acca7e79d00f94b17ceb8643bc2f0383f5147dbbd8bd41ede17208930335015a"
+  },
+  "instrumentationPatchSha256": "8c2e8873ecf48c034a729d149c2c4f6d9d15d0122b9ad95fa518a3541f05671c",
+  "lane": "bound-green-1",
+  "preparedTree": {
+    "bytes": 61795042,
+    "directories": 4847,
+    "files": 5099,
+    "sha256": "67174d5e40c82404a0b913879a46c73681208e3024fb76e8b2839e142b034a69"
+  },
+  "productionPatchSha256": "6cee9e224f9355386a9002ad41fe7e34a5b07fd1a83ad44426cc3c4e56b2cc28",
+  "schemaVersion": 1
+}

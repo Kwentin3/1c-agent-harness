@@ -1,3 +1,7 @@
 # Frozen unified-diff evidence contains literal context marker + source tabs.
 experiments/issue12-narrow-context-20260826/diffs/*.diff whitespace=-space-before-tab,-trailing-space
 experiments/issue12-narrow-context-20260826/patches/*.patch whitespace=-space-before-tab,-trailing-space
+
+# Exact Issue #43 BSL patches and CRLF receipts are byte evidence.
+experiments/issue43-inventory-transfer-core-loop/*.patch binary
+experiments/issue43-inventory-transfer-core-loop/*-receipt.txt binary

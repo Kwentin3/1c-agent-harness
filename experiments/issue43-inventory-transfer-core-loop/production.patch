@@ -1,0 +1,15 @@
+--- a/Documents/InventoryTransfer/Ext/ObjectModule.bsl
++++ b/Documents/InventoryTransfer/Ext/ObjectModule.bsl
+@@ -9,6 +9,12 @@
+ EndProcedure
+ 
+ Procedure Posting(Cancel, PostingMode)
++	
++	If Warehouse = WarehouseReceiver Then
++		Common.MessageToUser(NStr("en = 'Warehouse from and warehouse to must differ.'; tr = 'Çıkış ve varış depoları farklı olmalıdır.'"));
++		Cancel = True;
++		Return;
++	EndIf;
+ 	
+ 	// Initialization of additional properties for document posting.
+ 	PostingManagement.InitializeAdditionalPropertiesForPosting(Ref, AdditionalProperties);
