@@ -29,6 +29,13 @@ EXPECTED_RULE = {
 EXPECTED_REQUEST_KEYS = {
     "protocolVersion", "operation", "scenario", "runId", "caseId", "nonce"
 }
+PRODUCTION_PATH = "Documents/InventoryTransfer/Ext/ObjectModule.bsl"
+INSTRUMENTATION_PATHS = {
+    "CommonModules/JetServerCall/Ext/Module.bsl",
+    "Ext/ManagedApplicationModule.bsl",
+}
+CHANGED_PATHS = {PRODUCTION_PATH, *INSTRUMENTATION_PATHS}
+SNAPSHOT_MANIFEST_SHA256 = "70972b5e11901ca31c7f7ec67dca03f78986206b024be01aeb34e0e1f3ff6691"
 
 
 def sha256(path: Path) -> str:
@@ -99,6 +106,60 @@ def validate_runner_result(path: Path, receipt_path: Path) -> dict:
     return result
 
 
+def runner_tree(identity: dict) -> dict:
+    return {
+        "files": identity["files"],
+        "directories": identity["directories"],
+        "bytes": identity["bytes"],
+        "sha256": identity.get("sha256", identity.get("sourceTreeSha256")),
+    }
+
+
+def validate_input_binding(
+    root: Path,
+    lane: int,
+    result: dict,
+    contract: dict,
+) -> None:
+    binding = json.loads(
+        (root / f"bound-green-{lane}-input-binding.json").read_text(encoding="utf-8")
+    )
+    expected_keys = {
+        "schemaVersion", "lane", "canonicalManifestSha256",
+        "productionPatchSha256", "instrumentationPatchSha256",
+        "changedFiles", "preparedTree", "frozenTree",
+    }
+    assert set(binding) == expected_keys
+    assert binding["schemaVersion"] == 1
+    assert binding["lane"] == f"bound-green-{lane}"
+    assert binding["canonicalManifestSha256"] == contract["snapshotManifestSha256"]
+    assert binding["canonicalManifestSha256"] == SNAPSHOT_MANIFEST_SHA256
+    assert binding["productionPatchSha256"] == sha256(root / "production.patch")
+    assert binding["instrumentationPatchSha256"] == sha256(
+        root / f"bound-green-{lane}-instrumentation.patch"
+    )
+
+    changed = binding["changedFiles"]
+    assert set(changed) == CHANGED_PATHS
+    for path, identities in changed.items():
+        assert set(identities) == {"canonicalSha256", "patchedSha256"}
+        for digest in identities.values():
+            assert isinstance(digest, str) and len(digest) == 64
+            assert all(character in "0123456789abcdef" for character in digest)
+        if path == PRODUCTION_PATH:
+            assert identities["canonicalSha256"] != identities["patchedSha256"]
+
+    prepared = binding["preparedTree"]
+    frozen = binding["frozenTree"]
+    assert set(prepared) == set(frozen) == {"files", "directories", "bytes", "sha256"}
+    assert prepared == result["preparedInvocation"]["sourceBefore"]
+    assert prepared == result["preparedInvocation"]["sourceAfter"]
+    assert prepared == result["preparedInvocation"]["copiedBeforeFreeze"]
+    assert frozen == result["preparedInvocation"]["frozenInput"]["identity"]
+    assert frozen == runner_tree(result["input"])
+    assert frozen == runner_tree(result["inputAfter"])
+
+
 def validate_package(root: Path) -> None:
     manifest_path = root / "package-manifest.json"
     manifest = json.loads(manifest_path.read_text(encoding="utf-8"))
@@ -114,7 +175,7 @@ def validate_package(root: Path) -> None:
     assert contract["baseCommit"] == "5c6b0e9c2b20a1fb15aa69ae49539b9786cf816b"
     assert contract["baseTree"] == "03407c6c5fbcac550db3f5a2ea48bbdac0a791a3"
     assert contract["sourceCfSha256"] == "5694f9e4bdf9a0857185118ba816d562d8ee8de2b8da3f60792397a399ca128a"
-    assert contract["snapshotManifestSha256"] == "70972b5e11901ca31c7f7ec67dca03f78986206b024be01aeb34e0e1f3ff6691"
+    assert contract["snapshotManifestSha256"] == SNAPSHOT_MANIFEST_SHA256
     assert contract["snapshotFileCount"] == 5099
 
     production = (root / "production.patch").read_text(encoding="utf-8")
@@ -127,9 +188,6 @@ def validate_package(root: Path) -> None:
     for lane in (1, 2):
         scenario = f"issue43-bound-green-{lane}"
         request = json.loads((root / f"bound-green-{lane}-request.json").read_text(encoding="utf-8"))
-        prepare = json.loads((root / f"bound-green-{lane}-prepare.json").read_text(encoding="utf-8"))
-        assert prepare["request"] == request
-        assert prepare["files"] == 5099
         patch = (root / f"bound-green-{lane}-instrumentation.patch").read_text(encoding="utf-8")
         assert patch.count("--- a/") == patch.count("+++ b/") == 2
         for value in (scenario, request["runId"], request["caseId"], request["nonce"]):
@@ -137,6 +195,7 @@ def validate_package(root: Path) -> None:
         receipt = root / f"bound-green-{lane}-receipt.txt"
         validate_receipt(receipt, request, expected_scenario=scenario, expect_rule=True)
         result = validate_runner_result(root / f"bound-green-{lane}-result.json", receipt)
+        validate_input_binding(root, lane, result, contract)
         meta = json.loads((root / f"bound-green-{lane}-meta.json").read_text(encoding="utf-8"))
         assert meta["wallNs"] > 0
         assert result["totalDurationSeconds"] > 0

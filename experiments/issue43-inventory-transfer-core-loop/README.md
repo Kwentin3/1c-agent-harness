@@ -9,28 +9,36 @@ A one-file production patch rejects posting `Document.InventoryTransfer` when `W
 | Lane | Runner | Observation |
 |---|---|---|
 | RED | `run-7vpvx0u8` | Same-warehouse draft saved; posting incorrectly succeeded; document became posted; 2 inventory and 2 cost rows. Distinct-warehouse control posted normally. |
-| GREEN | `run-b2m5djmf` | Same-warehouse draft saved; posting rejected; `Posted=false`; 0 inventory and 0 cost rows; balance unchanged. Distinct-warehouse control posted with exact A=`7|7|35`, B=`3|3|15`. |
-| Clean repeat | `run-7fl4mw2c` | Exact GREEN business observations repeated from a fresh disposable IB. |
-| Bound GREEN 1 | `run-sppm3cya` | Exact GREEN plus receipt-bound fresh `runId/caseId/nonce`; stable terminal receipt. |
-| Bound GREEN 2 | `run-swvxtiga` | Exact GREEN repeated in a second clean state with different identities; stable terminal receipt. |
+| Bound GREEN 1 | `run-sppm3cya` | Same-warehouse draft saved; posting rejected; `Posted=false`; 0 inventory and 0 cost rows; balance unchanged. Distinct-warehouse control posted with exact A=`7|7|35`, B=`3|3|15`; receipt-bound fresh `runId/caseId/nonce`. |
+| Bound GREEN 2 | `run-swvxtiga` | Exact GREEN repeated from a second fresh disposable IB with different request identities and stable terminal receipt. |
 
-The two final lanes are the acceptance lanes for identity binding and reproducibility. The earlier RED/GREEN/repeat establish the chronological business change cycle but their receipts lack explicit request identities; they are not used to claim stale/foreign protection.
+These are the three retained lanes: one RED and two accepted GREEN runs. The earlier intermediate GREEN/repeat were useful during development but duplicated the accepted lanes and are not part of the package claim.
 
 ## Package
 
 - `semantic-contract.md` — source-grounded contract frozen before RED and production patch.
 - `production.patch` — only production change; one BSL object module.
-- `instrumentation.patch` — original RED/GREEN instrumentation.
+- `instrumentation.patch` — exact RED instrumentation.
 - `bound-green-*-instrumentation.patch` — exact identity-bound task instrumentation.
-- `*-request.json`, `*-receipt.txt`, `*-result.json`, `*-meta.json` — native bindings and runner evidence.
-- `validate.py` — fail-closed semantic, identity, runner, hash, and closure validation.
+- `bound-green-*-input-binding.json` — deterministic canonical+patch reconstruction identity, linked to the runner's prepared/frozen input.
+- `*-request.json`, `*-receipt.txt`, `*-result.json`, `*-meta.json` — accepted native request/result evidence.
+- `reconstruct_input.py` — task-specific, no-1C replay against the canonical snapshot; recomputes both prepared/frozen tree identities.
+- `validate.py` — fail-closed semantic, request, patch-byte, reconstructed-input, runner, hash, and closure validation.
 - `package-manifest.json` — exact package closure excluding itself.
+
+The validator requires this chain for both GREEN lanes:
+
+`canonical manifest + SHA(production.patch) + SHA(lane instrumentation) → reconstructed prepared/frozen tree → runner input identities → exact request-bound receipt`.
+
+Changing any patch bytes and merely updating `package-manifest.json` therefore fails against the independently retained input binding.
 
 Run:
 
 ```bash
 python3 experiments/issue43-inventory-transfer-core-loop/validate.py
 python3 -m unittest -v tests.test_issue43_evidence
+# On the canonical executor only; copies/patches/hashes source and never starts 1C:
+python3 experiments/issue43-inventory-transfer-core-loop/reconstruct_input.py
 ```
 
 ## Exact immutable target

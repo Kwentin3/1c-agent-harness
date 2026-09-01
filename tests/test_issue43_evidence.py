@@ -1,7 +1,9 @@
 from __future__ import annotations
 
 import copy
+import hashlib
 import json
+import shutil
 import sys
 import tempfile
 from pathlib import Path
@@ -15,6 +17,23 @@ from validate import validate_package, validate_receipt  # type: ignore  # noqa:
 
 
 class Issue43EvidenceTests(unittest.TestCase):
+    def assert_patch_substitution_rejected(self, patch_name: str) -> None:
+        with tempfile.TemporaryDirectory() as td:
+            package = Path(td) / "package"
+            manifest = json.loads((PACKAGE / "package-manifest.json").read_text(encoding="utf-8"))
+            package.mkdir()
+            for name in manifest["files"]:
+                shutil.copy2(PACKAGE / name, package / name)
+            target = package / patch_name
+            target.write_bytes(target.read_bytes() + b"\n")
+            manifest["sha256"][patch_name] = hashlib.sha256(target.read_bytes()).hexdigest()
+            (package / "package-manifest.json").write_text(
+                json.dumps(manifest, indent=2, sort_keys=True) + "\n",
+                encoding="utf-8",
+            )
+            with self.assertRaises(AssertionError):
+                validate_package(package)
+
     def test_complete_package_validates(self) -> None:
         validate_package(PACKAGE)
 
@@ -58,6 +77,16 @@ class Issue43EvidenceTests(unittest.TestCase):
             path.write_text(receipt, encoding="utf-8")
             with self.assertRaises(AssertionError):
                 validate_receipt(path, request, expected_scenario="issue43-bound-green-1", expect_rule=True)
+
+    def test_production_patch_substitution_survives_manifest_but_is_rejected(self) -> None:
+        self.assert_patch_substitution_rejected("production.patch")
+
+    def test_instrumentation_patch_substitution_survives_manifest_but_is_rejected(self) -> None:
+        for lane in (1, 2):
+            with self.subTest(lane=lane):
+                self.assert_patch_substitution_rejected(
+                    f"bound-green-{lane}-instrumentation.patch"
+                )
 
 
 if __name__ == "__main__":
