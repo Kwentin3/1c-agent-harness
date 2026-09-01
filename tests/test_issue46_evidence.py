@@ -1,6 +1,5 @@
 from __future__ import annotations
-import base64, hashlib, importlib.util, json, os, shutil, tempfile, unittest
-from unittest import mock
+import base64, hashlib, importlib.util, json, shutil, tempfile, unittest
 from pathlib import Path
 
 ROOT = Path(__file__).resolve().parents[1]
@@ -21,41 +20,29 @@ class Issue46EvidenceTest(unittest.TestCase):
         td,root=self.copy()
         try:
             mutate(root); refresh(root)
-            with self.assertRaises((ValueError,KeyError,TypeError,base64.binascii.Error)): V.validate(root,False)
+            with self.assertRaises((ValueError,KeyError,TypeError,base64.binascii.Error)): V.validate(root)
         finally: td.cleanup()
     def test_package_is_closed_hashed_and_semantically_valid(self):
-        result=V.validate(PKG,True); self.assertEqual(result["status"],"PASS"); self.assertEqual(result["lanes"],["red","green","repeat"])
-    def test_shallow_context_requires_exact_github_pr_authority(self):
-        with mock.patch.dict(os.environ,{},clear=True), self.assertRaises(ValueError):
-            V.validate_shallow_pr_context(PKG,V.FROZEN_CONTRACT)
-        with tempfile.TemporaryDirectory() as td:
-            event=Path(td)/"event.json"; head=V.git(PKG,"rev-parse","HEAD")
-            payload={"pull_request":{"base":{"ref":"main","sha":V.FROZEN_CONTRACT["baseCommit"]},"head":{"sha":head}}}
-            event.write_text(json.dumps(payload))
-            env={"GITHUB_EVENT_NAME":"pull_request","GITHUB_REPOSITORY":"Kwentin3/1c-agent-harness","GITHUB_EVENT_PATH":str(event)}
-            with mock.patch.dict(os.environ,env,clear=True): V.validate_shallow_pr_context(PKG,V.FROZEN_CONTRACT)
-            def merge_git(root,*args):
-                if args == ("rev-parse","HEAD"): return "f"*40
-                return f'tree {"1"*40}\nparent {V.FROZEN_CONTRACT["baseCommit"]}\nparent {head}\n\nmerge'
-            with mock.patch.dict(os.environ,env,clear=True), mock.patch.object(V,"git",side_effect=merge_git):
-                V.validate_shallow_pr_context(PKG,V.FROZEN_CONTRACT)
-            with mock.patch.dict(os.environ,env,clear=True), mock.patch.object(V,"git",return_value="f"*40), self.assertRaises(ValueError):
-                V.validate_shallow_pr_context(PKG,V.FROZEN_CONTRACT)
-            payload["pull_request"]["base"]["sha"]="0"*40; event.write_text(json.dumps(payload))
-            with mock.patch.dict(os.environ,env,clear=True), self.assertRaises(ValueError): V.validate_shallow_pr_context(PKG,V.FROZEN_CONTRACT)
+        result=V.validate(PKG); self.assertEqual(result["status"],"PASS"); self.assertEqual(result["lanes"],["red","green","repeat"])
+    def test_historical_package_is_independent_of_moving_repository_state(self):
+        td,root=self.copy()
+        try:
+            result=V.validate(root)
+            self.assertEqual(result["status"],"PASS")
+        finally: td.cleanup()
     def test_unmanifested_file_and_hash_tamper_are_rejected(self):
         td,root=self.copy()
         try:
             (root/"foreign.txt").write_text("x")
-            with self.assertRaises(ValueError): V.validate(root,False)
+            with self.assertRaises(ValueError): V.validate(root)
             (root/"foreign.txt").unlink(); (root/"README.md").write_text("tampered")
-            with self.assertRaises(ValueError): V.validate(root,False)
+            with self.assertRaises(ValueError): V.validate(root)
         finally: td.cleanup()
     def test_nested_unmanifested_manifest_is_rejected(self):
         td,root=self.copy()
         try:
             nested=root/"nested"; nested.mkdir(); (nested/"manifest.json").write_text("{}")
-            with self.assertRaises(ValueError): V.validate(root,False)
+            with self.assertRaises(ValueError): V.validate(root)
         finally: td.cleanup()
     def test_published_prepare_is_bound_to_retained_replay(self):
         evidence=json.loads((PKG/"evidence.json").read_text())
