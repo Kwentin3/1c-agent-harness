@@ -1,7 +1,7 @@
 #!/usr/bin/env python3
 """Fail-closed validator for the frozen Issue 46 evidence package."""
 from __future__ import annotations
-import argparse, base64, hashlib, json, subprocess, sys, uuid
+import argparse, base64, hashlib, json, os, subprocess, sys, uuid
 from pathlib import Path
 
 LANES = ("red", "green", "repeat")
@@ -94,6 +94,17 @@ def git(root: Path, *args: str) -> str:
 def optional_git(root: Path, *args: str):
     result = subprocess.run(["git",*args],cwd=root.parent.parent,text=True,stdout=subprocess.PIPE,stderr=subprocess.DEVNULL)
     return result.stdout.strip() if result.returncode == 0 else None
+def validate_shallow_pr_context(root: Path, contract: dict) -> None:
+    if os.environ.get("GITHUB_EVENT_NAME") != "pull_request" or os.environ.get("GITHUB_REPOSITORY") != "Kwentin3/1c-agent-harness":
+        fail("shallow validation requires trusted GitHub pull_request context")
+    event_path = os.environ.get("GITHUB_EVENT_PATH")
+    if not event_path: fail("missing GitHub event path")
+    event = json.loads(Path(event_path).read_text(encoding="utf-8"))
+    pull = event.get("pull_request", {})
+    if pull.get("base", {}).get("ref") != "main" or pull.get("base", {}).get("sha") != contract["baseCommit"]:
+        fail("GitHub PR base identity mismatch")
+    if pull.get("head", {}).get("sha") != git(root,"rev-parse","HEAD"):
+        fail("GitHub PR head identity mismatch")
 
 def validate(root: Path = ROOT, check_git: bool = True) -> dict:
     validate_manifest(root)
@@ -105,9 +116,10 @@ def validate(root: Path = ROOT, check_git: bool = True) -> dict:
     if check_git:
         shallow = git(root,"rev-parse","--is-shallow-repository") == "true"
         origin_main = optional_git(root,"rev-parse","--verify","origin/main")
+        base_tree = optional_git(root,"rev-parse",f'{contract["baseCommit"]}^{{tree}}')
+        if shallow and (origin_main is None or base_tree is None): validate_shallow_pr_context(root, contract)
         if origin_main is None and not shallow: fail("missing origin/main in full clone")
         if origin_main is not None and origin_main != contract["baseCommit"]: fail("foreign/stale origin/main")
-        base_tree = optional_git(root,"rev-parse",f'{contract["baseCommit"]}^{{tree}}')
         if base_tree is None and not shallow: fail("missing base object in full clone")
         if base_tree is not None and base_tree != contract["baseTree"]: fail("base tree mismatch")
         runner = root.parent.parent/contract["runnerPath"]

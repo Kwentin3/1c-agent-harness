@@ -1,5 +1,6 @@
 from __future__ import annotations
-import base64, hashlib, importlib.util, json, shutil, tempfile, unittest
+import base64, hashlib, importlib.util, json, os, shutil, tempfile, unittest
+from unittest import mock
 from pathlib import Path
 
 ROOT = Path(__file__).resolve().parents[1]
@@ -24,6 +25,17 @@ class Issue46EvidenceTest(unittest.TestCase):
         finally: td.cleanup()
     def test_package_is_closed_hashed_and_semantically_valid(self):
         result=V.validate(PKG,True); self.assertEqual(result["status"],"PASS"); self.assertEqual(result["lanes"],["red","green","repeat"])
+    def test_shallow_context_requires_exact_github_pr_authority(self):
+        with mock.patch.dict(os.environ,{},clear=True), self.assertRaises(ValueError):
+            V.validate_shallow_pr_context(PKG,V.FROZEN_CONTRACT)
+        with tempfile.TemporaryDirectory() as td:
+            event=Path(td)/"event.json"; head=V.git(PKG,"rev-parse","HEAD")
+            payload={"pull_request":{"base":{"ref":"main","sha":V.FROZEN_CONTRACT["baseCommit"]},"head":{"sha":head}}}
+            event.write_text(json.dumps(payload))
+            env={"GITHUB_EVENT_NAME":"pull_request","GITHUB_REPOSITORY":"Kwentin3/1c-agent-harness","GITHUB_EVENT_PATH":str(event)}
+            with mock.patch.dict(os.environ,env,clear=True): V.validate_shallow_pr_context(PKG,V.FROZEN_CONTRACT)
+            payload["pull_request"]["base"]["sha"]="0"*40; event.write_text(json.dumps(payload))
+            with mock.patch.dict(os.environ,env,clear=True), self.assertRaises(ValueError): V.validate_shallow_pr_context(PKG,V.FROZEN_CONTRACT)
     def test_unmanifested_file_and_hash_tamper_are_rejected(self):
         td,root=self.copy()
         try:
