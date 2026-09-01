@@ -38,6 +38,24 @@ class Issue46EvidenceTest(unittest.TestCase):
         def mutate(r):
             p=r/"instrumentation.json"; d=json.loads(p.read_text()); raw=base64.b64decode(d["lanes"]["green"]["base64"])+b"x"; d["lanes"]["green"]["base64"]=base64.b64encode(raw).decode(); d["lanes"]["green"]["sha256"]=hashlib.sha256(raw).hexdigest(); p.write_text(json.dumps(d))
         self.rejected(mutate)
+    def test_coordinated_instrumentation_rewrite_is_rejected(self):
+        def mutate(r):
+            ip=r/"instrumentation.json"; ep=r/"evidence.json"
+            i=json.loads(ip.read_text()); e=json.loads(ep.read_text())
+            raw=base64.b64decode(i["lanes"]["green"]["base64"])+b"foreign"
+            changed=hashlib.sha256(raw).hexdigest()
+            i["lanes"]["green"].update(base64=base64.b64encode(raw).decode(),sha256=changed)
+            e["lanes"]["green"]["binding"]["instrumentationPatchSha256"]=changed
+            ip.write_text(json.dumps(i)); ep.write_text(json.dumps(e))
+        self.rejected(mutate)
+    def test_coordinated_production_rewrite_is_rejected(self):
+        def mutate(r):
+            pp=r/"production.patch"; ep=r/"evidence.json"; e=json.loads(ep.read_text())
+            raw=pp.read_bytes().replace(b"\tIf Warehouse.DeletionMark Then",b"\t// If Warehouse.DeletionMark Then\r\n\tIf False Then")
+            changed=hashlib.sha256(raw).hexdigest(); pp.write_bytes(raw); e["productionPatchSha256"]=changed
+            for lane in ("green","repeat"): e["lanes"][lane]["binding"]["productionPatchSha256"]=changed
+            ep.write_text(json.dumps(e))
+        self.rejected(mutate)
     def test_stale_foreign_and_partial_evidence_are_rejected(self):
         def stale(r):
             p=r/"evidence.json"; d=json.loads(p.read_text()); d["lanes"]["red"]["request"]["treeIdentity"]="0"*64; p.write_text(json.dumps(d))
