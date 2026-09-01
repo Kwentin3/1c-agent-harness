@@ -11,7 +11,7 @@ ROOT = Path(__file__).resolve().parent
 FROZEN_CONTRACT = {
     "baseCommit": "6d69352e4f7bacf8c9578168990d7384b82e84d9",
     "baseTree": "23bd5c4a43c4b438835e8694f6007193ed15d7f1",
-    "retainedPrepareSha256": "230df6d2c07122d6de94e58d4fe5a20a4179843d82d3d45101538c118c6e1c52",
+    "retainedPrepareSha256": "0bef9d0dda0cd8ea916c71a98fd1345a70ff817ca032df8091d17f2f23e95d53",
     "runnerPath": "scripts/native_cycle.py",
     "runnerSha256": "9afc9e99c6ae3bf853113605c2c4b3be8e049240c46256b196a45062e7678ad1",
     "snapshotFiles": 5099,
@@ -19,6 +19,11 @@ FROZEN_CONTRACT = {
     "sourceCfSha256": "5694f9e4bdf9a0857185118ba816d562d8ee8de2b8da3f60792397a399ca128a",
 }
 FROZEN_PRODUCTION_SHA256 = "4ebe30ff232822bd4a950b0d7ece25dad8c944c5e005dcc1b7e5a56759005343"
+FROZEN_CHANGED = {
+    "red": {"CommonModules/JetServerCall/Ext/Module.bsl":"9ec5730479541115b1075324ae623115903ce26a0dc2b1c1e1c39d3e16ad9711","Ext/ManagedApplicationModule.bsl":"2737c631ca9cf2c5569162f9fe155517eae02c3c4ed6f5bf4c431db3e581deb2"},
+    "green": {"CommonModules/JetServerCall/Ext/Module.bsl":"9ec5730479541115b1075324ae623115903ce26a0dc2b1c1e1c39d3e16ad9711","Documents/SupplierInvoice/Ext/ObjectModule.bsl":"b1ecb83aae9911a0116a88ac2c34438be7ec01d4965ef9da556d51624263af70","Ext/ManagedApplicationModule.bsl":"3ed5639795728709c6ee8770f47d5c6680ba662efbd7a4de7d872262bdf7fca9"},
+    "repeat": {"CommonModules/JetServerCall/Ext/Module.bsl":"9ec5730479541115b1075324ae623115903ce26a0dc2b1c1e1c39d3e16ad9711","Documents/SupplierInvoice/Ext/ObjectModule.bsl":"b1ecb83aae9911a0116a88ac2c34438be7ec01d4965ef9da556d51624263af70","Ext/ManagedApplicationModule.bsl":"7fa96a3ce267c01ebcfc58e7661631576d557795d506f375d503af988e092ac1"},
+}
 FROZEN_LANES = {
     "red": {
         "ids": ("8477ef5a-4ad5-4f0b-bd63-a96580ad2270", "eb67dee5-358d-49a7-8628-6a2ee095ed27", "397aeb50-1652-4466-90aa-9b9a160fe14e", "03d59cdf-a9af-460a-b731-af081d231dbd"),
@@ -83,7 +88,7 @@ def validate_manifest(root: Path) -> dict:
     if manifest.get("schemaVersion") != 1: fail("manifest schema")
     declared = manifest.get("files")
     if not isinstance(declared, dict): fail("manifest files")
-    actual = {p.relative_to(root).as_posix() for p in root.rglob("*") if p.is_file() and p.name != "manifest.json" and "__pycache__" not in p.parts}
+    actual = {p.relative_to(root).as_posix() for p in root.rglob("*") if p.is_file() and p != root/"manifest.json" and "__pycache__" not in p.parts}
     if actual != set(declared): fail(f"package closure mismatch: actual={sorted(actual)} declared={sorted(declared)}")
     for rel, digest in declared.items():
         if sha((root/rel).read_bytes()) != digest: fail(f"manifest hash mismatch: {rel}")
@@ -118,6 +123,7 @@ def validate(root: Path = ROOT, check_git: bool = True) -> dict:
     if evidence.get("schemaVersion") != 1 or instr.get("schemaVersion") != 1: fail("evidence schema")
     contract = evidence["contract"]
     if contract != FROZEN_CONTRACT: fail("frozen contract identity mismatch")
+    if sha((root/"prepare.py").read_bytes()) != contract["retainedPrepareSha256"]: fail("retained replay implementation mismatch")
     if check_git:
         shallow = git(root,"rev-parse","--is-shallow-repository") == "true"
         origin_main = optional_git(root,"rev-parse","--verify","origin/main")
@@ -142,6 +148,7 @@ def validate(root: Path = ROOT, check_git: bool = True) -> dict:
         if request.get("lane") != lane or request.get("production") is not modes[lane]: fail(f"{lane}: mode mismatch")
         expected_paths = ["CommonModules/JetServerCall/Ext/Module.bsl","Ext/ManagedApplicationModule.bsl"] + (["Documents/SupplierInvoice/Ext/ObjectModule.bsl"] if modes[lane] else [])
         if request.get("changedPaths") != expected_paths: fail(f"{lane}: changed-path closure")
+        if binding.get("changedFileSha256") != FROZEN_CHANGED[lane]: fail(f"{lane}: changed-file replay binding")
         if request.get("treeIdentity") != binding.get("preparedContentSha256"): fail(f"{lane}: prepared identity mismatch")
         if binding.get("preparedContentSha256") != frozen["prepared"]: fail(f"{lane}: foreign prepared identity")
         ri = binding.get("runnerInput",{}); runner = item.get("runner",{})

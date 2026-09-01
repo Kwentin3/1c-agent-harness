@@ -3,12 +3,15 @@
 from __future__ import annotations
 
 import argparse
+import base64
 import hashlib
 import json
 import os
 import re
 import shutil
 import stat
+import subprocess
+import sys
 import uuid
 from pathlib import Path
 
@@ -350,13 +353,96 @@ def prepare(repo: Path, lane: str, production: bool) -> dict[str, object]:
     return request
 
 
+def replay_retained(repo: Path) -> list[dict[str, object]]:
+    """Apply exact retained patches to canonical bytes; never launches 1C."""
+    package = Path(__file__).resolve().parent
+    source = repo / ".local/runs/training-jet-review-final/snapshot"
+    work = repo / ".local/issue46-retained-replay"
+    if not source.is_dir() or source.is_symlink():
+        raise RuntimeError(f"canonical snapshot unavailable: {source}")
+    if work.exists():
+        raise RuntimeError(f"replay root already exists: {work}")
+    evidence = json.loads((package / "evidence.json").read_text(encoding="utf-8"))
+    instrumentation = json.loads((package / "instrumentation.json").read_text(encoding="utf-8"))
+    sys.path.insert(0, str(repo / "scripts"))
+    from native_cycle import tree_identity as runner_identity
+
+    receipts: list[dict[str, object]] = []
+    work.mkdir()
+    try:
+        for lane, production in (("red", False), ("green", True), ("repeat", True)):
+            item = evidence["lanes"][lane]
+            tree = work / lane / "input-tree"
+            shutil.copytree(source, tree, copy_function=shutil.copy2)
+            changed = item["request"]["changedPaths"]
+            for relative in changed:
+                path = tree / relative
+                path.chmod(path.stat().st_mode | stat.S_IWUSR)
+                parent = path.parent
+                while parent != tree.parent:
+                    parent.chmod(parent.stat().st_mode | stat.S_IWUSR | stat.S_IXUSR)
+                    if parent == tree:
+                        break
+                    parent = parent.parent
+            patches: list[tuple[str, bytes]] = []
+            if production:
+                patches.append(("production", (package / "production.patch").read_bytes()))
+            patches.append(("instrumentation", base64.b64decode(
+                instrumentation["lanes"][lane]["base64"], validate=True)))
+            for label, payload in patches:
+                patch_path = work / f"{lane}-{label}.patch"
+                patch_path.write_bytes(payload)
+                subprocess.run(
+                    ["git", "apply", "--whitespace=nowarn", "--directory",
+                     tree.relative_to(repo).as_posix(), str(patch_path)],
+                    cwd=repo, check=True,
+                )
+            changed_hashes = {
+                relative: hashlib.sha256((tree / relative).read_bytes()).hexdigest()
+                for relative in changed
+            }
+            content_identity = tree_identity(tree)
+            for path in (tree, *tree.rglob("*")):
+                path.chmod(path.lstat().st_mode & ~0o222)
+            for relative in changed:
+                (tree / relative).chmod(0o444)
+            frozen_identity = runner_identity(tree)
+            binding = item["binding"]
+            if changed_hashes != binding["changedFileSha256"]:
+                raise RuntimeError(f"{lane}: changed-file replay mismatch")
+            if content_identity != binding["preparedContentSha256"]:
+                raise RuntimeError(f"{lane}: prepared content replay mismatch")
+            if frozen_identity != binding["runnerInput"]:
+                raise RuntimeError(f"{lane}: frozen runner input replay mismatch")
+            receipts.append({
+                "lane": lane,
+                "changedFileSha256": changed_hashes,
+                "preparedContentSha256": content_identity,
+                "runnerInput": frozen_identity,
+                "status": "PASS",
+            })
+        return receipts
+    finally:
+        for path in sorted(work.rglob("*"), reverse=True):
+            if not path.is_symlink():
+                mode = stat.S_IRWXU if path.is_dir() else stat.S_IWUSR
+                path.chmod(path.lstat().st_mode | mode)
+        shutil.rmtree(work)
+
+
 def main() -> None:
     parser = argparse.ArgumentParser()
-    parser.add_argument("lane")
+    parser.add_argument("lane", nargs="?")
     parser.add_argument("--repo-root", default=".")
     parser.add_argument("--production", action="store_true")
+    parser.add_argument("--replay-retained", action="store_true")
     args = parser.parse_args()
     repo = Path(args.repo_root).resolve()
+    if args.replay_retained:
+        print(json.dumps({"lanes": replay_retained(repo), "status": "PASS"}, indent=2))
+        return
+    if not args.lane:
+        parser.error("lane is required unless --replay-retained is used")
     print(json.dumps(prepare(repo, args.lane, args.production), indent=2))
 
 

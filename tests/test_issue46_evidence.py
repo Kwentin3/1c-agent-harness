@@ -11,7 +11,7 @@ V = importlib.util.module_from_spec(SPEC); SPEC.loader.exec_module(V)
 
 def digest(path: Path) -> str: return hashlib.sha256(path.read_bytes()).hexdigest()
 def refresh(root: Path) -> None:
-    files={p.relative_to(root).as_posix():digest(p) for p in root.rglob("*") if p.is_file() and p.name!="manifest.json"}
+    files={p.relative_to(root).as_posix():digest(p) for p in root.rglob("*") if p.is_file() and p.name!="manifest.json" and "__pycache__" not in p.parts}
     (root/"manifest.json").write_text(json.dumps({"schemaVersion":1,"files":dict(sorted(files.items()))},sort_keys=True)+"\n")
 
 class Issue46EvidenceTest(unittest.TestCase):
@@ -51,6 +51,21 @@ class Issue46EvidenceTest(unittest.TestCase):
             (root/"foreign.txt").unlink(); (root/"README.md").write_text("tampered")
             with self.assertRaises(ValueError): V.validate(root,False)
         finally: td.cleanup()
+    def test_nested_unmanifested_manifest_is_rejected(self):
+        td,root=self.copy()
+        try:
+            nested=root/"nested"; nested.mkdir(); (nested/"manifest.json").write_text("{}")
+            with self.assertRaises(ValueError): V.validate(root,False)
+        finally: td.cleanup()
+    def test_published_prepare_is_bound_to_retained_replay(self):
+        evidence=json.loads((PKG/"evidence.json").read_text())
+        self.assertEqual(digest(PKG/"prepare.py"),evidence["contract"]["retainedPrepareSha256"])
+    def test_changed_file_replay_binding_is_not_mutable(self):
+        def mutate(r):
+            p=r/"evidence.json"; d=json.loads(p.read_text())
+            d["lanes"]["green"]["binding"]["changedFileSha256"]["Ext/ManagedApplicationModule.bsl"]="0"*64
+            p.write_text(json.dumps(d))
+        self.rejected(mutate)
     def test_production_mutation_with_refreshed_manifest_is_rejected(self):
         self.rejected(lambda r:(r/"production.patch").write_bytes((r/"production.patch").read_bytes().replace(b"Warehouse.DeletionMark",b"Warehouse.Ref.DeletionMark")))
     def test_instrumentation_mutation_with_refreshed_manifest_is_rejected(self):
