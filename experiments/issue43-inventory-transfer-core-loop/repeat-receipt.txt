@@ -1,0 +1,17 @@
+﻿scenario###issue43-repeat
+seedFromState###10|10|50
+seedToState###0|0|0
+sameDraftSucceeded###Yes
+sameDraftPersisted###Yes
+samePostingSucceeded###No
+samePostingErrorPresent###Yes
+samePosted###No
+sameInventoryMovementCount###0
+sameCostMovementCount###0
+sameStateAfterPosting###10|10|50
+validPosted###Yes
+validInventoryMovementCount###2
+validCostMovementCount###2
+validFromState###7|7|35
+validToState###3|3|15
+complete###true

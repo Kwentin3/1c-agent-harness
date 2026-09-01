@@ -1,0 +1,194 @@
+{
+  "schemaVersion": 1,
+  "status": "runtime_contract_completed",
+  "durationSeconds": 67.105,
+  "specSha256": "0dc7c55662de693349ccb26209b1caa6445693e39478f05d9683b6001805ab8d",
+  "input": {
+    "files": 5099,
+    "directories": 4847,
+    "bytes": 61794753,
+    "sourceTreeSha256": "baa038d0fd4a8e5731598b521e117a1b04348c6202677f22e0bd7182c86366d4",
+    "copiedTreeSha256": "baa038d0fd4a8e5731598b521e117a1b04348c6202677f22e0bd7182c86366d4",
+    "loadTreeSha256": "51fa9cc8b3f6a98f545d997a9202fcfb9509d18c3319bf3b4b9cd2b027038234"
+  },
+  "commands": {
+    "create": [
+      "/workspace/1c-agent-harness/.local/platform/libs/usr/bin/xvfb-run",
+      "-a",
+      "-s",
+      "-screen 0 1280x1024x8 -nolisten tcp",
+      "/workspace/1c-agent-harness/.local/platform/1cv8t/x86_64/8.5.1.1150/1cv8t",
+      "CREATEINFOBASE",
+      "File=/workspace/1c-agent-harness/.local/runs/native-cycle/run-b2m5djmf/run/ib",
+      "/DisableStartupDialogs",
+      "/DisableStartupMessages",
+      "/Out",
+      "/workspace/1c-agent-harness/.local/runs/native-cycle/run-b2m5djmf/run/logs/create.log",
+      "/DumpResult",
+      "/workspace/1c-agent-harness/.local/runs/native-cycle/run-b2m5djmf/run/logs/create.result"
+    ],
+    "load": [
+      "/workspace/1c-agent-harness/.local/platform/libs/usr/bin/xvfb-run",
+      "-a",
+      "-s",
+      "-screen 0 1280x1024x8 -nolisten tcp",
+      "/workspace/1c-agent-harness/.local/platform/1cv8t/x86_64/8.5.1.1150/1cv8t",
+      "DESIGNER",
+      "/F",
+      "/workspace/1c-agent-harness/.local/runs/native-cycle/run-b2m5djmf/run/ib",
+      "/LoadConfigFromFiles",
+      "/workspace/1c-agent-harness/.local/runs/native-cycle/run-b2m5djmf/run/work-copy",
+      "/UpdateDBCfg",
+      "/DisableStartupDialogs",
+      "/DisableStartupMessages",
+      "/Out",
+      "/workspace/1c-agent-harness/.local/runs/native-cycle/run-b2m5djmf/run/logs/load.log",
+      "/DumpResult",
+      "/workspace/1c-agent-harness/.local/runs/native-cycle/run-b2m5djmf/run/logs/load.result"
+    ],
+    "runtime": [
+      "/workspace/1c-agent-harness/.local/platform/libs/usr/bin/xvfb-run",
+      "-a",
+      "-s",
+      "-screen 0 1280x1024x8 -nolisten tcp",
+      "/workspace/1c-agent-harness/.local/platform/1cv8t/x86_64/8.5.1.1150/1cv8t",
+      "ENTERPRISE",
+      "/F",
+      "/workspace/1c-agent-harness/.local/runs/native-cycle/run-b2m5djmf/run/ib",
+      "/C",
+      "/workspace/1c-agent-harness/.local/runs/native-cycle/run-b2m5djmf/run/evidence/receipt.txt",
+      "/DisableStartupDialogs",
+      "/DisableStartupMessages",
+      "/Out",
+      "/workspace/1c-agent-harness/.local/runs/native-cycle/run-b2m5djmf/run/logs/run.log",
+      "/DumpResult",
+      "/workspace/1c-agent-harness/.local/runs/native-cycle/run-b2m5djmf/run/logs/run.result"
+    ]
+  },
+  "environment": {
+    "HOME": "/workspace/1c-agent-harness/.local/runs/native-cycle/run-b2m5djmf/run/home",
+    "TMPDIR": "/workspace/1c-agent-harness/.local/runs/native-cycle/run-b2m5djmf/run/tmp",
+    "XDG_CACHE_HOME": "/workspace/1c-agent-harness/.local/runs/native-cycle/run-b2m5djmf/run/home/xdg-cache",
+    "XDG_CONFIG_HOME": "/workspace/1c-agent-harness/.local/runs/native-cycle/run-b2m5djmf/run/home/xdg-config",
+    "XDG_DATA_HOME": "/workspace/1c-agent-harness/.local/runs/native-cycle/run-b2m5djmf/run/home/xdg-data",
+    "FONTCONFIG_FILE": "/workspace/1c-agent-harness/.local/platform/fonts.conf",
+    "LD_LIBRARY_PATH": "/workspace/1c-agent-harness/.local/platform/1cv8t/x86_64/8.5.1.1150:/workspace/1c-agent-harness/.local/platform/libs/usr/lib/x86_64-linux-gnu",
+    "PATH": "/workspace/1c-agent-harness/.local/platform/libs/usr/bin:/usr/local/sbin:/usr/local/bin:/usr/sbin:/usr/bin:/sbin:/bin:/usr/games"
+  },
+  "create": {
+    "processReturn": 0,
+    "dumpResult": "0",
+    "resultSha256": "e45825471ed10290785b62676dc5f453d228a1e1d933c45a733e9bb239c9e083",
+    "logSha256": "e85eaa61ad894a2a52abd1f1290aa91ccdd1e31feb37741c7b2af02eff0b4d78",
+    "successMarker": "completed successfully"
+  },
+  "load": {
+    "processReturn": 0,
+    "dumpResult": "0",
+    "resultSha256": "e45825471ed10290785b62676dc5f453d228a1e1d933c45a733e9bb239c9e083",
+    "logSha256": "4d841be04b71dd0ee7cfebcfa7af194d74902e2ec1c213987889d7d3940c0f86",
+    "successMarker": "Configuration successfully updated"
+  },
+  "runtime": {
+    "completed": true,
+    "completeMarker": "complete###true",
+    "stableReads": 2,
+    "processReturn": -15,
+    "receipt": {
+      "state": "regular",
+      "bytes": 441,
+      "sha256": "9711561e03c6925cb1ac93867f3f2e12921d148a6c237910e8c0f313e604eac5",
+      "terminalMarker": true
+    },
+    "outputs": {
+      "log": {
+        "state": "regular",
+        "bytes": 49,
+        "sha256": "4117172f389bdfc38123337e2a2fe1993c6a1275e719119f004e5a6d5a28a124"
+      },
+      "result": {
+        "state": "absent"
+      }
+    },
+    "receiptSha256": "9711561e03c6925cb1ac93867f3f2e12921d148a6c237910e8c0f313e604eac5",
+    "receiptBytes": 441
+  },
+  "inputAfter": {
+    "files": 5099,
+    "directories": 4847,
+    "bytes": 61794753,
+    "sha256": "baa038d0fd4a8e5731598b521e117a1b04348c6202677f22e0bd7182c86366d4"
+  },
+  "resultPath": ".local/runs/native-cycle/run-b2m5djmf/run/result.json",
+  "preparedInvocation": {
+    "invocationRoot": ".local/runs/native-cycle/run-b2m5djmf",
+    "sourcePath": ".local/prepared/issue43-inventory-transfer-green",
+    "sourceBefore": {
+      "files": 5099,
+      "directories": 4847,
+      "bytes": 61794753,
+      "sha256": "8f70a5699e6e766566f83a9755d04e34168e600d738031033153265f66e792c3"
+    },
+    "sourceAfter": {
+      "files": 5099,
+      "directories": 4847,
+      "bytes": 61794753,
+      "sha256": "8f70a5699e6e766566f83a9755d04e34168e600d738031033153265f66e792c3"
+    },
+    "copiedBeforeFreeze": {
+      "files": 5099,
+      "directories": 4847,
+      "bytes": 61794753,
+      "sha256": "8f70a5699e6e766566f83a9755d04e34168e600d738031033153265f66e792c3"
+    },
+    "frozenInput": {
+      "path": ".local/runs/native-cycle/run-b2m5djmf/frozen-input",
+      "identity": {
+        "files": 5099,
+        "directories": 4847,
+        "bytes": 61794753,
+        "sha256": "baa038d0fd4a8e5731598b521e117a1b04348c6202677f22e0bd7182c86366d4"
+      }
+    },
+    "generatedSpec": {
+      "path": ".local/runs/native-cycle/run-b2m5djmf/spec.json",
+      "sha256": "0dc7c55662de693349ccb26209b1caa6445693e39478f05d9683b6001805ab8d"
+    },
+    "generatedBinding": {
+      "kind": "1c-enterprise-launch-parameter",
+      "status": "generated",
+      "receipt": ".local/runs/native-cycle/run-b2m5djmf/run/evidence/receipt.txt",
+      "runtimeArgvSha256": "8f39a8caa9749fa94a69ec36fc5586f7a1b5a3935a7689283203f245d4e27ee0"
+    }
+  },
+  "totalDurationSeconds": 82.763,
+  "storageCompaction": {
+    "policy": "compact-current-invocation-v1",
+    "status": "completed",
+    "manualCleanupActions": 0,
+    "configuredTargets": [
+      "frozen-input",
+      "run/work-copy",
+      "run/ib",
+      "run/home",
+      "run/tmp"
+    ],
+    "completedRemovedPaths": [
+      "frozen-input",
+      "run/work-copy",
+      "run/ib",
+      "run/home",
+      "run/tmp"
+    ],
+    "retainedPaths": [
+      "spec.json",
+      "run/evidence",
+      "run/logs",
+      "run/result.json"
+    ],
+    "preCompactionLogicalBytes": 224604514,
+    "removedLogicalBytes": 224579445,
+    "retainedLogicalBytesExcludingResult": 17941,
+    "durationSeconds": 4.496
+  }
+}

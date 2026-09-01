@@ -1,0 +1,8 @@
+{
+  "protocolVersion": "issue43-v1",
+  "operation": "inventoryTransferSameWarehouseRule",
+  "scenario": "issue43-bound-green-1",
+  "runId": "9919bb48-0bfa-4ede-ba40-7493dd1b2eb8",
+  "caseId": "ffcc3b0e-8c2b-4886-928d-c84bb04739c5",
+  "nonce": "577333c7-d12d-481f-a848-f920e9b4c19c"
+}

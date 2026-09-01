@@ -1,0 +1,141 @@
+--- a/CommonModules/JetServerCall/Ext/Module.bsl
++++ b/CommonModules/JetServerCall/Ext/Module.bsl
+@@ -14,4 +14,127 @@
+ 	
+ EndFunction
+ 
++
++Procedure Issue43InventoryTransferProbe(ReceiptPath) Export
++	Writer = New TextWriter(ReceiptPath, TextEncoding.UTF8);
++	Writer.Write("scenario###issue43-bound-green-1" + Chars.LF);
++	Writer.Write("protocolVersion###issue43-v1" + Chars.LF);
++	Writer.Write("runId###9919bb48-0bfa-4ede-ba40-7493dd1b2eb8" + Chars.LF);
++	Writer.Write("caseId###ffcc3b0e-8c2b-4886-928d-c84bb04739c5" + Chars.LF);
++	Writer.Write("nonce###577333c7-d12d-481f-a848-f920e9b4c19c" + Chars.LF);
++	
++	WarehouseFromObject = Catalogs.Warehouses.CreateItem();
++	WarehouseFromObject.Description = "Issue 43 warehouse from";
++	WarehouseFromObject.Write();
++	WarehouseFrom = WarehouseFromObject.Ref;
++	WarehouseToObject = Catalogs.Warehouses.CreateItem();
++	WarehouseToObject.Description = "Issue 43 warehouse to";
++	WarehouseToObject.Write();
++	WarehouseTo = WarehouseToObject.Ref;
++	UnitObject = Catalogs.Units.CreateItem();
++	UnitObject.Description = "Issue 43 unit";
++	UnitObject.Write();
++	ProductObject = Catalogs.Products.CreateItem();
++	ProductObject.Description = "Issue 43 product";
++	ProductObject.ProductType = Enums.ProductTypes.Inventory;
++	ProductObject.Unit = UnitObject.Ref;
++	ProductObject.Write();
++	Product = ProductObject.Ref;
++	
++	Increase = Documents.InventoryIncrease.CreateDocument();
++	Increase.Date = CurrentDate();
++	Increase.Warehouse = WarehouseFrom;
++	IncreaseRow = Increase.Inventory.Add();
++	IncreaseRow.Product = Product;
++	IncreaseRow.Quantity = 10;
++	IncreaseRow.Price = 5;
++	IncreaseRow.Amount = 50;
++	Increase.Write(DocumentWriteMode.Posting);
++	Issue43WriteObservation(Writer, "seedFromState", Issue43BalanceState(WarehouseFrom, Product));
++	Issue43WriteObservation(Writer, "seedToState", Issue43BalanceState(WarehouseTo, Product));
++	
++	SameDocument = Issue43NewTransfer(WarehouseFrom, WarehouseFrom, Product, 3);
++	SameDraftResult = Issue43TryWrite(SameDocument, False);
++	Issue43WriteObservation(Writer, "sameDraftSucceeded", SameDraftResult.Succeeded);
++	Issue43WriteObservation(Writer, "sameDraftPersisted", SameDocument.Ref.GetObject().Warehouse = WarehouseFrom And SameDocument.Ref.GetObject().WarehouseReceiver = WarehouseFrom);
++	SamePostingResult = Issue43TryWrite(SameDocument, True);
++	Issue43WriteObservation(Writer, "samePostingSucceeded", SamePostingResult.Succeeded);
++	Issue43WriteObservation(Writer, "samePostingErrorPresent", SamePostingResult.Error <> "");
++	Issue43WriteObservation(Writer, "samePosted", SameDocument.Ref.Posted);
++	Issue43WriteObservation(Writer, "sameInventoryMovementCount", Issue43MovementCount(SameDocument.Ref, True));
++	Issue43WriteObservation(Writer, "sameCostMovementCount", Issue43MovementCount(SameDocument.Ref, False));
++	Issue43WriteObservation(Writer, "sameStateAfterPosting", Issue43BalanceState(WarehouseFrom, Product));
++	
++	ValidDocument = Issue43NewTransfer(WarehouseFrom, WarehouseTo, Product, 3);
++	ValidDocument.Write(DocumentWriteMode.Posting);
++	Issue43WriteObservation(Writer, "validPosted", ValidDocument.Ref.Posted);
++	Issue43WriteObservation(Writer, "validInventoryMovementCount", Issue43MovementCount(ValidDocument.Ref, True));
++	Issue43WriteObservation(Writer, "validCostMovementCount", Issue43MovementCount(ValidDocument.Ref, False));
++	Issue43WriteObservation(Writer, "validFromState", Issue43BalanceState(WarehouseFrom, Product));
++	Issue43WriteObservation(Writer, "validToState", Issue43BalanceState(WarehouseTo, Product));
++	Writer.Write("complete###true" + Chars.LF);
++	Writer.Close();
++EndProcedure
++
++Function Issue43NewTransfer(WarehouseFrom, WarehouseTo, Product, Quantity)
++	DocumentObject = Documents.InventoryTransfer.CreateDocument();
++	DocumentObject.Date = CurrentDate();
++	DocumentObject.Warehouse = WarehouseFrom;
++	DocumentObject.WarehouseReceiver = WarehouseTo;
++	Row = DocumentObject.Inventory.Add();
++	Row.Product = Product;
++	Row.Quantity = Quantity;
++	Return DocumentObject;
++EndFunction
++
++Function Issue43TryWrite(DocumentObject, Posting)
++	Result = New Structure("Succeeded,Error", True, "");
++	Try
++		If Posting Then
++			DocumentObject.Write(DocumentWriteMode.Posting);
++		Else
++			DocumentObject.Write();
++		EndIf;
++	Except
++		Result.Succeeded = False;
++		Result.Error = ErrorDescription();
++	EndTry;
++	Return Result;
++EndFunction
++
++Function Issue43MovementCount(Recorder, InventoryRegister)
++	Query = New Query;
++	If InventoryRegister Then
++		Query.Text = "SELECT COUNT(*) AS RowCount FROM AccumulationRegister.InventoryInWarehouses AS Records WHERE Records.Recorder = &Recorder";
++	Else
++		Query.Text = "SELECT COUNT(*) AS RowCount FROM AccumulationRegister.InventoryCost AS Records WHERE Records.Recorder = &Recorder";
++	EndIf;
++	Query.SetParameter("Recorder", Recorder);
++	Return Query.Execute().Unload()[0].RowCount;
++EndFunction
++
++Function Issue43BalanceState(Warehouse, Product)
++	Query = New Query;
++	Query.Text =
++	"SELECT ISNULL(SUM(Balance.QuantityBalance), 0) AS InventoryQuantity, 0 AS CostQuantity, 0 AS CostAmount
++	|FROM AccumulationRegister.InventoryInWarehouses.Balance(, Warehouse = &Warehouse AND Product = &Product) AS Balance
++	|UNION ALL
++	|SELECT 0, ISNULL(SUM(CostBalance.QuantityBalance), 0), ISNULL(SUM(CostBalance.AmountBalance), 0)
++	|FROM AccumulationRegister.InventoryCost.Balance(, Warehouse = &Warehouse AND Product = &Product) AS CostBalance";
++	Query.SetParameter("Warehouse", Warehouse);
++	Query.SetParameter("Product", Product);
++	InventoryQuantity = 0; CostQuantity = 0; CostAmount = 0;
++	Selection = Query.Execute().Select();
++	While Selection.Next() Do
++		InventoryQuantity = InventoryQuantity + Selection.InventoryQuantity;
++		CostQuantity = CostQuantity + Selection.CostQuantity;
++		CostAmount = CostAmount + Selection.CostAmount;
++	EndDo;
++	Return String(InventoryQuantity) + "|" + String(CostQuantity) + "|" + String(CostAmount);
++EndFunction
++
++Procedure Issue43WriteObservation(Writer, Key, Value)
++	Writer.Write(Key + "###" + String(Value) + Chars.LF);
++EndProcedure
++
+ #EndRegion--- a/Ext/ManagedApplicationModule.bsl
++++ b/Ext/ManagedApplicationModule.bsl
+@@ -55,6 +55,9 @@
+ 
+ Procedure OnStart()
+ 	
++	JetServerCall.Issue43InventoryTransferProbe(LaunchParameter);
++	Return;
++	
+ 	// StandardSubsystems
+ #If MobileClient Then
+ 	Execute("StandardSubsystemsClient.OnStart()");
