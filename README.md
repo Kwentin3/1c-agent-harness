@@ -52,6 +52,14 @@ python3 scripts/project_target.py
 `scripts/native_cycle.py run-prepared`. Низкоуровневый `run --spec` остаётся только expert/debug
 интерфейсом и не является альтернативным стартом задачи.
 
+После успешного task oracle общий front door выдаёт один compact provenance receipt. Он
+связывает canonical base, exact patch hashes, prepared/frozen input, свежий request,
+runtime, raw business receipt и cleanup; бизнес-поля остаются непрозрачными для shared
+кода и проверяются только маленьким task oracle. Representative contract, receipt и oracle
+показаны в [`experiments/issue48-kiss-receipt`](experiments/issue48-kiss-receipt/).
+Исторические packages не переписываются, а candidate commit/tree и CI остаются
+ответственностью GitHub, не task validator.
+
 ## Цель MVP
 
 Кодовый агент в Linux-окружении получает снимок конфигурации 1С и может:

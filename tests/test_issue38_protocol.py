@@ -263,8 +263,19 @@ class Issue38ProtocolTests(unittest.TestCase):
                 "CommonModules/JetServerCall/Ext/Module.bsl", "Ext/ManagedApplicationModule.bsl",
             ])
             self.assertEqual(prepared_result["preparationAudit"]["staticCheck"], "pass")
-            self.assertEqual(prepared_result["preparationAudit"]["changedPaths"], prepared_result["changedFiles"])
-            self.assertEqual(prepared_result["preparationAudit"]["forbiddenAddedMatches"], [])
+            audit = prepared_result["preparationAudit"]
+            self.assertEqual(audit["changedPaths"], prepared_result["changedFiles"])
+            self.assertRegex(audit["canonicalBase"]["sha256"], r"^[0-9a-f]{64}$")
+            self.assertRegex(audit["preparedInput"]["sha256"], r"^[0-9a-f]{64}$")
+            self.assertEqual(set(audit["runnerInput"]), {"files", "directories", "bytes", "sha256"})
+            self.assertRegex(audit["runnerInput"]["sha256"], r"^[0-9a-f]{64}$")
+            self.assertNotEqual(audit["canonicalBase"], audit["preparedInput"])
+            self.assertEqual([item["role"] for item in audit["patches"]], [
+                "instrumentation.client", "instrumentation.server",
+            ])
+            for item in audit["patches"]:
+                self.assertRegex(item["sha256"], r"^[0-9a-f]{64}$")
+            self.assertEqual(audit["forbiddenAddedMatches"], [])
             self.assertTrue(all(not (path.stat().st_mode & 0o222) for path in (prepared, *prepared.rglob("*"))))
             request = json.loads(request_path.read_text(encoding="utf-8"))
             self.assertEqual(set(request), {
@@ -593,7 +604,24 @@ class Issue38ProtocolTests(unittest.TestCase):
                 receipt = evidence / "receipt.txt"
                 receipt.write_bytes(client)
                 receipt.with_name("receipt.txt.server").write_bytes(server)
-                result = {"preparedInvocation": {"invocationRoot": ".local/runs/native-cycle/run-validated"}}
+                identity = frontdoor.native_cycle.tree_identity(prepared)
+                result = {
+                    "status": "runtime_contract_completed",
+                    "preparedInvocation": {
+                        "invocationRoot": ".local/runs/native-cycle/run-validated",
+                        "sourceBefore": identity,
+                        "sourceAfter": identity,
+                        "copiedBeforeFreeze": identity,
+                        "frozenInput": {"identity": identity},
+                    },
+                    "inputAfter": identity,
+                    "runtime": {
+                        "completed": True,
+                        "receiptSha256": hashlib.sha256(client).hexdigest(),
+                        "receiptBytes": len(client),
+                    },
+                    "storageCompaction": {"status": "completed", "manualCleanupActions": 0},
+                }
                 return subprocess.CompletedProcess([], 0, json.dumps(result), "")
 
             frontdoor.subprocess.run = validated_runner
@@ -604,6 +632,8 @@ class Issue38ProtocolTests(unittest.TestCase):
 
             self.assertEqual(result["status"], "validated")
             self.assertEqual(result["cleanup"], "discarded")
+            self.assertEqual(frontdoor.managed_probe_prepare.validate_provenance_receipt(result["provenance"])["status"], "PASS")
+            self.assertEqual(result["provenance"]["business"]["payload"], result["response"])
             self.assertFalse(prepared.exists())
 
     def test_frontdoor_run_reports_prepared_cleanup_failure(self) -> None:

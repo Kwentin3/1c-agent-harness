@@ -19,6 +19,7 @@ from typing import Final
 
 import issue38_protocol
 import managed_probe_prepare
+import native_cycle
 
 
 _COMPLETE_MARKER: Final = "complete###true###Boolean"
@@ -135,6 +136,7 @@ def prepare(repo_root: Path, source_tree: Path, prepared_tree: Path, request_pat
             client_block=_client_probe(request),
             server_block=_server_probe(request),
         )
+        preparation_audit["runnerInput"] = native_cycle.tree_identity(prepared_tree)
         _write_json_new(request_path, request)
     except BaseException as exc:
         if preparation_audit is not None:
@@ -235,6 +237,7 @@ def run(repo_root: Path, source_tree: Path, prepared_tree: Path, request_path: P
     prepared_tree = _lexical_absolute(repo_root, prepared_tree)
     prepared = prepare(repo_root, source_tree, prepared_tree, request_path)
     terminal_error: BaseException | None = None
+    validated_context: tuple[dict[str, object], bytes, bytes] | None = None
     try:
         try:
             completed = subprocess.run(
@@ -254,7 +257,9 @@ def run(repo_root: Path, source_tree: Path, prepared_tree: Path, request_path: P
         else:
             receipt, server = _runner_receipts(repo_root, runner_result)
             request = json.loads(request_path.read_text(encoding="utf-8"))
-            response = issue38_protocol.validate_terminal(request, receipt.read_bytes(), server.read_bytes())
+            client_bytes, server_bytes = receipt.read_bytes(), server.read_bytes()
+            response = issue38_protocol.validate_terminal(request, client_bytes, server_bytes)
+            validated_context = (request, client_bytes, server_bytes)
             result = {"status": "validated", "prepared": prepared, "runner": runner_result, "response": response}
     except BaseException as exc:
         terminal_error = exc
@@ -262,6 +267,18 @@ def run(repo_root: Path, source_tree: Path, prepared_tree: Path, request_path: P
     finally:
         _discard_after_run(repo_root, prepared_tree, terminal_error)
     result["cleanup"] = "discarded"
+    if validated_context is not None:
+        request, client_bytes, server_bytes = validated_context
+        result["provenance"] = managed_probe_prepare.build_provenance_receipt(
+            preparation=prepared["preparationAudit"],
+            request=request,
+            runner=result["runner"],
+            client_receipt=client_bytes,
+            server_receipt=server_bytes,
+            business_payload=result["response"],
+            oracle={"status": "PASS"},
+            prepared_cleanup="discarded",
+        )
     return result
 
 
