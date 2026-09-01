@@ -1,7 +1,7 @@
 #!/usr/bin/env python3
 """Fail-closed validator for the frozen Issue 46 evidence package."""
 from __future__ import annotations
-import argparse, base64, hashlib, json, os, subprocess, sys, uuid
+import argparse, base64, hashlib, json, sys, uuid
 from pathlib import Path
 
 LANES = ("red", "green", "repeat")
@@ -94,29 +94,7 @@ def validate_manifest(root: Path) -> dict:
         if sha((root/rel).read_bytes()) != digest: fail(f"manifest hash mismatch: {rel}")
     return manifest
 
-def git(root: Path, *args: str) -> str:
-    return subprocess.run(["git",*args],cwd=root.parent.parent,check=True,text=True,stdout=subprocess.PIPE).stdout.strip()
-def optional_git(root: Path, *args: str):
-    result = subprocess.run(["git",*args],cwd=root.parent.parent,text=True,stdout=subprocess.PIPE,stderr=subprocess.DEVNULL)
-    return result.stdout.strip() if result.returncode == 0 else None
-def validate_shallow_pr_context(root: Path, contract: dict) -> None:
-    if os.environ.get("GITHUB_EVENT_NAME") != "pull_request" or os.environ.get("GITHUB_REPOSITORY") != "Kwentin3/1c-agent-harness":
-        fail("shallow validation requires trusted GitHub pull_request context")
-    event_path = os.environ.get("GITHUB_EVENT_PATH")
-    if not event_path: fail("missing GitHub event path")
-    event = json.loads(Path(event_path).read_text(encoding="utf-8"))
-    pull = event.get("pull_request", {})
-    base_sha = pull.get("base", {}).get("sha")
-    head_sha = pull.get("head", {}).get("sha")
-    if pull.get("base", {}).get("ref") != "main" or base_sha != contract["baseCommit"]:
-        fail("GitHub PR base identity mismatch")
-    current = git(root,"rev-parse","HEAD")
-    if current != head_sha:
-        raw_commit = git(root,"cat-file","-p","HEAD")
-        parents = [line.split()[1] for line in raw_commit.splitlines() if line.startswith("parent ")]
-        if parents != [base_sha, head_sha]: fail("GitHub PR merge/head identity mismatch")
-
-def validate(root: Path = ROOT, check_git: bool = True) -> dict:
+def validate(root: Path = ROOT) -> dict:
     validate_manifest(root)
     evidence = json.loads((root/"evidence.json").read_text(encoding="utf-8"))
     instr = json.loads((root/"instrumentation.json").read_text(encoding="utf-8"))
@@ -124,17 +102,7 @@ def validate(root: Path = ROOT, check_git: bool = True) -> dict:
     contract = evidence["contract"]
     if contract != FROZEN_CONTRACT: fail("frozen contract identity mismatch")
     if sha((root/"prepare.py").read_bytes()) != contract["retainedPrepareSha256"]: fail("retained replay implementation mismatch")
-    if check_git:
-        shallow = git(root,"rev-parse","--is-shallow-repository") == "true"
-        origin_main = optional_git(root,"rev-parse","--verify","origin/main")
-        base_tree = optional_git(root,"rev-parse",f'{contract["baseCommit"]}^{{tree}}')
-        if shallow and (origin_main is None or base_tree is None): validate_shallow_pr_context(root, contract)
-        if origin_main is None and not shallow: fail("missing origin/main in full clone")
-        if origin_main is not None and origin_main != contract["baseCommit"]: fail("foreign/stale origin/main")
-        if base_tree is None and not shallow: fail("missing base object in full clone")
-        if base_tree is not None and base_tree != contract["baseTree"]: fail("base tree mismatch")
-        runner = root.parent.parent/contract["runnerPath"]
-        if sha(runner.read_bytes()) != contract["runnerSha256"]: fail("runner hash mismatch")
+
     production = (root/"production.patch").read_bytes()
     if sha(production) != FROZEN_PRODUCTION_SHA256 or evidence["productionPatchSha256"] != FROZEN_PRODUCTION_SHA256: fail("production patch hash mismatch")
     if b"If Warehouse.DeletionMark Then" not in production or production.index(b"If Warehouse.DeletionMark Then") > production.index(b"PostingManagement.Initialize"): fail("production guard not earliest")
@@ -183,7 +151,7 @@ def validate(root: Path = ROOT, check_git: bool = True) -> dict:
     return {"status":"PASS","lanes":list(LANES),"baseCommit":contract["baseCommit"]}
 
 def main() -> None:
-    ap=argparse.ArgumentParser(); ap.add_argument("--root",type=Path,default=ROOT); ap.add_argument("--no-git",action="store_true"); args=ap.parse_args()
-    try: print(json.dumps(validate(args.root.resolve(),not args.no_git),sort_keys=True))
+    ap=argparse.ArgumentParser(); ap.add_argument("--root",type=Path,default=ROOT); args=ap.parse_args()
+    try: print(json.dumps(validate(args.root.resolve()),sort_keys=True))
     except Exception as exc: print(f"FAIL: {exc}",file=sys.stderr); raise SystemExit(1)
 if __name__ == "__main__": main()

@@ -19,7 +19,9 @@ python3 experiments/issue46-supplier-warehouse-core-loop/validate.py
 python3 -m unittest tests.test_issue46_evidence
 ```
 
-Validation binds the package to `origin/main`, its Git tree, `scripts/native_cycle.py`, the published replay implementation, exact production/instrumentation bytes, changed-file hashes, prepared identities and runner inputs. It requires fresh canonical UUIDv4 identities, independent response tokens, exact RED/GREEN business vectors, positive durations, completed cleanup, and GREEN=repeat.
+Validation binds the frozen package to its published replay implementation, exact production/instrumentation bytes, changed-file hashes, prepared identities, retained runner inputs and business receipts. It requires fresh canonical UUIDv4 identities, independent response tokens, exact RED/GREEN business vectors, positive durations, completed cleanup, and GREEN=repeat.
+
+The historical task validator intentionally does not inspect the current Git checkout, moving `main`, or the current runner bytes. Published candidate identity and CI belong to GitHub; the package remains valid after later repository changes because its own frozen identities and artifacts are closed and checked internally.
 
 Where the canonical snapshot is available, independently replay all accepted lanes without 1C:
 
