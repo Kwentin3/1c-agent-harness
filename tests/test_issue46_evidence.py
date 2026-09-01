@@ -34,6 +34,12 @@ class Issue46EvidenceTest(unittest.TestCase):
             event.write_text(json.dumps(payload))
             env={"GITHUB_EVENT_NAME":"pull_request","GITHUB_REPOSITORY":"Kwentin3/1c-agent-harness","GITHUB_EVENT_PATH":str(event)}
             with mock.patch.dict(os.environ,env,clear=True): V.validate_shallow_pr_context(PKG,V.FROZEN_CONTRACT)
+            def merge_git(root,*args):
+                return "f"*40 if args == ("rev-parse","HEAD") else f'{V.FROZEN_CONTRACT["baseCommit"]} {head}'
+            with mock.patch.dict(os.environ,env,clear=True), mock.patch.object(V,"git",side_effect=merge_git):
+                V.validate_shallow_pr_context(PKG,V.FROZEN_CONTRACT)
+            with mock.patch.dict(os.environ,env,clear=True), mock.patch.object(V,"git",return_value="f"*40), self.assertRaises(ValueError):
+                V.validate_shallow_pr_context(PKG,V.FROZEN_CONTRACT)
             payload["pull_request"]["base"]["sha"]="0"*40; event.write_text(json.dumps(payload))
             with mock.patch.dict(os.environ,env,clear=True), self.assertRaises(ValueError): V.validate_shallow_pr_context(PKG,V.FROZEN_CONTRACT)
     def test_unmanifested_file_and_hash_tamper_are_rejected(self):

@@ -101,10 +101,14 @@ def validate_shallow_pr_context(root: Path, contract: dict) -> None:
     if not event_path: fail("missing GitHub event path")
     event = json.loads(Path(event_path).read_text(encoding="utf-8"))
     pull = event.get("pull_request", {})
-    if pull.get("base", {}).get("ref") != "main" or pull.get("base", {}).get("sha") != contract["baseCommit"]:
+    base_sha = pull.get("base", {}).get("sha")
+    head_sha = pull.get("head", {}).get("sha")
+    if pull.get("base", {}).get("ref") != "main" or base_sha != contract["baseCommit"]:
         fail("GitHub PR base identity mismatch")
-    if pull.get("head", {}).get("sha") != git(root,"rev-parse","HEAD"):
-        fail("GitHub PR head identity mismatch")
+    current = git(root,"rev-parse","HEAD")
+    if current != head_sha:
+        parents = git(root,"show","-s","--format=%P","HEAD").split()
+        if parents != [base_sha, head_sha]: fail("GitHub PR merge/head identity mismatch")
 
 def validate(root: Path = ROOT, check_git: bool = True) -> dict:
     validate_manifest(root)
