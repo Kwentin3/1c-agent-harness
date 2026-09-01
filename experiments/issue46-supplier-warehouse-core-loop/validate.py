@@ -91,6 +91,9 @@ def validate_manifest(root: Path) -> dict:
 
 def git(root: Path, *args: str) -> str:
     return subprocess.run(["git",*args],cwd=root.parent.parent,check=True,text=True,stdout=subprocess.PIPE).stdout.strip()
+def optional_git(root: Path, *args: str):
+    result = subprocess.run(["git",*args],cwd=root.parent.parent,text=True,stdout=subprocess.PIPE,stderr=subprocess.DEVNULL)
+    return result.stdout.strip() if result.returncode == 0 else None
 
 def validate(root: Path = ROOT, check_git: bool = True) -> dict:
     validate_manifest(root)
@@ -100,8 +103,13 @@ def validate(root: Path = ROOT, check_git: bool = True) -> dict:
     contract = evidence["contract"]
     if contract != FROZEN_CONTRACT: fail("frozen contract identity mismatch")
     if check_git:
-        if git(root,"rev-parse","origin/main") != contract["baseCommit"]: fail("foreign/stale origin/main")
-        if git(root,"rev-parse",f'{contract["baseCommit"]}^{{tree}}') != contract["baseTree"]: fail("base tree mismatch")
+        shallow = git(root,"rev-parse","--is-shallow-repository") == "true"
+        origin_main = optional_git(root,"rev-parse","--verify","origin/main")
+        if origin_main is None and not shallow: fail("missing origin/main in full clone")
+        if origin_main is not None and origin_main != contract["baseCommit"]: fail("foreign/stale origin/main")
+        base_tree = optional_git(root,"rev-parse",f'{contract["baseCommit"]}^{{tree}}')
+        if base_tree is None and not shallow: fail("missing base object in full clone")
+        if base_tree is not None and base_tree != contract["baseTree"]: fail("base tree mismatch")
         runner = root.parent.parent/contract["runnerPath"]
         if sha(runner.read_bytes()) != contract["runnerSha256"]: fail("runner hash mismatch")
     production = (root/"production.patch").read_bytes()
