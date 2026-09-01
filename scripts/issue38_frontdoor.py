@@ -136,13 +136,18 @@ def prepare(repo_root: Path, source_tree: Path, prepared_tree: Path, request_pat
             server_block=_server_probe(request),
         )
         _write_json_new(request_path, request)
-    except (OSError, ValueError, RuntimeError) as exc:
+    except BaseException as exc:
         if preparation_audit is not None:
             try:
                 managed_probe_prepare.discard_prepared_tree(repo_root=repo_root, prepared_root=prepared_tree)
-            except (OSError, ValueError) as cleanup_exc:
-                raise FrontDoorError(f"preparation failed: {exc}; prepared cleanup failed: {cleanup_exc}") from cleanup_exc
-        raise FrontDoorError(str(exc)) from exc
+            except BaseException as cleanup_exc:
+                raise FrontDoorError(
+                    f"preparation failed: {type(exc).__name__}: {exc}; "
+                    f"prepared cleanup failed: {type(cleanup_exc).__name__}: {cleanup_exc}"
+                ) from cleanup_exc
+        if isinstance(exc, (OSError, ValueError, RuntimeError)):
+            raise FrontDoorError(str(exc)) from exc
+        raise
 
     return {
         "status": "prepared",

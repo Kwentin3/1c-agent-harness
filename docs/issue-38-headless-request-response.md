@@ -77,8 +77,10 @@ not implement a second copy/splice/freeze path.
 `prepare` is non-native: it creates a fresh request outside the input tree and
 asks that primitive to create the named disposable prepared tree. Every relative
 `--input-tree`, `--prepared-tree`, and `--request` path is interpreted relative
-to `--repo-root`, never the caller's current directory. A standalone prepared
-tree is retained only until its caller explicitly discards it; use:
+to `--repo-root`, never the caller's current directory. If request writing fails
+after the primitive has claimed the tree, the front door discards that owned tree
+and re-raises the original interrupt or exit after successful cleanup. A standalone
+prepared tree is retained only until its caller explicitly discards it; use:
 
 ```bash
 python3 scripts/issue38_frontdoor.py discard \

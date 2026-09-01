@@ -290,6 +290,69 @@ class Issue38ProtocolTests(unittest.TestCase):
             for forbidden in ("Execute(", "Eval(", "ErrorDescription", "ErrorInfo", "Chr("):
                 self.assertNotIn(forbidden, generated_lines)
 
+    def test_frontdoor_prepare_discards_owned_tree_after_request_write_keyboard_interrupt(self) -> None:
+        frontdoor = load_frontdoor()
+        with tempfile.TemporaryDirectory() as tmp:
+            root = Path(tmp)
+            source = root / "snapshot"
+            prepared = root / ".local/prepared" / "request-write-interrupt"
+            request_path = root / "evidence/request.json"
+            write_frontdoor_snapshot(source)
+            original_write = frontdoor._write_json_new
+            frontdoor._write_json_new = lambda *args, **kwargs: (_ for _ in ()).throw(KeyboardInterrupt())
+            try:
+                with self.assertRaises(KeyboardInterrupt):
+                    frontdoor.prepare(root, source, prepared, request_path)
+            finally:
+                frontdoor._write_json_new = original_write
+            self.assertFalse(prepared.exists())
+            self.assertFalse(request_path.exists())
+
+    def test_frontdoor_prepare_discards_owned_tree_after_request_write_system_exit(self) -> None:
+        frontdoor = load_frontdoor()
+        with tempfile.TemporaryDirectory() as tmp:
+            root = Path(tmp)
+            source = root / "snapshot"
+            prepared = root / ".local/prepared" / "request-write-exit"
+            request_path = root / "evidence/request.json"
+            write_frontdoor_snapshot(source)
+            original_write = frontdoor._write_json_new
+            frontdoor._write_json_new = lambda *args, **kwargs: (_ for _ in ()).throw(SystemExit(9))
+            try:
+                with self.assertRaises(SystemExit) as raised:
+                    frontdoor.prepare(root, source, prepared, request_path)
+            finally:
+                frontdoor._write_json_new = original_write
+            self.assertEqual(raised.exception.code, 9)
+            self.assertFalse(prepared.exists())
+            self.assertFalse(request_path.exists())
+
+    def test_frontdoor_prepare_reports_primary_and_cleanup_failure(self) -> None:
+        frontdoor = load_frontdoor()
+        with tempfile.TemporaryDirectory() as tmp:
+            root = Path(tmp)
+            source = root / "snapshot"
+            prepared = root / ".local/prepared" / "request-write-double-failure"
+            request_path = root / "evidence/request.json"
+            write_frontdoor_snapshot(source)
+            original_write = frontdoor._write_json_new
+            original_discard = frontdoor.managed_probe_prepare.discard_prepared_tree
+            frontdoor._write_json_new = lambda *args, **kwargs: (_ for _ in ()).throw(KeyboardInterrupt())
+            frontdoor.managed_probe_prepare.discard_prepared_tree = (
+                lambda **kwargs: (_ for _ in ()).throw(SystemExit(7))
+            )
+            try:
+                with self.assertRaisesRegex(
+                    frontdoor.FrontDoorError,
+                    "KeyboardInterrupt.*prepared cleanup failed: SystemExit",
+                ):
+                    frontdoor.prepare(root, source, prepared, request_path)
+            finally:
+                frontdoor._write_json_new = original_write
+                frontdoor.managed_probe_prepare.discard_prepared_tree = original_discard
+                original_discard(repo_root=root, prepared_root=prepared)
+            self.assertFalse(prepared.exists())
+
     def test_frontdoor_run_discards_prepared_tree_after_runner_failure(self) -> None:
         frontdoor = load_frontdoor()
         with tempfile.TemporaryDirectory() as tmp:

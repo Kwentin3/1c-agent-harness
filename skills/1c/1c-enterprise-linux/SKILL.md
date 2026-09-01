@@ -1,7 +1,7 @@
 ---
 name: 1c-enterprise-linux
 description: "Use when running or automating 1C:Enterprise on Linux."
-version: 1.2.0
+version: 1.2.1
 author: Hermes Agent
 license: MIT
 metadata:
@@ -172,6 +172,9 @@ ABI-matched set (e.g. ICU 72) comes from one release instead of mixing trixie/bo
   `<cachedir>`. Also expect `sh: /sbin/ip: not found` noise — the platform calls `/sbin/ip`
   during license checks (absent in minimal containers; harmless).
 - Always pass `/Out ... -NoTruncate`: the Designer writes the real error cause to that log.
+- If a unit test uses a temporary executable helper and `/tmp` is mounted `noexec`, set
+  `TMPDIR` to a fresh task-owned executable directory under `.local/` and remove it
+  afterwards. This test-harness setting neither launches 1C nor consumes native budget.
 - Installer/message output is cp1251 (shows as `????` under UTF-8). Decode with
   `iconv -f cp1251 -t utf-8` or pass `--installer-language en` for readable diagnostics.
 
