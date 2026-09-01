@@ -53,12 +53,42 @@ rename them into an application result.
 ## Reproducible A front door
 
 `issue38_frontdoor.py` is the small, task-specific adapter around the existing
-`native_cycle.py run-prepared` lifecycle. It does not create a service or change
+`native_cycle.py run-prepared` lifecycle. It owns only the Issue #38 request,
+receipt templates and validation order; it does not create a service or change
 the canonical snapshot.
 
-`prepare` is non-native: it creates a fresh request outside the input tree,
-copies the named input tree to a named disposable prepared tree, and changes
-only these two BSL files:
+Its sole prepared-tree primitive is `scripts/managed_probe_prepare.py`. That
+primitive owns only technical tree lifecycle: it requires source and prepared
+roots to be disjoint, atomically claims its named output root before copying, and
+copies the input into that fresh `.local/prepared/` tree. It preserves the
+complete managed-application module, splices the supplied early client block
+after any initial `Var` declarations (including a UTF-8 BOM before `OnStart`
+and `//` inside quoted string literals),
+appends the supplied server block, checks that exactly the two declared BSL files
+changed, freezes the copy, and performs safe explicit discard. A collision at an
+existing output is refused without deletion; failure cleanup applies only after
+this primitive has claimed the output. If preparation and cleanup both fail, the
+reported error carries both causes. It rejects unsafe path/symlink components
+and missing `ServerCall=true` metadata. Its bounded token scan is input hygiene,
+**not** a proof that arbitrary supplied BSL has no business effect; the Issue
+#38 adapter and its semantic task contract own that meaning. The front door does
+not implement a second copy/splice/freeze path.
+
+`prepare` is non-native: it creates a fresh request outside the input tree and
+asks that primitive to create the named disposable prepared tree. Every relative
+`--input-tree`, `--prepared-tree`, and `--request` path is interpreted relative
+to `--repo-root`, never the caller's current directory. If request writing fails
+after the primitive has claimed the tree, the front door discards that owned tree
+and re-raises the original interrupt or exit after successful cleanup. A standalone
+prepared tree is retained only until its caller explicitly discards it; use:
+
+```bash
+python3 scripts/issue38_frontdoor.py discard \
+  --repo-root . \
+  --prepared-tree .local/prepared/issue38-a-next
+```
+
+The resulting closure changes only these two BSL files:
 
 ```text
 Ext/ManagedApplicationModule.bsl
@@ -79,8 +109,13 @@ python3 scripts/issue38_frontdoor.py prepare \
 ```
 
 The `run` form performs that preparation, invokes the existing bounded
-`native_cycle.py run-prepared` (`120` seconds, `complete###true`), locates the
-current invocation receipts, and calls `validate_terminal`:
+`native_cycle.py run-prepared` (`120` seconds, `complete###true`), accepts a
+runner JSON object only, and reads receipts only from a regular, non-symlink
+`.local/runs/native-cycle/run-*` invocation root. It then calls
+`validate_terminal`. It discards the prepared tree on every terminal runner,
+receipt, timeout, validation, and success path; a cleanup failure is returned
+explicitly rather than suppressed. The standalone request file is retained as
+run evidence and is never silently deleted:
 
 ```bash
 python3 scripts/issue38_frontdoor.py run \
