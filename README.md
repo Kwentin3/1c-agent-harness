@@ -52,13 +52,32 @@ python3 scripts/project_target.py
 `scripts/native_cycle.py run-prepared`. Низкоуровневый `run --spec` остаётся только expert/debug
 интерфейсом и не является альтернативным стартом задачи.
 
-После успешного task oracle общий front door выдаёт один compact provenance receipt. Он
-связывает canonical base, exact patch hashes, prepared/frozen input, свежий request,
-runtime, raw business receipt и cleanup; бизнес-поля остаются непрозрачными для shared
-кода и проверяются только маленьким task oracle. Representative contract, receipt и oracle
-показаны в [`experiments/issue48-kiss-receipt`](experiments/issue48-kiss-receipt/).
-Исторические packages не переписываются, а candidate commit/tree и CI остаются
-ответственностью GitHub, не task validator.
+После успешного task oracle одна опубликованная общая точка входа
+[`scripts/shared_task_route.py`](scripts/shared_task_route.py) выдаёт compact provenance receipt.
+Следующая задача передаёт ей task-owned request, exact production/instrumentation patch files,
+completion marker и oracle; shared route сама вызывает существующие preparation и native lifecycle,
+читает raw receipts, вызывает oracle и удаляет prepared tree. Бизнес-поля остаются непрозрачными
+для shared кода.
+
+```bash
+python3 scripts/shared_task_route.py run \
+  --repo-root . \
+  --input-tree .local/runs/training-jet-review-final/snapshot \
+  --prepared-tree .local/prepared/<task> \
+  --request .local/<task>/request.json \
+  --production-patch experiments/<task>/production.patch \
+  --instrumentation-patch experiments/<task>/instrumentation.patch \
+  --complete-marker 'complete###true' \
+  --oracle experiments/<task>/oracle.py \
+  --receipt .local/<task>/receipt.json
+```
+
+Стандартный receipt связывает canonical base, exact patch hashes, prepared/frozen input, свежий
+request, runtime, raw business receipt, oracle result и cleanup. Полный representative task layer —
+contract, exact production patch, exact instrumentation patch, receipt и maintainable oracle —
+показан в [`experiments/issue48-kiss-receipt`](experiments/issue48-kiss-receipt/).
+Исторические packages не переписываются, а candidate commit/tree и CI остаются ответственностью
+GitHub, не task validator.
 
 ## Цель MVP
 

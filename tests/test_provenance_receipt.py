@@ -11,10 +11,20 @@ import tempfile
 import unittest
 
 ROOT = Path(__file__).resolve().parents[1]
-SPEC = importlib.util.spec_from_file_location("provenance_receipt", ROOT / "scripts/managed_probe_prepare.py")
+SPEC = importlib.util.spec_from_file_location("provenance_receipt", ROOT / "scripts/shared_task_route.py")
 assert SPEC and SPEC.loader
 N = importlib.util.module_from_spec(SPEC)
+import sys
+sys.path.insert(0, str(ROOT / "scripts"))
 SPEC.loader.exec_module(N)
+sys.path.pop(0)
+PREPARATION_SPEC = importlib.util.spec_from_file_location(
+    "managed_probe_prepare_for_receipt_tests",
+    ROOT / "scripts/managed_probe_prepare.py",
+)
+assert PREPARATION_SPEC and PREPARATION_SPEC.loader
+P = importlib.util.module_from_spec(PREPARATION_SPEC)
+PREPARATION_SPEC.loader.exec_module(P)
 
 
 def sha(payload: bytes) -> str:
@@ -59,6 +69,107 @@ def sample() -> dict[str, object]:
 
 
 class ProvenanceReceiptTests(unittest.TestCase):
+    def test_shared_route_owns_prepare_runner_oracle_receipt_and_cleanup(self) -> None:
+        with tempfile.TemporaryDirectory() as temporary:
+            repo = Path(temporary)
+            source = repo / "snapshot"
+            source.mkdir()
+            (source / "A.txt").write_text("base\n", encoding="utf-8")
+            production = repo / "task/production.patch"
+            instrumentation = repo / "task/instrumentation.patch"
+            oracle = repo / "task/oracle.py"
+            production.parent.mkdir()
+            production.write_bytes(
+                b"--- a/A.txt\n+++ b/A.txt\n@@ -1 +1 @@\n-base\n+product\n"
+            )
+            instrumentation.write_bytes(
+                b"--- a/A.txt\n+++ b/A.txt\n@@ -1 +1 @@\n-product\n+instrumented\n"
+            )
+            oracle.write_text("# task-owned oracle\n", encoding="utf-8")
+            prepared = repo / ".local/prepared/task"
+
+            probe = P.prepare_patched_tree(
+                repo_root=repo,
+                snapshot_root=source,
+                prepared_root=prepared,
+                patches=[
+                    ("production", production.read_bytes()),
+                    ("instrumentation", instrumentation.read_bytes()),
+                ],
+            )
+            identity = N.native_cycle.tree_identity(prepared)
+            P.discard_prepared_tree(repo_root=repo, prepared_root=prepared)
+            request = {
+                "runId": "11111111-1111-4111-8111-111111111111",
+                "preparedTree": ".local/prepared/task",
+                "changedPaths": probe["changedPaths"],
+                "treeIdentity": identity["sha256"],
+            }
+            request_path = repo / "task/request.json"
+            request_path.write_text(json.dumps(request), encoding="utf-8")
+            calls: list[list[str]] = []
+
+            def fake_run(command: list[str], **kwargs: object) -> subprocess.CompletedProcess[str]:
+                calls.append(command)
+                if "run-prepared" in command:
+                    invocation = repo / ".local/runs/native-cycle/run-test"
+                    evidence = invocation / "run/evidence"
+                    evidence.mkdir(parents=True)
+                    (evidence / "receipt.txt").write_bytes(b"client\n")
+                    (evidence / "receipt.txt.server").write_bytes(b"server\n")
+                    runner = {
+                        "status": "runtime_contract_completed",
+                        "preparedInvocation": {
+                            "invocationRoot": ".local/runs/native-cycle/run-test",
+                            "sourceBefore": identity,
+                            "sourceAfter": identity,
+                            "copiedBeforeFreeze": identity,
+                            "frozenInput": {"identity": identity},
+                        },
+                        "inputAfter": identity,
+                        "runtime": {"completed": True},
+                        "storageCompaction": {
+                            "status": "completed",
+                            "manualCleanupActions": 0,
+                        },
+                    }
+                    return subprocess.CompletedProcess(command, 0, json.dumps(runner), "")
+                oracle_result = {
+                    "status": "PASS",
+                    "task": "sample",
+                    "businessPayload": {"accepted": True},
+                }
+                return subprocess.CompletedProcess(command, 0, json.dumps(oracle_result), "")
+
+            receipt_path = repo / "task/receipt.json"
+            receipt = N.run_task(
+                repo_root=repo,
+                input_tree=source,
+                prepared_tree=prepared,
+                request_path=request_path,
+                patch_paths=[
+                    ("production", production),
+                    ("instrumentation", instrumentation),
+                ],
+                complete_marker="complete###true",
+                oracle_path=oracle,
+                receipt_path=receipt_path,
+                timeout_seconds=30,
+                run_command=fake_run,
+            )
+
+            self.assertEqual(receipt["business"]["payload"], {"accepted": True})
+            self.assertEqual(receipt["patches"], [
+                {"role": "production", "sha256": sha(production.read_bytes())},
+                {"role": "instrumentation", "sha256": sha(instrumentation.read_bytes())},
+            ])
+            self.assertTrue(receipt_path.is_file())
+            self.assertFalse(prepared.exists())
+            self.assertIn("run-prepared", calls[0])
+            self.assertEqual(calls[1][1], str(oracle))
+            self.assertIn("--client-receipt", calls[1])
+            self.assertIn("--server-receipt", calls[1])
+
     def test_shared_preparation_applies_exact_patch_bytes_and_freezes_the_result(self) -> None:
         with tempfile.TemporaryDirectory() as temporary:
             repo = Path(temporary)
@@ -70,7 +181,7 @@ class ProvenanceReceiptTests(unittest.TestCase):
             patch_a = b"--- a/A.txt\n+++ b/A.txt\n@@ -1 +1 @@\n-before-a\n+after-a\n"
             patch_b = b"--- a/B.txt\n+++ b/B.txt\n@@ -1 +1 @@\n-before-b\n+after-b\n"
 
-            audit = N.prepare_patched_tree(
+            audit = P.prepare_patched_tree(
                 repo_root=repo,
                 snapshot_root=source,
                 prepared_root=prepared,
@@ -107,7 +218,7 @@ class ProvenanceReceiptTests(unittest.TestCase):
             (prepared / "A.txt").unlink()
             prepared.rmdir()
 
-            audit = N.prepare_patched_tree(
+            audit = P.prepare_patched_tree(
                 repo_root=repo,
                 snapshot_root=source,
                 prepared_root=prepared,
@@ -127,13 +238,29 @@ class ProvenanceReceiptTests(unittest.TestCase):
             prepared = repo / ".local/prepared/task"
             stale = b"--- a/A.txt\n+++ b/A.txt\n@@ -1 +1 @@\n-stale\n+changed\n"
             with self.assertRaises(ValueError):
-                N.prepare_patched_tree(
+                P.prepare_patched_tree(
                     repo_root=repo,
                     snapshot_root=source,
                     prepared_root=prepared,
                     patches=[("production", stale)],
                 )
             self.assertFalse(prepared.exists())
+
+    def test_shared_preparation_rejects_overlapping_source_and_output(self) -> None:
+        with tempfile.TemporaryDirectory() as temporary:
+            repo = Path(temporary)
+            source = repo / ".local/prepared/source"
+            source.mkdir(parents=True)
+            (source / "A.txt").write_text("before\n", encoding="utf-8")
+            patch = b"--- a/A.txt\n+++ b/A.txt\n@@ -1 +1 @@\n-before\n+after\n"
+            with self.assertRaisesRegex(ValueError, "must be disjoint"):
+                P.prepare_patched_tree(
+                    repo_root=repo,
+                    snapshot_root=source,
+                    prepared_root=source / "child",
+                    patches=[("production", patch)],
+                )
+            self.assertEqual((source / "A.txt").read_text(), "before\n")
 
     def test_compact_receipt_binds_the_complete_shared_chain(self) -> None:
         receipt = sample()
@@ -187,10 +314,46 @@ class ProvenanceReceiptTests(unittest.TestCase):
         business["business"]["payloadSha256"] = N._canonical_sha256(business["business"]["payload"])
         business["oracle"]["businessPayloadSha256"] = business["business"]["payloadSha256"]
         mutations.append(business)
+        patch = copy.deepcopy(original)
+        patch["patches"][0]["sha256"] = "0" * 64
+        mutations.append(patch)
         for receipt in mutations:
             self.assertEqual(N.validate_provenance_receipt(receipt)["status"], "PASS")
             with self.assertRaises(ValueError):
                 oracle.validate(receipt)
+
+    def test_task_oracle_cli_accepts_the_frozen_raw_route_inputs(self) -> None:
+        task_dir = ROOT / "experiments/issue48-kiss-receipt"
+        receipt = json.loads((task_dir / "receipt.json").read_text(encoding="utf-8"))
+        with tempfile.TemporaryDirectory() as temporary:
+            root = Path(temporary)
+            request = root / "request.json"
+            client = root / "client.txt"
+            server = root / "server.txt"
+            request.write_text(json.dumps(receipt["request"]["payload"]), encoding="utf-8")
+            client.write_bytes(base64.b64decode(receipt["runtime"]["clientReceipt"]["base64"]))
+            server.write_bytes(base64.b64decode(receipt["business"]["rawReceipt"]["base64"]))
+            completed = subprocess.run(
+                [
+                    sys.executable,
+                    str(task_dir / "oracle.py"),
+                    "--request", str(request),
+                    "--client-receipt", str(client),
+                    "--server-receipt", str(server),
+                ],
+                text=True,
+                capture_output=True,
+                timeout=10,
+            )
+        self.assertEqual(completed.returncode, 0, completed.stderr)
+        result = json.loads(completed.stdout)
+        self.assertEqual(result["status"], "PASS")
+        self.assertEqual(result["businessPayload"], receipt["business"]["payload"])
+
+    def test_shared_route_contains_no_representative_business_grammar(self) -> None:
+        source = (ROOT / "scripts/shared_task_route.py").read_text(encoding="utf-8")
+        for term in ("SupplierInvoice", "Warehouse", "Purchases", "InventoryCost"):
+            self.assertNotIn(term, source)
 
     def test_frozen_issue46_red_green_repeat_project_to_the_same_contract(self) -> None:
         package = ROOT / "experiments/issue46-supplier-warehouse-core-loop"

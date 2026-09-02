@@ -1,18 +1,16 @@
 #!/usr/bin/env python3
-"""Fail-closed primitive for a disposable managed-application probe tree.
+"""Fail-closed preparation primitive for disposable managed-app trees.
 
-The caller owns the probe's request and receipt grammar. This module owns
-copying a source tree, placing supplied client/server blocks in the two declared
-modules, checking the exact file-content closure, freezing the prepared tree,
-and issuing the shared provenance receipt after the task oracle passes.
+This module owns source-tree copying, exact ordered patch application, changed-path
+audit and freeze. `prepare_probe` is the retained Issue #38 block-to-patch adapter.
+Runtime, task-oracle and provenance-receipt ownership belong to
+`shared_task_route`.
 """
 
 from __future__ import annotations
 
-import base64
 import difflib
 import hashlib
-import json
 import os
 from pathlib import Path
 import re
@@ -201,135 +199,6 @@ def _unified_patch(relative: Path, before: bytes, after: bytes) -> bytes:
     ))
 
 
-def _json_copy(value: object) -> object:
-    return json.loads(json.dumps(value, ensure_ascii=False, allow_nan=False))
-
-
-def _canonical_sha256(value: object) -> str:
-    payload = json.dumps(value, ensure_ascii=False, sort_keys=True, separators=(",", ":"), allow_nan=False)
-    return _sha256(payload.encode("utf-8"))
-
-
-def _require_sha256(value: object, field: str) -> str:
-    if not isinstance(value, str) or len(value) != 64 or any(char not in "0123456789abcdef" for char in value):
-        raise ValueError(f"{field} must be a lowercase SHA-256")
-    return value
-
-
-def _require_tree_identity(value: object, field: str) -> dict[str, object]:
-    if not isinstance(value, dict) or set(value) != {"files", "directories", "bytes", "sha256"}:
-        raise ValueError(f"{field} must be one complete tree identity")
-    if any(type(value[key]) is not int or value[key] < 0 for key in ("files", "directories", "bytes")):
-        raise ValueError(f"{field} counters must be non-negative integers")
-    _require_sha256(value["sha256"], f"{field}.sha256")
-    return value
-
-
-def _raw_receipt(payload: bytes) -> dict[str, object]:
-    if not isinstance(payload, bytes) or not payload:
-        raise ValueError("raw receipt must be non-empty bytes")
-    return {"bytes": len(payload), "sha256": _sha256(payload), "base64": base64.b64encode(payload).decode("ascii")}
-
-
-def build_provenance_receipt(
-    *, preparation: dict[str, object], request: dict[str, object], runner: dict[str, object],
-    client_receipt: bytes, server_receipt: bytes, business_payload: object,
-    oracle: dict[str, object], prepared_cleanup: str,
-) -> dict[str, object]:
-    """Issue one generic receipt after a task oracle accepts opaque business bytes."""
-    prepared = _require_tree_identity(preparation.get("runnerInput"), "preparation.runnerInput")
-    invocation = runner.get("preparedInvocation")
-    if not isinstance(invocation, dict):
-        raise ValueError("runner omitted preparedInvocation")
-    frozen = invocation.get("frozenInput")
-    input_chain = {
-        "prepared": _json_copy(prepared),
-        "sourceBefore": _json_copy(invocation.get("sourceBefore")),
-        "sourceAfter": _json_copy(invocation.get("sourceAfter")),
-        "copiedBeforeFreeze": _json_copy(invocation.get("copiedBeforeFreeze")),
-        "frozen": _json_copy(frozen.get("identity")) if isinstance(frozen, dict) else None,
-        "inputAfter": _json_copy(runner.get("inputAfter")),
-    }
-    if any(_require_tree_identity(value, f"input.{key}") != prepared for key, value in input_chain.items()):
-        raise ValueError("prepared/frozen runner input identity mismatch")
-    runtime, cleanup = runner.get("runtime"), runner.get("storageCompaction")
-    if runner.get("status") != "runtime_contract_completed" or not isinstance(runtime, dict):
-        raise ValueError("runner did not complete the runtime contract")
-    if not isinstance(cleanup, dict):
-        raise ValueError("runner omitted cleanup result")
-    client, server = _raw_receipt(client_receipt), _raw_receipt(server_receipt)
-    request_sha, payload_sha = _canonical_sha256(request), _canonical_sha256(business_payload)
-    oracle_binding = dict(oracle)
-    oracle_binding.update({"requestSha256": request_sha, "businessPayloadSha256": payload_sha, "serverReceiptSha256": server["sha256"]})
-    receipt = {
-        "schemaVersion": 1,
-        "canonicalBase": _json_copy(preparation.get("canonicalBase")),
-        "patches": _json_copy(preparation.get("patches")),
-        "changedPaths": sorted(preparation.get("changedPaths", [])),
-        "input": input_chain,
-        "request": {"payload": _json_copy(request), "sha256": request_sha},
-        "runtime": {"status": runner.get("status"), "completed": runtime.get("completed"), "clientReceipt": client},
-        "cleanup": {"runner": _json_copy(cleanup), "preparedTree": prepared_cleanup},
-        "business": {"rawReceipt": server, "payload": _json_copy(business_payload), "payloadSha256": payload_sha},
-        "oracle": oracle_binding,
-    }
-    validate_provenance_receipt(receipt)
-    return receipt
-
-
-def validate_provenance_receipt(receipt: dict[str, object]) -> dict[str, object]:
-    expected = {"schemaVersion", "canonicalBase", "patches", "changedPaths", "input", "request", "runtime", "cleanup", "business", "oracle"}
-    if not isinstance(receipt, dict) or set(receipt) != expected or receipt.get("schemaVersion") != 1:
-        raise ValueError("provenance receipt schema mismatch")
-    canonical = receipt["canonicalBase"]
-    if not isinstance(canonical, dict) or set(canonical) != {"files", "sha256"} or type(canonical["files"]) is not int or canonical["files"] <= 0:
-        raise ValueError("canonical base identity mismatch")
-    _require_sha256(canonical["sha256"], "canonicalBase.sha256")
-    patches = receipt["patches"]
-    if not isinstance(patches, list) or not patches:
-        raise ValueError("patch set is empty")
-    roles: set[str] = set()
-    for patch in patches:
-        if not isinstance(patch, dict) or set(patch) != {"role", "sha256"} or not isinstance(patch["role"], str) or not patch["role"] or patch["role"] in roles:
-            raise ValueError("patch binding mismatch")
-        roles.add(patch["role"]); _require_sha256(patch["sha256"], "patch.sha256")
-    changed = receipt["changedPaths"]
-    if not isinstance(changed, list) or not changed or changed != sorted(set(changed)) or not all(isinstance(path, str) and path and not Path(path).is_absolute() and ".." not in Path(path).parts for path in changed):
-        raise ValueError("changed-path closure mismatch")
-    input_chain = receipt["input"]
-    if not isinstance(input_chain, dict) or set(input_chain) != {"prepared", "sourceBefore", "sourceAfter", "copiedBeforeFreeze", "frozen", "inputAfter"}:
-        raise ValueError("input chain mismatch")
-    prepared = _require_tree_identity(input_chain["prepared"], "input.prepared")
-    if any(_require_tree_identity(value, f"input.{key}") != prepared for key, value in input_chain.items()):
-        raise ValueError("prepared/frozen input mismatch")
-    request = receipt["request"]
-    if not isinstance(request, dict) or set(request) != {"payload", "sha256"} or request["sha256"] != _canonical_sha256(request["payload"]):
-        raise ValueError("request binding mismatch")
-    runtime = receipt["runtime"]
-    if not isinstance(runtime, dict) or set(runtime) != {"status", "completed", "clientReceipt"} or runtime["status"] != "runtime_contract_completed" or runtime["completed"] is not True:
-        raise ValueError("runtime is incomplete")
-    cleanup = receipt["cleanup"]
-    if not isinstance(cleanup, dict) or set(cleanup) != {"runner", "preparedTree"} or cleanup.get("preparedTree") != "discarded":
-        raise ValueError("prepared cleanup is incomplete")
-    runner_cleanup = cleanup["runner"]
-    if not isinstance(runner_cleanup, dict) or runner_cleanup.get("status") != "completed" or runner_cleanup.get("manualCleanupActions") != 0:
-        raise ValueError("runner cleanup is incomplete")
-    business = receipt["business"]
-    if not isinstance(business, dict) or set(business) != {"rawReceipt", "payload", "payloadSha256"} or business["payloadSha256"] != _canonical_sha256(business["payload"]):
-        raise ValueError("business payload binding mismatch")
-    for label, raw in (("client", runtime["clientReceipt"]), ("server", business["rawReceipt"])):
-        if not isinstance(raw, dict) or set(raw) != {"bytes", "sha256", "base64"}:
-            raise ValueError(f"{label} receipt binding mismatch")
-        decoded = base64.b64decode(raw["base64"], validate=True)
-        if raw["bytes"] != len(decoded) or raw["sha256"] != _sha256(decoded):
-            raise ValueError(f"{label} receipt byte/hash mismatch")
-    oracle = receipt["oracle"]
-    bindings = {"requestSha256": request["sha256"], "businessPayloadSha256": business["payloadSha256"], "serverReceiptSha256": business["rawReceipt"]["sha256"]}
-    if not isinstance(oracle, dict) or oracle.get("status") != "PASS" or any(oracle.get(key) != value for key, value in bindings.items()):
-        raise ValueError("task oracle binding mismatch")
-    return {"status": "PASS", "schemaVersion": 1}
-
-
 def prepare_patched_tree(
     *,
     repo_root: Path,
@@ -344,6 +213,8 @@ def prepare_patched_tree(
     prepared_root = _repo_relative(repo_root, prepared_root, field="preparedRoot", inside=prepared_base)
     if prepared_root == prepared_base:
         raise ValueError("preparedRoot must be a strict child of .local/prepared")
+    if not _disjoint(snapshot_root, prepared_root):
+        raise ValueError("snapshotRoot and preparedRoot must be disjoint")
     if not snapshot_root.is_dir() or snapshot_root.is_symlink():
         raise ValueError("snapshotRoot must be a non-symlink directory")
     if prepared_root.exists() or prepared_root.is_symlink():
