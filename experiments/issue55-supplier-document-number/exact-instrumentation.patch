@@ -1,8 +1,8 @@
 diff --git a/CommonModules/JetServerCall/Ext/Module.bsl b/CommonModules/JetServerCall/Ext/Module.bsl
-index 17aedb7..bc819f4 100644
+index 17aedb7..0cff7c7 100644
 --- a/CommonModules/JetServerCall/Ext/Module.bsl
 +++ b/CommonModules/JetServerCall/Ext/Module.bsl
-@@ -14,4 +14,47 @@ Function GetVATRateValue(VATRate) Export
+@@ -14,4 +14,72 @@ Function GetVATRateValue(VATRate) Export
  	
  EndFunction
  
@@ -33,6 +33,18 @@ index 17aedb7..bc819f4 100644
 +	RepostResult = Issue55TryWrite(First, True); Issue55Write(Writer, "repost_same_document", RepostResult.Succeeded);
 +	Control = Issue55NewInvoice(Warehouse.Ref, SupplierA.Ref, Currency.Ref, Product.Ref, "I55-002");
 +	ControlResult = Issue55TryWrite(Control, True); Issue55Write(Writer, "existing_behavior", ControlResult.Succeeded);
++	ConcurrentA = Issue55NewInvoice(Warehouse.Ref, SupplierA.Ref, Currency.Ref, Product.Ref, "I55-CONCURRENT"); ConcurrentA.Write();
++	ConcurrentB = Issue55NewInvoice(Warehouse.Ref, SupplierA.Ref, Currency.Ref, Product.Ref, "I55-CONCURRENT"); ConcurrentB.Write();
++	ConcurrentAPath = ReceiptPath + ".concurrent-a"; ConcurrentBPath = ReceiptPath + ".concurrent-b";
++	ConcurrentParametersA = New Array; ConcurrentParametersA.Add(ConcurrentAPath); ConcurrentParametersA.Add(ConcurrentA.Ref);
++	ConcurrentParametersB = New Array; ConcurrentParametersB.Add(ConcurrentBPath); ConcurrentParametersB.Add(ConcurrentB.Ref);
++	ConcurrentJobA = BackgroundJobs.Execute("JetServerCall.Issue55ConcurrentPost", ConcurrentParametersA);
++	ConcurrentJobB = BackgroundJobs.Execute("JetServerCall.Issue55ConcurrentPost", ConcurrentParametersB);
++	ConcurrentJobA.WaitForExecutionCompletion(); ConcurrentJobB.WaitForExecutionCompletion();
++	Issue55Write(Writer, "concurrent.jobs_started", 2);
++	Issue55Write(Writer, "concurrent.a.succeeded", Issue55ReadConcurrentResult(ConcurrentAPath)); Issue55WriteMovements(Writer, "concurrent.a", ConcurrentA.Ref);
++	Issue55Write(Writer, "concurrent.b.succeeded", Issue55ReadConcurrentResult(ConcurrentBPath)); Issue55WriteMovements(Writer, "concurrent.b", ConcurrentB.Ref);
++	Issue55Write(Writer, "concurrent.posted_count", Issue55PostedCount(SupplierA.Ref, "I55-CONCURRENT"));
 +	Issue55Write(Writer, "complete", "true"); Writer.Close(); Return ResponseToken;
 +EndFunction
 +
@@ -43,6 +55,19 @@ index 17aedb7..bc819f4 100644
 +
 +Function Issue55TryWrite(DocumentObject, Posting)
 +	Result = New Structure("Succeeded,Error", True, ""); Try If Posting Then DocumentObject.Write(DocumentWriteMode.Posting); Else DocumentObject.Write(); EndIf; Except Result.Succeeded = False; Result.Error = ErrorDescription(); EndTry; Return Result;
++EndFunction
++
++Procedure Issue55ConcurrentPost(ResultPath, DocumentRef) Export
++	Result = Issue55TryWrite(DocumentRef.GetObject(), True);
++	Writer = New TextWriter(ResultPath, TextEncoding.UTF8); Writer.Write(String(Result.Succeeded)); Writer.Close();
++EndProcedure
++
++Function Issue55ReadConcurrentResult(ResultPath)
++	Reader = New TextReader(ResultPath, TextEncoding.UTF8); Result = Reader.ReadLine(); Reader.Close(); Return Result;
++EndFunction
++
++Function Issue55PostedCount(Supplier, Number)
++	Query = New Query; Query.Text = "SELECT COUNT(*) AS Rows FROM Document.SupplierInvoice AS SupplierInvoice WHERE SupplierInvoice.Posted AND SupplierInvoice.Supplier = &Supplier AND SupplierInvoice.SupplierDocumentNumber = &Number"; Query.SetParameter("Supplier", Supplier); Query.SetParameter("Number", Number); Selection = Query.Execute().Select(); Selection.Next(); Return Selection.Rows;
 +EndFunction
 +
 +Procedure Issue55WriteMovements(Writer, Prefix, Recorder)

@@ -38,10 +38,10 @@ index 6d79ab8..a4444d3 100644
  							<DataPath>Object.Currency</DataPath>
  							<EditMode>EnterOnInput</EditMode>
 diff --git a/Documents/SupplierInvoice/Ext/ObjectModule.bsl b/Documents/SupplierInvoice/Ext/ObjectModule.bsl
-index dbf8986..71dc924 100644
+index dbf8986..b44a949 100644
 --- a/Documents/SupplierInvoice/Ext/ObjectModule.bsl
 +++ b/Documents/SupplierInvoice/Ext/ObjectModule.bsl
-@@ -10,6 +10,28 @@ EndProcedure
+@@ -10,6 +10,32 @@ EndProcedure
  
  Procedure Posting(Cancel, PostingMode)
  	
@@ -49,6 +49,10 @@ index dbf8986..71dc924 100644
 +		Common.MessageToUser(NStr("en = 'Specify the supplier document number before posting.'; tr = 'Göndermeden önce tedarikçi belge numarasını belirtin.'"),,,, Cancel);
 +		Return;
 +	EndIf;
++	DataLock = New DataLock;
++	LockItem = DataLock.Add("Document.SupplierInvoice");
++	LockItem.Mode = DataLockMode.Exclusive;
++	DataLock.Lock();
 +	Query = New Query;
 +	Query.Text = "SELECT TOP 1
 +	|	SupplierInvoice.Ref

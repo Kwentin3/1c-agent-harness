@@ -53,6 +53,21 @@ def main() -> int:
             for index in range(1, 5):
                 if server.get(f"{prefix}.movement{index}") != "0":
                     raise ValueError(f"rejected posting has movements: {prefix}.{index}")
+        if server.get("concurrent.jobs_started") != "2":
+            raise ValueError("two concurrent posting jobs were not started")
+        if server.get("concurrent.posted_count") != "1":
+            raise ValueError("concurrent uniqueness invariant failed")
+        concurrent = []
+        for name in ("a", "b"):
+            succeeded = yes(server.get(f"concurrent.{name}.succeeded", ""))
+            movement_values = [server.get(f"concurrent.{name}.movement{index}") for index in range(1, 5)]
+            if any(value is None or not value.isdigit() for value in movement_values):
+                raise ValueError(f"missing concurrent movements: {name}")
+            concurrent.append((succeeded, all(value == "0" for value in movement_values)))
+        if sum(1 for succeeded, _ in concurrent if succeeded) != 1:
+            raise ValueError("concurrent postings did not have exactly one winner")
+        if sum(1 for _, no_movements in concurrent if no_movements) != 1:
+            raise ValueError("concurrent rejected document lacks no-movement witness")
     except Exception as exc:
         print(f"FAIL: {exc}", file=__import__("sys").stderr)
         return 1
