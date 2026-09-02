@@ -65,7 +65,7 @@ def write_project(root: Path) -> None:
             "manifestSha256": sha256(manifest_payload),
             "fileCount": len(files),
         },
-        "dailyNativeRoute": "scripts/native_cycle.py run-prepared",
+        "dailyNativeRoute": "scripts/shared_task_route.py run",
     }
     (root / "project-target.json").write_text(
         json.dumps(contract, indent=2) + "\n", encoding="utf-8"
@@ -163,7 +163,7 @@ class ProjectTargetCliTests(unittest.TestCase):
             self.assertEqual(result["sourceCf"]["actualSha256"], result["sourceCf"]["expectedSha256"])
             self.assertEqual(result["snapshot"]["actualManifestSha256"], result["snapshot"]["expectedManifestSha256"])
             self.assertEqual(result["snapshot"]["actualFileCount"], 2)
-            self.assertEqual(result["dailyNativeRoute"], "scripts/native_cycle.py run-prepared")
+            self.assertEqual(result["dailyNativeRoute"], "scripts/shared_task_route.py run")
 
     def test_configuration_identity_uses_configuration_properties_only(self) -> None:
         with tempfile.TemporaryDirectory() as temporary:
@@ -241,7 +241,7 @@ class ProjectTargetCliTests(unittest.TestCase):
             self.assertEqual(completed.returncode, 1)
             self.assertEqual(
                 json.loads(completed.stdout)["reason"],
-                "dailyNativeRoute must be scripts/native_cycle.py run-prepared",
+                "dailyNativeRoute must be scripts/shared_task_route.py run",
             )
 
     def test_rejects_source_path_outside_repository(self) -> None:

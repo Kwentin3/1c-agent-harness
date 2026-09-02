@@ -48,6 +48,17 @@ def _receipt() -> dict[str, object]:
 
 
 class SharedTaskRouteTests(unittest.TestCase):
+    def test_committed_final_command_receipt_is_valid(self) -> None:
+        receipt = json.loads((
+            ROOT / "experiments/issue48-kiss-receipt/receipt.json"
+        ).read_text(encoding="utf-8"))
+        route.validate_receipt(receipt)
+        request = json.loads((
+            ROOT / "experiments/issue48-kiss-receipt/request.json"
+        ).read_text(encoding="utf-8"))
+        self.assertEqual(receipt["request"]["payload"], request)
+        self.assertEqual(receipt["result"]["oracle"]["status"], "PASS")
+
     def test_one_call_owns_prepare_identity_runner_oracle_receipt_and_cleanup(self) -> None:
         with tempfile.TemporaryDirectory() as temporary:
             repo = Path(temporary)

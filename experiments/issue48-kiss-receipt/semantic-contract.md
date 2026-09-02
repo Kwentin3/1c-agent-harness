@@ -65,3 +65,18 @@ storage service or task-specific provenance validator.
 | business oracle | `oracle.py` |
 
 `receipt.json` is command output, not an input or recurring implementation artifact.
+
+## Final-path native smoke
+
+The published command was invoked once with these five inputs and no preceding prepare command.
+The resulting `receipt.json` records:
+
+- production patch `4ebe30ff232822bd4a950b0d7ece25dad8c944c5e005dcc1b7e5a56759005343`;
+- instrumentation patch `45decea4cf7bc6a8b0ad52dd2274a3f9269d25aafe58a1418b533a33fca29fcc`;
+- prepared/runner/frozen input `93569aa33e4c34d2a982722156eae43050cd65e5cb0fca073fd982fb990798f2`;
+- request `a9f8486ea07c26c5e0664f0b65dd1725f82044a8d02db98baa2bc62585d299d9`;
+- task oracle `PASS`;
+- runner cleanup `completed`, zero manual actions, and prepared cleanup `discarded`.
+
+The native runner completed in 66.604 seconds. Canonical target verification remained `ready` and
+no owned 1C/Xvfb/native process or `shared-task-*` prepared directory remained afterward.
