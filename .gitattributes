@@ -5,3 +5,6 @@ experiments/issue12-narrow-context-20260826/patches/*.patch whitespace=-space-be
 # Exact Issue #43 BSL patches and CRLF receipts are byte evidence.
 experiments/issue43-inventory-transfer-core-loop/*.patch binary
 experiments/issue43-inventory-transfer-core-loop/*-receipt.txt binary
+
+# Exact task patches can contain CRLF bytes required by native replay.
+experiments/**/exact-*.patch binary

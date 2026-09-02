@@ -14,5 +14,5 @@
     "manifestSha256": "70972b5e11901ca31c7f7ec67dca03f78986206b024be01aeb34e0e1f3ff6691",
     "fileCount": 5099
   },
-  "dailyNativeRoute": "scripts/native_cycle.py run-prepared"
+  "dailyNativeRoute": "scripts/shared_task_route.py run"
 }

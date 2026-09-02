@@ -48,9 +48,32 @@ python3 scripts/project_target.py
 
 Для этого проекта target — canonical JetTr `1.0.3.1`; immutable CF/snapshot/manifest никогда не
 являются рабочей копией. После `ready` подготовленная task-specific копия размещается отдельно под
-`.local/prepared/`, а единственный повседневный native RED/GREEN route —
-`scripts/native_cycle.py run-prepared`. Низкоуровневый `run --spec` остаётся только expert/debug
-интерфейсом и не является альтернативным стартом задачи.
+`.local/prepared/`. Единственная продуктовая команда для прикладной проверки —
+[`scripts/shared_task_route.py run`](scripts/shared_task_route.py). Она сама создаёт disposable
+prepared path, применяет task-owned exact patches, вычисляет derived identities, вызывает
+низкоуровневый `native_cycle.py run-prepared`, передаёт raw receipts предметному oracle, возвращает
+короткий receipt и удаляет prepared tree. `native_cycle.py` остаётся внутренним lifecycle owner,
+а исторический `issue38_frontdoor.py` — только compatibility alias той же команды, не второй route.
+
+```bash
+python3 scripts/shared_task_route.py run \
+  --repo-root . \
+  --input-tree .local/runs/training-jet-review-final/snapshot \
+  --request experiments/<task>/request.json \
+  --production-patch experiments/<task>/exact-production.patch \
+  --instrumentation-patch experiments/<task>/exact-instrumentation.patch \
+  --complete-marker 'complete###true' \
+  --oracle experiments/<task>/oracle.py \
+  --receipt .local/<task>/receipt.json
+```
+
+Перед командой не нужен отдельный prepare, replay или расчёт `changedPaths`/`treeIdentity`.
+Стандартный receipt связывает canonical base, exact patch hashes, prepared/frozen input, свежий
+request, raw 1C receipts, oracle result и cleanup. Полный representative task layer —
+contract, request, exact production patch, exact instrumentation patch и maintainable oracle —
+показан в [`experiments/issue48-kiss-receipt`](experiments/issue48-kiss-receipt/).
+Исторические packages не переписываются, а candidate commit/tree и CI остаются ответственностью
+GitHub, не task validator.
 
 ## Цель MVP
 

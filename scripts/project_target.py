@@ -142,8 +142,8 @@ def verify(repo_root: Path) -> dict[str, object]:
     file_count_contract = contract["snapshot"]["fileCount"]
     if type(file_count_contract) is not int or file_count_contract < 1:
         raise ValueError("snapshot.fileCount must be a positive integer")
-    if contract["dailyNativeRoute"] != "scripts/native_cycle.py run-prepared":
-        raise ValueError("dailyNativeRoute must be scripts/native_cycle.py run-prepared")
+    if contract["dailyNativeRoute"] != "scripts/shared_task_route.py run":
+        raise ValueError("dailyNativeRoute must be scripts/shared_task_route.py run")
     source = _repo_path(repo_root, contract["sourceCf"]["path"], field="sourceCf.path")
     snapshot = _repo_path(repo_root, contract["snapshot"]["path"], field="snapshot.path")
     manifest = _repo_path(
