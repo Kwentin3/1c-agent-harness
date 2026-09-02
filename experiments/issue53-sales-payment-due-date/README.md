@@ -24,7 +24,7 @@ Context size: **5 files / 148 ranged source lines**. The nearest bypass is direc
 
 - adds optional date-only `PaymentDueDate` metadata;
 - exposes `Object.PaymentDueDate` beside the existing document date in the main form;
-- rejects a filled due date whose calendar day is earlier than the document calendar day, with an immediate return before posting initialization or movements.
+- rejects a filled due date whose calendar day is earlier than the document calendar day, reports `NStr`-localized English/Turkish text through the domain's existing `Common.MessageToUser(..., Cancel)` boundary, and immediately returns before posting initialization or movements.
 
 `BeforeWrite`, manager/common modules and register writers are unchanged.
 
@@ -39,7 +39,9 @@ The shared command produced [`receipt.json`](receipt.json) as its automatic outp
 - the existing insufficient-stock failure remains rejected;
 - metadata is optional, date-only and persisted.
 
-The first native invocation reached the correct business result but the host oracle rejected the platform's localized date rendering. After a normal local parser correction, the final shared-route invocation returned oracle `PASS` and wrote the receipt. This was not a business or 1C retry.
+The exact production patch statically binds the localized text to the existing `SalesInvoice` `Common.MessageToUser(..., Cancel)` boundary. The final native run exercises that guard: all four earlier-date attempts return a nonempty platform posting failure, remain unposted and leave every recorder movement and observed balance unchanged. Pixel-level message rendering is intentionally outside scope.
+
+This is a compact requalification through the new daily route of `PaymentDueDate`, a feature first investigated in Issue #23, plus new exposure in the standard document form. It is not evidence that the route solved a wholly unfamiliar business task. The Issue #23 oracle already parsed the platform's localized date rendering; the parser miss in the first Goal #53 delivery was a local transfer error, not evidence of a shared-boundary defect.
 
 ## Cost
 
@@ -50,7 +52,9 @@ The first native invocation reached the correct business result but the host ora
 | shared native route, parser correction and final receipt | 264 s |
 | **Total to local terminal receipt** | **1,035 s** |
 
-The dominant miss was pre-native adaptation of the older payment-date probe to the new shared client/server receipt boundary. No new generic component was added; the adaptation stays task-owned.
+Owner correction elapsed to its replacement local receipt: **483.070 s**, measured separately. It does not reset or improve the original 1,035 s result.
+
+The largest measured phase was context/search at **509 s**. Probe adaptation also contributed inside later phases, but the published breakdown does not support calling it the sole or primary delay. No new generic component was added. The original elapsed and verdict remain unchanged by the owner correction; its additional elapsed is reported separately in the terminal update.
 
 ## Cleanup and limits
 

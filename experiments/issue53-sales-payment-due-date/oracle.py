@@ -60,6 +60,7 @@ def evaluate(request,client_bytes,server_bytes):
   if boolv(s,f"{case}.postedAfter") or any(num(s,f"{case}.movements.{x}")!=0 for x in MOV): raise ValueError(f"invalid posting moved {case}")
   if any(num(s,f"{case}.before.{x}")!=num(s,f"{case}.after.{x}") for x in STATE): raise ValueError(f"state changed {case}")
  for case in ("N1","N2","N3","N4"):
+  if boolv(s,f"{case}.postCallSucceeded") or not s[f"{case}.postError"][0]: raise ValueError(f"message-boundary rejection missing {case}")
   if not datev(s,f"{case}.dueDateInput").date()<datev(s,f"{case}.documentDate").date(): raise ValueError(f"not earlier {case}")
  if datev(s,"B1.dueDateInput").date()!=datev(s,"B1.documentDate").date(): raise ValueError("same-day case wrong")
  if datev(s,"R1.dueDateInput").year!=1: raise ValueError("blank case wrong")

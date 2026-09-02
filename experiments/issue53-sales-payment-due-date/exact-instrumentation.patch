@@ -259,7 +259,7 @@ index 17aedb7..b006fe5 100644
  #EndRegion
 \ No newline at end of file
 diff --git a/Ext/ManagedApplicationModule.bsl b/Ext/ManagedApplicationModule.bsl
-index 03ca2b2..65407d8 100644
+index 03ca2b2..010863d 100644
 --- a/Ext/ManagedApplicationModule.bsl
 +++ b/Ext/ManagedApplicationModule.bsl
 @@ -55,6 +55,17 @@ EndProcedure
@@ -267,7 +267,7 @@ index 03ca2b2..65407d8 100644
  Procedure OnStart()
  	
 +	ClientWriter = New TextWriter(LaunchParameter, TextEncoding.UTF8);
-+	RunId = "6a57882e-18af-4cf9-ba17-0f0537776010"; CaseId = "4fb0682b-d33e-48a2-8ede-5320e75413ef"; Nonce = "d3174bfd-b748-4a98-bb9b-923f118b5bb6";
++	RunId = "1aa344ea-8731-4dfa-9414-61dcd01253f9"; CaseId = "549bc14d-32e4-4cfd-8ced-dfb88f093031"; Nonce = "5357bade-ae85-4d10-832d-e6c83ac1050b";
 +	Issue53WriteClient(ClientWriter, "runId", RunId); Issue53WriteClient(ClientWriter, "caseId", CaseId); Issue53WriteClient(ClientWriter, "nonce", Nonce);
 +	Try
 +		ResponseToken = JetServerCall.Issue23RuntimeProbe(LaunchParameter + ".server", RunId, CaseId, Nonce);

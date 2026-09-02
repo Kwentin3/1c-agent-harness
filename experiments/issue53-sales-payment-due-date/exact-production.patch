@@ -1,13 +1,14 @@
 diff --git a/Documents/SalesInvoice/Ext/ObjectModule.bsl b/Documents/SalesInvoice/Ext/ObjectModule.bsl
-index 1c308bf..b8c9fce 100644
+index 1c308bf..7419332 100644
 --- a/Documents/SalesInvoice/Ext/ObjectModule.bsl
 +++ b/Documents/SalesInvoice/Ext/ObjectModule.bsl
-@@ -13,6 +13,11 @@ EndProcedure
+@@ -13,6 +13,12 @@ EndProcedure
  
  Procedure Posting(Cancel, PostingMode)
  	
 +	If ValueIsFilled(PaymentDueDate) And BegOfDay(PaymentDueDate) < BegOfDay(Date) Then
-+		Cancel = True;
++		MessageText = NStr("en = 'Payment due date cannot be earlier than the document date.'; tr = 'Ödeme vade tarihi belge tarihinden önce olamaz.'");
++		Common.MessageToUser(MessageText,,,, Cancel);
 +		Return;
 +	EndIf;
 +	
