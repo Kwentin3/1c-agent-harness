@@ -23,6 +23,12 @@ For the accepted GREEN request:
 
 The generic receipt code contains no SupplierInvoice, warehouse, register or task-field names.
 
+The real shared seam was confirmed once on the accepted Issue 46 business candidate: one native
+invocation completed in 94.852 seconds, the task oracle accepted the fresh raw receipts, runner and
+prepared-tree cleanup completed, and the canonical target returned to `ready`. `receipt.json` is the
+compact standard receipt from that exact smoke; raw logs and disposable infobase remain executor-local.
+No RED, repeat, or additional native invocation was performed.
+
 ## Compactness
 
 This representative task layer contains only this contract, one standard receipt and one oracle. It has no task manifest, replay/preparer, lifecycle/cleanup implementation, large validator, duplicated Base64 receipt, candidate SHA, or task-specific mutation suite.
