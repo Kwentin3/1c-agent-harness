@@ -1,0 +1,72 @@
+diff --git a/Documents/SupplierInvoice.xml b/Documents/SupplierInvoice.xml
+index d9c6480..21a42c8 100644
+--- a/Documents/SupplierInvoice.xml
++++ b/Documents/SupplierInvoice.xml
+@@ -297,6 +297,18 @@
+ 					<DataHistory>Use</DataHistory>
+ 				</Properties>
+ 			</Attribute>
++			<Attribute uuid="5bc443f2-8eaf-44ba-b939-86f3e24ec4e0">
++				<Properties>
++					<Name>SupplierDocumentNumber</Name>
++					<Synonym>
++						<v8:item><v8:lang>en</v8:lang><v8:content>Supplier document number</v8:content></v8:item>
++						<v8:item><v8:lang>tr</v8:lang><v8:content>Tedarikçi belge numarası</v8:content></v8:item>
++					</Synonym>
++					<Comment/>
++					<Type><v8:Type>xs:string</v8:Type><v8:StringQualifiers><v8:Length>50</v8:Length><v8:AllowedLength>Variable</v8:AllowedLength></v8:StringQualifiers></Type>
++					<PasswordMode>false</PasswordMode><Format/><EditFormat/><ToolTip/><MarkNegatives>false</MarkNegatives><Mask/><MultiLine>false</MultiLine><ExtendedEdit>false</ExtendedEdit><MinValue xsi:nil="true"/><MaxValue xsi:nil="true"/><FillChecking>DontCheck</FillChecking><ChoiceFoldersAndItems>Items</ChoiceFoldersAndItems><ChoiceParameterLinks/><ChoiceParameters/><QuickChoice>Auto</QuickChoice><CreateOnInput>Auto</CreateOnInput><ChoiceForm/><LinkByType/><ChoiceHistoryOnInput>Auto</ChoiceHistoryOnInput><Indexing>DontIndex</Indexing><FullTextSearch>Use</FullTextSearch><DataHistory>Use</DataHistory>
++				</Properties>
++			</Attribute>
+ 			<Attribute uuid="1d0ac06b-e222-4028-b542-e8dd5115d0ee">
+ 				<Properties>
+ 					<Name>Warehouse</Name>
+diff --git a/Documents/SupplierInvoice/Forms/DocumentForm/Ext/Form.xml b/Documents/SupplierInvoice/Forms/DocumentForm/Ext/Form.xml
+index 6d79ab8..a4444d3 100644
+--- a/Documents/SupplierInvoice/Forms/DocumentForm/Ext/Form.xml
++++ b/Documents/SupplierInvoice/Forms/DocumentForm/Ext/Form.xml
+@@ -57,6 +57,11 @@
+ 							<ContextMenu name="SupplierContextMenu" id="8"/>
+ 							<ExtendedTooltip name="SupplierExtendedTooltip" id="9"/>
+ 						</InputField>
++						<InputField name="SupplierDocumentNumber" id="241">
++							<DataPath>Object.SupplierDocumentNumber</DataPath>
++							<EditMode>EnterOnInput</EditMode><AutoEditMode>true</AutoEditMode><ExtendedEditMultipleValues>true</ExtendedEditMultipleValues>
++							<ContextMenu name="SupplierDocumentNumberContextMenu" id="242"/><ExtendedTooltip name="SupplierDocumentNumberExtendedTooltip" id="243"/>
++						</InputField>
+ 						<InputField name="Currency" id="13">
+ 							<DataPath>Object.Currency</DataPath>
+ 							<EditMode>EnterOnInput</EditMode>
+diff --git a/Documents/SupplierInvoice/Ext/ObjectModule.bsl b/Documents/SupplierInvoice/Ext/ObjectModule.bsl
+index dbf8986..71dc924 100644
+--- a/Documents/SupplierInvoice/Ext/ObjectModule.bsl
++++ b/Documents/SupplierInvoice/Ext/ObjectModule.bsl
+@@ -10,6 +10,28 @@ EndProcedure
+ 
+ Procedure Posting(Cancel, PostingMode)
+ 	
++	If Not ValueIsFilled(SupplierDocumentNumber) Then
++		Common.MessageToUser(NStr("en = 'Specify the supplier document number before posting.'; tr = 'Göndermeden önce tedarikçi belge numarasını belirtin.'"),,,, Cancel);
++		Return;
++	EndIf;
++	Query = New Query;
++	Query.Text = "SELECT TOP 1
++	|	SupplierInvoice.Ref
++	|FROM
++	|	Document.SupplierInvoice AS SupplierInvoice
++	|WHERE
++	|	SupplierInvoice.Posted
++	|	AND SupplierInvoice.Supplier = &Supplier
++	|	AND SupplierInvoice.SupplierDocumentNumber = &SupplierDocumentNumber
++	|	AND SupplierInvoice.Ref <> &Ref";
++	Query.SetParameter("Supplier", Supplier);
++	Query.SetParameter("SupplierDocumentNumber", SupplierDocumentNumber);
++	Query.SetParameter("Ref", Ref);
++	If Not Query.Execute().IsEmpty() Then
++		Common.MessageToUser(NStr("en = 'A posted supplier invoice with this supplier document number already exists.'; tr = 'Bu tedarikçi belge numarasına sahip gönderilmiş bir tedarikçi faturası zaten var.'"),,,, Cancel);
++		Return;
++	EndIf;
++
+ 	// Initialization of additional properties for document posting.
+ 	PostingManagement.InitializeAdditionalPropertiesForPosting(Ref, AdditionalProperties);
+ 	
