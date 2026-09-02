@@ -147,10 +147,10 @@ index 03ca2b2..e813b78 100644
  	
 +
 +	ClientWriter = New TextWriter(LaunchParameter, TextEncoding.UTF8);
-+	RunId = "f6954c86-b101-45d5-ac80-54133a3987a2";
-+	DeletedCaseId = "2fac3bec-0dbf-42c8-bd56-920bc95b6cb6";
-+	ActiveCaseId = "22fa5cb5-1d8d-46f6-9f61-0eeea84b725e";
-+	Nonce = "961f3ce8-c810-4abf-9a2b-b4216c5f3f9f";
++	RunId = "f0fce595-da76-46b1-9773-4e6336c98f2e";
++	DeletedCaseId = "68fb10c7-c809-4f5f-afdc-489d427f6d4c";
++	ActiveCaseId = "be26b700-c902-47cf-b2fa-2a9e853377e9";
++	Nonce = "5598bbd9-2657-4865-9ca5-5a93f39981d6";
 +	Issue46WriteClientObservation(ClientWriter, "runId", RunId);
 +	Issue46WriteClientObservation(ClientWriter, "deletedCaseId", DeletedCaseId);
 +	Issue46WriteClientObservation(ClientWriter, "activeCaseId", ActiveCaseId);
