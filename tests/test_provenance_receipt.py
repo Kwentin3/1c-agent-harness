@@ -97,6 +97,15 @@ class ProvenanceReceiptTests(unittest.TestCase):
             (source / "A.txt").write_text("before\n", encoding="utf-8")
             prepared = repo / ".local/prepared/task"
             patch = b"--- a/A.txt\n+++ b/A.txt\n@@ -1 +1 @@\n-before\n+after\n"
+            prepared.parent.mkdir(parents=True)
+            prepared.mkdir()
+            (prepared / "A.txt").write_text("before\n", encoding="utf-8")
+            ignored = subprocess.run(
+                ["git", "check-ignore", "-q", str(prepared / "A.txt")], cwd=repo,
+            )
+            self.assertEqual(ignored.returncode, 0, "regression fixture must be ignored by the enclosing worktree")
+            (prepared / "A.txt").unlink()
+            prepared.rmdir()
 
             audit = N.prepare_patched_tree(
                 repo_root=repo,

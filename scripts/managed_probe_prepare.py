@@ -13,6 +13,7 @@ import base64
 import difflib
 import hashlib
 import json
+import os
 from pathlib import Path
 import re
 import shutil
@@ -379,6 +380,7 @@ def prepare_patched_tree(
                 completed = _run(
                     command,
                     cwd=prepared_root,
+                    env={**os.environ, "GIT_CEILING_DIRECTORIES": str(prepared_root.parent)},
                     input=payload,
                     stdout=PIPE,
                     stderr=PIPE,
