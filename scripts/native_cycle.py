@@ -21,6 +21,7 @@ from typing import Optional
 
 XVFB_SCREEN = "-screen 0 1280x1024x8 -nolisten tcp"
 PR_SET_CHILD_SUBREAPER = 36
+CANONICAL_COMPLETE_MARKER = "complete###true"
 
 
 class _ReceiptChangedDuringRead(RuntimeError):
@@ -277,7 +278,6 @@ def _new_invocation_root(repo_root: Path) -> Path:
 def prepare_invocation(
     repo_root: Path,
     input_tree_value: str,
-    complete_marker: str,
     timeout_seconds: int,
     invocation_root: Optional[Path] = None,
 ) -> SimpleNamespace:
@@ -292,10 +292,6 @@ def prepare_invocation(
         raise ValueError("inputTree must be inside .local/prepared") from exc
     if input_tree == prepared_root:
         raise ValueError("inputTree must be inside .local/prepared")
-    if not isinstance(complete_marker, str) or not complete_marker:
-        raise ValueError("completeMarker must be a non-empty string")
-    if "\n" in complete_marker or "\r" in complete_marker:
-        raise ValueError("completeMarker must be a single line")
     if type(timeout_seconds) is not int or not 1 <= timeout_seconds <= 3600:
         raise ValueError("timeoutSeconds must be an integer from 1 to 3600")
 
@@ -335,7 +331,7 @@ def prepare_invocation(
             "inputTreeSha256": frozen_identity["sha256"],
             "runRoot": run_root.relative_to(repo_root).as_posix(),
             "receipt": "evidence/receipt.txt",
-            "completeMarker": complete_marker,
+            "completeMarker": CANONICAL_COMPLETE_MARKER,
             "timeoutSeconds": timeout_seconds,
         }
         _write_json_atomic(spec_path, spec)
@@ -1035,7 +1031,6 @@ def _prepared_invocation_fields(
 def run_prepared(
     repo_root: Path,
     input_tree_value: str,
-    complete_marker: str,
     timeout_seconds: int,
 ) -> dict[str, object]:
     repo_root = repo_root.resolve()
@@ -1045,7 +1040,6 @@ def run_prepared(
         invocation = prepare_invocation(
             repo_root,
             input_tree_value,
-            complete_marker,
             timeout_seconds,
             invocation_root=invocation_root,
         )
@@ -1196,7 +1190,6 @@ def main(argv: Optional[list[str]] = None) -> int:
         help="freeze, fingerprint, bind, and run one prepared tree",
     )
     prepared_parser.add_argument("--input-tree", required=True)
-    prepared_parser.add_argument("--complete-marker", required=True)
     prepared_parser.add_argument("--timeout-seconds", required=True, type=int)
     prepared_parser.add_argument("--repo-root", type=Path, default=Path.cwd())
     args = parser.parse_args(argv)
@@ -1207,7 +1200,6 @@ def main(argv: Optional[list[str]] = None) -> int:
             result = run_prepared(
                 repo_root,
                 args.input_tree,
-                args.complete_marker,
                 args.timeout_seconds,
             )
         except Exception as exc:

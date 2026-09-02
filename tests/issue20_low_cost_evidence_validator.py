@@ -4,6 +4,7 @@ import gzip
 import hashlib
 import json
 from pathlib import Path
+import subprocess
 from typing import Optional
 
 REPO_ROOT = Path(__file__).resolve().parents[1]
@@ -68,6 +69,20 @@ REQUIRED_PER_RUN = {
 
 def sha256(path: Path) -> str:
     return hashlib.sha256(path.read_bytes()).hexdigest()
+
+
+def _candidate_file_sha256(relative: str) -> str:
+    tree = subprocess.run(
+        ["git", "rev-parse", f"{CANDIDATE_COMMIT}^{{tree}}"],
+        cwd=REPO_ROOT, text=True, capture_output=True,
+    )
+    assert tree.returncode == 0 and tree.stdout.strip() == CANDIDATE_TREE
+    source = subprocess.run(
+        ["git", "show", f"{CANDIDATE_COMMIT}:{relative}"],
+        cwd=REPO_ROOT, capture_output=True,
+    )
+    assert source.returncode == 0
+    return hashlib.sha256(source.stdout).hexdigest()
 
 
 def _native_repo_root(result: dict[str, object]) -> str:
@@ -151,7 +166,7 @@ def validate_package(package: Path) -> None:
         "codeIdentity": CODE_IDENTITY,
     }
     assert CODE_IDENTITY == {
-        relative: sha256(REPO_ROOT / relative) for relative in CODE_IDENTITY
+        relative: _candidate_file_sha256(relative) for relative in CODE_IDENTITY
     }
 
     snapshot = json.loads((package / "snapshot-verification.json").read_text(encoding="utf-8"))
