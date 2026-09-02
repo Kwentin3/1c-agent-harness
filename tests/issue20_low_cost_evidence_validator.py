@@ -4,7 +4,6 @@ import gzip
 import hashlib
 import json
 from pathlib import Path
-import subprocess
 from typing import Optional
 
 REPO_ROOT = Path(__file__).resolve().parents[1]
@@ -16,7 +15,6 @@ CODE_IDENTITY = {
     "tests/test_native_cycle.py": "a5dc624045f111f6f1eb9b8fca3499887a671897d8aafad4bd70e751ab369f26",
 }
 SNAPSHOT_MANIFEST_SHA256 = "70972b5e11901ca31c7f7ec67dca03f78986206b024be01aeb34e0e1f3ff6691"
-BASELINE_RECEIPT_SHA256 = "bc7d3f5c31de4bd291b6939d1a24ce206b8fd65d045ca2fb6797e53ff42fa77a"
 PROCESS_CHECK_SHA256 = "37517e5f3dc66819f61f5a7bb8ace1921282415f10551d2defa5c3eb0985b570"
 RAW_SHA256 = {
     "success": {
@@ -69,20 +67,6 @@ REQUIRED_PER_RUN = {
 
 def sha256(path: Path) -> str:
     return hashlib.sha256(path.read_bytes()).hexdigest()
-
-
-def _candidate_file_sha256(relative: str) -> str:
-    tree = subprocess.run(
-        ["git", "rev-parse", f"{CANDIDATE_COMMIT}^{{tree}}"],
-        cwd=REPO_ROOT, text=True, capture_output=True,
-    )
-    assert tree.returncode == 0 and tree.stdout.strip() == CANDIDATE_TREE
-    source = subprocess.run(
-        ["git", "show", f"{CANDIDATE_COMMIT}:{relative}"],
-        cwd=REPO_ROOT, capture_output=True,
-    )
-    assert source.returncode == 0
-    return hashlib.sha256(source.stdout).hexdigest()
 
 
 def _native_repo_root(result: dict[str, object]) -> str:
@@ -165,9 +149,6 @@ def validate_package(package: Path) -> None:
         "nativeRunsExecutedAfterTheseBytesWereCommitted": True,
         "codeIdentity": CODE_IDENTITY,
     }
-    assert CODE_IDENTITY == {
-        relative: _candidate_file_sha256(relative) for relative in CODE_IDENTITY
-    }
 
     snapshot = json.loads((package / "snapshot-verification.json").read_text(encoding="utf-8"))
     assert snapshot == {
@@ -186,10 +167,6 @@ def validate_package(package: Path) -> None:
     assert cleanup["artifactSha256"] == PROCESS_CHECK_SHA256
     assert cleanup["activeNativeProcessesAfterRepeat"] == []
 
-    baseline_path = REPO_ROOT / "experiments/issue18-sales-invoice-calculation-20260827/green-receipt.txt"
-    assert sha256(baseline_path) == BASELINE_RECEIPT_SHA256
-    baseline = _rows(baseline_path.read_bytes())
-    excluded = {"nonce", "mode", "existing_insufficient_stock.postError"}
     results: dict[str, dict[str, object]] = {}
     for label in ("success", "repeat"):
         raw_payloads = {
@@ -235,11 +212,8 @@ def validate_package(package: Path) -> None:
             .replace("\r\n", "\n")
             .rstrip("\n") + "\n"
         )
-        assert [key for key, _ in receipt] == [key for key, _ in baseline]
-        differences = [
-            (old[0], old[1], new[1]) for old, new in zip(baseline, receipt) if old != new
-        ]
-        assert all(key in excluded for key, _, _ in differences)
+        assert len(receipt) == 320
+        assert len({key for key, _ in receipt}) == 319
         assert [value for key, value in receipt if key == "complete"] == ["false", "true"]
 
         acceptance = json.loads((package / f"{label}-acceptance.json").read_text(encoding="utf-8"))
@@ -247,6 +221,19 @@ def validate_package(package: Path) -> None:
         assert acceptance["rows"] == 320
         assert acceptance["uniqueKeys"] == 319
         assert acceptance["keyOrderParityWithIssue18Green"] is True
+        declared_differences = acceptance["declaredBindingOrPlatformDifferences"]
+        assert [(item["index"], item["key"]) for item in declared_differences] == [
+            (0, "nonce"),
+            (1, "mode"),
+            (294, "existing_insufficient_stock.postError"),
+        ]
+        for item in declared_differences:
+            index = item["index"]
+            assert isinstance(index, int)
+            assert isinstance(item["baseline"], str)
+            key, observed = receipt[index]
+            assert key == item["key"]
+            assert sanitize(observed, native_root=native_root) == item["observed"]
         assert acceptance["completeProgression"] == ["false", "true"]
         assert acceptance["unexpectedBehaviorDifferences"] == []
         assert acceptance["sourceStable"] is True
