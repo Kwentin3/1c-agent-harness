@@ -1,0 +1,54 @@
+diff --git a/Documents/SalesInvoice/Ext/ObjectModule.bsl b/Documents/SalesInvoice/Ext/ObjectModule.bsl
+index 1c308bf..b8c9fce 100644
+--- a/Documents/SalesInvoice/Ext/ObjectModule.bsl
++++ b/Documents/SalesInvoice/Ext/ObjectModule.bsl
+@@ -13,6 +13,11 @@ EndProcedure
+ 
+ Procedure Posting(Cancel, PostingMode)
+ 	
++	If ValueIsFilled(PaymentDueDate) And BegOfDay(PaymentDueDate) < BegOfDay(Date) Then
++		Cancel = True;
++		Return;
++	EndIf;
++	
+ 	// EDI
+ 	If EDIServer.DocumentCanceled(Ref) Then
+ 		MessageText = NStr("en = 'Document has already been canceled on EDI system. It is prohibited to post documents after cancelation.'; tr = 'Belge EDI sisteminde iptal edilmiştir. İptal edildikten sonra belge kaydedilemez.'");
+diff --git a/Documents/SalesInvoice/Forms/DocumentForm/Ext/Form.xml b/Documents/SalesInvoice/Forms/DocumentForm/Ext/Form.xml
+index b0aa8a4..d71632f 100644
+--- a/Documents/SalesInvoice/Forms/DocumentForm/Ext/Form.xml
++++ b/Documents/SalesInvoice/Forms/DocumentForm/Ext/Form.xml
+@@ -290,6 +290,11 @@
+ 									<ContextMenu name="DateContextMenu" id="5"/>
+ 									<ExtendedTooltip name="DateExtendedTooltip" id="6"/>
+ 								</InputField>
++								<InputField name="PaymentDueDate" id="5000">
++									<DataPath>Object.PaymentDueDate</DataPath>
++									<EditMode>EnterOnInput</EditMode><AutoEditMode>true</AutoEditMode><ExtendedEditMultipleValues>true</ExtendedEditMultipleValues>
++									<ContextMenu name="PaymentDueDateContextMenu" id="5001"/><ExtendedTooltip name="PaymentDueDateExtendedTooltip" id="5002"/>
++								</InputField>
+ 							</ChildItems>
+ 						</UsualGroup>
+ 						<InputField name="PriceType" id="125">
+diff --git a/Documents/SalesInvoice.xml b/Documents/SalesInvoice.xml
+index 2a3eff2..b2864e3 100644
+--- a/Documents/SalesInvoice.xml
++++ b/Documents/SalesInvoice.xml
+@@ -1061,6 +1061,17 @@
+ 					<DataHistory>Use</DataHistory>
+ 				</Properties>
+ 			</Attribute>
++			<Attribute uuid="8b626a4a-0f1d-4dd7-81e6-72cc3308a23e">
++				<Properties>
++					<Name>PaymentDueDate</Name>
++					<Synonym><v8:item><v8:lang>en</v8:lang><v8:content>Payment due date</v8:content></v8:item><v8:item><v8:lang>tr</v8:lang><v8:content>Ödeme vade tarihi</v8:content></v8:item></Synonym>
++					<Comment/>
++					<Type><v8:Type>xs:dateTime</v8:Type><v8:DateQualifiers><v8:DateFractions>Date</v8:DateFractions></v8:DateQualifiers></Type>
++					<PasswordMode>false</PasswordMode><Format/><EditFormat/><ToolTip/><MarkNegatives>false</MarkNegatives><Mask/><MultiLine>false</MultiLine><ExtendedEdit>false</ExtendedEdit>
++					<MinValue xsi:nil="true"/><MaxValue xsi:nil="true"/><FillFromFillingValue>false</FillFromFillingValue><FillValue xsi:nil="true"/><FillChecking>DontCheck</FillChecking>
++					<ChoiceFoldersAndItems>Items</ChoiceFoldersAndItems><ChoiceParameterLinks/><ChoiceParameters/><QuickChoice>Auto</QuickChoice><CreateOnInput>Auto</CreateOnInput><ChoiceForm/><LinkByType/><ChoiceHistoryOnInput>Auto</ChoiceHistoryOnInput><Indexing>DontIndex</Indexing><FullTextSearch>Use</FullTextSearch><DataHistory>Use</DataHistory>
++				</Properties>
++			</Attribute>
+ 			<Form>DocumentForm</Form>
+ 			<Form>ListForm</Form>
+ 			<Form>ChoiceForm</Form>
