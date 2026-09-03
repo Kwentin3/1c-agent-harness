@@ -42,6 +42,22 @@ def element_text(element: ET.Element | None) -> str:
     return (element.text or "").strip() if element is not None else ""
 
 
+def deep_text(element: ET.Element | None) -> str:
+    return "".join(element.itertext()).strip() if element is not None else ""
+
+
+def object_properties(element: ET.Element) -> ET.Element:
+    return first_child(element, "Properties") or element
+
+
+def object_name(element: ET.Element) -> str:
+    return element_text(first_child(object_properties(element), "Name")) or element_text(element)
+
+
+def object_type(element: ET.Element) -> str | None:
+    return deep_text(first_child(object_properties(element), "Type")) or None
+
+
 def text_lines(path: Path) -> list[str]:
     return path.read_text(encoding="utf-8-sig", errors="strict").splitlines()
 
@@ -122,42 +138,42 @@ def parse_descriptor(snapshot: Path, name: str) -> tuple[dict[str, Any], list[di
     if document is None or properties is None or element_text(first_child(properties, "Name")) != name:
         raise InputBlocked("snapshot_invalid", f"descriptor identity mismatch: {relative.as_posix()}")
 
-    def named_items(parent_name: str, item_name: str) -> list[dict[str, Any]]:
-        parent = first_child(properties, parent_name)
+    child_objects = first_child(document, "ChildObjects")
+
+    def named_items(item_name: str) -> list[dict[str, Any]]:
         result: list[dict[str, Any]] = []
-        if parent is None:
+        if child_objects is None:
             return result
-        for item in children(parent, item_name):
-            item_name_value = element_text(first_child(item, "Name"))
+        for item in children(child_objects, item_name):
+            item_name_value = object_name(item)
             if not item_name_value:
                 continue
             result.append(
                 {
                     "name": item_name_value,
-                    "type": element_text(first_child(item, "Type")) or None,
+                    "type": object_type(item),
                     "locator": locator(relative, find_line(lines, f"<Name>{item_name_value}</Name>")),
                 }
             )
         return result
 
-    attributes = named_items("Attributes", "Attribute")
+    attributes = named_items("Attribute")
     tabular_sections: list[dict[str, Any]] = []
-    sections = first_child(properties, "TabularSections")
-    if sections is not None:
-        for section in children(sections, "TabularSection"):
-            section_name = element_text(first_child(section, "Name"))
+    if child_objects is not None:
+        for section in children(child_objects, "TabularSection"):
+            section_name = object_name(section)
             if not section_name:
                 continue
             section_attributes: list[dict[str, Any]] = []
-            section_attributes_node = first_child(section, "Attributes")
+            section_attributes_node = first_child(section, "ChildObjects") or first_child(section, "Attributes")
             if section_attributes_node is not None:
                 for child in children(section_attributes_node, "Attribute"):
-                    child_name = element_text(first_child(child, "Name"))
+                    child_name = object_name(child)
                     if child_name:
                         section_attributes.append(
                             {
                                 "name": child_name,
-                                "type": element_text(first_child(child, "Type")) or None,
+                                "type": object_type(child),
                                 "locator": locator(relative, find_line(lines, f"<Name>{child_name}</Name>")),
                             }
                         )
@@ -172,8 +188,8 @@ def parse_descriptor(snapshot: Path, name: str) -> tuple[dict[str, Any], list[di
         "descriptor": {"name": name, "kind": "Document", "locator": locator(relative, find_line(lines, f"<Name>{name}</Name>"))},
         "attributes": sorted(attributes, key=lambda value: value["name"]),
         "tabularSections": sorted(tabular_sections, key=lambda value: value["name"]),
-        "forms": sorted(element_text(item) for item in children(first_child(properties, "Forms") or ET.Element("empty"), "Form") if element_text(item)),
-        "templates": sorted(element_text(item) for item in children(first_child(properties, "Templates") or ET.Element("empty"), "Template") if element_text(item)),
+        "forms": sorted(object_name(item) for item in children(child_objects or ET.Element("empty"), "Form") if object_name(item)),
+        "templates": sorted(object_name(item) for item in children(child_objects or ET.Element("empty"), "Template") if object_name(item)),
     }
     return metadata, collect_owned_artifacts(snapshot, name)
 

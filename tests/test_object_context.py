@@ -34,15 +34,13 @@ def write_document_snapshot(root: Path, name: str = "GoodsReceipt") -> Path:
   <Document>
     <Properties>
       <Name>{name}</Name>
-      <Attributes>
-        <Attribute><Name>Warehouse</Name><Type>CatalogRef.Warehouses</Type></Attribute>
-      </Attributes>
-      <TabularSections>
-        <TabularSection><Name>Goods</Name><Attributes><Attribute><Name>Product</Name><Type>CatalogRef.Products</Type></Attribute></Attributes></TabularSection>
-      </TabularSections>
-      <Forms><Form>DocumentForm</Form></Forms>
-      <Templates><Template>PrintForm</Template></Templates>
     </Properties>
+    <ChildObjects>
+      <Attribute><Name>Warehouse</Name><Type>CatalogRef.Warehouses</Type></Attribute>
+      <TabularSection><Name>Goods</Name><Attributes><Attribute><Name>Product</Name><Type>CatalogRef.Products</Type></Attribute></Attributes></TabularSection>
+      <Form><Name>DocumentForm</Name></Form>
+      <Template><Name>PrintForm</Name></Template>
+    </ChildObjects>
   </Document>
 </MetaDataObject>
 """,
