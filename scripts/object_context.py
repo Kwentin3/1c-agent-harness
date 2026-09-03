@@ -46,8 +46,13 @@ def deep_text(element: ET.Element | None) -> str:
     return "".join(element.itertext()).strip() if element is not None else ""
 
 
+def first_present(*elements: ET.Element | None) -> ET.Element | None:
+    return next((element for element in elements if element is not None), None)
+
+
 def object_properties(element: ET.Element) -> ET.Element:
-    return first_child(element, "Properties") or element
+    properties = first_child(element, "Properties")
+    return properties if properties is not None else element
 
 
 def object_name(element: ET.Element) -> str:
@@ -158,6 +163,7 @@ def parse_descriptor(snapshot: Path, name: str) -> tuple[dict[str, Any], list[di
         return result
 
     attributes = named_items("Attribute")
+    child_objects_or_empty = child_objects if child_objects is not None else ET.Element("empty")
     tabular_sections: list[dict[str, Any]] = []
     if child_objects is not None:
         for section in children(child_objects, "TabularSection"):
@@ -165,7 +171,9 @@ def parse_descriptor(snapshot: Path, name: str) -> tuple[dict[str, Any], list[di
             if not section_name:
                 continue
             section_attributes: list[dict[str, Any]] = []
-            section_attributes_node = first_child(section, "ChildObjects") or first_child(section, "Attributes")
+            section_attributes_node = first_present(
+                first_child(section, "ChildObjects"), first_child(section, "Attributes")
+            )
             if section_attributes_node is not None:
                 for child in children(section_attributes_node, "Attribute"):
                     child_name = object_name(child)
@@ -188,8 +196,16 @@ def parse_descriptor(snapshot: Path, name: str) -> tuple[dict[str, Any], list[di
         "descriptor": {"name": name, "kind": "Document", "locator": locator(relative, find_line(lines, f"<Name>{name}</Name>"))},
         "attributes": sorted(attributes, key=lambda value: value["name"]),
         "tabularSections": sorted(tabular_sections, key=lambda value: value["name"]),
-        "forms": sorted(object_name(item) for item in children(child_objects or ET.Element("empty"), "Form") if object_name(item)),
-        "templates": sorted(object_name(item) for item in children(child_objects or ET.Element("empty"), "Template") if object_name(item)),
+        "forms": sorted(
+            object_name(item)
+            for item in children(child_objects_or_empty, "Form")
+            if object_name(item)
+        ),
+        "templates": sorted(
+            object_name(item)
+            for item in children(child_objects_or_empty, "Template")
+            if object_name(item)
+        ),
     }
     return metadata, collect_owned_artifacts(snapshot, name)
 
