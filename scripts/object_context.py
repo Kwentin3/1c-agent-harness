@@ -10,15 +10,17 @@ import sys
 from typing import Any, Iterable
 import xml.etree.ElementTree as ET
 
+from target_admission import TargetBlocked, admit_target, load_contract, paths, snapshot_ref, unique_object
+
 
 DEFAULT_LIMIT = 24
 DEFAULT_BYTE_LIMIT = 32 * 1024
 NAME = re.compile(r"^[A-Za-z_][A-Za-z0-9_]*$")
 OUTLINE = re.compile(
-    r"^\s*(Procedure|Function)\s+([A-Za-z_][A-Za-z0-9_]*)\s*\((.*?)\)\s*(Export)?\s*$",
+    r"^\s*(Procedure|Function|Процедура|Функция)\s+([^\W\d]\w*)\s*\((.*?)\)\s*(Export|Экспорт)?\s*$",
     re.IGNORECASE,
 )
-END_OUTLINE = re.compile(r"^\s*End(Procedure|Function)\s*;?\s*$", re.IGNORECASE)
+END_OUTLINE = re.compile(r"^\s*(End(Procedure|Function)|Конец(Процедуры|Функции))\s*;?\s*$", re.IGNORECASE)
 METADATA_TOKEN = re.compile(
     r"\b(AccumulationRegister|BusinessProcess|Catalog|ChartOfCharacteristicTypes|"
     r"Document|ExchangePlan|InformationRegister|Report|Role|Subsystem)\.([A-Za-z_][A-Za-z0-9_]*)\b"
@@ -85,6 +87,17 @@ def find_line(lines: list[str], needle: str, occurrence: int = 1) -> int:
     return 1
 
 
+class LineLocators:
+    def __init__(self, lines: list[str]) -> None:
+        self.lines = lines
+        self.occurrences: dict[str, int] = {}
+
+    def locator(self, relative: Path, needle: str) -> dict[str, Any]:
+        occurrence = self.occurrences.get(needle, 0) + 1
+        self.occurrences[needle] = occurrence
+        return locator(relative, find_line(self.lines, needle, occurrence))
+
+
 def read_regular(root: Path, relative: Path) -> tuple[Path, list[str]]:
     path = root / relative
     if path.is_symlink() or not path.is_file():
@@ -100,6 +113,22 @@ class InputBlocked(RuntimeError):
 
 def block(reason_code: str, message: str) -> dict[str, Any]:
     return {"schemaVersion": 1, "status": "blocked", "reasonCode": reason_code, "message": message}
+
+
+def resolve_snapshot_ref(repo_root: Path, reference_path: Path) -> Path:
+    if reference_path.is_symlink() or not reference_path.is_file():
+        raise InputBlocked("snapshot_ref_invalid", "SnapshotRef must be a regular JSON file")
+    try:
+        reference = json.loads(reference_path.read_text(encoding="utf-8"), object_pairs_hook=unique_object)
+        contract, _ = load_contract(repo_root)
+        action = reference.get("action") if isinstance(reference, dict) else None
+        if action not in {"materialized", "reused"} or reference != snapshot_ref(contract, action):
+            raise ValueError("SnapshotRef does not match the project target contract")
+        _, target, snapshot, manifest, binding = paths(repo_root, contract)
+        admit_target(target, snapshot, manifest, binding, contract)
+        return snapshot
+    except (OSError, ValueError, TypeError, TargetBlocked) as exc:
+        raise InputBlocked("snapshot_ref_invalid", "SnapshotRef failed authoritative target admission") from exc
 
 
 def artifact(relative: Path, kind: str) -> dict[str, Any]:
@@ -123,6 +152,8 @@ def collect_owned_artifacts(snapshot: Path, name: str) -> list[dict[str, Any]]:
             kind = "form"
         elif "Forms" in parts and relative.suffix.lower() == ".xml":
             kind = "formDescriptor"
+        elif "Commands" in parts:
+            kind = "command"
         elif "Templates" in parts:
             kind = "template"
         else:
@@ -134,6 +165,7 @@ def collect_owned_artifacts(snapshot: Path, name: str) -> list[dict[str, Any]]:
 def parse_descriptor(snapshot: Path, name: str) -> tuple[dict[str, Any], list[dict[str, Any]]]:
     relative = Path("Documents") / f"{name}.xml"
     path, lines = read_regular(snapshot, relative)
+    locations = LineLocators(lines)
     try:
         root = ET.parse(path).getroot()
     except ET.ParseError as exc:
@@ -157,7 +189,7 @@ def parse_descriptor(snapshot: Path, name: str) -> tuple[dict[str, Any], list[di
                 {
                     "name": item_name_value,
                     "type": object_type(item),
-                    "locator": locator(relative, find_line(lines, f"<Name>{item_name_value}</Name>")),
+                    "locator": locations.locator(relative, f"<Name>{item_name_value}</Name>"),
                 }
             )
         return result
@@ -182,18 +214,18 @@ def parse_descriptor(snapshot: Path, name: str) -> tuple[dict[str, Any], list[di
                             {
                                 "name": child_name,
                                 "type": object_type(child),
-                                "locator": locator(relative, find_line(lines, f"<Name>{child_name}</Name>")),
+                                "locator": locations.locator(relative, f"<Name>{child_name}</Name>"),
                             }
                         )
             tabular_sections.append(
                 {
                     "name": section_name,
                     "attributes": sorted(section_attributes, key=lambda value: value["name"]),
-                    "locator": locator(relative, find_line(lines, f"<Name>{section_name}</Name>")),
+                    "locator": locations.locator(relative, f"<Name>{section_name}</Name>"),
                 }
             )
     metadata = {
-        "descriptor": {"name": name, "kind": "Document", "locator": locator(relative, find_line(lines, f"<Name>{name}</Name>"))},
+        "descriptor": {"name": name, "kind": "Document", "locator": locations.locator(relative, f"<Name>{name}</Name>")},
         "attributes": sorted(attributes, key=lambda value: value["name"]),
         "tabularSections": sorted(tabular_sections, key=lambda value: value["name"]),
         "forms": sorted(
@@ -266,6 +298,7 @@ def parse_forms(snapshot: Path, artifacts: Iterable[dict[str, Any]]) -> list[dic
             continue
         relative = Path(item["locator"]["path"])
         path, lines = read_regular(snapshot, relative)
+        locations = LineLocators(lines)
         try:
             root = ET.parse(path).getroot()
         except ET.ParseError as exc:
@@ -277,11 +310,11 @@ def parse_forms(snapshot: Path, artifacts: Iterable[dict[str, Any]]) -> list[dic
             node_kind = local_name(node)
             value = element_text(node)
             if node_kind == "DataPath" and value:
-                data_paths.append({"value": value, "locator": locator(relative, find_line(lines, value))})
+                data_paths.append({"value": value, "locator": locations.locator(relative, value)})
             elif node_kind == "Event" and value:
-                events.append({"name": node.get("name") or value, "handler": value, "locator": locator(relative, find_line(lines, value))})
+                events.append({"name": node.get("name") or value, "handler": value, "locator": locations.locator(relative, value)})
             elif node_kind in {"CommandName", "Action"} and value:
-                commands.append({"name": value, "locator": locator(relative, find_line(lines, value))})
+                commands.append({"name": value, "locator": locations.locator(relative, value)})
         forms.append(
             {
                 "name": relative.parts[3],
@@ -296,24 +329,57 @@ def parse_forms(snapshot: Path, artifacts: Iterable[dict[str, Any]]) -> list[dic
 
 def confirmed_relations(snapshot: Path, object_name: str) -> list[dict[str, Any]]:
     token = f"Document.{object_name}"
-    roots = {
+    sources = {
         "Configuration.xml": "configuration",
         "Roles": "role",
         "EventSubscriptions": "eventSubscription",
         "Subsystems": "subsystem",
         "FunctionalOptions": "functionalOption",
     }
+
+    def relation_position(kind: str, path: tuple[str, ...], value: str) -> bool:
+        if kind == "configuration":
+            return path[-3:] == ("Configuration", "ChildObjects", "Document") and value == object_name
+        if kind == "role":
+            return path[-3:] == ("Rights", "object", "name") and value == token
+        if kind == "eventSubscription":
+            return path[-1:] == ("Source",) and value == token
+        if kind == "subsystem":
+            return path[-4:] == ("Subsystem", "Properties", "Content", "Item") and value == token
+        if kind == "functionalOption":
+            return path[-1:] == ("Content",) and value == token
+        return False
+
+    def nodes(element: ET.Element, parent: tuple[str, ...] = ()) -> Iterable[tuple[ET.Element, tuple[str, ...]]]:
+        path = parent + (local_name(element),)
+        yield element, path
+        for child in element:
+            yield from nodes(child, path)
+
     result: list[dict[str, Any]] = []
-    for raw_root, kind in roots.items():
+    for raw_root, kind in sources.items():
         source = snapshot / raw_root
         paths = [source] if source.is_file() else sorted(source.rglob("*.xml")) if source.is_dir() and not source.is_symlink() else []
         for path in paths:
             if path.is_symlink() or not path.is_file():
                 continue
             relative = path.relative_to(snapshot)
-            for number, line in enumerate(text_lines(path), start=1):
-                if token in line or (kind == "configuration" and f">{object_name}<" in line):
-                    result.append({"kind": kind, "target": token, "state": "confirmed", "locator": locator(relative, number)})
+            try:
+                root = ET.parse(path).getroot()
+            except ET.ParseError as exc:
+                raise InputBlocked("snapshot_invalid", f"cannot parse relation source: {relative.as_posix()}") from exc
+            locations = LineLocators(text_lines(path))
+            for node, position in nodes(root):
+                value = element_text(node)
+                if relation_position(kind, position, value):
+                    result.append(
+                        {
+                            "kind": kind,
+                            "target": token,
+                            "state": "confirmed",
+                            "locator": locations.locator(relative, value),
+                        }
+                    )
     unique = {json.dumps(item, sort_keys=True): item for item in result}
     return sorted(unique.values(), key=lambda value: (value["kind"], value["locator"]["path"], value["locator"]["startLine"]))
 
@@ -388,10 +454,11 @@ def inspect(snapshot: Path, canonical_name: str, limit: int, focus_terms: Iterab
 
 
 def main(argv: list[str] | None = None) -> int:
-    parser = argparse.ArgumentParser(description=__doc__)
+    parser = argparse.ArgumentParser(description=__doc__, allow_abbrev=False)
     commands = parser.add_subparsers(dest="command", required=True)
-    inspect_parser = commands.add_parser("inspect", help="inspect one canonical Document object")
-    inspect_parser.add_argument("--snapshot", required=True, type=Path)
+    inspect_parser = commands.add_parser("inspect", help="inspect one canonical Document object", allow_abbrev=False)
+    inspect_parser.add_argument("--repo-root", type=Path, default=Path.cwd())
+    inspect_parser.add_argument("--snapshot-ref", required=True, type=Path)
     inspect_parser.add_argument("--object", required=True)
     inspect_parser.add_argument("--focus", action="append", default=[], help="optional term for BSL lexical candidates")
     inspect_parser.add_argument("--limit", type=int, default=DEFAULT_LIMIT)
@@ -400,7 +467,8 @@ def main(argv: list[str] | None = None) -> int:
         print(encode(block("invalid_limit", "limit must be between 1 and 64")), end="")
         return 2
     try:
-        result = inspect(args.snapshot, args.object, args.limit, args.focus)
+        snapshot = resolve_snapshot_ref(args.repo_root.resolve(), args.snapshot_ref)
+        result = inspect(snapshot, args.object, args.limit, args.focus)
     except InputBlocked as exc:
         print(encode(block(exc.reason_code, str(exc))), end="")
         return 2

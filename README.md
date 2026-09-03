@@ -91,12 +91,14 @@ GitHub, не task validator.
 
 ## Контекст одного документа
 
-Когда exact `Document.<Name>` уже найден обычным `rg`, одна read-only команда возвращает
-небольшую доказанную карту его непосредственной поверхности:
+Когда exact `Document.<Name>` уже найден обычным `rg`, команда принимает только сериализованный
+`SnapshotRef`, ранее выданный `project_target.py open`, и повторно проверяет его через тот же
+retained-target admission boundary:
 
 ```bash
+python3 scripts/project_target.py open > .local/snapshot-ref.json
 python3 scripts/object_context.py inspect \
-  --snapshot .local/targets/jettr-1.0.3.1/snapshot \
+  --snapshot-ref .local/snapshot-ref.json \
   --object Document.SupplierInvoice \
   --focus Warehouse
 ```
