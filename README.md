@@ -89,6 +89,25 @@ contract, request, exact production patch, exact instrumentation patch и mainta
 Исторические packages не переписываются, а candidate commit/tree и CI остаются ответственностью
 GitHub, не task validator.
 
+## Контекст одного документа
+
+Когда exact `Document.<Name>` уже найден обычным `rg`, одна read-only команда возвращает
+небольшую доказанную карту его непосредственной поверхности:
+
+```bash
+python3 scripts/object_context.py inspect \
+  --snapshot .local/targets/jettr-1.0.3.1/snapshot \
+  --object Document.SupplierInvoice \
+  --focus Warehouse
+```
+
+JSON содержит descriptor, реквизиты и табличные части, принадлежащие XML/BSL/form/template
+артефакты, короткий outline процедур с line locators, `DataPath`/события/команды форм и
+одношаговые конфигурационные связи. `Document` — единственный поддержанный тип v1; прочие
+canonical metadata identifiers возвращают `unsupported`. Полные BSL/XML, рекурсивный граф,
+семантические выводы и постоянный index не строятся. Все списки детерминированно ограничены:
+`truncated` и `diagnostics` обязательны, когда часть ответа не помещается.
+
 ## Цель MVP
 
 Кодовый агент в Linux-окружении получает снимок конфигурации 1С и может:

@@ -245,9 +245,18 @@ def parse_outline(
                             "locator": locator(relative, number),
                         }
                     )
-    key = lambda item: (item["name"], item["locator"]["path"], item["locator"]["startLine"])
+    def outline_key(item: dict[str, Any]) -> tuple[int, str, str, int]:
+        path = item["locator"]["path"]
+        if path.endswith("/Ext/ObjectModule.bsl"):
+            priority = 0
+        elif path.endswith("/Ext/ManagerModule.bsl"):
+            priority = 1
+        else:
+            priority = 2
+        return priority, path, item["name"], item["locator"]["startLine"]
+
     relation_key = lambda item: (item["target"], item["locator"]["path"], item["locator"]["startLine"])
-    return sorted(outline, key=key), sorted({json.dumps(item, sort_keys=True): item for item in candidates}.values(), key=relation_key)
+    return sorted(outline, key=outline_key), sorted({json.dumps(item, sort_keys=True): item for item in candidates}.values(), key=relation_key)
 
 
 def parse_forms(snapshot: Path, artifacts: Iterable[dict[str, Any]]) -> list[dict[str, Any]]:

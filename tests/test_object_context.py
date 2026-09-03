@@ -105,7 +105,7 @@ class ObjectContextTests(unittest.TestCase):
             self.assertEqual([item["name"] for item in payload["metadata"]["tabularSections"]], ["Goods"])
             self.assertEqual(
                 [item["name"] for item in payload["bsl"]["outline"]],
-                ["CurrentWarehouse", "Initialize", "OnOpen", "Posting", "WarehouseOnChange"],
+                ["CurrentWarehouse", "Posting", "Initialize", "OnOpen", "WarehouseOnChange"],
             )
             self.assertEqual(
                 [item["value"] for item in payload["forms"][0]["dataPaths"]],
