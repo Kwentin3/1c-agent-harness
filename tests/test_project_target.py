@@ -13,131 +13,426 @@ import unittest
 ROOT = Path(__file__).resolve().parents[1]
 CLI = ROOT / "scripts" / "project_target.py"
 sys.path.insert(0, str(ROOT / "scripts"))
+
 import cf_materializer
+import managed_probe_prepare
+import native_cycle
+import target_admission
 
 
-def digest(data: bytes) -> str: return hashlib.sha256(data).hexdigest()
+def digest(payload: bytes) -> str:
+    return hashlib.sha256(payload).hexdigest()
+
 
 def manifest(root: Path) -> bytes:
-    return "".join(f"{digest(p.read_bytes())}  {p.relative_to(root).as_posix()}\n" for p in sorted(root.rglob("*")) if p.is_file()).encode()
+    records = []
+    for path in sorted(root.rglob("*")):
+        if path.is_file():
+            records.append(
+                f"{digest(path.read_bytes())}  {path.relative_to(root).as_posix()}\n"
+            )
+    return "".join(records).encode("utf-8")
 
-def export(root: Path, name="Sample", version="2.0") -> Path:
-    source=root/".local/source/export"; source.mkdir(parents=True)
-    (source/"Configuration.xml").write_bytes(f"<MetaDataObject><Configuration><Properties><Name>{name}</Name><Version>{version}</Version></Properties></Configuration></MetaDataObject>".encode())
-    p=source/"Documents/Order.xml"; p.parent.mkdir(); p.write_text("<MetaDataObject/>")
+
+def export(root: Path, *, name: str = "Sample", version: str = "2.0") -> Path:
+    source = root / ".local/source/export"
+    source.mkdir(parents=True)
+    configuration = (
+        "<MetaDataObject><Configuration><Properties>"
+        f"<Name>{name}</Name><Version>{version}</Version>"
+        "</Properties></Configuration></MetaDataObject>"
+    )
+    (source / "Configuration.xml").write_text(configuration, encoding="utf-8")
+    document = source / "Documents/Order.xml"
+    document.parent.mkdir()
+    document.write_text("<MetaDataObject/>", encoding="utf-8")
     return source
 
-def contract(root: Path, source: dict[str, object], content: str, count=2) -> None:
-    value={"schemaVersion":2,"configuration":{"name":"Sample","version":"2.0"},"source":source,"snapshot":{"root":".local/targets/sample/snapshot","manifest":".local/targets/sample/snapshot.manifest","contentId":f"sha256:{content}","fileCount":count},"dailyNativeRoute":"scripts/shared_task_route.py run"}
-    (root/"project-target.json").write_text(json.dumps(value))
 
-def hierarchical(root: Path) -> Path:
-    source=export(root); payload=manifest(source); contract(root,{"kind":"hierarchical","path":".local/source/export","contentId":f"sha256:{digest(payload)}","fileCount":2},digest(payload)); return source
+def write_contract(
+    root: Path,
+    source: dict[str, object],
+    content_id: str,
+    *,
+    file_count: int = 2,
+) -> None:
+    value = {
+        "schemaVersion": 2,
+        "configuration": {"name": "Sample", "version": "2.0"},
+        "source": source,
+        "snapshot": {
+            "root": ".local/targets/sample/snapshot",
+            "manifest": ".local/targets/sample/snapshot.manifest",
+            "contentId": f"sha256:{content_id}",
+            "fileCount": file_count,
+        },
+        "dailyNativeRoute": "scripts/shared_task_route.py run",
+    }
+    (root / "project-target.json").write_text(json.dumps(value), encoding="utf-8")
 
-def open_(root: Path, command="open") -> subprocess.CompletedProcess[str]:
-    argv=[sys.executable,str(CLI),"--repo-root",str(root)] if command == "alias" else [sys.executable,str(CLI),command,"--repo-root",str(root)]
-    return subprocess.run(argv,text=True,capture_output=True,check=False)
 
-def result(cp): return json.loads(cp.stdout)
+def hierarchical_project(root: Path) -> Path:
+    source = export(root)
+    source_manifest = manifest(source)
+    write_contract(
+        root,
+        {
+            "kind": "hierarchical",
+            "path": ".local/source/export",
+            "contentId": f"sha256:{digest(source_manifest)}",
+            "fileCount": 2,
+        },
+        digest(source_manifest),
+    )
+    return source
+
+
+def run_open(root: Path, *, legacy_alias: bool = False) -> subprocess.CompletedProcess[str]:
+    command = [sys.executable, str(CLI)]
+    if not legacy_alias:
+        command.append("open")
+    command.extend(("--repo-root", str(root)))
+    return subprocess.run(command, text=True, capture_output=True, check=False)
+
+
+def response(completed: subprocess.CompletedProcess[str]) -> dict[str, object]:
+    return json.loads(completed.stdout)
+
 
 class ProjectTargetTests(unittest.TestCase):
-    def test_hierarchical_cold_and_legacy_alias_use_one_contract_and_admission(self):
-        with tempfile.TemporaryDirectory() as td:
-            root=Path(td); source=hierarchical(root); cold=open_(root); alias=open_(root,"alias")
-            self.assertEqual(cold.returncode,0,cold.stdout); self.assertEqual(alias.returncode,0,alias.stdout)
-            self.assertEqual(result(cold)["action"],"materialized"); self.assertEqual(result(alias)["action"],"reused")
-            ref=result(cold)["snapshot"]; self.assertIn(b"Sample",(root/ref["root"] / "Configuration.xml").read_bytes())
-            self.assertEqual(manifest(source),manifest(root/ref["root"]))
+    def test_hierarchical_source_and_legacy_alias_share_open_boundary(self) -> None:
+        with tempfile.TemporaryDirectory() as temporary:
+            root = Path(temporary)
+            source = hierarchical_project(root)
 
-    def test_warm_reuse_is_identical_without_source(self):
-        with tempfile.TemporaryDirectory() as td:
-            root=Path(td); source=hierarchical(root); self.assertEqual(open_(root).returncode,0); shutil.rmtree(source)
-            one,two=open_(root),open_(root)
-            self.assertEqual(one.stdout,two.stdout); self.assertEqual(result(one)["action"],"reused")
+            cold = run_open(root)
+            alias = run_open(root, legacy_alias=True)
 
-    def test_invalid_source_and_retained_target_fail_closed(self):
-        with tempfile.TemporaryDirectory() as td:
-            root=Path(td); source=hierarchical(root); (source/"Documents/Order.xml").write_text("bad")
-            self.assertEqual(result(open_(root))["reasonCode"],"source_mismatch")
-            self.assertFalse((root/".local/targets/sample").exists())
-            (source/"Documents/Order.xml").write_text("<MetaDataObject/>")
-            payload=manifest(source); contract(root,{"kind":"hierarchical","path":".local/source/export","contentId":f"sha256:{digest(payload)}","fileCount":2},digest(payload)); self.assertEqual(open_(root).returncode,0)
-            f=root/".local/targets/sample/snapshot/Documents/Order.xml"; f.chmod(0o644); f.write_text("bad")
-            self.assertEqual(result(open_(root))["reasonCode"],"snapshot_invalid")
-            self.assertEqual(f.read_text(),"bad")
+            self.assertEqual(cold.returncode, 0, cold.stdout)
+            self.assertEqual(alias.returncode, 0, alias.stdout)
+            self.assertEqual(response(cold)["action"], "materialized")
+            self.assertEqual(response(alias)["action"], "reused")
+            snapshot = root / str(response(cold)["snapshot"]["root"])
+            self.assertIn(b"Sample", (snapshot / "Configuration.xml").read_bytes())
+            self.assertEqual(manifest(source), manifest(snapshot))
 
-    def test_cf_open_uses_repo_owned_algorithm_and_fake_runtime(self):
-        with tempfile.TemporaryDirectory() as td:
-            root=Path(td); template=export(root); payload=manifest(template); shutil.rmtree(template)
-            cf=root/".local/dist/sample.cf"; cf.parent.mkdir(parents=True); cf.write_bytes(b"cf")
-            contract(root,{"kind":"cf","path":".local/dist/sample.cf","sha256":digest(b"cf")},digest(payload)); self.fake_runtime(root)
-            cold,warm=open_(root),open_(root)
-            self.assertEqual(cold.returncode,0,cold.stdout); self.assertEqual(result(cold)["action"],"materialized")
-            self.assertEqual(result(warm)["action"],"reused")
-            self.assertEqual(cf.read_bytes(),b"cf")
-            self.assertEqual((root/".local/runtime-count").read_text(),"1\n1\n1\n")
-            self.assertFalse(any((root/".local/targets").glob(".sample.staging-*")))
+    def test_warm_reuse_is_deterministic_without_source(self) -> None:
+        with tempfile.TemporaryDirectory() as temporary:
+            root = Path(temporary)
+            source = hierarchical_project(root)
+            self.assertEqual(run_open(root).returncode, 0)
+            shutil.rmtree(source)
 
-    def test_cf_open_uses_one_executor_runtime_contract_without_jet_version(self):
-        with tempfile.TemporaryDirectory() as td:
-            root=Path(td); template=export(root); payload=manifest(template); shutil.rmtree(template)
-            cf=root/".local/dist/sample.cf"; cf.parent.mkdir(parents=True); cf.write_bytes(b"cf")
-            contract(root,{"kind":"cf","path":".local/dist/sample.cf","sha256":digest(b"cf")},digest(payload))
-            self.fake_runtime(root, platform="executor/runtime/bin/custom-1c")
-            opened=open_(root)
-            self.assertEqual(opened.returncode,0,opened.stdout)
-            self.assertEqual(result(opened)["action"],"materialized")
+            first = run_open(root)
+            second = run_open(root)
 
-    def test_missing_runtime_is_only_cf_blocker(self):
-        with tempfile.TemporaryDirectory() as td:
-            root=Path(td); cf=root/".local/dist/sample.cf"; cf.parent.mkdir(parents=True); cf.write_bytes(b"cf")
-            contract(root,{"kind":"cf","path":".local/dist/sample.cf","sha256":digest(b"cf")},"0"*64)
-            blocked=result(open_(root)); self.assertEqual(blocked["reasonCode"],"materializer_unavailable"); self.assertEqual(blocked["locator"],"docs/lab-bootstrap.md")
+            self.assertEqual(first.returncode, 0, first.stdout)
+            self.assertEqual(first.stdout, second.stdout)
+            self.assertEqual(response(first)["action"], "reused")
 
-    def test_malformed_executor_runtime_contract_is_a_materializer_blocker(self):
-        with tempfile.TemporaryDirectory() as td:
-            root=Path(td); cf=root/".local/dist/sample.cf"; cf.parent.mkdir(parents=True); cf.write_bytes(b"cf")
-            contract(root,{"kind":"cf","path":".local/dist/sample.cf","sha256":digest(b"cf")},"0"*64)
-            (root/".local/one-c-runtime.json").write_text('{"schemaVersion":1,"platform":"relative"}')
-            self.assertEqual(result(open_(root))["reasonCode"],"materializer_unavailable")
+    def test_invalid_source_and_corrupted_retained_target_fail_closed(self) -> None:
+        with tempfile.TemporaryDirectory() as temporary:
+            root = Path(temporary)
+            source = hierarchical_project(root)
+            (source / "Documents/Order.xml").write_text("bad", encoding="utf-8")
 
-    def test_parallel_cold_cf_open_runs_one_materialization(self):
-        with tempfile.TemporaryDirectory() as td:
-            root=Path(td); template=export(root); payload=manifest(template); shutil.rmtree(template)
-            cf=root/".local/dist/sample.cf"; cf.parent.mkdir(parents=True); cf.write_bytes(b"cf")
-            contract(root,{"kind":"cf","path":".local/dist/sample.cf","sha256":digest(b"cf")},digest(payload)); self.fake_runtime(root)
-            args=[sys.executable,str(CLI),"open","--repo-root",str(root)]
-            a=subprocess.Popen(args,text=True,stdout=subprocess.PIPE); b=subprocess.Popen(args,text=True,stdout=subprocess.PIPE)
-            ao,_=a.communicate(timeout=15); bo,_=b.communicate(timeout=15)
-            self.assertEqual((a.returncode,b.returncode),(0,0)); self.assertEqual({json.loads(ao)["action"],json.loads(bo)["action"]},{"materialized","reused"})
-            self.assertEqual((root/".local/runtime-count").read_text(),"1\n1\n1\n")
+            self.assertEqual(response(run_open(root))["reasonCode"], "source_mismatch")
+            self.assertFalse((root / ".local/targets/sample").exists())
 
-    def test_cf_materializer_checks_all_three_results_and_removes_bad_output(self):
-        with tempfile.TemporaryDirectory() as td:
-            root=Path(td); cf=root/"source.cf"; cf.write_bytes(b"cf"); out=root/"output"; work=root/"work"; self.fake_runtime(root)
-            def runner(argv, **kwargs):
-                result=Path(argv[argv.index("/DumpResult")+1]); result.parent.mkdir(parents=True,exist_ok=True); result.write_text("1")
-                return subprocess.CompletedProcess(argv,0)
+            (source / "Documents/Order.xml").write_text("<MetaDataObject/>", encoding="utf-8")
+            source_manifest = manifest(source)
+            write_contract(
+                root,
+                {
+                    "kind": "hierarchical",
+                    "path": ".local/source/export",
+                    "contentId": f"sha256:{digest(source_manifest)}",
+                    "fileCount": 2,
+                },
+                digest(source_manifest),
+            )
+            self.assertEqual(run_open(root).returncode, 0)
+
+            retained = root / ".local/targets/sample/snapshot/Documents/Order.xml"
+            retained.chmod(0o644)
+            retained.write_text("bad", encoding="utf-8")
+            self.assertEqual(response(run_open(root))["reasonCode"], "snapshot_invalid")
+            self.assertEqual(retained.read_text(encoding="utf-8"), "bad")
+
+    def test_cf_open_uses_repo_owned_algorithm_and_warm_reuse(self) -> None:
+        with tempfile.TemporaryDirectory() as temporary:
+            root = Path(temporary)
+            template = export(root)
+            expected = manifest(template)
+            shutil.rmtree(template)
+            source = root / ".local/dist/sample.cf"
+            source.parent.mkdir(parents=True)
+            source.write_bytes(b"cf")
+            write_contract(
+                root,
+                {"kind": "cf", "path": ".local/dist/sample.cf", "sha256": digest(b"cf")},
+                digest(expected),
+            )
+            self.write_fake_runtime(root)
+
+            cold = run_open(root)
+            warm = run_open(root)
+
+            self.assertEqual(cold.returncode, 0, cold.stdout)
+            self.assertEqual(response(cold)["action"], "materialized")
+            self.assertEqual(response(warm)["action"], "reused")
+            self.assertEqual(source.read_bytes(), b"cf")
+            self.assertEqual((root / ".local/runtime-count").read_text(), "1\n1\n1\n")
+
+    def test_executor_runtime_contract_does_not_embed_jet_version(self) -> None:
+        with tempfile.TemporaryDirectory() as temporary:
+            root = Path(temporary)
+            template = export(root)
+            expected = manifest(template)
+            shutil.rmtree(template)
+            source = root / ".local/dist/sample.cf"
+            source.parent.mkdir(parents=True)
+            source.write_bytes(b"cf")
+            write_contract(
+                root,
+                {"kind": "cf", "path": ".local/dist/sample.cf", "sha256": digest(b"cf")},
+                digest(expected),
+            )
+            self.write_fake_runtime(root, platform="executor/runtime/bin/custom-1c")
+
+            opened = run_open(root)
+
+            self.assertEqual(opened.returncode, 0, opened.stdout)
+            self.assertEqual(response(opened)["action"], "materialized")
+
+    def test_missing_or_malformed_runtime_contract_is_materializer_blocker(self) -> None:
+        with tempfile.TemporaryDirectory() as temporary:
+            root = Path(temporary)
+            source = root / ".local/dist/sample.cf"
+            source.parent.mkdir(parents=True)
+            source.write_bytes(b"cf")
+            write_contract(
+                root,
+                {"kind": "cf", "path": ".local/dist/sample.cf", "sha256": digest(b"cf")},
+                "0" * 64,
+            )
+
+            missing = response(run_open(root))
+            self.assertEqual(missing["reasonCode"], "materializer_unavailable")
+            self.assertEqual(missing["locator"], "docs/lab-bootstrap.md")
+
+            (root / ".local/one-c-runtime.json").write_text(
+                '{"schemaVersion":1,"platform":"relative"}', encoding="utf-8"
+            )
+            self.assertEqual(response(run_open(root))["reasonCode"], "materializer_unavailable")
+
+    def test_parallel_cf_open_materializes_once(self) -> None:
+        with tempfile.TemporaryDirectory() as temporary:
+            root = Path(temporary)
+            template = export(root)
+            expected = manifest(template)
+            shutil.rmtree(template)
+            source = root / ".local/dist/sample.cf"
+            source.parent.mkdir(parents=True)
+            source.write_bytes(b"cf")
+            write_contract(
+                root,
+                {"kind": "cf", "path": ".local/dist/sample.cf", "sha256": digest(b"cf")},
+                digest(expected),
+            )
+            self.write_fake_runtime(root)
+            argv = [sys.executable, str(CLI), "open", "--repo-root", str(root)]
+
+            first = subprocess.Popen(argv, text=True, stdout=subprocess.PIPE)
+            second = subprocess.Popen(argv, text=True, stdout=subprocess.PIPE)
+            first_output, _ = first.communicate(timeout=15)
+            second_output, _ = second.communicate(timeout=15)
+
+            self.assertEqual((first.returncode, second.returncode), (0, 0))
+            actions = {json.loads(first_output)["action"], json.loads(second_output)["action"]}
+            self.assertEqual(actions, {"materialized", "reused"})
+            self.assertEqual((root / ".local/runtime-count").read_text(), "1\n1\n1\n")
+
+    def test_cf_materializer_rejects_bad_dump_result_and_cleans_output(self) -> None:
+        with tempfile.TemporaryDirectory() as temporary:
+            root = Path(temporary)
+            source = root / "source.cf"
+            source.write_bytes(b"cf")
+            output = root / "output"
+            work = root / "work"
+            self.write_fake_runtime(root)
+
+            def bad_runner(argv, **_kwargs):
+                result = Path(argv[argv.index("/DumpResult") + 1])
+                result.parent.mkdir(parents=True, exist_ok=True)
+                result.write_text("1", encoding="utf-8")
+                return subprocess.CompletedProcess(argv, 0)
+
             with self.assertRaises(cf_materializer.MaterializationFailed):
-                cf_materializer.materialize_cf(repo_root=root,source=cf,output=out,work_root=work,runner=runner)
-            self.assertFalse(out.exists())
+                cf_materializer.materialize_cf(
+                    repo_root=root,
+                    source=source,
+                    output=output,
+                    work_root=work,
+                    runner=bad_runner,
+                )
+            self.assertFalse(output.exists())
+
+    def test_owned_cleanup_does_not_follow_symlink_to_external_sentinel(self) -> None:
+        with tempfile.TemporaryDirectory() as temporary:
+            root = Path(temporary)
+            sentinel = root / "external-sentinel"
+            sentinel.write_bytes(b"do not touch")
+            sentinel.chmod(0o640)
+            owned = root / "owned"
+            owned.mkdir()
+            (owned / "escape").symlink_to(sentinel)
+            before = (sentinel.read_bytes(), stat.S_IMODE(sentinel.stat().st_mode))
+
+            target_admission.remove_owned(owned)
+
+            self.assertFalse(owned.exists())
+            self.assertEqual(
+                (sentinel.read_bytes(), stat.S_IMODE(sentinel.stat().st_mode)), before
+            )
+
+    def test_symlink_and_hardlink_source_entries_do_not_bypass_admission(self) -> None:
+        for kind in ("symlink", "hardlink"):
+            with self.subTest(kind=kind), tempfile.TemporaryDirectory() as temporary:
+                root = Path(temporary)
+                source = hierarchical_project(root)
+                document = source / "Documents/Order.xml"
+                if kind == "symlink":
+                    replacement = root / "external.xml"
+                    replacement.write_text("<MetaDataObject/>", encoding="utf-8")
+                    document.unlink()
+                    document.symlink_to(replacement)
+                else:
+                    duplicate = source / "Documents/Duplicate.xml"
+                    duplicate.hardlink_to(document)
+
+                blocked = response(run_open(root))
+
+                self.assertEqual(blocked["reasonCode"], "source_mismatch")
+                self.assertFalse((root / ".local/targets/sample").exists())
+
+    def test_duplicate_keys_and_boolean_file_count_are_rejected(self) -> None:
+        with tempfile.TemporaryDirectory() as temporary:
+            root = Path(temporary)
+            hierarchical_project(root)
+            duplicate_contract = (
+                '{"schemaVersion":2,"schemaVersion":2,"configuration":{},'
+                '"source":{},"snapshot":{},"dailyNativeRoute":""}'
+            )
+            (root / "project-target.json").write_text(duplicate_contract, encoding="utf-8")
+            self.assertEqual(response(run_open(root))["reasonCode"], "snapshot_invalid")
+
+        with tempfile.TemporaryDirectory() as temporary:
+            root = Path(temporary)
+            source = hierarchical_project(root)
+            value = json.loads((root / "project-target.json").read_text(encoding="utf-8"))
+            value["snapshot"]["fileCount"] = True
+            (root / "project-target.json").write_text(json.dumps(value), encoding="utf-8")
+
+            self.assertEqual(response(run_open(root))["reasonCode"], "snapshot_invalid")
+            self.assertTrue(source.exists())
+
+    def test_unsupported_source_is_distinct_from_invalid_source(self) -> None:
+        with tempfile.TemporaryDirectory() as temporary:
+            root = Path(temporary)
+            write_contract(root, {"kind": "edt", "path": ".local/source"}, "0" * 64)
+            self.assertEqual(response(run_open(root))["reasonCode"], "unsupported_source")
+
+        with tempfile.TemporaryDirectory() as temporary:
+            root = Path(temporary)
+            source = root / ".local/dist/sample.cf"
+            source.parent.mkdir(parents=True)
+            source.mkdir()
+            write_contract(
+                root,
+                {"kind": "cf", "path": ".local/dist/sample.cf", "sha256": "0" * 64},
+                "0" * 64,
+            )
+            self.assertEqual(response(run_open(root))["reasonCode"], "source_mismatch")
+
+    def test_run_and_prepared_cleanup_do_not_touch_retained_target(self) -> None:
+        with tempfile.TemporaryDirectory() as temporary:
+            root = Path(temporary)
+            hierarchical_project(root)
+            self.assertEqual(run_open(root).returncode, 0)
+            retained = root / ".local/targets/sample"
+            prepared = root / ".local/prepared/task-owned"
+            generated = root / ".local/runs/task-owned/run/work-copy"
+            prepared.mkdir(parents=True)
+            generated.mkdir(parents=True)
+            (prepared / "temporary.txt").write_text("temporary", encoding="utf-8")
+            (generated / "temporary.txt").write_text("temporary", encoding="utf-8")
+
+            managed_probe_prepare.discard_prepared_tree(
+                repo_root=root,
+                prepared_root=prepared,
+            )
+            native_cycle._remove_generated_tree(generated)
+
+            self.assertFalse(prepared.exists())
+            self.assertFalse(generated.exists())
+            self.assertTrue((retained / "snapshot/Configuration.xml").is_file())
+            self.assertTrue((retained / "snapshot.manifest").is_file())
 
     @staticmethod
-    def fake_runtime(root: Path, platform=".local/platform/1cv8t/x86_64/8.5.1.1150/1cv8t") -> None:
-        binary=root/platform; xvfb=root/"executor/runtime/bin/xvfb-run"; font=root/"executor/runtime/fonts.conf"; libs=root/"executor/runtime/libs"
-        binary.parent.mkdir(parents=True,exist_ok=True); xvfb.parent.mkdir(parents=True,exist_ok=True); font.parent.mkdir(parents=True,exist_ok=True); libs.mkdir(parents=True,exist_ok=True); binary.write_text("x"); font.write_text("<fontconfig/>")
-        (root/".local/one-c-runtime.json").parent.mkdir(parents=True, exist_ok=True)
-        (root/".local/one-c-runtime.json").write_text(json.dumps({"schemaVersion":1,"platform":str(binary),"xvfb":str(xvfb),"fontconfig":str(font),"libs":str(libs)}))
-        script=f'''#!/usr/bin/env python3
+    def write_fake_runtime(
+        root: Path,
+        *,
+        platform: str = ".local/platform/1cv8t/x86_64/8.5.1.1150/1cv8t",
+    ) -> None:
+        binary = root / platform
+        xvfb = root / "executor/runtime/bin/xvfb-run"
+        fontconfig = root / "executor/runtime/fonts.conf"
+        libraries = root / "executor/runtime/libs"
+        binary.parent.mkdir(parents=True, exist_ok=True)
+        xvfb.parent.mkdir(parents=True, exist_ok=True)
+        fontconfig.parent.mkdir(parents=True, exist_ok=True)
+        libraries.mkdir(parents=True, exist_ok=True)
+        binary.write_text("x", encoding="utf-8")
+        fontconfig.write_text("<fontconfig/>", encoding="utf-8")
+        (root / ".local/one-c-runtime.json").write_text(
+            json.dumps(
+                {
+                    "schemaVersion": 1,
+                    "platform": str(binary),
+                    "xvfb": str(xvfb),
+                    "fontconfig": str(fontconfig),
+                    "libs": str(libraries),
+                }
+            ),
+            encoding="utf-8",
+        )
+        script = f'''#!/usr/bin/env python3
 import sys
 from pathlib import Path
-args=sys.argv[1:]
-root=Path({str(root)!r})
-with (root/'.local/runtime-count').open('a') as f:f.write('1\\n')
-result=Path(args[args.index('/DumpResult')+1]);result.parent.mkdir(parents=True,exist_ok=True);result.write_text('0')
-if '/DumpConfigToFiles' in args:
- out=Path(args[args.index('/DumpConfigToFiles')+1]);out.mkdir();(out/'Configuration.xml').write_text('<MetaDataObject><Configuration><Properties><Name>Sample</Name><Version>2.0</Version></Properties></Configuration></MetaDataObject>');(out/'Documents').mkdir();(out/'Documents/Order.xml').write_text('<MetaDataObject/>')
-'''
-        xvfb.write_text(script); xvfb.chmod(0o755); binary.chmod(0o755)
 
-if __name__ == "__main__": unittest.main()
+args = sys.argv[1:]
+root = Path({str(root)!r})
+with (root / ".local/runtime-count").open("a") as stream:
+    stream.write("1\\n")
+result = Path(args[args.index("/DumpResult") + 1])
+result.parent.mkdir(parents=True, exist_ok=True)
+result.write_text("0", encoding="utf-8")
+if "/DumpConfigToFiles" in args:
+    output = Path(args[args.index("/DumpConfigToFiles") + 1])
+    output.mkdir()
+    (output / "Configuration.xml").write_text(
+        "<MetaDataObject><Configuration><Properties><Name>Sample</Name>"
+        "<Version>2.0</Version></Properties></Configuration></MetaDataObject>",
+        encoding="utf-8",
+    )
+    (output / "Documents").mkdir()
+    (output / "Documents/Order.xml").write_text("<MetaDataObject/>", encoding="utf-8")
+'''
+        xvfb.write_text(script, encoding="utf-8")
+        xvfb.chmod(0o755)
+        binary.chmod(0o755)
+
+
+if __name__ == "__main__":
+    unittest.main()

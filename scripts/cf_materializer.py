@@ -8,11 +8,11 @@ from __future__ import annotations
 import os
 import json
 from pathlib import Path
-import shutil
 import signal
-import stat
 import subprocess
 from typing import Callable
+
+from target_admission import remove_owned
 
 XVFB_SCREEN = "-screen 0 1280x1024x8 -nolisten tcp"
 TIMEOUT_SECONDS = 600
@@ -64,22 +64,6 @@ def require_runtime(repo_root: Path) -> dict[str, Path]:
     if not paths["libs"].is_dir() or paths["libs"].is_symlink():
         raise MaterializerUnavailable("1C runtime is unavailable")
     return paths
-
-
-def _remove_owned_tree(path: Path) -> None:
-    if not path.exists():
-        return
-    if path.is_symlink() or not path.is_dir():
-        raise MaterializationFailed("owned cleanup target is not a directory")
-    for item in (path, *path.rglob("*")):
-        mode = item.lstat().st_mode
-        if stat.S_ISDIR(mode):
-            item.chmod(mode | stat.S_IRWXU)
-        elif stat.S_ISREG(mode):
-            item.chmod(mode | stat.S_IRUSR | stat.S_IWUSR)
-        else:
-            raise MaterializationFailed("owned cleanup target contains a special entry")
-    shutil.rmtree(path)
 
 
 def _run_step(
@@ -164,5 +148,5 @@ def materialize_cf(
         if output.is_symlink() or not output.is_dir():
             raise MaterializationFailed("native materialization did not create a snapshot")
     except BaseException:
-        _remove_owned_tree(output)
+        remove_owned(output)
         raise

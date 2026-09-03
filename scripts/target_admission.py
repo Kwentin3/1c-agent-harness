@@ -6,7 +6,6 @@ import hashlib
 import json
 import os
 from pathlib import Path
-import shutil
 import stat
 import uuid
 import xml.etree.ElementTree as ET
@@ -198,11 +197,19 @@ def remove_owned(path: Path) -> None:
         return
     if path.is_symlink() or not path.is_dir():
         raise RuntimeError("owned cleanup target is invalid")
-    for item in (path, *path.rglob("*")):
-        if item.is_dir(): item.chmod(item.lstat().st_mode | stat.S_IRWXU)
-        elif item.is_file(): item.chmod(item.lstat().st_mode | stat.S_IRUSR | stat.S_IWUSR)
-        else: raise RuntimeError("owned cleanup target has special entry")
-    shutil.rmtree(path)
+    entries = sorted((path, *path.rglob("*")), key=lambda item: len(item.parts), reverse=True)
+    for item in entries:
+        mode = item.lstat().st_mode
+        if stat.S_ISLNK(mode):
+            item.unlink()
+        elif stat.S_ISREG(mode):
+            item.chmod(mode | stat.S_IRUSR | stat.S_IWUSR)
+            item.unlink()
+        elif stat.S_ISDIR(mode):
+            item.chmod(mode | stat.S_IRWXU)
+            item.rmdir()
+        else:
+            raise RuntimeError("owned cleanup target has special entry")
 
 
 def paths(repo_root: Path, contract: dict[str, object]) -> tuple[Path, Path, Path, Path, Path]:
