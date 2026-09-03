@@ -2,6 +2,7 @@ from __future__ import annotations
 
 import hashlib
 import json
+import os
 from pathlib import Path
 import shutil
 import stat
@@ -309,7 +310,7 @@ class ProjectTargetTests(unittest.TestCase):
                     document.symlink_to(replacement)
                 else:
                     duplicate = source / "Documents/Duplicate.xml"
-                    duplicate.hardlink_to(document)
+                    os.link(document, duplicate)
 
                 blocked = response(run_open(root))
 
