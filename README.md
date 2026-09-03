@@ -62,7 +62,6 @@ python3 scripts/shared_task_route.py run \
   --request experiments/<task>/request.json \
   --production-patch experiments/<task>/exact-production.patch \
   --instrumentation-patch experiments/<task>/exact-instrumentation.patch \
-  --complete-marker 'complete###true' \
   --oracle experiments/<task>/oracle.py \
   --receipt .local/<task>/receipt.json
 ```

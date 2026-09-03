@@ -64,12 +64,11 @@ def _raw(payload: bytes) -> dict[str, object]:
     }
 
 
-def _runner_command(repo: Path, prepared: Path, marker: str, timeout: int) -> list[str]:
+def _runner_command(repo: Path, prepared: Path, timeout: int) -> list[str]:
     return [
         sys.executable, str(repo / "scripts/native_cycle.py"), "run-prepared",
         "--repo-root", str(repo),
         "--input-tree", prepared.relative_to(repo).as_posix(),
-        "--complete-marker", marker,
         "--timeout-seconds", str(timeout),
     ]
 
@@ -186,7 +185,6 @@ def run_task(
     input_tree: Path,
     request_path: Path,
     patch_paths: list[tuple[str, Path]],
-    complete_marker: str,
     oracle_path: Path,
     receipt_path: Path,
     timeout_seconds: int,
@@ -200,8 +198,6 @@ def run_task(
     output = _inside(repo, receipt_path, "receipt")
     if output.exists() or output.is_symlink():
         raise SharedRouteError("receipt output already exists")
-    if not complete_marker or "\n" in complete_marker or "\r" in complete_marker:
-        raise SharedRouteError("completeMarker must be one non-empty line")
     if timeout_seconds <= 0:
         raise SharedRouteError("timeoutSeconds must be positive")
     request = json.loads(request_file.read_text(encoding="utf-8"))
@@ -221,7 +217,7 @@ def run_task(
         )
         prepared_identity = native_cycle.tree_identity(prepared)
         completed = execute(
-            _runner_command(repo, prepared, complete_marker, timeout_seconds),
+            _runner_command(repo, prepared, timeout_seconds),
             text=True, capture_output=True, timeout=timeout_seconds + 90,
         )
         try:
@@ -284,7 +280,6 @@ def main(argv: list[str] | None = None) -> int:
     parser.add_argument("--request", type=Path, required=True)
     parser.add_argument("--production-patch", type=Path, required=True)
     parser.add_argument("--instrumentation-patch", type=Path, required=True)
-    parser.add_argument("--complete-marker", required=True)
     parser.add_argument("--oracle", type=Path, required=True)
     parser.add_argument("--receipt", type=Path, required=True)
     parser.add_argument("--timeout-seconds", type=int, default=300)
@@ -294,7 +289,7 @@ def main(argv: list[str] | None = None) -> int:
             repo_root=args.repo_root, input_tree=args.input_tree,
             request_path=args.request,
             patch_paths=[("production", args.production_patch), ("instrumentation", args.instrumentation_patch)],
-            complete_marker=args.complete_marker, oracle_path=args.oracle,
+            oracle_path=args.oracle,
             receipt_path=args.receipt, timeout_seconds=args.timeout_seconds,
         )
     except (OSError, ValueError, json.JSONDecodeError, subprocess.SubprocessError) as exc:

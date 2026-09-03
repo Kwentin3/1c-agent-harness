@@ -11,6 +11,7 @@ import sys
 import tempfile
 import time
 from types import SimpleNamespace
+from typing import Any
 import unittest
 from unittest import mock
 
@@ -18,7 +19,7 @@ ROOT = Path(__file__).resolve().parents[1]
 CLI = ROOT / "scripts" / "native_cycle.py"
 
 
-def load_module(name: str = "native_cycle_under_test") -> object:
+def load_module(name: str = "native_cycle_under_test") -> Any:
     spec = importlib.util.spec_from_file_location(name, CLI)
     if spec is None or spec.loader is None:
         raise AssertionError("cannot load native cycle module")
@@ -79,7 +80,6 @@ class NativeCycleContractTests(unittest.TestCase):
             invocation = native_cycle.prepare_invocation(
                 repo,
                 ".local/prepared/case-a",
-                "complete###true",
                 30,
             )
 
@@ -93,6 +93,10 @@ class NativeCycleContractTests(unittest.TestCase):
             )
             self.assertTrue(invocation.invocation_root.is_relative_to(repo / ".local/runs/native-cycle"))
             self.assertTrue(invocation.spec_path.is_file())
+            self.assertEqual(
+                json.loads(invocation.spec_path.read_text(encoding="utf-8"))["completeMarker"],
+                "complete###true",
+            )
             self.assertEqual(invocation.source_identity, source_before)
             self.assertEqual(
                 invocation.frozen_identity,
@@ -114,15 +118,6 @@ class NativeCycleContractTests(unittest.TestCase):
             launch_index = plan.runtime_argv.index("/C")
             self.assertEqual(plan.runtime_argv[launch_index + 1], str(plan.receipt))
 
-    def test_prepare_invocation_rejects_multiline_completion_marker(self) -> None:
-        native_cycle = load_module("native_cycle_multiline_marker")
-        with tempfile.TemporaryDirectory() as tmp:
-            repo = Path(tmp)
-            source = repo / ".local" / "prepared" / "case-a"
-            source.mkdir(parents=True)
-            (source / "Configuration.xml").write_text("<Configuration/>\n", encoding="utf-8")
-            with self.assertRaisesRegex(ValueError, "single line"):
-                native_cycle.prepare_invocation(repo, ".local/prepared/case-a", "complete###true\nextra", 5)
 
     def test_prepare_invocation_distinguishes_second_read_only_input_shape(self) -> None:
         native_cycle = load_module("native_cycle_second_shape")
@@ -139,10 +134,10 @@ class NativeCycleContractTests(unittest.TestCase):
             second_before = native_cycle.tree_identity(second)
 
             first_invocation = native_cycle.prepare_invocation(
-                repo, ".local/prepared/first", "done", 30,
+                repo, ".local/prepared/first", 30,
             )
             second_invocation = native_cycle.prepare_invocation(
-                repo, ".local/prepared/second", "done", 30,
+                repo, ".local/prepared/second", 30,
             )
 
             self.assertNotEqual(first_invocation.source_identity, second_invocation.source_identity)
@@ -164,7 +159,6 @@ class NativeCycleContractTests(unittest.TestCase):
                     "run-prepared",
                     "--repo-root", str(repo),
                     "--input-tree", ".local/prepared/fifo",
-                    "--complete-marker", "complete###true",
                     "--timeout-seconds", "5",
                 ],
                 text=True,
@@ -197,7 +191,7 @@ class NativeCycleContractTests(unittest.TestCase):
 
             with mock.patch.object(native_cycle.shutil, "copytree", side_effect=fail_copy):
                 with self.assertRaises(OSError) as raised:
-                    native_cycle.run_prepared(repo, ".local/prepared/case-a", "complete###true", 5)
+                    native_cycle.run_prepared(repo, ".local/prepared/case-a", 5)
 
             result_path = getattr(raised.exception, "result_path", None)
             self.assertIsNotNone(result_path)
@@ -229,7 +223,7 @@ class NativeCycleContractTests(unittest.TestCase):
                 side_effect=RuntimeError("simulated procfs preflight failure"),
             ):
                 with self.assertRaises(RuntimeError) as raised:
-                    native_cycle.run_prepared(repo, ".local/prepared/case-a", "complete###true", 5)
+                    native_cycle.run_prepared(repo, ".local/prepared/case-a", 5)
 
             result_path = getattr(raised.exception, "result_path", None)
             self.assertIsNotNone(result_path)
@@ -277,7 +271,7 @@ class NativeCycleContractTests(unittest.TestCase):
                 native_cycle, "run_cycle", side_effect=fail_cycle
             ):
                 with self.assertRaises(TimeoutError) as raised:
-                    native_cycle.run_prepared(repo, ".local/prepared/case-a", "complete###true", 5)
+                    native_cycle.run_prepared(repo, ".local/prepared/case-a", 5)
 
             persisted = json.loads(Path(raised.exception.result_path).read_text(encoding="utf-8"))
             invocation_root = repo / persisted["preparedInvocation"]["invocationRoot"]
@@ -469,7 +463,7 @@ class NativeCycleContractTests(unittest.TestCase):
                 native_cycle, "_remove_generated_tree", side_effect=OSError("simulated cleanup failure")
             ):
                 with self.assertRaises(OSError) as raised:
-                    native_cycle.run_prepared(repo, ".local/prepared/case-a", "complete###true", 5)
+                    native_cycle.run_prepared(repo, ".local/prepared/case-a", 5)
 
             persisted = json.loads(Path(raised.exception.result_path).read_text(encoding="utf-8"))
             self.assertEqual(persisted["status"], "artifact_cleanup_failed")
@@ -498,7 +492,7 @@ class NativeCycleContractTests(unittest.TestCase):
 
             with mock.patch.object(native_cycle, "load_plan", side_effect=fail_plan):
                 with self.assertRaises(RuntimeError) as raised:
-                    native_cycle.run_prepared(repo, ".local/prepared/case-a", "complete###true", 5)
+                    native_cycle.run_prepared(repo, ".local/prepared/case-a", 5)
 
             result_path = getattr(raised.exception, "result_path", None)
             self.assertIsNotNone(result_path)
@@ -529,7 +523,6 @@ class NativeCycleContractTests(unittest.TestCase):
                     native_cycle.run_prepared(
                         repo,
                         ".local/prepared/replace",
-                        "complete###true",
                         5,
                     )
 
@@ -1438,7 +1431,6 @@ class NativeCycleContractTests(unittest.TestCase):
                 "run-prepared",
                 "--repo-root", str(repo),
                 "--input-tree", ".local/prepared/case-a",
-                "--complete-marker", "complete###true",
                 "--timeout-seconds", "5",
             ]
 
