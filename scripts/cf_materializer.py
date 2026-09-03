@@ -6,6 +6,7 @@ fixed native algorithm; it never installs or downloads a runtime.
 from __future__ import annotations
 
 import os
+import json
 from pathlib import Path
 import shutil
 import signal
@@ -25,23 +26,43 @@ class MaterializationFailed(RuntimeError):
     pass
 
 
+def _unique_object(pairs: list[tuple[str, object]]) -> dict[str, object]:
+    result: dict[str, object] = {}
+    for key, value in pairs:
+        if key in result:
+            raise ValueError("duplicate runtime contract key")
+        result[key] = value
+    return result
+
+
 def runtime_paths(repo_root: Path) -> dict[str, Path]:
-    version = repo_root / ".local/platform/1cv8t/x86_64/8.5.1.1150"
-    return {
-        "platform": version / "1cv8t",
-        "xvfb": repo_root / ".local/platform/libs/usr/bin/xvfb-run",
-        "fontconfig": repo_root / ".local/platform/fonts.conf",
-        "libs": repo_root / ".local/platform/libs/usr/lib/x86_64-linux-gnu",
-    }
+    """Load the one executor-owned runtime locator, never project metadata."""
+    contract = repo_root / ".local/one-c-runtime.json"
+    if contract.is_symlink() or not contract.is_file():
+        raise MaterializerUnavailable("1C runtime contract is unavailable")
+    try:
+        value = json.loads(contract.read_text(encoding="utf-8"), object_pairs_hook=_unique_object)
+        if not isinstance(value, dict) or set(value) != {"schemaVersion", "platform", "xvfb", "fontconfig", "libs"}:
+            raise ValueError("runtime contract keys")
+        if value["schemaVersion"] != 1:
+            raise ValueError("runtime contract schema")
+        paths = {name: Path(value[name]) for name in ("platform", "xvfb", "fontconfig", "libs")}
+        if any(not path.is_absolute() for path in paths.values()):
+            raise ValueError("runtime paths must be absolute")
+    except (OSError, TypeError, ValueError, json.JSONDecodeError) as exc:
+        raise MaterializerUnavailable("1C runtime contract is invalid") from exc
+    return paths
 
 
 def require_runtime(repo_root: Path) -> dict[str, Path]:
     paths = runtime_paths(repo_root)
     required = ("platform", "xvfb", "fontconfig")
     if any(not paths[name].is_file() or paths[name].is_symlink() for name in required):
-        raise MaterializerUnavailable("1C training runtime is unavailable")
+        raise MaterializerUnavailable("1C runtime is unavailable")
     if not os.access(paths["platform"], os.X_OK) or not os.access(paths["xvfb"], os.X_OK):
-        raise MaterializerUnavailable("1C training runtime is unavailable")
+        raise MaterializerUnavailable("1C runtime is unavailable")
+    if not paths["libs"].is_dir() or paths["libs"].is_symlink():
+        raise MaterializerUnavailable("1C runtime is unavailable")
     return paths
 
 

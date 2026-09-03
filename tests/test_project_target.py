@@ -78,11 +78,28 @@ class ProjectTargetTests(unittest.TestCase):
             self.assertEqual((root/".local/runtime-count").read_text(),"1\n1\n1\n")
             self.assertFalse(any((root/".local/targets").glob(".sample.staging-*")))
 
+    def test_cf_open_uses_one_executor_runtime_contract_without_jet_version(self):
+        with tempfile.TemporaryDirectory() as td:
+            root=Path(td); template=export(root); payload=manifest(template); shutil.rmtree(template)
+            cf=root/".local/dist/sample.cf"; cf.parent.mkdir(parents=True); cf.write_bytes(b"cf")
+            contract(root,{"kind":"cf","path":".local/dist/sample.cf","sha256":digest(b"cf")},digest(payload))
+            self.fake_runtime(root, platform="executor/runtime/bin/custom-1c")
+            opened=open_(root)
+            self.assertEqual(opened.returncode,0,opened.stdout)
+            self.assertEqual(result(opened)["action"],"materialized")
+
     def test_missing_runtime_is_only_cf_blocker(self):
         with tempfile.TemporaryDirectory() as td:
             root=Path(td); cf=root/".local/dist/sample.cf"; cf.parent.mkdir(parents=True); cf.write_bytes(b"cf")
             contract(root,{"kind":"cf","path":".local/dist/sample.cf","sha256":digest(b"cf")},"0"*64)
             blocked=result(open_(root)); self.assertEqual(blocked["reasonCode"],"materializer_unavailable"); self.assertEqual(blocked["locator"],"docs/lab-bootstrap.md")
+
+    def test_malformed_executor_runtime_contract_is_a_materializer_blocker(self):
+        with tempfile.TemporaryDirectory() as td:
+            root=Path(td); cf=root/".local/dist/sample.cf"; cf.parent.mkdir(parents=True); cf.write_bytes(b"cf")
+            contract(root,{"kind":"cf","path":".local/dist/sample.cf","sha256":digest(b"cf")},"0"*64)
+            (root/".local/one-c-runtime.json").write_text('{"schemaVersion":1,"platform":"relative"}')
+            self.assertEqual(result(open_(root))["reasonCode"],"materializer_unavailable")
 
     def test_parallel_cold_cf_open_runs_one_materialization(self):
         with tempfile.TemporaryDirectory() as td:
@@ -106,9 +123,11 @@ class ProjectTargetTests(unittest.TestCase):
             self.assertFalse(out.exists())
 
     @staticmethod
-    def fake_runtime(root: Path) -> None:
-        binary=root/".local/platform/1cv8t/x86_64/8.5.1.1150/1cv8t"; xvfb=root/".local/platform/libs/usr/bin/xvfb-run"; font=root/".local/platform/fonts.conf"
-        binary.parent.mkdir(parents=True,exist_ok=True); xvfb.parent.mkdir(parents=True,exist_ok=True); font.parent.mkdir(parents=True,exist_ok=True); binary.write_text("x"); font.write_text("<fontconfig/>")
+    def fake_runtime(root: Path, platform=".local/platform/1cv8t/x86_64/8.5.1.1150/1cv8t") -> None:
+        binary=root/platform; xvfb=root/"executor/runtime/bin/xvfb-run"; font=root/"executor/runtime/fonts.conf"; libs=root/"executor/runtime/libs"
+        binary.parent.mkdir(parents=True,exist_ok=True); xvfb.parent.mkdir(parents=True,exist_ok=True); font.parent.mkdir(parents=True,exist_ok=True); libs.mkdir(parents=True,exist_ok=True); binary.write_text("x"); font.write_text("<fontconfig/>")
+        (root/".local/one-c-runtime.json").parent.mkdir(parents=True, exist_ok=True)
+        (root/".local/one-c-runtime.json").write_text(json.dumps({"schemaVersion":1,"platform":str(binary),"xvfb":str(xvfb),"fontconfig":str(font),"libs":str(libs)}))
         script=f'''#!/usr/bin/env python3
 import sys
 from pathlib import Path

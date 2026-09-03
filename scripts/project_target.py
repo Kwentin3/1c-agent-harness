@@ -84,7 +84,7 @@ def open_target(repo_root: Path) -> dict[str, object]:
                     try:
                         materialize_cf(repo_root=repo_root, source=source, output=staged_snapshot, work_root=work)
                     except MaterializerUnavailable as exc:
-                        raise TargetBlocked("materializer_unavailable", "1C training runtime is unavailable", locator="docs/lab-bootstrap.md") from exc
+                        raise TargetBlocked("materializer_unavailable", "1C runtime is unavailable", locator="docs/lab-bootstrap.md") from exc
                     except MaterializationFailed as exc:
                         raise TargetBlocked("materialization_failed", "CF materialization failed") from exc
                 remove_owned(work)

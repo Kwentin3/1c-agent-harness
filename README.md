@@ -48,6 +48,11 @@ source принимается без 1С; `.cf` материализуется �
 платформа 1С, Xvfb/libs и лицензия. При их отсутствии команда возвращает один
 `materializer_unavailable` с locator на [`docs/lab-bootstrap.md`](docs/lab-bootstrap.md); она
 ничего не скачивает и не устанавливает.
+
+Единственный executor-level locator — игнорируемый Git файл `.local/one-c-runtime.json`. Он не
+является project contract и не попадает в `SnapshotRef`; schema v1 содержит абсолютные пути
+`platform`, `xvfb`, `fontconfig`, `libs`. Это позволяет executor выбрать заранее подготовленный
+runtime без зашивания конфигурации, её версии или provider route в harness.
 EDT, CFE, CFU, DT, EPF, живые ИБ и remote executors в v1 возвращают `unsupported_source`.
 
 Admission в `project_target.py` проверяет закрытый manifest/file set, hashes, read-only режим и
