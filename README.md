@@ -32,23 +32,38 @@
 > Knowledge handoff и следующий gate зафиксированы в
 > [`docs/write-cycle-knowledge-handoff.md`](docs/write-cycle-knowledge-handoff.md).
 
-## Перед любой native-работой
+## Открытие project target
 
-Из корня репозитория сначала выполните единственный project front door:
+Из корня репозитория единственная входная команда получает или восстанавливает проверенный
+`SnapshotRef`:
 
 ```bash
-python3 scripts/project_target.py
+python3 scripts/project_target.py open
 ```
 
-Он читает один project-owned контракт [`project-target.json`](project-target.json) и возвращает
-`ready` только после проверки SHA-256 исходного CF, SHA-256 и всех записей manifest, полного набора
-файлов snapshot, а также имени и версии конфигурации по точному `Configuration/Properties` locator.
-`blocked` означает: **не запускать 1С и не выбирать другой похожий fixture**. Для другого проекта
-заменяется сам project-owned контракт; общий verifier и `native_cycle.py` не меняются.
+[`project-target.json`](project-target.json) объявляет ровно один source и ожидаемую identity.
+Поддержаны существующий admitted snapshot, полная hierarchical выгрузка и `.cf`. Hierarchical
+source принимается без 1С; `.cf` материализуется встроенным repo-owned маршрутом
+`CREATEINFOBASE → /LoadCfg → /DumpConfigToFiles -Format Hierarchical`. Внешними остаются только
+платформа 1С, Xvfb/libs и лицензия. При их отсутствии команда возвращает один
+`materializer_unavailable` с locator на [`docs/lab-bootstrap.md`](docs/lab-bootstrap.md); она
+ничего не скачивает и не устанавливает.
 
-Для этого проекта target — canonical JetTr `1.0.3.1`; immutable CF/snapshot/manifest никогда не
-являются рабочей копией. После `ready` подготовленная task-specific копия размещается отдельно под
-`.local/prepared/`. Единственная продуктовая команда для прикладной проверки —
+Единственный executor-level locator — игнорируемый Git файл `.local/one-c-runtime.json`. Он не
+является project contract и не попадает в `SnapshotRef`; schema v1 содержит абсолютные пути
+`platform`, `xvfb`, `fontconfig`, `libs`. Это позволяет executor выбрать заранее подготовленный
+runtime без зашивания конфигурации, её версии или provider route в harness.
+EDT, CFE, CFU, DT, EPF, живые ИБ и remote executors в v1 возвращают `unsupported_source`.
+
+Admission в `project_target.py` проверяет закрытый manifest/file set, hashes, read-only режим и
+`Configuration/Properties`. Только после него snapshot и manifest атомарно публикуются вместе под
+`.local/targets/`, вне disposable `.local/runs/` и `.local/prepared/`. Повторный `open` строго
+проверяет и переиспользует тот же retained target без source и native-запуска; повреждённый target
+не исправляется и не перезаписывается.
+
+Для этого проекта target — canonical JetTr `1.0.3.1`. Полученный `snapshot.root` передаётся
+следующим read-only инструментам. Для разрешённых прикладных write-проверок task-specific копия
+размещается отдельно под `.local/prepared/`. Единственная продуктовая команда такой проверки —
 [`scripts/shared_task_route.py run`](scripts/shared_task_route.py). Она сама создаёт disposable
 prepared path, применяет task-owned exact patches, вычисляет derived identities, вызывает
 низкоуровневый `native_cycle.py run-prepared`, передаёт raw receipts предметному oracle, возвращает

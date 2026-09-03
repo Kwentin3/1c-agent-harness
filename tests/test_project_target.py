@@ -4,424 +4,463 @@ import hashlib
 import json
 import os
 from pathlib import Path
+import shutil
+import signal
+import stat
 import subprocess
 import sys
 import tempfile
 import unittest
-
+from unittest import mock
 
 ROOT = Path(__file__).resolve().parents[1]
 CLI = ROOT / "scripts" / "project_target.py"
+sys.path.insert(0, str(ROOT / "scripts"))
+
+import cf_materializer
+import managed_probe_prepare
+import native_cycle
+import target_admission
 
 
-def sha256(payload: bytes) -> str:
+def digest(payload: bytes) -> str:
     return hashlib.sha256(payload).hexdigest()
 
 
-def run_cli(repo: Path) -> subprocess.CompletedProcess[str]:
-    return subprocess.run(
-        [sys.executable, str(CLI), "--repo-root", str(repo)],
-        text=True,
-        capture_output=True,
-        check=False,
+def manifest(root: Path) -> bytes:
+    records = []
+    for path in sorted(root.rglob("*")):
+        if path.is_file():
+            records.append(
+                f"{digest(path.read_bytes())}  {path.relative_to(root).as_posix()}\n"
+            )
+    return "".join(records).encode("utf-8")
+
+
+def export(root: Path, *, name: str = "Sample", version: str = "2.0") -> Path:
+    source = root / ".local/source/export"
+    source.mkdir(parents=True)
+    configuration = (
+        "<MetaDataObject><Configuration><Properties>"
+        f"<Name>{name}</Name><Version>{version}</Version>"
+        "</Properties></Configuration></MetaDataObject>"
     )
+    (source / "Configuration.xml").write_text(configuration, encoding="utf-8")
+    document = source / "Documents/Order.xml"
+    document.parent.mkdir()
+    document.write_text("<MetaDataObject/>", encoding="utf-8")
+    return source
 
 
-def write_project(root: Path) -> None:
-    source = root / ".local/dist/Jet-1.0.3.1-tr.cf"
-    snapshot = root / ".local/runs/training-jet-review-final/snapshot"
-    manifest = snapshot.parent / "snapshot.manifest"
-    source.parent.mkdir(parents=True)
-    snapshot.mkdir(parents=True)
-    source.write_bytes(b"canonical-cf")
-    files = {
-        "Configuration.xml": (
-            b'<?xml version="1.0" encoding="UTF-8"?>\n'
-            b'<MetaDataObject><Configuration><Properties>'
-            b'<Name>JetTr</Name><Version>1.0.3.1</Version>'
-            b'</Properties></Configuration></MetaDataObject>\n'
-        ),
-        "CommonModules/Example/Ext/Module.bsl": b"Procedure Example()\nEndProcedure\n",
-    }
-    for relative, payload in files.items():
-        path = snapshot / relative
-        path.parent.mkdir(parents=True, exist_ok=True)
-        path.write_bytes(payload)
-    manifest_payload = "".join(
-        f"{sha256(payload)}  {relative}\n"
-        for relative, payload in sorted(files.items())
-    ).encode()
-    manifest.write_bytes(manifest_payload)
-    contract = {
-        "schemaVersion": 1,
-        "configuration": {"name": "JetTr", "version": "1.0.3.1"},
-        "sourceCf": {
-            "path": ".local/dist/Jet-1.0.3.1-tr.cf",
-            "sha256": sha256(b"canonical-cf"),
-        },
+def write_contract(
+    root: Path,
+    source: dict[str, object],
+    content_id: str,
+    *,
+    file_count: int = 2,
+) -> None:
+    value = {
+        "schemaVersion": 2,
+        "configuration": {"name": "Sample", "version": "2.0"},
+        "source": source,
         "snapshot": {
-            "path": ".local/runs/training-jet-review-final/snapshot",
-            "manifestPath": ".local/runs/training-jet-review-final/snapshot.manifest",
-            "manifestSha256": sha256(manifest_payload),
-            "fileCount": len(files),
+            "root": ".local/targets/sample/snapshot",
+            "manifest": ".local/targets/sample/snapshot.manifest",
+            "contentId": f"sha256:{content_id}",
+            "fileCount": file_count,
         },
         "dailyNativeRoute": "scripts/shared_task_route.py run",
     }
-    (root / "project-target.json").write_text(
-        json.dumps(contract, indent=2) + "\n", encoding="utf-8"
+    (root / "project-target.json").write_text(json.dumps(value), encoding="utf-8")
+
+
+def hierarchical_project(root: Path) -> Path:
+    source = export(root)
+    source_manifest = manifest(source)
+    write_contract(
+        root,
+        {
+            "kind": "hierarchical",
+            "path": ".local/source/export",
+            "contentId": f"sha256:{digest(source_manifest)}",
+            "fileCount": 2,
+        },
+        digest(source_manifest),
     )
+    return source
 
 
-class ProjectTargetCliTests(unittest.TestCase):
-    def test_project_owned_contract_can_define_another_project(self) -> None:
+def run_open(root: Path, *, legacy_alias: bool = False) -> subprocess.CompletedProcess[str]:
+    command = [sys.executable, str(CLI)]
+    if not legacy_alias:
+        command.append("open")
+    command.extend(("--repo-root", str(root)))
+    return subprocess.run(command, text=True, capture_output=True, check=False)
+
+
+def response(completed: subprocess.CompletedProcess[str]) -> dict[str, object]:
+    return json.loads(completed.stdout)
+
+
+class ProjectTargetTests(unittest.TestCase):
+    def test_hierarchical_source_and_legacy_alias_share_open_boundary(self) -> None:
         with tempfile.TemporaryDirectory() as temporary:
-            repo = Path(temporary)
-            write_project(repo)
-            snapshot = repo / ".local/runs/training-jet-review-final/snapshot"
-            configuration = snapshot / "Configuration.xml"
-            configuration.write_bytes(
-                b'<MetaDataObject><Configuration><Properties>'
-                b'<Name>OtherProject</Name><Version>2.0</Version>'
-                b'</Properties></Configuration></MetaDataObject>\n'
-            )
-            manifest = snapshot.parent / "snapshot.manifest"
-            manifest_payload = "".join(
-                f"{sha256(path.read_bytes())}  {path.relative_to(snapshot).as_posix()}\n"
-                for path in sorted(snapshot.rglob("*"))
-                if path.is_file()
-            ).encode()
-            manifest.write_bytes(manifest_payload)
-            contract_path = repo / "project-target.json"
-            contract = json.loads(contract_path.read_text(encoding="utf-8"))
-            contract["configuration"] = {"name": "OtherProject", "version": "2.0"}
-            contract["snapshot"]["manifestSha256"] = sha256(manifest_payload)
-            contract_path.write_text(json.dumps(contract), encoding="utf-8")
+            root = Path(temporary)
+            source = hierarchical_project(root)
 
-            completed = run_cli(repo)
+            cold = run_open(root)
+            alias = run_open(root, legacy_alias=True)
 
-            self.assertEqual(completed.returncode, 0, completed.stdout)
-            self.assertEqual(
-                json.loads(completed.stdout)["configuration"],
-                {"name": "OtherProject", "version": "2.0"},
-            )
+            self.assertEqual(cold.returncode, 0, cold.stdout)
+            self.assertEqual(alias.returncode, 0, alias.stdout)
+            self.assertEqual(response(cold)["action"], "materialized")
+            self.assertEqual(response(alias)["action"], "reused")
+            snapshot = root / str(response(cold)["snapshot"]["root"])
+            self.assertIn(b"Sample", (snapshot / "Configuration.xml").read_bytes())
+            self.assertEqual(manifest(source), manifest(snapshot))
 
-    def test_rejects_contract_symlink(self) -> None:
+    def test_warm_reuse_is_deterministic_without_source(self) -> None:
         with tempfile.TemporaryDirectory() as temporary:
-            outer = Path(temporary)
-            repo = outer / "repo"
-            repo.mkdir()
-            write_project(repo)
-            contract_path = repo / "project-target.json"
-            outside = outer / "contract.json"
-            outside.write_bytes(contract_path.read_bytes())
-            contract_path.unlink()
-            contract_path.symlink_to(outside)
+            root = Path(temporary)
+            source = hierarchical_project(root)
+            self.assertEqual(run_open(root).returncode, 0)
+            shutil.rmtree(source)
 
-            completed = run_cli(repo)
+            first = run_open(root)
+            second = run_open(root)
 
-            self.assertEqual(completed.returncode, 1)
-            self.assertEqual(
-                json.loads(completed.stdout)["reason"],
-                "project-target.json contains a symlink component",
+            self.assertEqual(first.returncode, 0, first.stdout)
+            self.assertEqual(first.stdout, second.stdout)
+            self.assertEqual(response(first)["action"], "reused")
+
+    def test_invalid_source_and_corrupted_retained_target_fail_closed(self) -> None:
+        with tempfile.TemporaryDirectory() as temporary:
+            root = Path(temporary)
+            source = hierarchical_project(root)
+            (source / "Documents/Order.xml").write_text("bad", encoding="utf-8")
+
+            self.assertEqual(response(run_open(root))["reasonCode"], "source_mismatch")
+            self.assertFalse((root / ".local/targets/sample").exists())
+
+            (source / "Documents/Order.xml").write_text("<MetaDataObject/>", encoding="utf-8")
+            source_manifest = manifest(source)
+            write_contract(
+                root,
+                {
+                    "kind": "hierarchical",
+                    "path": ".local/source/export",
+                    "contentId": f"sha256:{digest(source_manifest)}",
+                    "fileCount": 2,
+                },
+                digest(source_manifest),
+            )
+            self.assertEqual(run_open(root).returncode, 0)
+
+            retained = root / ".local/targets/sample/snapshot/Documents/Order.xml"
+            retained.chmod(0o644)
+            retained.write_text("bad", encoding="utf-8")
+            self.assertEqual(response(run_open(root))["reasonCode"], "snapshot_invalid")
+            self.assertEqual(retained.read_text(encoding="utf-8"), "bad")
+
+    def test_cf_open_uses_repo_owned_algorithm_and_warm_reuse(self) -> None:
+        with tempfile.TemporaryDirectory() as temporary:
+            root = Path(temporary)
+            template = export(root)
+            expected = manifest(template)
+            shutil.rmtree(template)
+            source = root / ".local/dist/sample.cf"
+            source.parent.mkdir(parents=True)
+            source.write_bytes(b"cf")
+            write_contract(
+                root,
+                {"kind": "cf", "path": ".local/dist/sample.cf", "sha256": digest(b"cf")},
+                digest(expected),
+            )
+            self.write_fake_runtime(root)
+
+            cold = run_open(root)
+            warm = run_open(root)
+
+            self.assertEqual(cold.returncode, 0, cold.stdout)
+            self.assertEqual(response(cold)["action"], "materialized")
+            self.assertEqual(response(warm)["action"], "reused")
+            self.assertEqual(source.read_bytes(), b"cf")
+            self.assertEqual((root / ".local/runtime-count").read_text(), "1\n1\n1\n")
+
+    def test_executor_runtime_contract_does_not_embed_jet_version(self) -> None:
+        with tempfile.TemporaryDirectory() as temporary:
+            root = Path(temporary)
+            template = export(root)
+            expected = manifest(template)
+            shutil.rmtree(template)
+            source = root / ".local/dist/sample.cf"
+            source.parent.mkdir(parents=True)
+            source.write_bytes(b"cf")
+            write_contract(
+                root,
+                {"kind": "cf", "path": ".local/dist/sample.cf", "sha256": digest(b"cf")},
+                digest(expected),
+            )
+            self.write_fake_runtime(root, platform="executor/runtime/bin/custom-1c")
+
+            opened = run_open(root)
+
+            self.assertEqual(opened.returncode, 0, opened.stdout)
+            self.assertEqual(response(opened)["action"], "materialized")
+
+    def test_missing_or_malformed_runtime_contract_is_materializer_blocker(self) -> None:
+        with tempfile.TemporaryDirectory() as temporary:
+            root = Path(temporary)
+            source = root / ".local/dist/sample.cf"
+            source.parent.mkdir(parents=True)
+            source.write_bytes(b"cf")
+            write_contract(
+                root,
+                {"kind": "cf", "path": ".local/dist/sample.cf", "sha256": digest(b"cf")},
+                "0" * 64,
             )
 
-    def test_rejects_multiply_linked_identity_inputs(self) -> None:
-        cases = {
-            "project-target.json": "project-target.json",
-            "source CF": ".local/dist/Jet-1.0.3.1-tr.cf",
-            "snapshot manifest": ".local/runs/training-jet-review-final/snapshot.manifest",
-        }
-        for field, relative in cases.items():
-            with self.subTest(field=field), tempfile.TemporaryDirectory() as temporary:
-                repo = Path(temporary)
-                write_project(repo)
-                target = repo / relative
-                alias = repo / f"{field.replace(' ', '-')}.alias"
-                alias.write_bytes(target.read_bytes())
-                target.unlink()
-                os.link(alias, target)
+            missing = response(run_open(root))
+            self.assertEqual(missing["reasonCode"], "materializer_unavailable")
+            self.assertEqual(missing["locator"], "docs/lab-bootstrap.md")
 
-                completed = run_cli(repo)
+            (root / ".local/one-c-runtime.json").write_text(
+                '{"schemaVersion":1,"platform":"relative"}', encoding="utf-8"
+            )
+            self.assertEqual(response(run_open(root))["reasonCode"], "materializer_unavailable")
 
-                self.assertEqual(completed.returncode, 1, completed.stdout)
-                self.assertEqual(
-                    json.loads(completed.stdout)["reason"],
-                    f"{field} must have exactly one hard link",
+    def test_parallel_cf_open_materializes_once(self) -> None:
+        with tempfile.TemporaryDirectory() as temporary:
+            root = Path(temporary)
+            template = export(root)
+            expected = manifest(template)
+            shutil.rmtree(template)
+            source = root / ".local/dist/sample.cf"
+            source.parent.mkdir(parents=True)
+            source.write_bytes(b"cf")
+            write_contract(
+                root,
+                {"kind": "cf", "path": ".local/dist/sample.cf", "sha256": digest(b"cf")},
+                digest(expected),
+            )
+            self.write_fake_runtime(root)
+            argv = [sys.executable, str(CLI), "open", "--repo-root", str(root)]
+
+            first = subprocess.Popen(argv, text=True, stdout=subprocess.PIPE)
+            second = subprocess.Popen(argv, text=True, stdout=subprocess.PIPE)
+            first_output, _ = first.communicate(timeout=15)
+            second_output, _ = second.communicate(timeout=15)
+
+            self.assertEqual((first.returncode, second.returncode), (0, 0))
+            actions = {json.loads(first_output)["action"], json.loads(second_output)["action"]}
+            self.assertEqual(actions, {"materialized", "reused"})
+            self.assertEqual((root / ".local/runtime-count").read_text(), "1\n1\n1\n")
+
+    def test_cf_materializer_rejects_bad_dump_result_and_cleans_output(self) -> None:
+        with tempfile.TemporaryDirectory() as temporary:
+            root = Path(temporary)
+            source = root / "source.cf"
+            source.write_bytes(b"cf")
+            output = root / "output"
+            work = root / "work"
+            self.write_fake_runtime(root)
+
+            def bad_runner(argv, **_kwargs):
+                result = Path(argv[argv.index("/DumpResult") + 1])
+                result.parent.mkdir(parents=True, exist_ok=True)
+                result.write_text("1", encoding="utf-8")
+                return subprocess.CompletedProcess(argv, 0)
+
+            with self.assertRaises(cf_materializer.MaterializationFailed):
+                cf_materializer.materialize_cf(
+                    repo_root=root,
+                    source=source,
+                    output=output,
+                    work_root=work,
+                    runner=bad_runner,
                 )
+            self.assertFalse(output.exists())
 
-    def test_reports_verified_target_and_single_daily_route(self) -> None:
+    def test_cf_materializer_cleans_xvfb_process_group_after_successful_step(self) -> None:
         with tempfile.TemporaryDirectory() as temporary:
-            repo = Path(temporary)
-            write_project(repo)
+            root = Path(temporary)
+            result = root / "result"
+            result.write_text("0", encoding="utf-8")
 
-            completed = run_cli(repo)
+            class FinishedProcess:
+                pid = 4321
+                returncode = 0
 
-            self.assertEqual(completed.returncode, 0, completed.stderr)
-            result = json.loads(completed.stdout)
-            self.assertEqual(result["status"], "ready")
-            self.assertEqual(result["configuration"], {"name": "JetTr", "version": "1.0.3.1"})
-            self.assertEqual(result["sourceCf"]["actualSha256"], result["sourceCf"]["expectedSha256"])
-            self.assertEqual(result["snapshot"]["actualManifestSha256"], result["snapshot"]["expectedManifestSha256"])
-            self.assertEqual(result["snapshot"]["actualFileCount"], 2)
-            self.assertEqual(result["dailyNativeRoute"], "scripts/shared_task_route.py run")
+                def communicate(self, timeout):
+                    return (b"", b"")
 
-    def test_configuration_identity_uses_configuration_properties_only(self) -> None:
+            group_alive = True
+
+            def process_group(signal_number):
+                nonlocal group_alive
+                if signal_number == 0 and not group_alive:
+                    raise ProcessLookupError()
+                if signal_number == signal.SIGTERM:
+                    group_alive = False
+
+            with mock.patch.object(cf_materializer.subprocess, "Popen", return_value=FinishedProcess()), \
+                 mock.patch.object(cf_materializer.os, "killpg", side_effect=lambda _pid, signal_number: process_group(signal_number)):
+                cf_materializer._run_step(["native"], {}, result, runner=subprocess.run)
+
+    def test_owned_cleanup_does_not_follow_symlink_to_external_sentinel(self) -> None:
         with tempfile.TemporaryDirectory() as temporary:
-            repo = Path(temporary)
-            write_project(repo)
-            snapshot = repo / ".local/runs/training-jet-review-final/snapshot"
-            configuration = snapshot / "Configuration.xml"
-            configuration.write_bytes(
-                b'<MetaDataObject><Configuration><Properties>'
-                b'<Name>JetTr</Name><Version>1.0.3.1</Version>'
-                b'</Properties><Distractor><Name>Other</Name><Version>9.9</Version>'
-                b'</Distractor></Configuration></MetaDataObject>\n'
-            )
-            manifest = snapshot.parent / "snapshot.manifest"
-            manifest_payload = "".join(
-                f"{sha256(path.read_bytes())}  {path.relative_to(snapshot).as_posix()}\n"
-                for path in sorted(snapshot.rglob("*"))
-                if path.is_file()
-            ).encode()
-            manifest.write_bytes(manifest_payload)
-            contract_path = repo / "project-target.json"
-            contract = json.loads(contract_path.read_text(encoding="utf-8"))
-            contract["snapshot"]["manifestSha256"] = sha256(manifest_payload)
-            contract_path.write_text(json.dumps(contract), encoding="utf-8")
+            root = Path(temporary)
+            sentinel = root / "external-sentinel"
+            sentinel.write_bytes(b"do not touch")
+            sentinel.chmod(0o640)
+            owned = root / "owned"
+            owned.mkdir()
+            (owned / "escape").symlink_to(sentinel)
+            before = (sentinel.read_bytes(), stat.S_IMODE(sentinel.stat().st_mode))
 
-            completed = run_cli(repo)
+            target_admission.remove_owned(owned)
 
-            self.assertEqual(completed.returncode, 0, completed.stdout)
+            self.assertFalse(owned.exists())
             self.assertEqual(
-                json.loads(completed.stdout)["configuration"],
-                {"name": "JetTr", "version": "1.0.3.1"},
+                (sentinel.read_bytes(), stat.S_IMODE(sentinel.stat().st_mode)), before
             )
 
-    def test_rejects_snapshot_bytes_not_bound_by_manifest(self) -> None:
+    def test_symlink_and_hardlink_source_entries_do_not_bypass_admission(self) -> None:
+        for kind in ("symlink", "hardlink"):
+            with self.subTest(kind=kind), tempfile.TemporaryDirectory() as temporary:
+                root = Path(temporary)
+                source = hierarchical_project(root)
+                document = source / "Documents/Order.xml"
+                if kind == "symlink":
+                    replacement = root / "external.xml"
+                    replacement.write_text("<MetaDataObject/>", encoding="utf-8")
+                    document.unlink()
+                    document.symlink_to(replacement)
+                else:
+                    duplicate = source / "Documents/Duplicate.xml"
+                    os.link(document, duplicate)
+
+                blocked = response(run_open(root))
+
+                self.assertEqual(blocked["reasonCode"], "source_mismatch")
+                self.assertFalse((root / ".local/targets/sample").exists())
+
+    def test_duplicate_keys_and_boolean_file_count_are_rejected(self) -> None:
         with tempfile.TemporaryDirectory() as temporary:
-            repo = Path(temporary)
-            write_project(repo)
-            (repo / ".local/runs/training-jet-review-final/snapshot/CommonModules/Example/Ext/Module.bsl").write_bytes(
-                b"Procedure Changed()\nEndProcedure\n"
+            root = Path(temporary)
+            hierarchical_project(root)
+            duplicate_contract = (
+                '{"schemaVersion":2,"schemaVersion":2,"configuration":{},'
+                '"source":{},"snapshot":{},"dailyNativeRoute":""}'
             )
+            (root / "project-target.json").write_text(duplicate_contract, encoding="utf-8")
+            self.assertEqual(response(run_open(root))["reasonCode"], "snapshot_invalid")
 
-            completed = run_cli(repo)
-
-            self.assertEqual(completed.returncode, 1)
-            self.assertEqual(json.loads(completed.stdout)["reason"], "snapshot content mismatch: CommonModules/Example/Ext/Module.bsl")
-
-    def test_rejects_a_second_target_shape(self) -> None:
         with tempfile.TemporaryDirectory() as temporary:
-            repo = Path(temporary)
-            write_project(repo)
-            contract_path = repo / "project-target.json"
-            contract = json.loads(contract_path.read_text(encoding="utf-8"))
-            contract["targets"] = [contract["configuration"]]
-            contract_path.write_text(json.dumps(contract), encoding="utf-8")
+            root = Path(temporary)
+            source = hierarchical_project(root)
+            value = json.loads((root / "project-target.json").read_text(encoding="utf-8"))
+            value["snapshot"]["fileCount"] = True
+            (root / "project-target.json").write_text(json.dumps(value), encoding="utf-8")
 
-            completed = run_cli(repo)
+            self.assertEqual(response(run_open(root))["reasonCode"], "snapshot_invalid")
+            self.assertTrue(source.exists())
 
-            self.assertEqual(completed.returncode, 1)
-            self.assertEqual(
-                json.loads(completed.stdout)["reason"],
-                "contract keys mismatch: expected configuration, dailyNativeRoute, schemaVersion, snapshot, sourceCf",
-            )
-
-    def test_rejects_competing_daily_native_route(self) -> None:
+    def test_unsupported_source_is_distinct_from_invalid_source(self) -> None:
         with tempfile.TemporaryDirectory() as temporary:
-            repo = Path(temporary)
-            write_project(repo)
-            contract_path = repo / "project-target.json"
-            contract = json.loads(contract_path.read_text(encoding="utf-8"))
-            contract["dailyNativeRoute"] = "scripts/native_cycle.py run"
-            contract_path.write_text(json.dumps(contract), encoding="utf-8")
+            root = Path(temporary)
+            write_contract(root, {"kind": "edt", "path": ".local/source"}, "0" * 64)
+            self.assertEqual(response(run_open(root))["reasonCode"], "unsupported_source")
 
-            completed = run_cli(repo)
-
-            self.assertEqual(completed.returncode, 1)
-            self.assertEqual(
-                json.loads(completed.stdout)["reason"],
-                "dailyNativeRoute must be scripts/shared_task_route.py run",
-            )
-
-    def test_rejects_source_path_outside_repository(self) -> None:
         with tempfile.TemporaryDirectory() as temporary:
-            outer = Path(temporary)
-            repo = outer / "repo"
-            repo.mkdir()
-            write_project(repo)
-            outside = outer / "outside.cf"
-            outside.write_bytes(b"outside-but-matching")
-            contract_path = repo / "project-target.json"
-            contract = json.loads(contract_path.read_text(encoding="utf-8"))
-            contract["sourceCf"] = {
-                "path": str(outside),
-                "sha256": sha256(outside.read_bytes()),
-            }
-            contract_path.write_text(json.dumps(contract), encoding="utf-8")
-
-            completed = run_cli(repo)
-
-            self.assertEqual(completed.returncode, 1)
-            self.assertEqual(
-                json.loads(completed.stdout)["reason"],
-                "sourceCf.path must stay within repository",
+            root = Path(temporary)
+            source = root / ".local/dist/sample.cf"
+            source.parent.mkdir(parents=True)
+            source.mkdir()
+            write_contract(
+                root,
+                {"kind": "cf", "path": ".local/dist/sample.cf", "sha256": "0" * 64},
+                "0" * 64,
             )
+            self.assertEqual(response(run_open(root))["reasonCode"], "source_mismatch")
 
-    def test_rejects_duplicate_contract_keys(self) -> None:
+    def test_run_and_prepared_cleanup_do_not_touch_retained_target(self) -> None:
         with tempfile.TemporaryDirectory() as temporary:
-            repo = Path(temporary)
-            write_project(repo)
-            contract_path = repo / "project-target.json"
-            text = contract_path.read_text(encoding="utf-8").replace(
-                '"schemaVersion": 1,',
-                '"schemaVersion": 1,\n  "schemaVersion": 1,',
-                1,
+            root = Path(temporary)
+            hierarchical_project(root)
+            self.assertEqual(run_open(root).returncode, 0)
+            retained = root / ".local/targets/sample"
+            prepared = root / ".local/prepared/task-owned"
+            generated = root / ".local/runs/task-owned/run/work-copy"
+            prepared.mkdir(parents=True)
+            generated.mkdir(parents=True)
+            (prepared / "temporary.txt").write_text("temporary", encoding="utf-8")
+            (generated / "temporary.txt").write_text("temporary", encoding="utf-8")
+
+            managed_probe_prepare.discard_prepared_tree(
+                repo_root=root,
+                prepared_root=prepared,
             )
-            contract_path.write_text(text, encoding="utf-8")
+            native_cycle._remove_generated_tree(generated)
 
-            completed = run_cli(repo)
+            self.assertFalse(prepared.exists())
+            self.assertFalse(generated.exists())
+            self.assertTrue((retained / "snapshot/Configuration.xml").is_file())
+            self.assertTrue((retained / "snapshot.manifest").is_file())
 
-            self.assertEqual(completed.returncode, 1)
-            self.assertEqual(
-                json.loads(completed.stdout)["reason"],
-                "duplicate JSON key: schemaVersion",
-            )
+    @staticmethod
+    def write_fake_runtime(
+        root: Path,
+        *,
+        platform: str = ".local/platform/1cv8t/x86_64/8.5.1.1150/1cv8t",
+    ) -> None:
+        binary = root / platform
+        xvfb = root / "executor/runtime/bin/xvfb-run"
+        fontconfig = root / "executor/runtime/fonts.conf"
+        libraries = root / "executor/runtime/libs"
+        binary.parent.mkdir(parents=True, exist_ok=True)
+        xvfb.parent.mkdir(parents=True, exist_ok=True)
+        fontconfig.parent.mkdir(parents=True, exist_ok=True)
+        libraries.mkdir(parents=True, exist_ok=True)
+        binary.write_text("x", encoding="utf-8")
+        fontconfig.write_text("<fontconfig/>", encoding="utf-8")
+        (root / ".local/one-c-runtime.json").write_text(
+            json.dumps(
+                {
+                    "schemaVersion": 1,
+                    "platform": str(binary),
+                    "xvfb": str(xvfb),
+                    "fontconfig": str(fontconfig),
+                    "libs": str(libraries),
+                }
+            ),
+            encoding="utf-8",
+        )
+        script = f'''#!/usr/bin/env python3
+import sys
+from pathlib import Path
 
-    def test_rejects_symlink_inside_snapshot(self) -> None:
-        with tempfile.TemporaryDirectory() as temporary:
-            repo = Path(temporary)
-            write_project(repo)
-            relative = "CommonModules/Example/Ext/Module.bsl"
-            linked = repo / ".local/runs/training-jet-review-final/snapshot" / relative
-            linked.unlink()
-            outside = repo / "outside.bsl"
-            outside.write_bytes(b"Procedure Example()\nEndProcedure\n")
-            linked.symlink_to(outside)
-            manifest = repo / ".local/runs/training-jet-review-final/snapshot.manifest"
-            contract_path = repo / "project-target.json"
-            contract = json.loads(contract_path.read_text(encoding="utf-8"))
-            contract["snapshot"]["manifestSha256"] = sha256(manifest.read_bytes())
-            contract_path.write_text(json.dumps(contract), encoding="utf-8")
-
-            completed = run_cli(repo)
-
-            self.assertEqual(completed.returncode, 1)
-            self.assertEqual(
-                json.loads(completed.stdout)["reason"],
-                f"snapshot contains symlink: {relative}",
-            )
-
-    def test_rejects_5002_file_fixture_as_current_target(self) -> None:
-        with tempfile.TemporaryDirectory() as temporary:
-            repo = Path(temporary)
-            write_project(repo)
-            snapshot = repo / ".local/runs/training-jet-review-final/snapshot"
-            generated = snapshot / "Generated"
-            generated.mkdir()
-            for index in range(5000):
-                (generated / f"{index:04d}.txt").write_bytes(b"")
-            manifest = snapshot.parent / "snapshot.manifest"
-            manifest_payload = "".join(
-                f"{sha256(path.read_bytes())}  {path.relative_to(snapshot).as_posix()}\n"
-                for path in sorted(snapshot.rglob("*"))
-                if path.is_file()
-            ).encode()
-            manifest.write_bytes(manifest_payload)
-            contract_path = repo / "project-target.json"
-            contract = json.loads(contract_path.read_text(encoding="utf-8"))
-            contract["snapshot"]["manifestSha256"] = sha256(manifest_payload)
-            contract["snapshot"]["fileCount"] = 5099
-            contract_path.write_text(json.dumps(contract), encoding="utf-8")
-
-            completed = run_cli(repo)
-
-            self.assertEqual(completed.returncode, 1)
-            self.assertEqual(
-                json.loads(completed.stdout)["reason"],
-                "snapshot file count mismatch: expected 5099, got 5002",
-            )
-
-    def test_rejects_unsupported_contract_schema(self) -> None:
-        with tempfile.TemporaryDirectory() as temporary:
-            repo = Path(temporary)
-            write_project(repo)
-            contract_path = repo / "project-target.json"
-            contract = json.loads(contract_path.read_text(encoding="utf-8"))
-            contract["schemaVersion"] = 2
-            contract_path.write_text(json.dumps(contract), encoding="utf-8")
-
-            completed = run_cli(repo)
-
-            self.assertEqual(completed.returncode, 1)
-            self.assertEqual(
-                json.loads(completed.stdout)["reason"],
-                "unsupported schemaVersion: 2",
-            )
-
-    def test_rejects_fallback_source_in_contract(self) -> None:
-        with tempfile.TemporaryDirectory() as temporary:
-            repo = Path(temporary)
-            write_project(repo)
-            contract_path = repo / "project-target.json"
-            contract = json.loads(contract_path.read_text(encoding="utf-8"))
-            contract["sourceCf"]["fallbackPath"] = ".local/dist/Jet-1.0.2.1.cf"
-            contract_path.write_text(json.dumps(contract), encoding="utf-8")
-
-            completed = run_cli(repo)
-
-            self.assertEqual(completed.returncode, 1)
-            self.assertEqual(
-                json.loads(completed.stdout)["reason"],
-                "sourceCf keys mismatch: expected path, sha256",
-            )
-
-    def test_rejects_boolean_schema_version(self) -> None:
-        with tempfile.TemporaryDirectory() as temporary:
-            repo = Path(temporary)
-            write_project(repo)
-            contract_path = repo / "project-target.json"
-            contract = json.loads(contract_path.read_text(encoding="utf-8"))
-            contract["schemaVersion"] = True
-            contract_path.write_text(json.dumps(contract), encoding="utf-8")
-
-            completed = run_cli(repo)
-
-            self.assertEqual(completed.returncode, 1)
-            self.assertEqual(
-                json.loads(completed.stdout)["reason"],
-                "schemaVersion must be integer 1",
-            )
-
-    def test_rejects_boolean_file_count(self) -> None:
-        with tempfile.TemporaryDirectory() as temporary:
-            repo = Path(temporary)
-            write_project(repo)
-            snapshot = repo / ".local/runs/training-jet-review-final/snapshot"
-            module = snapshot / "CommonModules/Example/Ext/Module.bsl"
-            module.unlink()
-            module.parent.rmdir()
-            module.parent.parent.rmdir()
-            module.parent.parent.parent.rmdir()
-            configuration = snapshot / "Configuration.xml"
-            manifest_payload = (
-                f"{sha256(configuration.read_bytes())}  Configuration.xml\n"
-            ).encode()
-            manifest = snapshot.parent / "snapshot.manifest"
-            manifest.write_bytes(manifest_payload)
-            contract_path = repo / "project-target.json"
-            contract = json.loads(contract_path.read_text(encoding="utf-8"))
-            contract["snapshot"]["manifestSha256"] = sha256(manifest_payload)
-            contract["snapshot"]["fileCount"] = True
-            contract_path.write_text(json.dumps(contract), encoding="utf-8")
-
-            completed = run_cli(repo)
-
-            self.assertEqual(completed.returncode, 1)
-            self.assertEqual(
-                json.loads(completed.stdout)["reason"],
-                "snapshot.fileCount must be a positive integer",
-            )
+args = sys.argv[1:]
+root = Path({str(root)!r})
+with (root / ".local/runtime-count").open("a") as stream:
+    stream.write("1\\n")
+result = Path(args[args.index("/DumpResult") + 1])
+result.parent.mkdir(parents=True, exist_ok=True)
+result.write_text("0", encoding="utf-8")
+if "/DumpConfigToFiles" in args:
+    output = Path(args[args.index("/DumpConfigToFiles") + 1])
+    output.mkdir()
+    (output / "Configuration.xml").write_text(
+        "<MetaDataObject><Configuration><Properties><Name>Sample</Name>"
+        "<Version>2.0</Version></Properties></Configuration></MetaDataObject>",
+        encoding="utf-8",
+    )
+    (output / "Documents").mkdir()
+    (output / "Documents/Order.xml").write_text("<MetaDataObject/>", encoding="utf-8")
+'''
+        xvfb.write_text(script, encoding="utf-8")
+        xvfb.chmod(0o755)
+        binary.chmod(0o755)
 
 
 if __name__ == "__main__":

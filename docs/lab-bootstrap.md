@@ -237,4 +237,22 @@ check_ldd /usr/bin/xkbcomp
 echo LAB_READY
 ```
 
-После `LAB_READY` выполните fail-closed smoke из [runbook лаборатории](lab.md).
+`LAB_READY` — достаточная runtime-предпосылка для CF materialization. Алгоритм
+`CREATEINFOBASE` → `/LoadCfg` → `/DumpConfigToFiles -Format Hierarchical` находится в
+repo-owned `scripts/cf_materializer.py`, а `open` передаёт ему только immutable CF и новый owned
+work root. Harness проверяет каждый exit/`DumpResult`, source continuity и closed output tree,
+удаляет disposable work root и только затем атомарно публикует retained target. Команда не
+скачивает и не устанавливает runtime.
+
+После проверки подготовленный executor публикует ровно один локальный, не коммитируемый locator
+`.local/one-c-runtime.json`:
+
+```json
+{"schemaVersion":1,"platform":"/absolute/path/to/1cv8t","xvfb":"/absolute/path/to/xvfb-run","fontconfig":"/absolute/path/to/fonts.conf","libs":"/absolute/path/to/libs"}
+```
+
+Это executor contract, а не `project-target.json`: он не содержит Jet/CF identity и не передаётся
+downstream. Никакой fallback/discovery/registry не поддерживается.
+
+После `LAB_READY` выполните fail-closed smoke из [runbook лаборатории](lab.md). Публичная
+проверка выполняется одной командой `python3 scripts/project_target.py open`.

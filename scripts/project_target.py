@@ -1,223 +1,132 @@
 #!/usr/bin/env python3
-"""Verify this repository's one declared 1C target before native work."""
-
+"""Open this repository's declared 1C configuration as an admitted SnapshotRef."""
 from __future__ import annotations
 
 import argparse
+import fcntl
 import hashlib
 import json
+import os
 from pathlib import Path
+import shutil
 import sys
-import xml.etree.ElementTree as ET
+import uuid
+
+from cf_materializer import MaterializationFailed, MaterializerUnavailable, materialize_cf
+from target_admission import (
+    TargetBlocked, admit_snapshot, admit_target, binding_bytes, freeze, load_contract,
+    manifest_entries, paths, remove_owned, repo_path, require_one_link, sha256,
+    snapshot_ref, source_identity, tree_manifest,
+)
 
 
-def _sha256(path: Path) -> str:
-    return hashlib.sha256(path.read_bytes()).hexdigest()
+def _source(repo_root: Path, contract: dict[str, object]) -> Path:
+    source = contract["source"]
+    assert isinstance(source, dict)
+    path = repo_path(repo_root, source["path"], field="source path")
+    if not path.exists():
+        raise TargetBlocked("source_missing", "declared source does not exist")
+    if source["kind"] == "cf":
+        if path.is_symlink() or not path.is_file():
+            raise TargetBlocked("source_mismatch", "declared CF source is not a regular file")
+        require_one_link(path)
+        if sha256(path) != source["sha256"]:
+            raise TargetBlocked("source_mismatch", "declared CF source identity mismatch")
+    else:
+        try:
+            manifest = tree_manifest(path)
+        except Exception as exc:
+            raise TargetBlocked("source_mismatch", "declared hierarchical source failed validation") from exc
+        if (len(manifest_entries(manifest)) != source["fileCount"] or
+                hashlib.sha256(manifest).hexdigest() != str(source["contentId"])[7:]):
+            raise TargetBlocked("source_mismatch", "declared hierarchical source identity mismatch")
+    return path
 
 
-def _local_name(tag: str) -> str:
-    return tag.rsplit("}", 1)[-1]
+def _source_unchanged(source: Path, contract: dict[str, object]) -> None:
+    definition = contract["source"]
+    assert isinstance(definition, dict)
+    actual = sha256(source) if definition["kind"] == "cf" else hashlib.sha256(tree_manifest(source)).hexdigest()
+    expected = definition["sha256"] if definition["kind"] == "cf" else str(definition["contentId"])[7:]
+    if actual != expected:
+        raise TargetBlocked("source_mismatch", "declared source changed during open")
 
 
-def _one_child(element: ET.Element, name: str) -> ET.Element:
-    matches = [child for child in element if _local_name(child.tag) == name]
-    if len(matches) != 1:
-        raise ValueError(f"Configuration.xml must contain exactly one {name} at the declared locator")
-    return matches[0]
-
-
-def _unique_json_object(pairs: list[tuple[str, object]]) -> dict[str, object]:
-    result: dict[str, object] = {}
-    for key, value in pairs:
-        if key in result:
-            raise ValueError(f"duplicate JSON key: {key}")
-        result[key] = value
-    return result
-
-
-def _repo_path(repo_root: Path, value: object, *, field: str) -> Path:
-    if not isinstance(value, str) or not value:
-        raise ValueError(f"{field} must be a non-empty repository-relative path")
-    relative = Path(value)
-    if relative.is_absolute() or ".." in relative.parts:
-        raise ValueError(f"{field} must stay within repository")
-    current = repo_root
-    for part in relative.parts:
-        current = current / part
-        if current.is_symlink():
-            raise ValueError(f"{field} contains a symlink component")
-    resolved = current.resolve()
+def open_target(repo_root: Path) -> dict[str, object]:
     try:
-        resolved.relative_to(repo_root.resolve())
-    except ValueError as exc:
-        raise ValueError(f"{field} must stay within repository") from exc
-    return resolved
-
-
-def _require_single_link(path: Path, *, field: str) -> None:
-    if path.stat().st_nlink != 1:
-        raise ValueError(f"{field} must have exactly one hard link")
-
-
-def _manifest_entries(payload: bytes) -> dict[str, str]:
-    entries: dict[str, str] = {}
-    for line_number, line in enumerate(payload.decode("utf-8").splitlines(), 1):
-        digest, separator, relative = line.partition("  ")
-        if (
-            separator != "  "
-            or len(digest) != 64
-            or any(character not in "0123456789abcdef" for character in digest)
-            or not relative
-            or relative.startswith("/")
-            or ".." in Path(relative).parts
-        ):
-            raise ValueError(f"invalid snapshot manifest line: {line_number}")
-        if relative in entries:
-            raise ValueError(f"duplicate snapshot manifest path: {relative}")
-        entries[relative] = digest
-    return entries
-
-
-def _verify_snapshot(snapshot: Path, manifest_entries: dict[str, str], expected_count: int) -> int:
-    snapshot_entries = list(snapshot.rglob("*"))
-    for path in snapshot_entries:
-        relative = path.relative_to(snapshot).as_posix()
-        if path.is_symlink():
-            raise ValueError(f"snapshot contains symlink: {relative}")
-        if not path.is_dir() and not path.is_file():
-            raise ValueError(f"snapshot contains non-regular entry: {relative}")
-        if path.is_file() and path.stat().st_nlink != 1:
-            raise ValueError(f"snapshot contains multiply-linked file: {relative}")
-    snapshot_files = {
-        path.relative_to(snapshot).as_posix(): path
-        for path in snapshot_entries
-        if path.is_file()
-    }
-    file_count = len(snapshot_files)
-    if file_count != expected_count:
-        raise ValueError(
-            f"snapshot file count mismatch: expected {expected_count}, got {file_count}"
-        )
-    if set(snapshot_files) != set(manifest_entries):
-        raise ValueError("snapshot paths do not match manifest")
-    for relative, path in sorted(snapshot_files.items()):
-        if _sha256(path) != manifest_entries[relative]:
-            raise ValueError(f"snapshot content mismatch: {relative}")
-    return file_count
-
-
-def verify(repo_root: Path) -> dict[str, object]:
-    contract_path = _repo_path(
-        repo_root,
-        "project-target.json",
-        field="project-target.json",
-    )
-    _require_single_link(contract_path, field="project-target.json")
-    contract_bytes = contract_path.read_bytes()
-    contract = json.loads(
-        contract_bytes.decode("utf-8"),
-        object_pairs_hook=_unique_json_object,
-    )
-    expected_keys = {
-        "schemaVersion", "configuration", "sourceCf", "snapshot", "dailyNativeRoute"
-    }
-    if not isinstance(contract, dict) or set(contract) != expected_keys:
-        raise ValueError(
-            "contract keys mismatch: expected configuration, dailyNativeRoute, schemaVersion, snapshot, sourceCf"
-        )
-    schema_version = contract["schemaVersion"]
-    if type(schema_version) is not int:
-        raise ValueError("schemaVersion must be integer 1")
-    if schema_version != 1:
-        raise ValueError(f"unsupported schemaVersion: {schema_version}")
-    nested_shapes = {
-        "configuration": {"name", "version"},
-        "sourceCf": {"path", "sha256"},
-        "snapshot": {"path", "manifestPath", "manifestSha256", "fileCount"},
-    }
-    for field, keys in nested_shapes.items():
-        value = contract[field]
-        if not isinstance(value, dict) or set(value) != keys:
-            raise ValueError(f"{field} keys mismatch: expected {', '.join(sorted(keys))}")
-    file_count_contract = contract["snapshot"]["fileCount"]
-    if type(file_count_contract) is not int or file_count_contract < 1:
-        raise ValueError("snapshot.fileCount must be a positive integer")
-    if contract["dailyNativeRoute"] != "scripts/shared_task_route.py run":
-        raise ValueError("dailyNativeRoute must be scripts/shared_task_route.py run")
-    source = _repo_path(repo_root, contract["sourceCf"]["path"], field="sourceCf.path")
-    snapshot = _repo_path(repo_root, contract["snapshot"]["path"], field="snapshot.path")
-    manifest = _repo_path(
-        repo_root,
-        contract["snapshot"]["manifestPath"],
-        field="snapshot.manifestPath",
-    )
-    _require_single_link(source, field="source CF")
-    _require_single_link(manifest, field="snapshot manifest")
-
-    source_actual = _sha256(source)
-    if source_actual != contract["sourceCf"]["sha256"]:
-        raise ValueError("source CF SHA-256 mismatch")
-    manifest_bytes = manifest.read_bytes()
-    manifest_actual = hashlib.sha256(manifest_bytes).hexdigest()
-    if manifest_actual != contract["snapshot"]["manifestSha256"]:
-        raise ValueError("snapshot manifest SHA-256 mismatch")
-    manifest_entries = _manifest_entries(manifest_bytes)
-    file_count = _verify_snapshot(snapshot, manifest_entries, file_count_contract)
-
-    configuration_bytes = (snapshot / "Configuration.xml").read_bytes()
-    if hashlib.sha256(configuration_bytes).hexdigest() != manifest_entries["Configuration.xml"]:
-        raise ValueError("snapshot content mismatch: Configuration.xml")
-    root = ET.fromstring(configuration_bytes)
-    configuration = _one_child(root, "Configuration")
-    properties = _one_child(configuration, "Properties")
-    name = _one_child(properties, "Name").text or ""
-    version = _one_child(properties, "Version").text or ""
-    actual_configuration = {"name": name, "version": version}
-    if actual_configuration != contract["configuration"]:
-        raise ValueError("configuration name/version mismatch")
-
-    if contract_path.read_bytes() != contract_bytes:
-        raise ValueError("project target contract changed during verification")
-    if _sha256(source) != source_actual:
-        raise ValueError("source CF changed during verification")
-    final_manifest_bytes = manifest.read_bytes()
-    if final_manifest_bytes != manifest_bytes:
-        raise ValueError("snapshot manifest changed during verification")
-    final_manifest_entries = _manifest_entries(final_manifest_bytes)
-    if final_manifest_entries != manifest_entries:
-        raise ValueError("snapshot manifest entries changed during verification")
-    _verify_snapshot(snapshot, final_manifest_entries, file_count_contract)
-
-    return {
-        "status": "ready",
-        "configuration": actual_configuration,
-        "sourceCf": {
-            "path": contract["sourceCf"]["path"],
-            "expectedSha256": contract["sourceCf"]["sha256"],
-            "actualSha256": source_actual,
-        },
-        "snapshot": {
-            "path": contract["snapshot"]["path"],
-            "manifestPath": contract["snapshot"]["manifestPath"],
-            "expectedManifestSha256": contract["snapshot"]["manifestSha256"],
-            "actualManifestSha256": manifest_actual,
-            "expectedFileCount": contract["snapshot"]["fileCount"],
-            "actualFileCount": file_count,
-        },
-        "dailyNativeRoute": contract["dailyNativeRoute"],
-    }
+        contract, contract_bytes = load_contract(repo_root)
+        base, target, snapshot, manifest, binding = paths(repo_root, contract)
+        base.mkdir(parents=True, exist_ok=True)
+        if base.is_symlink():
+            raise ValueError("retained target base is invalid")
+        fd = os.open(base, os.O_RDONLY | getattr(os, "O_DIRECTORY", 0) | getattr(os, "O_NOFOLLOW", 0))
+        try:
+            fcntl.flock(fd, fcntl.LOCK_EX)
+            if (repo_root / "project-target.json").read_bytes() != contract_bytes:
+                raise TargetBlocked("snapshot_invalid", "project target contract changed during open")
+            if os.path.lexists(target):
+                try:
+                    admit_target(target, snapshot, manifest, binding, contract)
+                except Exception as exc:
+                    raise TargetBlocked("snapshot_invalid", "retained snapshot failed admission") from exc
+                return snapshot_ref(contract, "reused")
+            source = _source(repo_root, contract)
+            staging = base / f".{target.name}.staging-{uuid.uuid4().hex}"
+            staging.mkdir()
+            staged_snapshot, staged_manifest, staged_binding = staging / snapshot.name, staging / manifest.name, staging / binding.name
+            work = staging / "work"
+            try:
+                definition = contract["source"]
+                assert isinstance(definition, dict)
+                if definition["kind"] == "hierarchical":
+                    shutil.copytree(source, staged_snapshot, copy_function=shutil.copy2)
+                else:
+                    try:
+                        materialize_cf(repo_root=repo_root, source=source, output=staged_snapshot, work_root=work)
+                    except MaterializerUnavailable as exc:
+                        raise TargetBlocked("materializer_unavailable", "1C runtime is unavailable", locator="docs/lab-bootstrap.md") from exc
+                    except MaterializationFailed as exc:
+                        raise TargetBlocked("materialization_failed", "CF materialization failed") from exc
+                remove_owned(work)
+                generated = tree_manifest(staged_snapshot)
+                expected = contract["snapshot"]
+                assert isinstance(expected, dict)
+                if hashlib.sha256(generated).hexdigest() != str(expected["contentId"])[7:] or len(manifest_entries(generated)) != expected["fileCount"]:
+                    raise TargetBlocked("source_mismatch" if definition["kind"] == "hierarchical" else "materialization_failed", "materialized snapshot identity mismatch")
+                _source_unchanged(source, contract)
+                staged_manifest.write_bytes(generated)
+                staged_binding.write_bytes(binding_bytes(contract))
+                freeze(staged_snapshot, staged_manifest, staged_binding)
+                admit_target(staging, staged_snapshot, staged_manifest, staged_binding, contract)
+                if (repo_root / "project-target.json").read_bytes() != contract_bytes:
+                    raise TargetBlocked("snapshot_invalid", "project target contract changed during open")
+                staging.rename(target)
+                admit_target(target, snapshot, manifest, binding, contract)
+                return snapshot_ref(contract, "materialized")
+            except BaseException:
+                remove_owned(staging)
+                raise
+        finally:
+            os.close(fd)
+    except TargetBlocked:
+        raise
+    except Exception as exc:
+        raise TargetBlocked("snapshot_invalid", "project target contract or retained snapshot is invalid") from exc
 
 
 def main() -> int:
     parser = argparse.ArgumentParser(description=__doc__)
+    parser.add_argument("command", nargs="?", default="open", choices=("open",))
     parser.add_argument("--repo-root", type=Path, default=Path.cwd())
     args = parser.parse_args()
     try:
-        result = verify(args.repo_root.resolve())
-    except Exception as exc:
-        print(json.dumps({"status": "blocked", "reason": str(exc)}, ensure_ascii=False))
+        result = open_target(args.repo_root.resolve())
+    except TargetBlocked as exc:
+        result: dict[str, object] = {"schemaVersion": 1, "status": "blocked", "reasonCode": exc.reason_code, "message": exc.message}
+        if exc.locator: result["locator"] = exc.locator
+        print(json.dumps(result, ensure_ascii=False, sort_keys=True, separators=(",", ":")))
         return 1
-    print(json.dumps(result, indent=2, ensure_ascii=False))
+    print(json.dumps(result, ensure_ascii=False, sort_keys=True, separators=(",", ":")))
     return 0
 
 
