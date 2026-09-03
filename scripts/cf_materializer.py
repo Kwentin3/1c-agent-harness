@@ -10,6 +10,7 @@ import json
 from pathlib import Path
 import signal
 import subprocess
+import time
 from typing import Callable
 
 from target_admission import remove_owned
@@ -24,6 +25,28 @@ class MaterializerUnavailable(RuntimeError):
 
 class MaterializationFailed(RuntimeError):
     pass
+
+
+def _process_group_exists(process_group_id: int) -> bool:
+    try:
+        os.killpg(process_group_id, 0)
+    except ProcessLookupError:
+        return False
+    return True
+
+
+def _stop_process_group(process_group_id: int) -> None:
+    """Reap the Xvfb wrapper's residual group before accepting a step."""
+    if not _process_group_exists(process_group_id):
+        return
+    os.killpg(process_group_id, signal.SIGTERM)
+    deadline = time.monotonic() + 2
+    while _process_group_exists(process_group_id) and time.monotonic() < deadline:
+        time.sleep(0.025)
+    if _process_group_exists(process_group_id):
+        os.killpg(process_group_id, signal.SIGKILL)
+    if _process_group_exists(process_group_id):
+        raise MaterializationFailed("native materialization left a running process")
 
 
 def _unique_object(pairs: list[tuple[str, object]]) -> dict[str, object]:
@@ -79,20 +102,10 @@ def _run_step(
             try:
                 process.communicate(timeout=TIMEOUT_SECONDS)
             except subprocess.TimeoutExpired:
-                os.killpg(process.pid, signal.SIGTERM)
-                try:
-                    process.communicate(timeout=2)
-                except subprocess.TimeoutExpired:
-                    os.killpg(process.pid, signal.SIGKILL)
-                    process.communicate()
+                _stop_process_group(process.pid)
+                process.communicate()
                 raise MaterializationFailed("native materialization timed out")
-            try:
-                os.killpg(process.pid, 0)
-            except ProcessLookupError:
-                pass
-            else:
-                os.killpg(process.pid, signal.SIGKILL)
-                raise MaterializationFailed("native materialization left a running process")
+            _stop_process_group(process.pid)
             completed = subprocess.CompletedProcess(argv, process.returncode)
     except subprocess.TimeoutExpired as exc:
         raise MaterializationFailed("native materialization timed out") from exc
