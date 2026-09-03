@@ -43,11 +43,11 @@ python3 scripts/project_target.py open
 
 [`project-target.json`](project-target.json) объявляет ровно один source и ожидаемую identity.
 Поддержаны существующий admitted snapshot, полная hierarchical выгрузка и `.cf`. Hierarchical
-source принимается без 1С; `.cf` материализуется только через заранее подготовленную локальную
-`.local/capabilities/cf_to_hierarchical_snapshot`. Capability получает `--source`, `--output` и
-`--work-root`, не должна изменять source и обязана завершить все свои процессы. При отсутствии
-capability команда возвращает один `materializer_unavailable` с locator на
-[`docs/lab-bootstrap.md`](docs/lab-bootstrap.md); она ничего не скачивает и не устанавливает.
+source принимается без 1С; `.cf` материализуется встроенным repo-owned маршрутом
+`CREATEINFOBASE → /LoadCfg → /DumpConfigToFiles -Format Hierarchical`. Внешними остаются только
+платформа 1С, Xvfb/libs и лицензия. При их отсутствии команда возвращает один
+`materializer_unavailable` с locator на [`docs/lab-bootstrap.md`](docs/lab-bootstrap.md); она
+ничего не скачивает и не устанавливает.
 EDT, CFE, CFU, DT, EPF, живые ИБ и remote executors в v1 возвращают `unsupported_source`.
 
 Admission в `project_target.py` проверяет закрытый manifest/file set, hashes, read-only режим и
