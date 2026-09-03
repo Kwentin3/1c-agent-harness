@@ -237,4 +237,15 @@ check_ldd /usr/bin/xkbcomp
 echo LAB_READY
 ```
 
-После `LAB_READY` выполните fail-closed smoke из [runbook лаборатории](lab.md).
+`LAB_READY` подтверждает runtime, но не объявляет его автоматически доступным для project target.
+CF-open использует одну executor-owned capability
+`.local/capabilities/cf_to_hierarchical_snapshot` с контрактом `--source <immutable-cf>
+--output <new-empty-snapshot> --work-root <owned-disposable-root>`. Она должна выполнить штатные
+`CREATEINFOBASE` → `/LoadCfg` → `/DumpConfigToFiles -Format Hierarchical`, вернуть `0` только после
+проверки всех `/DumpResult`, не изменять source и завершить все процессы. Harness сам проверяет
+полученный closed tree, создаёт manifest, удаляет work root и только затем атомарно публикует
+retained target. Конкретная capability является частью заранее подготовленного executor и не
+скачивается, не устанавливается и не генерируется командой `open`.
+
+После `LAB_READY` выполните fail-closed smoke из [runbook лаборатории](lab.md). После подготовки
+capability публичная проверка выполняется одной командой `python3 scripts/project_target.py open`.
