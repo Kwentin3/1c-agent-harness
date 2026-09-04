@@ -1,0 +1,39 @@
+diff --git a/Documents/SalesInvoice/Templates/PF_MXL_SalesInvoice/Ext/Template.xml b/Documents/SalesInvoice/Templates/PF_MXL_SalesInvoice/Ext/Template.xml
+--- a/Documents/SalesInvoice/Templates/PF_MXL_SalesInvoice/Ext/Template.xml
++++ b/Documents/SalesInvoice/Templates/PF_MXL_SalesInvoice/Ext/Template.xml
+@@ -454,11 +454,11 @@
+ 					<tl>
+ 						<v8:item>
+ 							<v8:lang>en</v8:lang>
+-							<v8:content>Invoice #[Number] date [Date]</v8:content>
++							<v8:content>Invoice #[Number] date [Date][?(ValueIsFilled(PaymentDueDate), " Payment due: " + Format(PaymentDueDate, "DF='d'"), "")]</v8:content>
+ 						</v8:item>
+ 						<v8:item>
+ 							<v8:lang>tr</v8:lang>
+-							<v8:content>Fatura #[Number] tarih [Date]</v8:content>
++							<v8:content>Fatura #[Number] tarih [Date][?(ValueIsFilled(PaymentDueDate), " Ödeme vadesi: " + Format(PaymentDueDate, "DF='d'"), "")]</v8:content>
+ 						</v8:item>
+ 					</tl>
+ 				</c>
+diff --git a/Documents/SalesInvoice/Templates/PrintData/Ext/Template.xml b/Documents/SalesInvoice/Templates/PrintData/Ext/Template.xml
+--- a/Documents/SalesInvoice/Templates/PrintData/Ext/Template.xml
++++ b/Documents/SalesInvoice/Templates/PrintData/Ext/Template.xml
+@@ -17,6 +17,10 @@
+ 		<field xsi:type="DataSetFieldField">
+ 			<dataPath>Date</dataPath>
+ 			<field>Date</field>
++		</field>
++		<field xsi:type="DataSetFieldField">
++			<dataPath>PaymentDueDate</dataPath>
++			<field>PaymentDueDate</field>
+ 		</field>
+ 		<field xsi:type="DataSetFieldField">
+ 			<dataPath>ExchangeRate</dataPath>
+@@ -109,6 +113,7 @@
+ 	SalesInvoice.Ref AS Ref,
+ 	SalesInvoice.Number AS Number,
+ 	SalesInvoice.Date AS Date,
++	SalesInvoice.PaymentDueDate AS PaymentDueDate,
+ 	VALUE(Catalog.Companies.MainCompany) AS Company,
+ 	SalesInvoice.Customer AS Customer,
+ 	SalesInvoice.Warehouse AS Warehouse,
