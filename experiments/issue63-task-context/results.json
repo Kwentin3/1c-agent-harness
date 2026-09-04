@@ -1,0 +1,145 @@
+{
+  "admission": {
+    "allLaneManifestFilesSha256": [
+      "70972b5e11901ca31c7f7ec67dca03f78986206b024be01aeb34e0e1f3ff6691"
+    ],
+    "environmentalAttestationLimit": "Lane ledgers and manifest continuity prove recorded source operations and snapshot-content continuity only; they do not independently attest absence of unrecorded native processes, cache use, or network activity.",
+    "ledgerObservedOperationTypes": [
+      "collect",
+      "read",
+      "search"
+    ],
+    "snapshotManifestContentSha256": "70972b5e11901ca31c7f7ec67dca03f78986206b024be01aeb34e0e1f3ff6691",
+    "sourceReadOnlyVerified": true
+  },
+  "attempt": 4,
+  "comparison": {
+    "activeElapsedNotWorse": false,
+    "allTasksSufficient": "INCONCLUSIVE",
+    "byteReductionPercent": -276.9839146812685,
+    "decisiveReason": "task-driven bytes and active elapsed are worse than rg-only; frozen Product PASS threshold cannot be met regardless of response sufficiency",
+    "genericCodeEvidence": {
+      "implementationFrozenHead": "e59a594f694c43c787498f77486141f9c55b3806",
+      "postRunGenericPathsChanged": [],
+      "verification": "git diff from implementationFrozenHead found only experiment README among tracked changes; scripts/ and tests/ were unchanged"
+    },
+    "genericCodeUnchangedForFreshTask": true,
+    "minimumByteReductionPercent": 40,
+    "operationsNotWorse": true,
+    "productPass": false,
+    "verdict": "NO MATERIAL WIN"
+  },
+  "responseSufficiency": {
+    "reason": "delegation durable result store unavailable; live transcript truncates final JSON; no response score inferred",
+    "status": "INCONCLUSIVE"
+  },
+  "routes": {
+    "rg-only": {
+      "tasks": {
+        "rg-sales": {
+          "activeElapsedSeconds": 25.706055098,
+          "bytes": 340736,
+          "failedSourceOperations": 0,
+          "operations": 24,
+          "operationsByType": {
+            "read": 12,
+            "search": 12
+          },
+          "snapshotManifestFileSha256": "70972b5e11901ca31c7f7ec67dca03f78986206b024be01aeb34e0e1f3ff6691"
+        },
+        "rg-supplier": {
+          "activeElapsedSeconds": 42.436132206,
+          "bytes": 257955,
+          "failedSourceOperations": 2,
+          "operations": 22,
+          "operationsByType": {
+            "read": 8,
+            "search": 14
+          },
+          "snapshotManifestFileSha256": "70972b5e11901ca31c7f7ec67dca03f78986206b024be01aeb34e0e1f3ff6691"
+        },
+        "rg-transfer": {
+          "activeElapsedSeconds": 26.467515503,
+          "bytes": 451770,
+          "failedSourceOperations": 1,
+          "operations": 17,
+          "operationsByType": {
+            "read": 8,
+            "search": 9
+          },
+          "snapshotManifestFileSha256": "70972b5e11901ca31c7f7ec67dca03f78986206b024be01aeb34e0e1f3ff6691"
+        }
+      },
+      "total": {
+        "activeElapsedSeconds": 94.609702807,
+        "bytes": 1050461,
+        "failedSourceOperations": 3,
+        "operations": 63
+      }
+    },
+    "task-driven": {
+      "tasks": {
+        "task-sales": {
+          "activeElapsedSeconds": 65.48367147,
+          "bytes": 270797,
+          "failedSourceOperations": 0,
+          "operations": 17,
+          "operationsByType": {
+            "collect": 1,
+            "read": 13,
+            "search": 3
+          },
+          "snapshotManifestFileSha256": "70972b5e11901ca31c7f7ec67dca03f78986206b024be01aeb34e0e1f3ff6691"
+        },
+        "task-supplier": {
+          "activeElapsedSeconds": 123.34262071,
+          "bytes": 3507212,
+          "failedSourceOperations": 1,
+          "operations": 24,
+          "operationsByType": {
+            "collect": 2,
+            "read": 8,
+            "search": 14
+          },
+          "snapshotManifestFileSha256": "70972b5e11901ca31c7f7ec67dca03f78986206b024be01aeb34e0e1f3ff6691"
+        },
+        "task-transfer": {
+          "activeElapsedSeconds": 120.876590108,
+          "bytes": 182060,
+          "failedSourceOperations": 0,
+          "operations": 18,
+          "operationsByType": {
+            "collect": 2,
+            "read": 6,
+            "search": 10
+          },
+          "snapshotManifestFileSha256": "70972b5e11901ca31c7f7ec67dca03f78986206b024be01aeb34e0e1f3ff6691"
+        }
+      },
+      "total": {
+        "activeElapsedSeconds": 309.702882288,
+        "bytes": 3960069,
+        "failedSourceOperations": 1,
+        "operations": 59
+      }
+    }
+  },
+  "schema": "issue63-results.v1",
+  "unscoredAttempts": [
+    {
+      "attempt": 1,
+      "reason": "rg unavailable before any source operation",
+      "status": "BLOCKED"
+    },
+    {
+      "attempt": 2,
+      "reason": "preflight query was written before fresh-executor scoring",
+      "status": "INVALID"
+    },
+    {
+      "attempt": 3,
+      "reason": "ledgers lacked frozen activeElapsed unit",
+      "status": "INVALID"
+    }
+  ]
+}
