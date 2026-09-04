@@ -15,9 +15,9 @@
   "attempt": 4,
   "comparison": {
     "activeElapsedNotWorse": false,
-    "allTasksSufficient": "INCONCLUSIVE",
+    "allTasksSufficient": false,
     "byteReductionPercent": -276.9839146812685,
-    "decisiveReason": "task-driven bytes and active elapsed are worse than rg-only; frozen Product PASS threshold cannot be met regardless of response sufficiency",
+    "decisiveReason": "task-driven fails frozen response sufficiency (supplier seam unconfirmed and sales required surface missing); its bytes and active elapsed are also worse than rg-only",
     "genericCodeEvidence": {
       "implementationFrozenHead": "e59a594f694c43c787498f77486141f9c55b3806",
       "postRunGenericPathsChanged": [],
@@ -27,11 +27,49 @@
     "minimumByteReductionPercent": 40,
     "operationsNotWorse": true,
     "productPass": false,
-    "verdict": "NO MATERIAL WIN"
+    "verdict": "TASK-DRIVEN CONTEXT FAIL"
   },
   "responseSufficiency": {
-    "reason": "delegation durable result store unavailable; live transcript truncates final JSON; no response score inferred",
-    "status": "INCONCLUSIVE"
+    "evidenceFile": "experiments/issue63-task-context/responses.json",
+    "evidenceSha256": "9e6f6869e351b0a7884ac5b984cd4d956914f649ccd5d4a2f14e2048d8ac1cce",
+    "reason": "full final JSON was recovered for both scored arms; task-driven fails frozen sufficiency on supplier-deleted-warehouse and sales-payment-due-date",
+    "routes": {
+      "rg-only": {
+        "status": "PASS",
+        "tasks": {
+          "inventory-self-transfer": {
+            "reason": "confirmed Posting seam overlaps frozen range; all required surface paths and three preservation constraints reported; explicit unknowns reported",
+            "status": "PASS"
+          },
+          "sales-payment-due-date": {
+            "reason": "confirmed Posting seam overlaps frozen range; all required surface paths (including seam path) and preservation constraints reported; explicit unknowns reported",
+            "status": "PASS"
+          },
+          "supplier-deleted-warehouse": {
+            "reason": "confirmed Posting seam overlaps frozen range; all required surface paths and three preservation constraints reported; explicit unknowns reported",
+            "status": "PASS"
+          }
+        }
+      },
+      "task-driven": {
+        "status": "FAIL",
+        "tasks": {
+          "inventory-self-transfer": {
+            "reason": "confirmed Posting seam overlaps frozen range; required surface paths and preservation constraints reported with explicit unknowns",
+            "status": "PASS"
+          },
+          "sales-payment-due-date": {
+            "reason": "required optional-date metadata precedent Documents/BankPayment.xml is absent from returned surfaces",
+            "status": "FAIL"
+          },
+          "supplier-deleted-warehouse": {
+            "reason": "seam is explicitly candidate at ObjectModule line 1; Posting identity/order and required movement derivation surface remain unavailable",
+            "status": "FAIL"
+          }
+        }
+      }
+    },
+    "status": "FAIL"
   },
   "routes": {
     "rg-only": {

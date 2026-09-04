@@ -1,0 +1,633 @@
+{
+  "attempt": 4,
+  "responses": {
+    "rg-only": {
+      "inventory-self-transfer": {
+        "response": {
+          "owner": {
+            "endLine": 34,
+            "path": "Documents/InventoryTransfer/Ext/ObjectModule.bsl",
+            "reason": "Владелец инварианта — серверный обработчик Posting документа InventoryTransfer: здесь доступны Warehouse, WarehouseReceiver и Cancel, а ниже начинается подготовка/запись движений.",
+            "startLine": 11
+          },
+          "preservation": [
+            "Черновик сохраняется, если инвариант проверяется только в Posting, а не через Cancel в BeforeWriteAtServer: форма имеет отдельный before-write hook [Documents/InventoryTransfer/Forms/DocumentForm/Ext/Form/Module.bsl:42-48], тогда как Posting получает собственный Cancel [Documents/InventoryTransfer/Ext/ObjectModule.bsl:11].",
+            "При совпадении складов ранний Cancel+Return не входит в PrepareRecordSetsForWriting/WriteRecordSets [Documents/InventoryTransfer/Ext/ObjectModule.bsl:19-30; CommonModules/PostingManagement/Ext/Module.bsl:45-82], следовательно не создаёт новые и не очищает/перезаписывает существующие движения этим отказом.",
+            "При разных складах условие не срабатывает и сохраняется исходная последовательность построения двух таблиц движений, отражения InventoryInWarehouses/InventoryCost и записи [Documents/InventoryTransfer/Ext/ObjectModule.bsl:13-32; Documents/InventoryTransfer/Ext/ManagerModule.bsl:157-184]."
+          ],
+          "seam": {
+            "endLine": 20,
+            "path": "Documents/InventoryTransfer/Ext/ObjectModule.bsl",
+            "reason": "Минимальная точка будущего изменения — самое начало Posting: при Warehouse = WarehouseReceiver вывести диагностическое сообщение, установить Cancel = True и немедленно Return до InitializeDocumentData, PrepareRecordSetsForWriting и WriteRecordSets. Один лишь Cancel без Return недостаточен: текущий код безусловно продолжает подготовку и запись наборов записей [Documents/InventoryTransfer/Ext/ObjectModule.bsl:13-30].",
+            "startLine": 11
+          },
+          "surfaces": [
+            {
+              "endLine": 34,
+              "path": "Documents/InventoryTransfer/Ext/ObjectModule.bsl",
+              "reason": "Основной posting-flow: инициализирует данные, готовит наборы, отражает два регистра, записывает наборы и запускает контроль остатков; ветка для разных складов должна остаться без изменений.",
+              "startLine": 11
+            },
+            {
+              "endLine": 184,
+              "path": "Documents/InventoryTransfer/Ext/ManagerModule.bsl",
+              "reason": "Ближайшая вычислительная зависимость: формирует таблицы движений из Warehouse и WarehouseReceiver, включая расход со склада-источника и приход на склад-получатель для InventoryInWarehouses и InventoryCost.",
+              "startLine": 12
+            },
+            {
+              "endLine": 82,
+              "path": "CommonModules/PostingManagement/Ext/Module.bsl",
+              "reason": "PrepareRecordSetsForWriting очищает существующие наборы и помечает их на запись, а WriteRecordSets безусловно записывает помеченные наборы; поэтому отказ должен произойти до этих вызовов.",
+              "startLine": 33
+            },
+            {
+              "endLine": 113,
+              "path": "CommonModules/PostingManagement/Ext/Module.bsl",
+              "reason": "ReflectInventoryInWarehouses уже уважает Cancel и не загружает строки при Cancel=True, но это не предотвращает последующий безусловный WriteRecordSets в объектном модуле.",
+              "startLine": 100
+            },
+            {
+              "endLine": 234,
+              "path": "CommonModules/PostingManagement/Ext/Module.bsl",
+              "reason": "ReflectInventoryCost имеет ту же защиту Cancel; обе отражающие процедуры будут естественно пропущены при раннем отказе.",
+              "startLine": 221
+            },
+            {
+              "endLine": 336,
+              "path": "Documents/InventoryTransfer.xml",
+              "reason": "Модель документа определяет Warehouse («Warehouse from») и WarehouseReceiver («Warehouse to») как ссылки CatalogRef.Warehouses; это корректная пара для сравнения.",
+              "startLine": 247
+            },
+            {
+              "endLine": 71,
+              "path": "Documents/InventoryTransfer/Forms/DocumentForm/Ext/Form/Module.bsl",
+              "reason": "Форма имеет BeforeWriteAtServer, но он вызывает только PropertyManager.BeforeWriteAtServer и не должен стать точкой запрета: отмена записи здесь могла бы нарушить требование о сохранении черновика.",
+              "startLine": 42
+            },
+            {
+              "endLine": 69,
+              "path": "Documents/InventoryTransfer/Forms/DocumentForm/Ext/Form.xml",
+              "reason": "Оба поля доступны в форме как Object.Warehouse и Object.WarehouseReceiver; UI-валидация возможна только как дополнительная подсказка, но не заменяет серверную проверку Posting.",
+              "startLine": 52
+            }
+          ],
+          "unknowns": [
+            "В изученном срезе не найден существующий проектный helper или локализованный текст для сообщения именно о совпадении Warehouse/WarehouseReceiver; формулировку и механизм сообщения нужно согласовать при реализации.",
+            "Поведение платформы по сохранению документа при Cancel именно в обработчике Posting не доказано интеграционным запуском в этом read-only pass; локально подтверждено только то, что валидация не должна отменять BeforeWrite и что ранний Return предотвращает код записи наборов [Documents/InventoryTransfer/Forms/DocumentForm/Ext/Form/Module.bsl:42-48; Documents/InventoryTransfer/Ext/ObjectModule.bsl:11-30].",
+            "Не исследованы внешние API/обменные пути создания и проведения InventoryTransfer; серверная проверка в ObjectModule.Posting покрывает все пути, которые используют штатное проведение этого документа [Documents/InventoryTransfer/Ext/ObjectModule.bsl:11-34]."
+          ]
+        },
+        "sourceSummaryFile": "subagent-summary-1-20260904_085306_638118.txt",
+        "sourceSummarySha256": "019131f9a4c2357ec77bd790216e230551a4f71763ac6f11772d80053068a4d0"
+      },
+      "sales-payment-due-date": {
+        "response": {
+          "owner": {
+            "endLine": 54,
+            "path": "Documents/SalesInvoice/Ext/ObjectModule.bsl",
+            "reason": "Владелец правила — серверный обработчик Document.SalesInvoice.Posting(Cancel, PostingMode): именно он выполняет проведение и затем готовит наборы записей (строка 33), отражает движения и записывает их (строки 36–51).",
+            "startLine": 14
+          },
+          "preservation": [
+            {
+              "endLine": 81,
+              "path": "Documents/SalesInvoice/Ext/ObjectModule.bsl",
+              "reason": "Не помещать новое ограничение в BeforeWrite: это общий write-hook, который сейчас лишь пересчитывает Total. Правило должно оставаться в Posting, чтобы сохранение черновика с пустой, равной, будущей или даже более ранней PaymentDate не блокировалось.",
+              "startLine": 74
+            },
+            {
+              "endLine": 54,
+              "path": "Documents/SalesInvoice/Ext/ObjectModule.bsl",
+              "reason": "При отклонении проведения Cancel должен устанавливаться до инициализации, подготовки record sets, отражения и записи движений; поздняя проверка после этих строк не сохраняет требуемую границу без побочных действий.",
+              "startLine": 28
+            },
+            {
+              "endLine": 158,
+              "path": "Documents/SalesInvoice/Forms/DocumentForm/Ext/Form/Module.bsl",
+              "reason": "Форма уже имеет FillCheckProcessingAtServer и BeforeWriteAtServer для иных задач. Новое правило не должно существовать только здесь: канонический инвариант проведения остаётся в ObjectModule.Posting.",
+              "startLine": 105
+            },
+            {
+              "endLine": 192,
+              "path": "Documents/SalesInvoice/Forms/ListForm/Ext/Form.xml",
+              "reason": "Список выбирает фиксированный набор реквизитов и PaymentDate в нём отсутствует; не расширять его без отдельного требования показывать/фильтровать дату оплаты.",
+              "startLine": 160
+            },
+            {
+              "endLine": 137,
+              "path": "Documents/SalesInvoice/Templates/PrintData/Ext/Template.xml",
+              "reason": "Печатный запрос также перечисляет фиксированные поля SalesInvoice и не включает PaymentDate; его изменение не требуется для хранения и проверки даты.",
+              "startLine": 105
+            }
+          ],
+          "seam": {
+            "endLine": 33,
+            "path": "Documents/SalesInvoice/Ext/ObjectModule.bsl",
+            "reason": "Минимальная точка — первое условие в Posting, до InitializeAdditionalPropertiesForPosting (строка 28) и PrepareRecordSetsForWriting (строка 33). При заполненном PaymentDate сравнивать именно календарные дни с Date; при более раннем дне сообщать ошибку через существующий паттерн Common.MessageToUser(..., Cancel), показанный на строках 17–25.",
+            "startLine": 14
+          },
+          "surfaces": [
+            {
+              "endLine": 1079,
+              "path": "Documents/SalesInvoice.xml",
+              "reason": "Граница заголовочных реквизитов SalesInvoice: последний показанный Attribute (EDocumentNumber) заканчивается перед объявлениями форм и табличной секцией Inventory. Здесь нужен новый необязательный header-атрибут PaymentDate.",
+              "startLine": 1017
+            },
+            {
+              "endLine": 604,
+              "path": "Documents/BankPayment.xml",
+              "reason": "Ближайший локальный образец необязательной даты: PaymentDate имеет тип xs:dateTime с DateFractions=Date и FillChecking=DontCheck; его структура пригодна как шаблон метаданных, без переноса UUID.",
+              "startLine": 566
+            },
+            {
+              "endLine": 328,
+              "path": "Documents/SalesInvoice/Forms/DocumentForm/Ext/Form.xml",
+              "reason": "Заголовок основной формы уже содержит группу Number/Date и поля PriceType, Warehouse, BankAccount; здесь минимально добавить InputField с DataPath Object.PaymentDate.",
+              "startLine": 270
+            },
+            {
+              "endLine": 103,
+              "path": "Documents/BankPayment/Forms/DocumentForm/Ext/Form.xml",
+              "reason": "Ближайший образец UI-привязки PaymentDate к Object.PaymentDate; для SalesInvoice достаточно простого поля без семантики Paid из BankPayment.",
+              "startLine": 80
+            }
+          ],
+          "unknowns": [
+            {
+              "endLine": 54,
+              "path": "Documents/SalesInvoice/Ext/ObjectModule.bsl",
+              "reason": "Это только статический context pass: проведение, отмена и отсутствие движений при Cancel нативно не запускались, поэтому runtime-поведение и точный текст диагностического сообщения не подтверждены.",
+              "startLine": 14
+            },
+            {
+              "endLine": 328,
+              "path": "Documents/SalesInvoice/Forms/DocumentForm/Ext/Form.xml",
+              "reason": "Не подтверждено требование отображать PaymentDate в списке, печатной форме, EDI или интеграционных выгрузках; исследованные ближайшие list/print поверхности её сейчас не используют.",
+              "startLine": 270
+            },
+            {
+              "endLine": 604,
+              "path": "Documents/BankPayment.xml",
+              "reason": "Локальный образец подтверждает date-only метаданные, но не задаёт для SalesInvoice окончательные локализованные синонимы, UUID нового реквизита или точную функцию нормализации Date до календарного дня.",
+              "startLine": 566
+            }
+          ]
+        },
+        "sourceSummaryFile": "subagent-summary-2-20260904_085306_649098.txt",
+        "sourceSummarySha256": "32dd9ac6f6bf7418a9423991b1aedcaf49e6694e1493cc3a3ef6d2daa67cbb49"
+      },
+      "supplier-deleted-warehouse": {
+        "response": {
+          "owner": {
+            "component": "Documents/SupplierInvoice/Ext/ObjectModule.bsl::Posting",
+            "finding": "Проведение приходной накладной поставщика владеет последовательностью инициализации, подготовки наборов записей, отражения движений и записи наборов.",
+            "locator": "Documents/SupplierInvoice/Ext/ObjectModule.bsl:11-38"
+          },
+          "preservation": [
+            {
+              "approach": "Ограничить будущую проверку методом Posting, не BeforeWrite и не глобальной event subscription.",
+              "locator": "Documents/SupplierInvoice/Ext/ObjectModule.bsl:11-38; Documents/SupplierInvoice/Ext/ObjectModule.bsl:65-73; EventSubscriptions/ProhibitUsageOfObjectsToDeleteInDocuments.xml:18-22",
+              "requirement": "Черновик с помеченным складом должен сохраняться."
+            },
+            {
+              "approach": "Отказывать до PrepareRecordSetsForWriting и до всех Reflect*/WriteRecordSets, а не выставлять Cancel после подготовки или отражения.",
+              "locator": "Documents/SupplierInvoice/Ext/ObjectModule.bsl:11-38; CommonModules/PostingManagement/Ext/Module.bsl:25-60",
+              "requirement": "Отказ не должен оставлять движений."
+            },
+            {
+              "approach": "Предикат должен быть узким: только Warehouse с установленной пометкой удаления; Warehouse является отдельной ссылкой CatalogRef.Warehouses.",
+              "locator": "Documents/SupplierInvoice.xml:302-315; Documents/SupplierInvoice/Ext/ManagerModule.bsl:12-44",
+              "requirement": "Активный склад продолжает работать."
+            }
+          ],
+          "seam": {
+            "endLine": 14,
+            "locator": "Documents/SupplierInvoice/Ext/ObjectModule.bsl:11-38; CommonModules/PostingManagement/Ext/Module.bsl:25-60",
+            "path": "Documents/SupplierInvoice/Ext/ObjectModule.bsl",
+            "reason": "Минимальная точка будущей правки — самое начало Posting, до InitializeAdditionalPropertiesForPosting, InitializeDocumentData и PrepareRecordSetsForWriting. Проверка пометки удаления Warehouse должна отменять проведение и немедленно выходить именно здесь; поздний Cancel небезопасен, поскольку далее вызывается безусловная запись наборов.",
+            "startLine": 11
+          },
+          "surfaces": [
+            {
+              "endLine": 38,
+              "path": "Documents/SupplierInvoice/Ext/ObjectModule.bsl",
+              "reason": "Владелец posting-path: после ранней точки запускаются подготовка, четыре отражения и WriteRecordSets.",
+              "startLine": 11
+            },
+            {
+              "endLine": 73,
+              "path": "Documents/SupplierInvoice/Ext/ObjectModule.bsl",
+              "reason": "BeforeWrite отделён от Posting и лишь пропускает DataExchange.Load/пересчитывает Total; не расширять эту точку проверкой, чтобы сохранить запись черновика.",
+              "startLine": 65
+            },
+            {
+              "endLine": 315,
+              "path": "Documents/SupplierInvoice.xml",
+              "reason": "Warehouse — реквизит документа типа cfg:CatalogRef.Warehouses, то есть целевой ссылочный объект проверки.",
+              "startLine": 302
+            },
+            {
+              "endLine": 185,
+              "path": "Documents/SupplierInvoice/Ext/ManagerModule.bsl",
+              "reason": "InitializeDocumentData читает SupplierInvoice.Warehouse, переносит его в DocumentHeader/ProductTable и формирует данные для Purchases, InventoryInWarehouses, SupplierBalance и InventoryCost.",
+              "startLine": 12
+            },
+            {
+              "endLine": 60,
+              "path": "CommonModules/PostingManagement/Ext/Module.bsl",
+              "reason": "PrepareRecordSetsForWriting очищает наборы и включает Write, а WriteRecordSets затем вызывает RecordSet.Write(); это ближайшая граница, которую отказ должен не достигать.",
+              "startLine": 25
+            },
+            {
+              "endLine": 128,
+              "path": "CommonModules/PostingManagement/Ext/Module.bsl",
+              "reason": "ReflectInventoryInWarehouses загружает набор InventoryInWarehouses после проверки Cancel; поздняя отмена не заменяет ранний выход до подготовки/записи.",
+              "startLine": 112
+            },
+            {
+              "endLine": 190,
+              "path": "CommonModules/PostingManagement/Ext/Module.bsl",
+              "reason": "ReflectSupplierBalance аналогично загружает SupplierBalance; это ещё один зависимый регистр posting-path.",
+              "startLine": 175
+            },
+            {
+              "endLine": 22,
+              "path": "EventSubscriptions/ProhibitUsageOfObjectsToDeleteInDocuments.xml",
+              "reason": "Существует глобальная подписка DocumentObject/BeforeWrite на общий контроль удаляемых объектов; она не является узкой точкой для правила только SupplierInvoice.",
+              "startLine": 18
+            },
+            {
+              "endLine": 241,
+              "path": "CommonModules/MarkedObjectsDeletionInternal/Ext/Module.bsl",
+              "reason": "Глобальный обработчик BeforeWrite вызывает общий ProhibitUsageOfObjectsToDelete без ветвления по WriteMode/PostingMode, поэтому изменение здесь рискует затронуть сохранение черновиков всех документов.",
+              "startLine": 240
+            }
+          ],
+          "unknowns": [
+            {
+              "item": "Точный реализуемый способ чтения DeletionMark по ссылке Warehouse и текст пользовательской ошибки не исследованы.",
+              "locator": "Documents/SupplierInvoice.xml:302-315"
+            },
+            {
+              "item": "Нативно не проверены семантика отмены Posting, сохранение черновика и отсутствие recorder-scoped движений во всех четырёх регистрах; статически определены только путь Purchases/InventoryInWarehouses/SupplierBalance/InventoryCost.",
+              "locator": "Documents/SupplierInvoice/Ext/ObjectModule.bsl:11-38; Documents/SupplierInvoice/Ext/ManagerModule.bsl:170-185"
+            },
+            {
+              "item": "Не установлено, какие внешние серверные вызовы могут обходить обычный lifecycle Posting; вывод ограничен путём, достигающим Document.SupplierInvoice.Posting.",
+              "locator": "Documents/SupplierInvoice/Ext/ObjectModule.bsl:11-38"
+            }
+          ]
+        },
+        "sourceSummaryFile": "subagent-summary-0-20260904_085306_634848.txt",
+        "sourceSummarySha256": "c26e5394cd6173fbeff27db165590f93959e501897843676a985aa6ce3f93904"
+      }
+    },
+    "task-driven": {
+      "inventory-self-transfer": {
+        "response": {
+          "owner": {
+            "component": "Document.InventoryTransfer",
+            "finding": "Владелец проведения — обработчик Posting(Cancel, PostingMode) объектного модуля документа.",
+            "locator": {
+              "endLine": 31,
+              "path": "Documents/InventoryTransfer/Ext/ObjectModule.bsl",
+              "startLine": 11
+            }
+          },
+          "preservation": [
+            {
+              "behavior": "Черновик должен сохраняться",
+              "evidence": {
+                "endLine": 49,
+                "path": "Documents/InventoryTransfer/Ext/ObjectModule.bsl",
+                "startLine": 1
+              },
+              "reason": "В объектном модуле обнаружен обработчик Posting, но нет BeforeWrite; поэтому ограничение, помещённое только в Posting, не отменяет обычную запись черновика."
+            },
+            {
+              "behavior": "Перемещение между разными складами сохраняется",
+              "evidence": {
+                "endLine": 31,
+                "path": "Documents/InventoryTransfer/Ext/ObjectModule.bsl",
+                "startLine": 11
+              },
+              "reason": "При неравных Warehouse и WarehouseReceiver новый ранний отказ не сработает, и текущая последовательность подготовки, отражения и записи наборов останется прежней."
+            },
+            {
+              "behavior": "Отказ не должен оставить движений",
+              "evidence": {
+                "endLine": 29,
+                "path": "Documents/InventoryTransfer/Ext/ObjectModule.bsl",
+                "startLine": 14
+              },
+              "reason": "Проверка перед InitializeDocumentData и до PrepareRecordSetsForWriting/Reflect*/WriteRecordSets является ближайшей статической точкой, исключающей запуск видимого пути подготовки и записи движений."
+            }
+          ],
+          "seam": {
+            "endLine": 19,
+            "locator": {
+              "endLine": 31,
+              "path": "Documents/InventoryTransfer/Ext/ObjectModule.bsl",
+              "startLine": 11
+            },
+            "path": "Documents/InventoryTransfer/Ext/ObjectModule.bsl",
+            "reason": "Минимальная будущая правка: в начале Posting проверить равенство Warehouse и WarehouseReceiver и выставить Cancel до InitializeDocumentData. Это оставляет черновое сохранение вне правила и останавливает путь до подготовки наборов записей.",
+            "startLine": 11
+          },
+          "surfaces": [
+            {
+              "endLine": 31,
+              "path": "Documents/InventoryTransfer/Ext/ObjectModule.bsl",
+              "reason": "Текущий порядок: инициализация данных → PrepareRecordSetsForWriting → отражение InventoryInWarehouses и InventoryCost → WriteRecordSets. Валидация после этих вызовов была бы слишком поздней для заявленного no-movements.",
+              "startLine": 11
+            },
+            {
+              "endLine": 95,
+              "path": "Documents/InventoryTransfer/Ext/ManagerModule.bsl",
+              "reason": "InitializeDocumentData берёт документ, ставит exclusive DataLock по AccumulationRegister.InventoryCost и строит данные проведения с Warehouse и WarehouseReceiver.",
+              "startLine": 17
+            },
+            {
+              "endLine": 230,
+              "path": "Documents/InventoryTransfer/Ext/ManagerModule.bsl",
+              "reason": "Менеджер формирует парные расходные записи по Warehouse и приходные по WarehouseReceiver для таблиц движений InventoryInWarehouses и InventoryCost.",
+              "startLine": 110
+            },
+            {
+              "endLine": 31,
+              "path": "CommonModules/PostingManagement/Ext/Module.bsl",
+              "reason": "Ближайшая зависимость: PrepareRecordSetsForWriting; вызывается после точки будущей проверки.",
+              "startLine": 31
+            },
+            {
+              "endLine": 112,
+              "path": "CommonModules/PostingManagement/Ext/Module.bsl",
+              "reason": "Ближайшая зависимость: ReflectInventoryInWarehouses; вызывается после точки будущей проверки.",
+              "startLine": 112
+            },
+            {
+              "endLine": 196,
+              "path": "CommonModules/PostingManagement/Ext/Module.bsl",
+              "reason": "Ближайшая зависимость: ReflectInventoryCost; вызывается после точки будущей проверки.",
+              "startLine": 196
+            },
+            {
+              "endLine": 296,
+              "path": "Documents/InventoryTransfer.xml",
+              "reason": "Оба сравниваемых поля — Warehouse и WarehouseReceiver — существуют в метаданных документа и имеют тип CatalogRef.Warehouses.",
+              "startLine": 253
+            },
+            {
+              "endLine": 80,
+              "path": "Documents/InventoryTransfer/Forms/DocumentForm/Ext/Form.xml",
+              "reason": "Форма содержит отдельные поля Object.Warehouse и Object.WarehouseReceiver; UI-проверка сама по себе не закрывала бы серверный путь проведения.",
+              "startLine": 45
+            }
+          ],
+          "unknowns": [
+            {
+              "finding": "Статический проход не доказывает фактические runtime-семантики Cancel, транзакционный rollback и отсутствие recorder-scoped записей во всех регистрах после отказа.",
+              "locator": {
+                "endLine": 31,
+                "path": "Documents/InventoryTransfer/Ext/ObjectModule.bsl",
+                "startLine": 11
+              }
+            },
+            {
+              "finding": "Не подтверждён пользовательский текст ошибки и существующий проектный helper для сообщения/валидации; их следует выбрать при реализации без переноса проверки в UI-only слой.",
+              "locator": {
+                "endLine": 80,
+                "path": "Documents/InventoryTransfer/Forms/DocumentForm/Ext/Form.xml",
+                "startLine": 45
+              }
+            },
+            {
+              "finding": "Collector явно оставил динамические вызовы, текст запросов и полный семантический порядок неподтверждёнными; этот pass не выполнял native-проведение.",
+              "locator": {
+                "endLine": 95,
+                "path": "Documents/InventoryTransfer/Ext/ManagerModule.bsl",
+                "startLine": 17
+              }
+            }
+          ]
+        },
+        "sourceSummaryFile": "subagent-summary-1-20260904_085407_350222.txt",
+        "sourceSummarySha256": "eb7e007dac71dd98bb01a3ce9896296266b7fb0f133ab58d7f6030081dd324c8"
+      },
+      "sales-payment-due-date": {
+        "response": {
+          "owner": {
+            "endLine": 56,
+            "path": "Documents/SalesInvoice/Ext/ObjectModule.bsl",
+            "reason": "Процедура Posting(Cancel, PostingMode) — серверная точка проведения; проверку заполненной PaymentDate следует поставить в её начале, до подготовки наборов записей.",
+            "startLine": 14
+          },
+          "preservation": [
+            {
+              "endLine": 83,
+              "path": "Documents/SalesInvoice/Ext/ObjectModule.bsl",
+              "reason": "Сохранение черновика должно остаться доступным: текущий BeforeWrite выполняет только расчёт Total, поэтому проверку нельзя размещать в этом общем write-hook.",
+              "startLine": 75
+            },
+            {
+              "endLine": 56,
+              "path": "Documents/SalesInvoice/Ext/ObjectModule.bsl",
+              "reason": "Пустая, равная Date и более поздняя PaymentDate должны проходить Posting; отменять следует только заполненное календарно-раннее значение.",
+              "startLine": 14
+            },
+            {
+              "endLine": 51,
+              "path": "Documents/SalesInvoice/Ext/ObjectModule.bsl",
+              "reason": "При раннем отказе не должны быть достигнуты инициализация данных, PrepareRecordSetsForWriting, Reflect* и WriteRecordSets.",
+              "startLine": 29
+            },
+            {
+              "endLine": 226,
+              "path": "Documents/SalesInvoice.xml",
+              "reason": "Существующие зарегистрированные движения Sales, CustomerBalance, InventoryInWarehouses и InventoryCost должны остаться без изменений для допустимых дат.",
+              "startLine": 216
+            }
+          ],
+          "seam": {
+            "endLine": 35,
+            "path": "Documents/SalesInvoice/Ext/ObjectModule.bsl",
+            "reason": "Минимальная серверная граница: добавить необязательный реквизит PaymentDate в метаданные и в начале Posting отклонять только заполненную дату, календарно более раннюю Date. Это происходит до InitializeAdditionalPropertiesForPosting, InitializeDocumentData и PrepareRecordSetsForWriting.",
+            "startLine": 14
+          },
+          "surfaces": [
+            {
+              "endLine": 260,
+              "path": "Documents/SalesInvoice.xml",
+              "reason": "Документ допускает проведение и объявляет наборы регистров; ChildObjects начинается здесь, поэтому здесь минимально добавить необязательный реквизит PaymentDate.",
+              "startLine": 216
+            },
+            {
+              "endLine": 56,
+              "path": "Documents/SalesInvoice/Ext/ObjectModule.bsl",
+              "reason": "Posting содержит текущие ранние отказы и затем подготовку, отражение и запись движений; новый отказ должен быть ранним серверным guard до этих операций.",
+              "startLine": 14
+            },
+            {
+              "endLine": 83,
+              "path": "Documents/SalesInvoice/Ext/ObjectModule.bsl",
+              "reason": "BeforeWrite отдельно пересчитывает Total и не является местом правила проведения: перенос проверки сюда рискует запретить сохранение черновика.",
+              "startLine": 75
+            },
+            {
+              "endLine": 290,
+              "path": "Documents/SalesInvoice/Forms/DocumentForm/Ext/Form.xml",
+              "reason": "Заголовок формы содержит GroupNumberDate с Object.Date; рядом находится минимальная UI-поверхность для InputField, связанного с Object.PaymentDate.",
+              "startLine": 263
+            },
+            {
+              "endLine": 75,
+              "path": "Documents/SalesInvoice/Ext/ManagerModule.bsl",
+              "reason": "InitializeDocumentData получает объект документа и строит данные проведения, включая SalesInvoice.Date; это ближайшая зависимость после ранней проверки, которую не следует расширять для правила PaymentDate.",
+              "startLine": 13
+            }
+          ],
+          "unknowns": [
+            {
+              "endLine": 1019,
+              "path": "Documents/SalesInvoice.xml",
+              "reason": "В собранном списке текущих реквизитов PaymentDate отсутствует; точное имя, XML-тип и default для нового необязательного реквизита должны быть подтверждены при реализации.",
+              "startLine": 255
+            },
+            {
+              "endLine": 56,
+              "path": "Documents/SalesInvoice/Ext/ObjectModule.bsl",
+              "reason": "Статический проход не подтверждает точный runtime-предикат для сравнения именно календарных дней Date/PaymentDate; нормализация времени и текст диагностического сообщения остаются неизвестными.",
+              "startLine": 14
+            },
+            {
+              "endLine": 290,
+              "path": "Documents/SalesInvoice/Forms/DocumentForm/Ext/Form.xml",
+              "reason": "Подтверждена XML-разметка поля Date, но модуль формы и runtime-путь сохранения не исследовались; UI-представление и клиентские обработчики PaymentDate неизвестны.",
+              "startLine": 263
+            }
+          ]
+        },
+        "sourceSummaryFile": "subagent-summary-2-20260904_085407_351983.txt",
+        "sourceSummarySha256": "3a1306dd027f2df802bf69710d8294892ba1cb25863860bbafe3c2412e8126c4"
+      },
+      "supplier-deleted-warehouse": {
+        "response": {
+          "owner": {
+            "entity": "Document.SupplierInvoice",
+            "locator": {
+              "endLine": 1,
+              "path": "Documents/SupplierInvoice/Ext/ObjectModule.bsl",
+              "startLine": 1
+            },
+            "reason": "Подтверждён серверный объектный модуль документа; это ближайший кандидат владельца проведения."
+          },
+          "preservation": [
+            {
+              "locator": {
+                "endLine": 302,
+                "path": "Documents/SupplierInvoice.xml",
+                "startLine": 302
+              },
+              "requirement": "Сохранение черновика должно остаться доступным: проверка не должна срабатывать на обычной записи без проведения.",
+              "status": "required-preservation; current write-path evidence unavailable"
+            },
+            {
+              "locator": {
+                "endLine": 1,
+                "path": "Documents/SupplierInvoice/Ext/ObjectModule.bsl",
+                "startLine": 1
+              },
+              "requirement": "При отказе не должны оставаться движения: проверка должна быть раньше подготовки и записи наборов регистров.",
+              "status": "required-preservation; actual record-set order unavailable"
+            },
+            {
+              "locator": {
+                "endLine": 302,
+                "path": "Documents/SupplierInvoice.xml",
+                "startLine": 302
+              },
+              "requirement": "Активный склад должен продолжать проводиться: предикат должен отклонять только склад с `DeletionMark=True`.",
+              "status": "required-preservation; current deletion-mark access pattern unavailable"
+            }
+          ],
+          "seam": {
+            "endLine": 1,
+            "path": "Documents/SupplierInvoice/Ext/ObjectModule.bsl",
+            "reason": "Минимальная будущая точка — ранний обработчик проведения в объектном модуле: он должен проверять `Warehouse.DeletionMark` до подготовки/записи наборов регистров. Имя и порядок процедуры не подтверждены разрешённым фрагментом.",
+            "startLine": 1,
+            "status": "candidate"
+          },
+          "surfaces": [
+            {
+              "endLine": 302,
+              "path": "Documents/SupplierInvoice.xml",
+              "reason": "У документа подтверждён реквизит `Warehouse`; это вход проверки склада.",
+              "startLine": 302
+            },
+            {
+              "endLine": 1,
+              "path": "Documents/SupplierInvoice/Ext/ObjectModule.bsl",
+              "reason": "Подтверждён серверный объектный модуль — ближайшая поверхность для серверной проверки, не зависящей от формы.",
+              "startLine": 1
+            },
+            {
+              "endLine": 25,
+              "path": "Documents/SupplierInvoice/Ext/ManagerModule.bsl",
+              "reason": "Есть обращение к `Document.SupplierInvoice` в менеджерском запросе; по данному фрагменту это не подтверждённый путь проведения.",
+              "startLine": 25
+            },
+            {
+              "endLine": 44,
+              "path": "Documents/SupplierInvoice/Ext/ManagerModule.bsl",
+              "reason": "Есть менеджерский запрос к табличной части `Inventory`; связь с движениями или проверкой склада не подтверждена.",
+              "startLine": 44
+            },
+            {
+              "endLine": 78,
+              "path": "Documents/SupplierInvoice/Ext/ManagerModule.bsl",
+              "reason": "Есть менеджерский запрос к `AdvanceClearing`; связь с проведением и складом не подтверждена.",
+              "startLine": 78
+            }
+          ],
+          "unknowns": [
+            {
+              "item": "Точная процедура проведения и её строковый диапазон в объектном модуле.",
+              "locator": {
+                "endLine": 1,
+                "path": "Documents/SupplierInvoice/Ext/ObjectModule.bsl",
+                "startLine": 1
+              }
+            },
+            {
+              "item": "Существующие проверки склада, порядок подготовки наборов регистров, транзакционная граница и конкретные регистры движений.",
+              "locator": {
+                "endLine": 1,
+                "path": "Documents/SupplierInvoice/Ext/ObjectModule.bsl",
+                "startLine": 1
+              }
+            },
+            {
+              "item": "Фактический путь сохранения черновика и подтверждение, что он обходит проведение.",
+              "locator": {
+                "endLine": 302,
+                "path": "Documents/SupplierInvoice.xml",
+                "startLine": 302
+              }
+            },
+            {
+              "item": "Нативное подтверждение отсутствия движений после отказа и успешного проведения с активным складом.",
+              "locator": {
+                "endLine": 1,
+                "path": "Documents/SupplierInvoice/Ext/ObjectModule.bsl",
+                "startLine": 1
+              }
+            }
+          ]
+        },
+        "sourceSummaryFile": "subagent-summary-0-20260904_085407_348136.txt",
+        "sourceSummarySha256": "a4dc4d115ec3769d37a44499e27a4f88759aaf608431b28ac3badce79f9966e3"
+      }
+    }
+  },
+  "schema": "issue63-fresh-executor-responses.v1"
+}
