@@ -5,7 +5,7 @@ import unittest
 
 
 ROOT = Path(__file__).resolve().parents[1]
-PATCH = ROOT / "experiments" / "issue65-salesinvoice-payment-due-print" / "print-form.patch"
+PATCH = ROOT / "experiments" / "issue65-salesinvoice-payment-due-print" / "exact-production.patch"
 
 
 class SalesInvoicePaymentDuePrintPatchTests(unittest.TestCase):
