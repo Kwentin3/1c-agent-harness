@@ -1,0 +1,91 @@
+diff --git a/Documents/SalesInvoice/Ext/ObjectModule.bsl b/Documents/SalesInvoice/Ext/ObjectModule.bsl
+--- a/Documents/SalesInvoice/Ext/ObjectModule.bsl
++++ b/Documents/SalesInvoice/Ext/ObjectModule.bsl
+@@ -12,6 +12,12 @@
+ EndProcedure
+ 
+ Procedure Posting(Cancel, PostingMode)
++	
++	If ValueIsFilled(PaymentDueDate) And BegOfDay(PaymentDueDate) < BegOfDay(Date) Then
++		MessageText = NStr("en = 'Payment due date cannot be earlier than the document date.'; tr = 'Ödeme vade tarihi belge tarihinden önce olamaz.'");
++		Common.MessageToUser(MessageText,,,, Cancel);
++		Return;
++	EndIf;
+ 	
+ 	// EDI
+ 	If EDIServer.DocumentCanceled(Ref) Then
+diff --git a/Documents/SalesInvoice/Forms/DocumentForm/Ext/Form.xml b/Documents/SalesInvoice/Forms/DocumentForm/Ext/Form.xml
+--- a/Documents/SalesInvoice/Forms/DocumentForm/Ext/Form.xml
++++ b/Documents/SalesInvoice/Forms/DocumentForm/Ext/Form.xml
+@@ -289,6 +289,11 @@
+ 									<ExtendedEditMultipleValues>true</ExtendedEditMultipleValues>
+ 									<ContextMenu name="DateContextMenu" id="5"/>
+ 									<ExtendedTooltip name="DateExtendedTooltip" id="6"/>
++								</InputField>
++								<InputField name="PaymentDueDate" id="5000">
++									<DataPath>Object.PaymentDueDate</DataPath>
++									<EditMode>EnterOnInput</EditMode><AutoEditMode>true</AutoEditMode><ExtendedEditMultipleValues>true</ExtendedEditMultipleValues>
++									<ContextMenu name="PaymentDueDateContextMenu" id="5001"/><ExtendedTooltip name="PaymentDueDateExtendedTooltip" id="5002"/>
+ 								</InputField>
+ 							</ChildItems>
+ 						</UsualGroup>
+diff --git a/Documents/SalesInvoice.xml b/Documents/SalesInvoice.xml
+--- a/Documents/SalesInvoice.xml
++++ b/Documents/SalesInvoice.xml
+@@ -1061,6 +1061,17 @@
+ 					<DataHistory>Use</DataHistory>
+ 				</Properties>
+ 			</Attribute>
++			<Attribute uuid="8b626a4a-0f1d-4dd7-81e6-72cc3308a23e">
++				<Properties>
++					<Name>PaymentDueDate</Name>
++					<Synonym><v8:item><v8:lang>en</v8:lang><v8:content>Payment due date</v8:content></v8:item><v8:item><v8:lang>tr</v8:lang><v8:content>Ödeme vade tarihi</v8:content></v8:item></Synonym>
++					<Comment/>
++					<Type><v8:Type>xs:dateTime</v8:Type><v8:DateQualifiers><v8:DateFractions>Date</v8:DateFractions></v8:DateQualifiers></Type>
++					<PasswordMode>false</PasswordMode><Format/><EditFormat/><ToolTip/><MarkNegatives>false</MarkNegatives><Mask/><MultiLine>false</MultiLine><ExtendedEdit>false</ExtendedEdit>
++					<MinValue xsi:nil="true"/><MaxValue xsi:nil="true"/><FillFromFillingValue>false</FillFromFillingValue><FillValue xsi:nil="true"/><FillChecking>DontCheck</FillChecking>
++					<ChoiceFoldersAndItems>Items</ChoiceFoldersAndItems><ChoiceParameterLinks/><ChoiceParameters/><QuickChoice>Auto</QuickChoice><CreateOnInput>Auto</CreateOnInput><ChoiceForm/><LinkByType/><ChoiceHistoryOnInput>Auto</ChoiceHistoryOnInput><Indexing>DontIndex</Indexing><FullTextSearch>Use</FullTextSearch><DataHistory>Use</DataHistory>
++				</Properties>
++			</Attribute>
+ 			<Form>DocumentForm</Form>
+ 			<Form>ListForm</Form>
+ 			<Form>ChoiceForm</Form>
+diff --git a/Documents/SalesInvoice/Templates/PF_MXL_SalesInvoice/Ext/Template.xml b/Documents/SalesInvoice/Templates/PF_MXL_SalesInvoice/Ext/Template.xml
+--- a/Documents/SalesInvoice/Templates/PF_MXL_SalesInvoice/Ext/Template.xml
++++ b/Documents/SalesInvoice/Templates/PF_MXL_SalesInvoice/Ext/Template.xml
+@@ -454,11 +454,11 @@
+ 					<tl>
+ 						<v8:item>
+ 							<v8:lang>en</v8:lang>
+-							<v8:content>Invoice #[Number] date [Date]</v8:content>
++							<v8:content>Invoice #[Number] date [Date][?(ValueIsFilled(PaymentDueDate), " Payment due: " + Format(PaymentDueDate, "DF='d'"), "")]</v8:content>
+ 						</v8:item>
+ 						<v8:item>
+ 							<v8:lang>tr</v8:lang>
+-							<v8:content>Fatura #[Number] tarih [Date]</v8:content>
++							<v8:content>Fatura #[Number] tarih [Date][?(ValueIsFilled(PaymentDueDate), " Ödeme vadesi: " + Format(PaymentDueDate, "DF='d'"), "")]</v8:content>
+ 						</v8:item>
+ 					</tl>
+ 				</c>
+diff --git a/Documents/SalesInvoice/Templates/PrintData/Ext/Template.xml b/Documents/SalesInvoice/Templates/PrintData/Ext/Template.xml
+--- a/Documents/SalesInvoice/Templates/PrintData/Ext/Template.xml
++++ b/Documents/SalesInvoice/Templates/PrintData/Ext/Template.xml
+@@ -17,6 +17,10 @@
+ 		<field xsi:type="DataSetFieldField">
+ 			<dataPath>Date</dataPath>
+ 			<field>Date</field>
++		</field>
++		<field xsi:type="DataSetFieldField">
++			<dataPath>PaymentDueDate</dataPath>
++			<field>PaymentDueDate</field>
+ 		</field>
+ 		<field xsi:type="DataSetFieldField">
+ 			<dataPath>ExchangeRate</dataPath>
+@@ -109,6 +113,7 @@
+ 	SalesInvoice.Ref AS Ref,
+ 	SalesInvoice.Number AS Number,
+ 	SalesInvoice.Date AS Date,
++	SalesInvoice.PaymentDueDate AS PaymentDueDate,
+ 	VALUE(Catalog.Companies.MainCompany) AS Company,
+ 	SalesInvoice.Customer AS Customer,
+ 	SalesInvoice.Warehouse AS Warehouse,
