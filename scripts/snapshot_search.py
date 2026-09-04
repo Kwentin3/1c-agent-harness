@@ -3,9 +3,11 @@
 from __future__ import annotations
 
 import argparse
+from contextlib import contextmanager
 import json
 from pathlib import Path, PurePosixPath
 import re
+import signal
 import sys
 from typing import Iterator
 
@@ -22,8 +24,10 @@ from target_admission import (
 SCHEMA_VERSION = 1
 DEFAULT_LIMIT = 20
 DEFAULT_MAX_BYTES = 32 * 1024
+MIN_MAX_BYTES = 256
 MAX_QUERY_BYTES = 512
 MAX_FRAGMENT_BYTES = 512
+SEARCH_DEADLINE_SECONDS = 9.0
 
 
 class SearchBlocked(Exception):
@@ -44,6 +48,37 @@ def _blocked(reason_code: str, message: str) -> dict[str, object]:
 
 def _dump(payload: dict[str, object]) -> str:
     return json.dumps(payload, ensure_ascii=False, sort_keys=True, separators=(",", ":"))
+
+
+def _stdout_bytes(payload: dict[str, object]) -> bytes:
+    return (_dump(payload) + "\n").encode("utf-8")
+
+
+def _write(payload: dict[str, object], maximum: int) -> None:
+    encoded = _stdout_bytes(payload)
+    if len(encoded) > maximum:
+        raise SearchBlocked("output_limit", "response exceeds byte limit")
+    sys.stdout.buffer.write(encoded)
+
+
+@contextmanager
+def _deadline(seconds: float) -> Iterator[None]:
+    if not hasattr(signal, "setitimer") or not hasattr(signal, "ITIMER_REAL"):
+        raise SearchBlocked("search_failed", "deadline enforcement is unavailable")
+    if signal.getitimer(signal.ITIMER_REAL) != (0.0, 0.0):
+        raise SearchBlocked("search_failed", "deadline enforcement is unavailable")
+    previous_handler = signal.getsignal(signal.SIGALRM)
+
+    def expired(_signum: int, _frame: object) -> None:
+        raise SearchBlocked("deadline_exceeded", "search deadline exceeded")
+
+    signal.signal(signal.SIGALRM, expired)
+    signal.setitimer(signal.ITIMER_REAL, seconds)
+    try:
+        yield
+    finally:
+        signal.setitimer(signal.ITIMER_REAL, 0)
+        signal.signal(signal.SIGALRM, previous_handler)
 
 
 def _bounded_text(value: object, *, name: str, maximum: int) -> str:
@@ -86,13 +121,15 @@ def _read_snapshot_ref(path: Path, contract: dict[str, object]) -> None:
         raise SearchBlocked("snapshot_invalid", "SnapshotRef is not admitted") from exc
 
 
-def _admitted_snapshot(repo_root: Path, ref_path: Path) -> tuple[Path, dict[str, str]]:
+def _admitted_snapshot(
+    repo_root: Path, ref_path: Path
+) -> tuple[Path, dict[str, str], tuple[Path, Path, Path, dict[str, object]]]:
     try:
         contract, _ = load_contract(repo_root)
         _read_snapshot_ref(ref_path, contract)
         _base, target, snapshot, manifest, binding = paths(repo_root, contract)
         admit_target(target, snapshot, manifest, binding, contract)
-        return snapshot, manifest_entries(manifest.read_bytes())
+        return snapshot, manifest_entries(manifest.read_bytes()), (target, manifest, binding, contract)
     except SearchBlocked:
         raise
     except (OSError, TargetBlocked, ValueError) as exc:
@@ -119,14 +156,17 @@ def _matching_lines(snapshot: Path, entries: dict[str, str], matcher: re.Pattern
     for relative in sorted(entries):
         if prefix is not None and relative != prefix and not relative.startswith(prefix + "/"):
             continue
+        if PurePosixPath(relative).suffix.casefold() not in {".bsl", ".xml"}:
+            continue
         path = snapshot / relative
         try:
-            payload = path.read_bytes()
+            with path.open("rb") as snapshot_file:
+                payload = snapshot_file.read()
             if b"\0" in payload:
-                continue
+                raise ValueError("binary snapshot content")
             text = payload.decode("utf-8")
-        except (OSError, UnicodeDecodeError):
-            continue
+        except (OSError, UnicodeDecodeError, ValueError) as exc:
+            raise SearchBlocked("snapshot_invalid", "Snapshot content is unreadable") from exc
         for line_number, line in enumerate(text.splitlines(), start=1):
             if matcher.search(line):
                 yield {"fragment": _fragment(line), "line": line_number, "path": relative}
@@ -153,22 +193,28 @@ def search(repo_root: Path, snapshot_ref_path: Path, query: str, mode: str, path
         matcher = re.compile(pattern)
     except re.error as exc:
         raise SearchBlocked("invalid_request", "query regex is invalid") from exc
-    snapshot, entries = _admitted_snapshot(repo_root, snapshot_ref_path)
-    results: list[dict[str, object]] = []
-    truncated = False
-    for hit in _matching_lines(snapshot, entries, matcher, path_prefix):
-        if len(results) >= limit:
-            truncated = True
-            break
-        candidate = results + [hit]
-        if len(_dump(_result(query, mode, path_prefix, candidate, True)).encode("utf-8")) > max_bytes:
-            truncated = True
-            break
-        results.append(hit)
-    payload = _result(query, mode, path_prefix, results, truncated)
-    if len(_dump(payload).encode("utf-8")) > max_bytes:
-        raise SearchBlocked("invalid_request", "maxBytes is too small")
-    return payload
+    with _deadline(SEARCH_DEADLINE_SECONDS):
+        snapshot, entries, admitted = _admitted_snapshot(repo_root, snapshot_ref_path)
+        results: list[dict[str, object]] = []
+        truncated = False
+        for hit in _matching_lines(snapshot, entries, matcher, path_prefix):
+            if len(results) >= limit:
+                truncated = True
+                break
+            candidate = results + [hit]
+            if len(_stdout_bytes(_result(query, mode, path_prefix, candidate, False))) > max_bytes:
+                truncated = True
+                break
+            results.append(hit)
+        target, manifest, binding, contract = admitted
+        try:
+            admit_target(target, snapshot, manifest, binding, contract)
+        except (OSError, TargetBlocked, ValueError) as exc:
+            raise SearchBlocked("snapshot_invalid", "SnapshotRef changed during search") from exc
+        payload = _result(query, mode, path_prefix, results, truncated)
+        if len(_stdout_bytes(payload)) > max_bytes:
+            raise SearchBlocked("invalid_request", "maxBytes is too small")
+        return payload
 
 
 def main() -> int:
@@ -181,19 +227,23 @@ def main() -> int:
     parser.add_argument("--limit", default=str(DEFAULT_LIMIT))
     parser.add_argument("--max-bytes", default=str(DEFAULT_MAX_BYTES))
     args = parser.parse_args()
+    output_limit = DEFAULT_MAX_BYTES
     try:
         query = _bounded_text(args.query, name="query", maximum=MAX_QUERY_BYTES)
         limit = _positive(args.limit, name="limit", maximum=100)
         max_bytes = _positive(args.max_bytes, name="maxBytes", maximum=DEFAULT_MAX_BYTES)
+        if max_bytes < MIN_MAX_BYTES:
+            raise SearchBlocked("invalid_request", "maxBytes is invalid")
+        output_limit = max_bytes
         prefix = _path_prefix(args.path_prefix)
         payload = search(args.repo_root.resolve(), args.snapshot_ref, query, args.mode, prefix, limit, max_bytes)
-        print(_dump(payload))
+        _write(payload, output_limit)
         return 0
     except SearchBlocked as exc:
-        print(_dump(_blocked(exc.reason_code, exc.message)))
+        _write(_blocked(exc.reason_code, exc.message), output_limit)
         return 1
     except Exception:
-        print(_dump(_blocked("search_failed", "search could not complete")))
+        _write(_blocked("search_failed", "search could not complete"), output_limit)
         return 1
 
 

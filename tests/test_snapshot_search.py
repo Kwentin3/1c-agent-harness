@@ -7,13 +7,16 @@ from pathlib import Path
 import subprocess
 import sys
 import tempfile
+import time
 import unittest
+from unittest.mock import patch
 
 ROOT = Path(__file__).resolve().parents[1]
 CLI = ROOT / "scripts" / "snapshot_search.py"
 sys.path.insert(0, str(ROOT / "scripts"))
 
 import target_admission
+import snapshot_search
 
 
 def digest(payload: bytes) -> str:
@@ -127,6 +130,59 @@ class SnapshotSearchTests(unittest.TestCase):
             payload = json.loads(first.stdout)
             self.assertTrue(payload["truncated"])
             self.assertEqual(len(payload["results"]), 1)
+
+    def test_max_bytes_includes_the_final_stdout_newline(self) -> None:
+        with tempfile.TemporaryDirectory() as temporary:
+            root = Path(temporary)
+            _, _, ref = create_target(root)
+
+            baseline = run_search(root, ref, "PaymentDueDate", "--mode", "literal")
+            self.assertEqual(baseline.returncode, 0, baseline.stderr)
+            bounded = run_search(
+                root,
+                ref,
+                "PaymentDueDate",
+                "--mode",
+                "literal",
+                "--max-bytes",
+                str(len(baseline.stdout.encode("utf-8")) - 1),
+            )
+
+            self.assertEqual(bounded.returncode, 0, bounded.stderr)
+            self.assertLessEqual(
+                len(bounded.stdout.encode("utf-8")),
+                len(baseline.stdout.encode("utf-8")) - 1,
+            )
+            self.assertTrue(json.loads(bounded.stdout)["truncated"])
+
+    def test_manifest_entry_read_or_decode_failure_is_not_silently_skipped(self) -> None:
+        with tempfile.TemporaryDirectory() as temporary:
+            snapshot = Path(temporary)
+            with self.assertRaisesRegex(snapshot_search.SearchBlocked, "Snapshot content is unreadable"):
+                list(snapshot_search._matching_lines(
+                    snapshot,
+                    {"Documents/Missing/Ext/ObjectModule.bsl": "sha256:unused"},
+                    __import__("re").compile("Anything"),
+                    None,
+                ))
+
+    def test_deadline_interrupts_a_slow_post_admission_scan(self) -> None:
+        with tempfile.TemporaryDirectory() as temporary:
+            root = Path(temporary)
+            _, _, ref = create_target(root)
+
+            admitted = snapshot_search._admitted_snapshot(root, ref)
+
+            def late_hits(*_args: object):
+                time.sleep(0.03)
+                if False:
+                    yield {}
+
+            with patch.object(snapshot_search, "SEARCH_DEADLINE_SECONDS", 0.01), patch.object(
+                snapshot_search, "_admitted_snapshot", return_value=admitted
+            ), patch.object(snapshot_search, "_matching_lines", late_hits):
+                with self.assertRaisesRegex(snapshot_search.SearchBlocked, "deadline"):
+                    snapshot_search.search(root, ref, "PaymentDueDate", "literal", None, 20, 32 * 1024)
 
     def test_path_prefix_limits_search_to_declared_subtree(self) -> None:
         with tempfile.TemporaryDirectory() as temporary:
