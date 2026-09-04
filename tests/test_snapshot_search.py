@@ -7,7 +7,6 @@ from pathlib import Path
 import subprocess
 import sys
 import tempfile
-import time
 import unittest
 from unittest.mock import patch
 
@@ -166,23 +165,17 @@ class SnapshotSearchTests(unittest.TestCase):
                     None,
                 ))
 
-    def test_deadline_interrupts_a_slow_post_admission_scan(self) -> None:
+    def test_search_uses_one_target_owned_snapshot_resolver(self) -> None:
         with tempfile.TemporaryDirectory() as temporary:
             root = Path(temporary)
             _, _, ref = create_target(root)
+            resolved = target_admission.resolve_snapshot_ref(root, ref)
 
-            admitted = snapshot_search._admitted_snapshot(root, ref)
+            with patch.object(snapshot_search, "resolve_snapshot_ref", return_value=resolved) as resolver:
+                payload = snapshot_search.search(root, ref, "PaymentDueDate", "literal", None, 20, 32 * 1024)
 
-            def late_hits(*_args: object):
-                time.sleep(0.03)
-                if False:
-                    yield {}
-
-            with patch.object(snapshot_search, "SEARCH_DEADLINE_SECONDS", 0.01), patch.object(
-                snapshot_search, "_admitted_snapshot", return_value=admitted
-            ), patch.object(snapshot_search, "_matching_lines", late_hits):
-                with self.assertRaisesRegex(snapshot_search.SearchBlocked, "deadline"):
-                    snapshot_search.search(root, ref, "PaymentDueDate", "literal", None, 20, 32 * 1024)
+            self.assertEqual(payload["status"], "ok")
+            resolver.assert_called_once_with(root, ref)
 
     def test_path_prefix_limits_search_to_declared_subtree(self) -> None:
         with tempfile.TemporaryDirectory() as temporary:

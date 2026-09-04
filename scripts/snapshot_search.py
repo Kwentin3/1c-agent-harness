@@ -3,22 +3,15 @@
 from __future__ import annotations
 
 import argparse
-from contextlib import contextmanager
 import json
 from pathlib import Path, PurePosixPath
 import re
-import signal
 import sys
 from typing import Iterator
 
 from target_admission import (
     TargetBlocked,
-    admit_target,
-    load_contract,
-    manifest_entries,
-    paths,
-    snapshot_ref,
-    unique_object,
+    resolve_snapshot_ref,
 )
 
 SCHEMA_VERSION = 1
@@ -27,7 +20,6 @@ DEFAULT_MAX_BYTES = 32 * 1024
 MIN_MAX_BYTES = 256
 MAX_QUERY_BYTES = 512
 MAX_FRAGMENT_BYTES = 512
-SEARCH_DEADLINE_SECONDS = 9.0
 
 
 class SearchBlocked(Exception):
@@ -61,26 +53,6 @@ def _write(payload: dict[str, object], maximum: int) -> None:
     sys.stdout.buffer.write(encoded)
 
 
-@contextmanager
-def _deadline(seconds: float) -> Iterator[None]:
-    if not hasattr(signal, "setitimer") or not hasattr(signal, "ITIMER_REAL"):
-        raise SearchBlocked("search_failed", "deadline enforcement is unavailable")
-    if signal.getitimer(signal.ITIMER_REAL) != (0.0, 0.0):
-        raise SearchBlocked("search_failed", "deadline enforcement is unavailable")
-    previous_handler = signal.getsignal(signal.SIGALRM)
-
-    def expired(_signum: int, _frame: object) -> None:
-        raise SearchBlocked("deadline_exceeded", "search deadline exceeded")
-
-    signal.signal(signal.SIGALRM, expired)
-    signal.setitimer(signal.ITIMER_REAL, seconds)
-    try:
-        yield
-    finally:
-        signal.setitimer(signal.ITIMER_REAL, 0)
-        signal.signal(signal.SIGALRM, previous_handler)
-
-
 def _bounded_text(value: object, *, name: str, maximum: int) -> str:
     if not isinstance(value, str) or not value or len(value.encode("utf-8")) > maximum:
         raise SearchBlocked("invalid_request", f"{name} is invalid")
@@ -108,31 +80,10 @@ def _path_prefix(value: str | None) -> str | None:
     return path.as_posix()
 
 
-def _read_snapshot_ref(path: Path, contract: dict[str, object]) -> None:
+def _admitted_snapshot(repo_root: Path, ref_path: Path) -> tuple[Path, dict[str, str]]:
     try:
-        if path.is_symlink() or not path.is_file() or path.stat().st_size > 16 * 1024:
-            raise ValueError("invalid snapshot reference")
-        actual = json.loads(path.read_text(encoding="utf-8"), object_pairs_hook=unique_object)
-        if not isinstance(actual, dict) or actual.get("action") not in {"materialized", "reused"}:
-            raise ValueError("invalid snapshot reference")
-        if actual != snapshot_ref(contract, str(actual["action"])):
-            raise ValueError("snapshot reference does not match target")
-    except (OSError, UnicodeDecodeError, ValueError, json.JSONDecodeError) as exc:
-        raise SearchBlocked("snapshot_invalid", "SnapshotRef is not admitted") from exc
-
-
-def _admitted_snapshot(
-    repo_root: Path, ref_path: Path
-) -> tuple[Path, dict[str, str], tuple[Path, Path, Path, dict[str, object]]]:
-    try:
-        contract, _ = load_contract(repo_root)
-        _read_snapshot_ref(ref_path, contract)
-        _base, target, snapshot, manifest, binding = paths(repo_root, contract)
-        admit_target(target, snapshot, manifest, binding, contract)
-        return snapshot, manifest_entries(manifest.read_bytes()), (target, manifest, binding, contract)
-    except SearchBlocked:
-        raise
-    except (OSError, TargetBlocked, ValueError) as exc:
+        return resolve_snapshot_ref(repo_root, ref_path)
+    except TargetBlocked as exc:
         raise SearchBlocked("snapshot_invalid", "SnapshotRef is not admitted") from exc
 
 
@@ -193,28 +144,22 @@ def search(repo_root: Path, snapshot_ref_path: Path, query: str, mode: str, path
         matcher = re.compile(pattern)
     except re.error as exc:
         raise SearchBlocked("invalid_request", "query regex is invalid") from exc
-    with _deadline(SEARCH_DEADLINE_SECONDS):
-        snapshot, entries, admitted = _admitted_snapshot(repo_root, snapshot_ref_path)
-        results: list[dict[str, object]] = []
-        truncated = False
-        for hit in _matching_lines(snapshot, entries, matcher, path_prefix):
-            if len(results) >= limit:
-                truncated = True
-                break
-            candidate = results + [hit]
-            if len(_stdout_bytes(_result(query, mode, path_prefix, candidate, False))) > max_bytes:
-                truncated = True
-                break
-            results.append(hit)
-        target, manifest, binding, contract = admitted
-        try:
-            admit_target(target, snapshot, manifest, binding, contract)
-        except (OSError, TargetBlocked, ValueError) as exc:
-            raise SearchBlocked("snapshot_invalid", "SnapshotRef changed during search") from exc
-        payload = _result(query, mode, path_prefix, results, truncated)
-        if len(_stdout_bytes(payload)) > max_bytes:
-            raise SearchBlocked("invalid_request", "maxBytes is too small")
-        return payload
+    snapshot, entries = _admitted_snapshot(repo_root, snapshot_ref_path)
+    results: list[dict[str, object]] = []
+    truncated = False
+    for hit in _matching_lines(snapshot, entries, matcher, path_prefix):
+        if len(results) >= limit:
+            truncated = True
+            break
+        candidate = results + [hit]
+        if len(_stdout_bytes(_result(query, mode, path_prefix, candidate, False))) > max_bytes:
+            truncated = True
+            break
+        results.append(hit)
+    payload = _result(query, mode, path_prefix, results, truncated)
+    if len(_stdout_bytes(payload)) > max_bytes:
+        raise SearchBlocked("invalid_request", "maxBytes is too small")
+    return payload
 
 
 def main() -> int:
