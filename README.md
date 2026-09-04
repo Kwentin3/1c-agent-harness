@@ -61,9 +61,35 @@ Admission в `project_target.py` проверяет закрытый manifest/fi
 проверяет и переиспользует тот же retained target без source и native-запуска; повреждённый target
 не исправляется и не перезаписывается.
 
-Для этого проекта target — canonical JetTr `1.0.3.1`. Полученный `snapshot.root` передаётся
-следующим read-only инструментам. Для разрешённых прикладных write-проверок task-specific копия
-размещается отдельно под `.local/prepared/`. Единственная продуктовая команда такой проверки —
+Для этого проекта target — canonical JetTr `1.0.3.1`. Полученный data-only `SnapshotRef`
+передаётся следующим read-only инструментам.
+
+### Поиск по admitted snapshot (V1)
+
+Готовый маршрут для fresh executor — `open → search`. Сначала сохранить единственный
+machine-readable `SnapshotRef`, затем передать именно этот файл поиску:
+
+```bash
+mkdir -p .local/search-session
+python3 scripts/project_target.py open --repo-root . \
+  > .local/search-session/snapshot-ref.json
+
+python3 scripts/snapshot_search.py \
+  --repo-root . \
+  --snapshot-ref .local/search-session/snapshot-ref.json \
+  --query 'Procedure\\s+Posting' \
+  --mode regex \
+  --path-prefix Documents/SalesInvoice/Ext
+```
+
+`open` остаётся единственным владельцем source, contract, retained storage и admission.
+`search` принимает только точный data-only `SnapshotRef`, разрешает его через target boundary и
+читает manifest-declared файлы. V1 намеренно ищет только `.bsl` и `.xml`; системный `rg`, сеть,
+1С, индекс, cache и parser не требуются. Результат — deterministic JSON с relative `path`, `line`,
+bounded `fragment` и явным `truncated`; доступны `literal` и `regex` modes и относительный
+`--path-prefix`.
+
+Для разрешённых прикладных write-проверок task-specific копия размещается отдельно под `.local/prepared/`. Единственная продуктовая команда такой проверки —
 [`scripts/shared_task_route.py run`](scripts/shared_task_route.py). Она сама создаёт disposable
 prepared path, применяет task-owned exact patches, вычисляет derived identities, вызывает
 низкоуровневый `native_cycle.py run-prepared`, передаёт raw receipts предметному oracle, возвращает

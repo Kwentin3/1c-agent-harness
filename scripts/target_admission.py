@@ -227,3 +227,23 @@ def snapshot_ref(contract: dict[str, object], action: str) -> dict[str, object]:
     snapshot = contract["snapshot"]; configuration = contract["configuration"]
     assert isinstance(snapshot, dict) and isinstance(configuration, dict)
     return {"schemaVersion": 1, "status": "ready", "action": action, "sourceIdentity": source_identity(contract), "snapshot": {"kind": "1c-configuration-files", "format": "hierarchical", "root": snapshot["root"], "manifest": snapshot["manifest"], "contentId": snapshot["contentId"], "fileCount": snapshot["fileCount"], "configuration": configuration}}
+
+
+def resolve_snapshot_ref(repo_root: Path, ref_path: Path) -> tuple[Path, dict[str, str]]:
+    """Resolve one exact data-only SnapshotRef through the retained-target boundary."""
+    try:
+        contract, _ = load_contract(repo_root)
+        if ref_path.is_symlink() or not ref_path.is_file() or ref_path.stat().st_size > 16 * 1024:
+            raise ValueError("invalid snapshot reference")
+        actual = json.loads(ref_path.read_text(encoding="utf-8"), object_pairs_hook=unique_object)
+        if not isinstance(actual, dict) or actual.get("action") not in {"materialized", "reused"}:
+            raise ValueError("invalid snapshot reference")
+        if actual != snapshot_ref(contract, str(actual["action"])):
+            raise ValueError("snapshot reference does not match target")
+        _base, target, snapshot, manifest, binding = paths(repo_root, contract)
+        admit_target(target, snapshot, manifest, binding, contract)
+        return snapshot, manifest_entries(manifest.read_bytes())
+    except TargetBlocked:
+        raise
+    except (OSError, UnicodeDecodeError, ValueError, json.JSONDecodeError) as exc:
+        raise TargetBlocked("snapshot_invalid", "SnapshotRef is not admitted") from exc
