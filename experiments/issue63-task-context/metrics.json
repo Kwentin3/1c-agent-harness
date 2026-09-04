@@ -1,0 +1,32 @@
+{
+  "schema": "issue63-accounting.v1",
+  "frozenBeforeScoring": true,
+  "units": {
+    "bytes": "UTF-8 bytes delivered to the task consumer before it names owner/seam/surfaces/preservation",
+    "operations": "every rg search, collector invocation, and source fragment/range read delivered to the consumer",
+    "activeElapsed": "monotonic seconds for those operations; unavailable is null, never zero"
+  },
+  "lanes": {
+    "rg-only": {
+      "allowed": ["rg search", "range read only of paths surfaced by that lane's rg result"],
+      "forbidden": ["collector", "history", "prior experiment outputs", "network"]
+    },
+    "task-driven": {
+      "allowed": ["rg seed discovery", "one ContextPacket collection", "range read only when the packet's locator is consumed"],
+      "forbidden": ["ground truth", "history", "prior experiment outputs", "network"]
+    }
+  },
+  "sufficiency": {
+    "allRequired": ["owner", "seam", "all requiredSurfaces", "preservation", "explicit unknowns"],
+    "wrongConfirmedRelation": "fail",
+    "missingRequiredSurface": "fail",
+    "unsupportedOrTruncatedWithoutDisclosure": "fail"
+  },
+  "winner": {
+    "minimumByteReductionPercent": 40,
+    "operationsNotWorse": true,
+    "activeElapsedNotWorse": true,
+    "allTasksSufficient": true,
+    "genericCodeUnchangedForFreshTask": true
+  }
+}

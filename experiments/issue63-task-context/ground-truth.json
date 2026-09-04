@@ -1,0 +1,43 @@
+{
+  "schema": "issue63-ground-truth.v1",
+  "visibility": "reviewer-only; excluded from fresh executor source root",
+  "tasks": {
+    "supplier-deleted-warehouse": {
+      "owner": "Document.SupplierInvoice",
+      "seam": {"path": "Documents/SupplierInvoice/Ext/ObjectModule.bsl", "startLine": 11, "endLine": 35, "procedure": "Posting"},
+      "requiredSurfaces": [
+        {"path": "Documents/SupplierInvoice.xml", "startLine": 216, "endLine": 226, "reason": "posting and declared record sets"},
+        {"path": "Documents/SupplierInvoice.xml", "startLine": 300, "endLine": 342, "reason": "Warehouse header reference"},
+        {"path": "Documents/SupplierInvoice/Ext/ObjectModule.bsl", "startLine": 11, "endLine": 35, "reason": "earliest posting boundary before preparation/reflection"},
+        {"path": "Documents/SupplierInvoice/Ext/ManagerModule.bsl", "startLine": 12, "endLine": 181, "reason": "movement derivation dependency"}
+      ],
+      "preservation": ["draft saves", "active warehouse posts", "rejection leaves no movements"],
+      "unknowns": ["localized message spelling", "native no-movement witness"]
+    },
+    "inventory-self-transfer": {
+      "owner": "Document.InventoryTransfer",
+      "seam": {"path": "Documents/InventoryTransfer/Ext/ObjectModule.bsl", "startLine": 11, "endLine": 34, "procedure": "Posting"},
+      "requiredSurfaces": [
+        {"path": "Documents/InventoryTransfer.xml", "startLine": 221, "endLine": 224, "reason": "posting and declared record sets"},
+        {"path": "Documents/InventoryTransfer.xml", "startLine": 253, "endLine": 309, "reason": "Warehouse and WarehouseReceiver header references"},
+        {"path": "Documents/InventoryTransfer/Ext/ObjectModule.bsl", "startLine": 11, "endLine": 34, "reason": "earliest posting boundary before preparation/reflection"},
+        {"path": "Documents/InventoryTransfer/Ext/ManagerModule.bsl", "startLine": 24, "endLine": 189, "reason": "movement derivation dependency"}
+      ],
+      "preservation": ["draft saves", "different warehouses post", "rejection leaves no movements"],
+      "unknowns": ["localized message spelling", "native no-movement witness"]
+    },
+    "sales-payment-due-date": {
+      "owner": "Document.SalesInvoice",
+      "seam": {"path": "Documents/SalesInvoice/Ext/ObjectModule.bsl", "startLine": 14, "endLine": 56, "procedure": "Posting"},
+      "requiredSurfaces": [
+        {"path": "Documents/SalesInvoice.xml", "startLine": 1061, "endLine": 1066, "reason": "header metadata insertion boundary"},
+        {"path": "Documents/SalesInvoice/Ext/ObjectModule.bsl", "startLine": 14, "endLine": 56, "reason": "earliest posting validation before movements"},
+        {"path": "Documents/SalesInvoice/Ext/ObjectModule.bsl", "startLine": 74, "endLine": 82, "reason": "draft-preserving BeforeWrite"},
+        {"path": "Documents/SalesInvoice/Forms/DocumentForm/Ext/Form.xml", "startLine": 271, "endLine": 315, "reason": "existing main-form header controls"},
+        {"path": "Documents/BankPayment.xml", "startLine": 568, "endLine": 612, "reason": "optional date-only metadata precedent"}
+      ],
+      "preservation": ["draft saves", "blank/same/later date posts", "earlier date rejection leaves no movements"],
+      "unknowns": ["UUIDs and control IDs", "localized message spelling", "native no-movement witness"]
+    }
+  }
+}
