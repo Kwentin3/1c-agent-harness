@@ -1,13 +1,13 @@
 #!/usr/bin/env python3
-"""Compatibility alias for the single shared native task route.
+"""Compatibility alias for the canonical shared task route."""
+from importlib import import_module
+from pathlib import Path
+import sys
 
-Issue #38 no longer owns preparation, native lifecycle, receipt collection or
-cleanup. Use `scripts/shared_task_route.py run`; this filename forwards to that
-same command so old automation cannot enter a parallel lifecycle.
-"""
-
-from shared_task_route import main
-
-
+_ROOT = str(Path(__file__).resolve().parents[1])
+if _ROOT not in sys.path:
+    sys.path.insert(0, _ROOT)
+_core = import_module("one_c_harness.shared_task_route")
+main = _core.main
 if __name__ == "__main__":
     raise SystemExit(main())

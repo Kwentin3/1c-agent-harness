@@ -21,10 +21,14 @@ def sha256(path: Path) -> str:
 
 
 def load_harness(name: str = "harness_under_test") -> object:
-    module_spec = importlib.util.spec_from_file_location(name, CLI)
+    module_name = f"one_c_harness._test_{name}"
+    module_spec = importlib.util.spec_from_file_location(
+        module_name, ROOT / "one_c_harness" / "harness.py"
+    )
     if module_spec is None or module_spec.loader is None:
         raise AssertionError("cannot load harness module")
     module = importlib.util.module_from_spec(module_spec)
+    sys.modules[module_name] = module
     module_spec.loader.exec_module(module)
     return module
 

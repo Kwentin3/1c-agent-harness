@@ -20,13 +20,14 @@ CLI = ROOT / "scripts" / "native_cycle.py"
 
 
 def load_module(name: str = "native_cycle_under_test") -> Any:
-    spec = importlib.util.spec_from_file_location(name, CLI)
+    module_name = f"one_c_harness._test_{name}"
+    spec = importlib.util.spec_from_file_location(module_name, ROOT / "one_c_harness" / "native_cycle.py")
     if spec is None or spec.loader is None:
         raise AssertionError("cannot load native cycle module")
     module = importlib.util.module_from_spec(spec)
+    sys.modules[module_name] = module
     spec.loader.exec_module(module)
     return module
-
 
 def process_is_running(pid: int) -> bool:
     status = Path(f"/proc/{pid}/status")
@@ -58,7 +59,44 @@ def create_fixed_profile(repo: Path, platform_body: str = "binary") -> tuple[Pat
     fontconfig = repo / ".local/platform/fonts.conf"
     fontconfig.write_text("fonts", encoding="utf-8")
     (repo / ".local/platform/libs/usr/lib/x86_64-linux-gnu").mkdir(parents=True)
+    platform.chmod(0o755)
+    xvfb.chmod(0o755)
+    runtime_contract = repo / "executor-runtime/one-c-runtime.json"
+    runtime_contract.parent.mkdir(parents=True, exist_ok=True)
+    runtime_contract.write_text(json.dumps({
+        "schemaVersion": 1,
+        "platform": str(platform),
+        "xvfb": str(xvfb),
+        "fontconfig": str(fontconfig),
+        "libs": str(repo / ".local/platform/libs/usr/lib/x86_64-linux-gnu"),
+    }), encoding="utf-8")
+    os.environ["ONE_C_HARNESS_RUNTIME_CONFIG"] = str(runtime_contract)
     return platform, xvfb
+
+
+def write_runtime_contract(repo: Path, runtime_root: Path) -> tuple[Path, Path, Path, Path]:
+    platform = runtime_root / "bin/1cv8t"
+    xvfb = runtime_root / "bin/xvfb-run"
+    fontconfig = runtime_root / "fonts.conf"
+    libs = runtime_root / "libs"
+    platform.parent.mkdir(parents=True)
+    platform.write_text("platform", encoding="utf-8")
+    platform.chmod(0o755)
+    xvfb.write_text("xvfb", encoding="utf-8")
+    xvfb.chmod(0o755)
+    fontconfig.write_text("fonts", encoding="utf-8")
+    libs.mkdir()
+    (repo / ".local").mkdir(exist_ok=True)
+    runtime_contract = runtime_root / "one-c-runtime.json"
+    runtime_contract.write_text(json.dumps({
+        "schemaVersion": 1,
+        "platform": str(platform),
+        "xvfb": str(xvfb),
+        "fontconfig": str(fontconfig),
+        "libs": str(libs),
+    }), encoding="utf-8")
+    os.environ["ONE_C_HARNESS_RUNTIME_CONFIG"] = str(runtime_contract)
+    return platform, xvfb, fontconfig, libs
 
 
 class NativeCycleContractTests(unittest.TestCase):
@@ -66,6 +104,7 @@ class NativeCycleContractTests(unittest.TestCase):
         native_cycle = load_module("native_cycle_prepare_invocation")
         with tempfile.TemporaryDirectory() as tmp:
             repo = Path(tmp)
+            create_fixed_profile(repo)
             source = repo / ".local" / "prepared" / "case-a"
             (source / "empty").mkdir(parents=True)
             module = source / "Ext" / "ManagedApplicationModule.bsl"
@@ -117,6 +156,26 @@ class NativeCycleContractTests(unittest.TestCase):
             self.assertEqual(plan.runtime_argv.count("/C"), 1)
             launch_index = plan.runtime_argv.index("/C")
             self.assertEqual(plan.runtime_argv[launch_index + 1], str(plan.receipt))
+
+    def test_load_plan_uses_executor_owned_runtime_contract_not_workspace_platform_layout(self) -> None:
+        native_cycle = load_module("native_cycle_executor_runtime")
+        with tempfile.TemporaryDirectory() as tmp:
+            repo = Path(tmp) / "business-project"
+            repo.mkdir()
+            runtime_root = Path(tmp) / "executor-runtime"
+            platform, xvfb, fontconfig, libs = write_runtime_contract(repo, runtime_root)
+            source = repo / ".local/prepared/case"
+            source.mkdir(parents=True)
+            (source / "Configuration.xml").write_text("<Configuration/>", encoding="utf-8")
+            invocation = native_cycle.prepare_invocation(repo, ".local/prepared/case", 30)
+
+            plan = native_cycle.load_plan(invocation.spec_path, repo)
+
+            self.assertEqual(plan.create_argv[0], str(xvfb))
+            self.assertIn(str(platform), plan.create_argv)
+            self.assertEqual(plan.environment["FONTCONFIG_FILE"], str(fontconfig))
+            self.assertEqual(plan.environment["LD_LIBRARY_PATH"], f"{platform.parent}:{libs}")
+            self.assertFalse((repo / ".local/platform").exists())
 
 
     def test_prepare_invocation_distinguishes_second_read_only_input_shape(self) -> None:
@@ -508,6 +567,7 @@ class NativeCycleContractTests(unittest.TestCase):
         native_cycle = load_module("native_cycle_source_replacement")
         with tempfile.TemporaryDirectory() as tmp:
             repo = Path(tmp)
+            create_fixed_profile(repo)
             source = repo / ".local" / "prepared" / "replace"
             source.mkdir(parents=True)
             configuration = source / "Configuration.xml"
