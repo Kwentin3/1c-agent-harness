@@ -1,0 +1,20 @@
+[build-system]
+requires = ["setuptools>=68"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "one-c-harness"
+version = "0.1.0"
+description = "Deterministic 1C Harness executor companion."
+requires-python = ">=3.10"
+license = {text = "UNLICENSED"}
+
+[project.scripts]
+one-c-harness = "one_c_harness.companion:main"
+
+[tool.setuptools]
+packages = ["one_c_harness"]
+
+[tool.setuptools.package-data]
+one_c_harness = ["release.json"]
+
