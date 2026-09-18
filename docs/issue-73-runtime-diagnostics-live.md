@@ -22,7 +22,7 @@ read-only source. No source setup or fallback collector is added.
 
 ```text
 Hermes terminal dispatch
-  -> installed one-c-harness companion
+  -> task-local exact `one-c-harness` companion (existing terminal boundary)
   -> investigate / expand
   -> native_run_history provider
   -> retained native-cycle result receipt
@@ -32,6 +32,12 @@ The provider creates opaque record IDs from the receipt bytes. It maps only a
 fixed safe subset to the normalized record: result status, total duration, and the
 receipt file modification time. Absolute paths, command arguments, environment,
 stack traces, and arbitrary receipt fields never cross the provider boundary.
+
+The executor currently lacks `ensurepip`/`venv`, so this canary invokes the exact
+companion source through its task-local Python module instead of altering the host
+or downloading dependencies. This still uses the existing terminal/companion
+boundary; a future persistent executor installation is packaging work, not a
+second transport or provider.
 
 ## Model-facing operations
 
@@ -69,5 +75,8 @@ Run the focused contract tests:
 python3 -m unittest -v tests.test_native_run_history tests.test_runtime_diagnostics tests.test_companion
 ```
 
-The executor E2E receipt is produced only from its existing task-owned runtime
-history through an installed `one-c-harness` companion in an isolated worktree.
+The executor E2E receipt is retained as
+[`issue-73-runtime-diagnostics-live-receipt.json`](issue-73-runtime-diagnostics-live-receipt.json).
+It was produced only from its existing task-owned runtime history through the
+exact companion source in an isolated worktree. It contains the bounded result
+only: 28 records, one finding and a three-record expand response.
