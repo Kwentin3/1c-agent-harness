@@ -14,7 +14,7 @@ from typing import Any
 
 try:  # Installed package.
     from . import ARTIFACT_ID, CAPABILITY_VERSION
-    from . import project_target, shared_task_route, snapshot_search, native_run_history
+    from . import project_target, shared_task_route, snapshot_search, native_run_history, techlog_observation
     from .target_admission import TargetBlocked, resolve_snapshot_value
 except ImportError:  # Repository-local compatibility for focused tests.
     from __init__ import ARTIFACT_ID, CAPABILITY_VERSION
@@ -22,6 +22,7 @@ except ImportError:  # Repository-local compatibility for focused tests.
     import shared_task_route
     import snapshot_search
     import native_run_history
+    import techlog_observation
     from target_admission import TargetBlocked, resolve_snapshot_value
 
 SCHEMA_VERSION = 1
@@ -211,6 +212,23 @@ def _expand(arguments: dict[str, object], project_root: Path) -> dict[str, objec
     return {"artifactId": ARTIFACT_ID, "capabilityVersion": CAPABILITY_VERSION, "operation": "expand", "schemaVersion": SCHEMA_VERSION, **result}
 
 
+def _observe(arguments: dict[str, object], project_root: Path) -> dict[str, object]:
+    if set(arguments) != {"window", "events", "limit"} or not isinstance(arguments["window"], dict):
+        raise CompanionError("observe arguments are invalid")
+    window = arguments["window"]
+    if set(window) != {"date", "start", "end"}:
+        raise CompanionError("observe arguments are invalid")
+    result = techlog_observation.observe(project_root, window["date"], window["start"], window["end"], arguments["events"], _positive(arguments["limit"], "limit", 20, 20))
+    return {"artifactId": ARTIFACT_ID, "capabilityVersion": CAPABILITY_VERSION, "operation": "observe", "schemaVersion": SCHEMA_VERSION, **result}
+
+
+def _expand_observation(arguments: dict[str, object], project_root: Path) -> dict[str, object]:
+    if set(arguments) != {"groupRef", "offset", "limit"}:
+        raise CompanionError("expand_observation arguments are invalid")
+    result = techlog_observation.expand(project_root, arguments["groupRef"], arguments["offset"], _positive(arguments["limit"], "limit", 20, 20))
+    return {"artifactId": ARTIFACT_ID, "capabilityVersion": CAPABILITY_VERSION, "operation": "expand_observation", "schemaVersion": SCHEMA_VERSION, **result}
+
+
 def execute(raw: bytes, project_root: Path) -> dict[str, object]:
     """Run one closed request against the selected terminal workspace only."""
     try:
@@ -228,6 +246,10 @@ def execute(raw: bytes, project_root: Path) -> dict[str, object]:
             return _investigate(arguments, root)
         if operation == "expand":
             return _expand(arguments, root)
+        if operation == "observe":
+            return _observe(arguments, root)
+        if operation == "expand_observation":
+            return _expand_observation(arguments, root)
         raise CompanionError("operation is invalid")
     except snapshot_search.SearchBlocked as exc:
         return _blocked(exc.reason_code, exc.message)

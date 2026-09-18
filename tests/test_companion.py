@@ -126,6 +126,31 @@ class CompanionContractTests(unittest.TestCase):
         self.assertEqual(response["status"], "blocked")
         self.assertEqual(response["reasonCode"], "invalid_request")
         self.assertNotIn("Traceback", json.dumps(response))
+    def test_observe_then_expand_observation_uses_techlog_snapshot(self) -> None:
+        with tempfile.TemporaryDirectory() as temporary:
+            project = Path(temporary) / "project"
+            source = Path(temporary) / "techlog"
+            log = source / "1cv8t_1" / "26091812.log"
+            project.mkdir(); log.parent.mkdir(parents=True)
+            log.write_text("12:00.000001-0,EXCP,1,process=1,Descr='private'\\n", encoding="utf-8")
+            previous = os.environ.get("ONE_C_HARNESS_TECHLOG_ROOT")
+            os.environ["ONE_C_HARNESS_TECHLOG_ROOT"] = str(source)
+            try:
+                observed = companion.execute(_request("observe", {
+                    "window": {"date": "260918", "start": "12:00.000000", "end": "12:00.000999"},
+                    "events": ["EXCP"], "limit": 10,
+                }), project)
+                expanded = companion.execute(_request("expand_observation", {
+                    "groupRef": observed["groups"][0]["ref"], "offset": 0, "limit": 10,
+                }), project)
+            finally:
+                if previous is None: os.environ.pop("ONE_C_HARNESS_TECHLOG_ROOT", None)
+                else: os.environ["ONE_C_HARNESS_TECHLOG_ROOT"] = previous
+        self.assertEqual(observed["status"], "ok")
+        self.assertEqual(expanded["status"], "ok")
+        self.assertEqual(expanded["records"][0]["event"], "EXCP")
+        self.assertNotIn("private", json.dumps(expanded))
+
     def test_investigate_then_expand_exposes_bounded_runtime_receipt_evidence(self) -> None:
         with tempfile.TemporaryDirectory() as temporary:
             project = Path(temporary)

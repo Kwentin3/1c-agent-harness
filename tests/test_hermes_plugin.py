@@ -49,13 +49,13 @@ class _Context:
 
 
 class HermesPluginTests(unittest.TestCase):
-    def test_registers_one_skill_and_three_closed_tools(self) -> None:
+    def test_registers_one_skill_and_five_closed_tools(self) -> None:
         plugin = _plugin_module()
         context = _Context({"output": "{}", "exit_code": 1})
 
         plugin.register(context)
 
-        self.assertEqual(set(context.tools), {"one_c_open", "one_c_narrow_context", "one_c_native_verify"})
+        self.assertEqual(set(context.tools), {"one_c_open", "one_c_narrow_context", "one_c_native_verify", "one_c_observe", "one_c_expand_observation"})
         self.assertIsNotNone(context.skill)
         assert context.skill is not None
         self.assertEqual(context.skill[0], "one-c-harness")

@@ -64,4 +64,19 @@ TOOLS = (
         ["snapshotRef", "request", "productionPatch", "instrumentationPatch", "oracle", "receipt", "timeoutSeconds"],
         "Run the canonical one-call native route on the admitted SnapshotRef and return a bounded receipt summary.",
     ),
+    _tool(
+        "one_c_observe",
+        {
+            "window": {"type": "object", "properties": {"date": {"type": "string", "pattern": "^\\d{6}$"}, "start": {"type": "string", "pattern": "^\\d\\d:\\d\\d\\.\\d{6,}$"}, "end": {"type": "string", "pattern": "^\\d\\d:\\d\\d\\.\\d{6,}$"}}, "required": ["date", "start", "end"], "additionalProperties": False},
+            "events": {"type": "array", "minItems": 1, "maxItems": 8, "items": {"type": "string", "minLength": 1, "maxLength": 32}},
+            "limit": {"type": "integer", "minimum": 1, "maximum": 20},
+        }, ["window", "events", "limit"],
+        "Summarize platform-authored technological-journal events in one source-date/time window.",
+    ),
+    _tool(
+        "one_c_expand_observation",
+        {"groupRef": {"type": "string", "minLength": 1, "maxLength": 256}, "offset": {"type": "integer", "minimum": 0}, "limit": {"type": "integer", "minimum": 1, "maximum": 20}},
+        ["groupRef", "offset", "limit"],
+        "Expand one stable technological-journal group from the exact prior observation.",
+    ),
 )

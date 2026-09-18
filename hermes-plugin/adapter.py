@@ -84,6 +84,18 @@ def narrow_context(ctx: Any) -> Callable[[object], str]:
     return handler
 
 
+def observe(ctx: Any) -> Callable[[object], str]:
+    def handler(arguments: object, **_kwargs: object) -> str:
+        return _call(ctx, "observe", arguments, 60)
+    return handler
+
+
+def expand_observation(ctx: Any) -> Callable[[object], str]:
+    def handler(arguments: object, **_kwargs: object) -> str:
+        return _call(ctx, "expand_observation", arguments, 60)
+    return handler
+
+
 def native_verify(ctx: Any) -> Callable[[object], str]:
     def handler(arguments: object, **_kwargs: object) -> str:
         if not isinstance(arguments, dict) or type(arguments.get("timeoutSeconds")) is not int:
