@@ -213,12 +213,12 @@ def _expand(arguments: dict[str, object], project_root: Path) -> dict[str, objec
 
 
 def _observe(arguments: dict[str, object], project_root: Path) -> dict[str, object]:
-    if set(arguments) != {"window", "events", "limit"} or not isinstance(arguments["window"], dict):
+    if set(arguments) != {"start", "end", "events", "limit"}:
         raise CompanionError("observe arguments are invalid")
-    window = arguments["window"]
-    if set(window) != {"date", "start", "end"}:
-        raise CompanionError("observe arguments are invalid")
-    result = techlog_observation.observe(project_root, window["date"], window["start"], window["end"], arguments["events"], _positive(arguments["limit"], "limit", 20, 20))
+    result = techlog_observation.observe(
+        project_root, arguments["start"], arguments["end"], arguments["events"],
+        _positive(arguments["limit"], "limit", 20, 20),
+    )
     return {"artifactId": ARTIFACT_ID, "capabilityVersion": CAPABILITY_VERSION, "operation": "observe", "schemaVersion": SCHEMA_VERSION, **result}
 
 

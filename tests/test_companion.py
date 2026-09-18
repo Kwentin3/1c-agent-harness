@@ -132,12 +132,14 @@ class CompanionContractTests(unittest.TestCase):
             source = Path(temporary) / "techlog"
             log = source / "1cv8t_1" / "26091812.log"
             project.mkdir(); log.parent.mkdir(parents=True)
-            log.write_text("12:00.000001-0,EXCP,1,process=1,Descr='private'\\n", encoding="utf-8")
+            log.write_text("00:00.000001-0,EXCP,1,process=1,Descr='private'\\n", encoding="utf-8")
             previous = os.environ.get("ONE_C_HARNESS_TECHLOG_ROOT")
+            previous_zone = os.environ.get("ONE_C_HARNESS_TECHLOG_TIME_ZONE")
             os.environ["ONE_C_HARNESS_TECHLOG_ROOT"] = str(source)
+            os.environ["ONE_C_HARNESS_TECHLOG_TIME_ZONE"] = "UTC"
             try:
                 observed = companion.execute(_request("observe", {
-                    "window": {"date": "260918", "start": "12:00.000000", "end": "12:00.000999"},
+                    "start": "2026-09-18T12:00:00", "end": "2026-09-18T12:00:01",
                     "events": ["EXCP"], "limit": 10,
                 }), project)
                 expanded = companion.execute(_request("expand_observation", {
@@ -146,6 +148,8 @@ class CompanionContractTests(unittest.TestCase):
             finally:
                 if previous is None: os.environ.pop("ONE_C_HARNESS_TECHLOG_ROOT", None)
                 else: os.environ["ONE_C_HARNESS_TECHLOG_ROOT"] = previous
+                if previous_zone is None: os.environ.pop("ONE_C_HARNESS_TECHLOG_TIME_ZONE", None)
+                else: os.environ["ONE_C_HARNESS_TECHLOG_TIME_ZONE"] = previous_zone
         self.assertEqual(observed["status"], "ok")
         self.assertEqual(expanded["status"], "ok")
         self.assertEqual(expanded["records"][0]["event"], "EXCP")

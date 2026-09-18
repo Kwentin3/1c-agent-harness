@@ -61,6 +61,17 @@ class HermesPluginTests(unittest.TestCase):
         self.assertEqual(context.skill[0], "one-c-harness")
         self.assertTrue(context.skill[1].is_file())
 
+    def test_manifest_schema_and_registration_agree_on_observation_tools(self) -> None:
+        plugin = _plugin_module()
+        context = _Context({"output": "{}", "exit_code": 1})
+        plugin.register(context)
+        manifest = (PLUGIN / "plugin.yaml").read_text(encoding="utf-8")
+        for name in ("one_c_observe", "one_c_expand_observation"):
+            self.assertIn(f"- {name}", manifest)
+            self.assertIn(name, context.tools)
+        schema = next(item for item in sys.modules[plugin.__name__ + ".schemas"].TOOLS if item["name"] == "one_c_observe")
+        self.assertEqual(set(schema["parameters"]["properties"]), {"start", "end", "events", "limit"})
+
     def test_open_dispatches_only_the_public_terminal_tool_and_checks_version(self) -> None:
         plugin = _plugin_module()
         result = {

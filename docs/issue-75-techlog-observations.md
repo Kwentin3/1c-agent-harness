@@ -1,75 +1,96 @@
 # Issue #75 — platform-authored 1C technological-journal observations
 
-## What is observed
+## Source and time semantics
 
-The source is the **1C:Enterprise technological journal** emitted by the installed
-Linux training runtime **8.5.1.1150** in an isolated file-mode Jet run. This is not
-a Harness receipt, test report, runner exit code or synthetic fixture.
+The single source is the **1C:Enterprise technological journal** emitted by the
+installed Linux training runtime **8.5.1.1150** in an isolated file-mode Jet run.
+It is not a Harness receipt, runner exit code, or synthetic fixture.
 
-The thin provider `one_c_harness.techlog_observation` has exactly two operations:
+The supported platform grammar is deliberately narrow:
 
-- `observe`: filters one source-date and source-time-token interval, groups selected
-  platform event names, and retains a bounded immutable task-local selection;
-- `expand_observation`: returns a requested page from exactly that retained selection.
+- the platform documentation defines each log file as `yymmddhh.log`, with the
+  file name carrying its one-hour interval: [1C:Enterprise Administrator Guide,
+  “Technological log structure”](https://kb.1ci.com/1C_Enterprise_Platform/Guides/Administrator_Guides/1C_Enterprise_8.3.23_Administrator_Guide/6._Infobase_administration/6.14._Technological_log/6.14.4._Technological_log_structure/);
+- the verified 8.5.1.1150 files use `mm:ss.ffffff-pid,EVENT,` at event start.
 
-The first token in the verified Linux log has the shape `25:25.291000`. Its precise
-calendar/time-zone semantics were not established from this source, so the API calls
-it `sourceTimeToken`, rather than inventing an ISO timestamp. The file-date token and
-this source token are both preserved; file mtime is not used as event time.
+Harness combines file date/hour and event minute/second into a calendar occurrence.
+It never uses file mtime. The executor supplies both `ONE_C_HARNESS_TECHLOG_ROOT`
+and `ONE_C_HARNESS_TECHLOG_TIME_ZONE`; this canary verified `UTC`. A model asks for
+inclusive local-source `start` and `end` such as `2026-09-18T15:25:00`, not raw file
+names or source tokens. If the root or timezone is missing/invalid, the source is
+`unavailable`; no silent timezone conversion or invented UTC occurs.
 
-`ONE_C_HARNESS_TECHLOG_ROOT` is executor-local configuration. It is absent by default,
-which returns `source_unavailable`; it is never supplied by a model request, project
-contract, SSH argument, or plugin argument.
+## Safe diagnostic meaning
 
-## Real isolated run
+`observe` groups `EXCP` records by event plus a deterministic error signature.
+`expand_observation` returns a stable page from exactly the retained selection. A
+record includes:
+
+- platform event and calendar `occurredAt` (with the configured source offset);
+- an allowlisted compact `Exception` technical token when the field is present and
+  token-shaped; and
+- a deterministic fingerprint for `Descr` when its value cannot be safely emitted.
+
+This makes distinct exception/description combinations and repeats distinguishable
+without exposing arbitrary log body. `Descr` is available in the platform source but
+has no reliable generic privacy contract: it can contain business values, paths,
+connect strings or user data. It is therefore deliberately redacted rather than
+released through heuristic text cleaning. Raw body, description text, usernames,
+connection strings, host/process values and Harness stack traces are never returned.
+This is the remaining semantic limit of the selected safe format, not a claim that
+the missing text does not exist.
+
+## Bounded collection and retained evidence
+
+One observation is capped at 24 candidate files, 96 discovered paths, 256 KiB input,
+2 seconds wall time, 8 KiB per source record, 200 retained records, 20 groups per
+response and 20 expanded records per page. Collection is sequential. A limit returns
+the useful retained part with `partial`, a coverage `reasonCode`, `bytesRead` and
+`filesRead`; counts never claim an unscanned incident total. An accessible empty
+interval is successful with `recordCount: 0`; unavailable and partially-read source
+are separate results.
+
+The task-local snapshot expires after one hour and is pruned only from its own cache.
+Expansion reads that snapshot, not the mutable journal. A missing, altered or expired
+snapshot fails closed as `evidence_not_found`.
+
+## Real isolated source run
 
 A task-owned hardlink copy of the training runtime carried the only `logcfg.xml`.
-The shared runtime had no `logcfg.xml` before or after. The selected configuration
-logged only platform event `EXCP` into a task-owned directory. The native runtime
-part was limited to 25 seconds; the whole create/load/runtime lifecycle took 91.488
-seconds because the existing runner has separate setup stages.
+The shared runtime had no `logcfg.xml` before or after; CF and snapshot were not
+changed. An EXCP-only configuration produced 3 platform log files / 47,170 bytes /
+100 platform records (`EXCP` and `EXCPCNTX`). The initial broad-log canary produced
+120,507,830 bytes and was rejected as noise; it is not the acceptance source.
 
-Result: 3 platform log files, 47,170 bytes, 100 platform records (`EXCP` and
-`EXCPCNTX`). No `1cv8t`, `1cv8ct`, or Xvfb process remained. The initial broad-log
-canary produced 120,507,830 bytes and is explicitly not the acceptance source.
+The current candidate made this real question against retained platform logs:
 
-A real read-only companion query over the small source selected the actual source
-window `260918 / 25:25.000000–25:25.999999` and event `EXCP`:
+> «Какие `EXCP` произошли в локальном времени источника с
+> `2026-09-18T15:25:00` по `2026-09-18T15:25:59`?»
 
-```json
-{
-  "summary": {"source": "1c_techlog", "recordCount": 1},
-  "groups": [{"event": "EXCP", "count": 1}],
-  "snapshot": {"stable": true, "partial": false}
-}
-```
+It returned a compact result: 44 selected records, 13 distinct `EXCP` groups, 3 files
+and 47,170 bytes read, with complete coverage. Expanding one group returned two
+repeated records at calendar times with the same safe technical exception identifier
+and redacted-description fingerprint; the group reported more pages. Hash manifests
+of every source log matched before and after query; no 1C or Xvfb process remained.
 
-Its group expansion returned the one safe source record. It identified the event and
-source token but marked `process`, `OSThread`, `Exception`, `Descr`, and the body as
-`<hidden>`. Hash manifests of all source log files matched before and after the
-query. Changing a source log after `observe` is covered by a regression test: later
-`expand_observation` uses the retained snapshot rather than rereading the source.
+## Hermes boundary and delivery state
 
-## Hermes boundary
+`plugin.yaml`, registered schemas, runtime handlers and bundled skill now agree on
+`one_c_observe` and `one_c_expand_observation`. They call the existing public
+terminal boundary with closed JSON; the plugin has no SSH, executor path or domain
+parser code. The companion and plugin still require matching existing release
+`artifactId` and capability version.
 
-The repository plugin registers two new closed tools:
+The real task-local source → companion route was exercised. It is **not** called
+Hermes E2E: the accessible environment has no pinned `hermes` executable, Python
+package or plugin loader, so an isolated-profile load cannot be performed without
+changing/deploying the active runtime. No active profile, deployment or restart was
+changed. This is the one external blocker for the requested full tool route.
 
-- `one_c_observe`
-- `one_c_expand_observation`
+## Supported limits
 
-They serialize closed JSON into the existing public terminal tool and then into the
-installed companion. `open`, `narrow`, and `verify` are unchanged. The task-local
-companion route was exercised against the real source. The currently deployed Hermes
-plugin is not changed by this branch; installing this tool pair would require a
-separate owner-approved deployment/restart, so this is not claimed as full deployed
-Hermes E2E.
-
-## Limits
-
-- Only the observed 8.5.1.1150 training-edition log grammar is supported.
-- The source does not establish cluster activity, CPU use, BSL causality, or a cause
-  of a production incident.
-- A retained selection is capped at 200 records. If exceeded, `snapshot.partial` is
-  explicit; it is not a monitoring database.
-- Safe expansion intentionally hides values and full body. The raw log remains only
-  in the executor task area.
+- Only the observed 8.5.1.1150 file-mode technological-log grammar is supported.
+- This source does not establish cluster activity, CPU use, BSL causality, or a root
+  cause for a production incident.
+- A safe `Descr` message cannot be guaranteed from arbitrary platform text; its
+  existence and stable fingerprint remain visible, its text remains redacted.
