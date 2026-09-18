@@ -1,0 +1,12 @@
+manifest_version: 2
+api_version: 1
+name: one-c-harness
+version: 0.1.0
+description: "Thin terminal-bound adapter for the pinned 1C Harness executor companion"
+author: "1C Harness"
+kind: standalone
+runtime_name: one-c-harness-0.1.0
+provides_tools:
+  - one_c_open
+  - one_c_narrow_context
+  - one_c_native_verify

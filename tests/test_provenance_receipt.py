@@ -5,6 +5,7 @@ import copy
 import hashlib
 import importlib.util
 import json
+import os
 from pathlib import Path
 import subprocess
 import sys
@@ -14,11 +15,9 @@ import unittest
 from unittest import mock
 
 ROOT = Path(__file__).resolve().parents[1]
-sys.path.insert(0, str(ROOT / "scripts"))
-import managed_probe_prepare as preparation
-import native_cycle
-import shared_task_route as route
-sys.path.pop(0)
+from one_c_harness import managed_probe_prepare as preparation
+from one_c_harness import native_cycle
+from one_c_harness import shared_task_route as route
 
 
 def _sha(payload: bytes) -> str:
@@ -64,6 +63,24 @@ class SharedTaskRouteTests(unittest.TestCase):
     def test_one_call_owns_prepare_identity_runner_oracle_receipt_and_cleanup(self) -> None:
         with tempfile.TemporaryDirectory() as temporary:
             repo = Path(temporary)
+            runtime = repo / "executor-runtime"
+            platform = runtime / "1cv8t"
+            xvfb = runtime / "xvfb-run"
+            fontconfig = runtime / "fonts.conf"
+            libs = runtime / "libs"
+            runtime.mkdir()
+            platform.write_text("platform", encoding="utf-8")
+            xvfb.write_text("xvfb", encoding="utf-8")
+            platform.chmod(0o755)
+            xvfb.chmod(0o755)
+            fontconfig.write_text("fonts", encoding="utf-8")
+            libs.mkdir()
+            runtime_contract = runtime / "one-c-runtime.json"
+            runtime_contract.write_text(json.dumps({
+                "schemaVersion": 1, "platform": str(platform), "xvfb": str(xvfb),
+                "fontconfig": str(fontconfig), "libs": str(libs),
+            }), encoding="utf-8")
+            os.environ["ONE_C_HARNESS_RUNTIME_CONFIG"] = str(runtime_contract)
             source = repo / "snapshot"
             source.mkdir()
             (source / "A.txt").write_text("base\n", encoding="utf-8")

@@ -12,10 +12,8 @@ from unittest.mock import patch
 
 ROOT = Path(__file__).resolve().parents[1]
 CLI = ROOT / "scripts" / "snapshot_search.py"
-sys.path.insert(0, str(ROOT / "scripts"))
-
-import target_admission
-import snapshot_search
+from one_c_harness import target_admission
+from one_c_harness import snapshot_search
 
 
 def digest(payload: bytes) -> str:

@@ -224,9 +224,10 @@ class ProjectTargetTests(unittest.TestCase):
             self.assertEqual(missing["reasonCode"], "materializer_unavailable")
             self.assertEqual(missing["locator"], "docs/lab-bootstrap.md")
 
-            (root / ".local/one-c-runtime.json").write_text(
-                '{"schemaVersion":1,"platform":"relative"}', encoding="utf-8"
-            )
+            invalid = root / "executor/runtime/one-c-runtime.json"
+            invalid.parent.mkdir(parents=True)
+            invalid.write_text('{"schemaVersion":1,"platform":"relative"}', encoding="utf-8")
+            os.environ["ONE_C_HARNESS_RUNTIME_CONFIG"] = str(invalid)
             self.assertEqual(response(run_open(root))["reasonCode"], "materializer_unavailable")
 
     def test_parallel_cf_open_materializes_once(self) -> None:
@@ -412,7 +413,7 @@ class ProjectTargetTests(unittest.TestCase):
     def write_fake_runtime(
         root: Path,
         *,
-        platform: str = ".local/platform/1cv8t/x86_64/8.5.1.1150/1cv8t",
+        platform: str = "executor/runtime/bin/1cv8t",
     ) -> None:
         binary = root / platform
         xvfb = root / "executor/runtime/bin/xvfb-run"
@@ -424,7 +425,8 @@ class ProjectTargetTests(unittest.TestCase):
         libraries.mkdir(parents=True, exist_ok=True)
         binary.write_text("x", encoding="utf-8")
         fontconfig.write_text("<fontconfig/>", encoding="utf-8")
-        (root / ".local/one-c-runtime.json").write_text(
+        runtime_contract = root / "executor/runtime/one-c-runtime.json"
+        runtime_contract.write_text(
             json.dumps(
                 {
                     "schemaVersion": 1,
@@ -436,6 +438,7 @@ class ProjectTargetTests(unittest.TestCase):
             ),
             encoding="utf-8",
         )
+        os.environ["ONE_C_HARNESS_RUNTIME_CONFIG"] = str(runtime_contract)
         script = f'''#!/usr/bin/env python3
 import sys
 from pathlib import Path

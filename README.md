@@ -115,6 +115,34 @@ contract, request, exact production patch, exact instrumentation patch и mainta
 Исторические packages не переписываются, а candidate commit/tree и CI остаются ответственностью
 GitHub, не task validator.
 
+### Установленный executor companion и Hermes plugin
+
+`one-c-harness` — один installable companion из этого же canonical tree. Он устанавливается
+один раз **у executor рядом с уже подготовленным 1С runtime**, а не копируется в business
+workspace:
+
+```bash
+python3 -m pip install --no-deps /immutable/source/revision
+```
+
+Его entrypoint `one-c-harness --request-stdin` принимает один closed JSON envelope
+`{schemaVersion: 1, operation, arguments}` и берёт project root только из текущего `cwd`
+terminal backend. Доступны `open`, `narrow` и `verify`; `narrow` и `verify` принимают только
+точный admitted `SnapshotRef`, а task artifacts для `verify` должны быть repository-relative.
+Он использует уже существующий executor locator `.local/one-c-runtime.json`, поэтому не требует
+`.local/platform`, Harness checkout или SSH credential в business workspace.
+
+Standalone Hermes plugin лежит в [`hermes-plugin/`](hermes-plugin/). Он регистрирует только
+`one_c_open`, `one_c_narrow_context`, `one_c_native_verify` и короткую plugin skill. Plugin
+формирует тот же JSON, вызывает только public `ctx.dispatch_tool("terminal", ...)` и не
+реализует SSH, executor discovery или workspace mapping. Версия plugin и companion сейчас
+`0.1.0`; operator обязан pin-ить оба install sources к одному immutable Git revision. Любой
+несовпадающий `capabilityVersion` блокируется fail-closed.
+
+Эти source artifacts сами по себе не включают SSH backend и не выполняют deployment/restart.
+Remote executor и его selected workspace должны быть явно настроены terminal boundary до
+установочного canary.
+
 ## Цель MVP
 
 Кодовый агент в Linux-окружении получает снимок конфигурации 1С и может:

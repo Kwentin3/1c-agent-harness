@@ -202,7 +202,7 @@ class Issue38ProtocolTests(unittest.TestCase):
 
     def test_issue38_frontdoor_is_only_a_shared_route_alias(self) -> None:
         source = FRONTDOOR_PATH.read_text(encoding="utf-8")
-        self.assertIn("from shared_task_route import main", source)
+        self.assertIn('import_module("one_c_harness.shared_task_route")', source)
         for lifecycle in ("prepare_probe", "run-prepared", "subprocess.run", "discard_prepared_tree"):
             self.assertNotIn(lifecycle, source)
 
