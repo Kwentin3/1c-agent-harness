@@ -4,7 +4,6 @@ import json
 import os
 from pathlib import Path
 import tempfile
-import tomllib
 import unittest
 
 from one_c_harness import cf_materializer
@@ -15,11 +14,11 @@ ROOT = Path(__file__).resolve().parents[1]
 
 class InstallableLayoutTests(unittest.TestCase):
     def test_core_uses_its_own_source_namespace_not_scripts(self) -> None:
-        metadata = tomllib.loads((ROOT / "pyproject.toml").read_text(encoding="utf-8"))
+        metadata = (ROOT / "pyproject.toml").read_text(encoding="utf-8")
 
         self.assertTrue((ROOT / "one_c_harness" / "companion.py").is_file())
-        self.assertEqual(metadata["tool"]["setuptools"]["packages"], ["one_c_harness"])
-        self.assertNotIn("package-dir", metadata["tool"]["setuptools"])
+        self.assertIn('packages = ["one_c_harness"]', metadata)
+        self.assertNotIn("package-dir", metadata)
 
     def test_runtime_locator_is_executor_owned_not_a_project_local_file(self) -> None:
         with tempfile.TemporaryDirectory() as temporary:
