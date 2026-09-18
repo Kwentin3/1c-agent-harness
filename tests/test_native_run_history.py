@@ -40,6 +40,7 @@ class NativeRunHistoryTests(unittest.TestCase):
             result = native_run_history.investigate(project, start, start, limit=10)
             finding = result["findings"][0]
             expanded = native_run_history.expand(project, finding["evidenceRefs"][0], limit=10)
+            truncated = native_run_history.expand(project, finding["evidenceRefs"][0], limit=1)
 
         self.assertEqual(result["status"], "ok")
         self.assertEqual(result["summary"]["recordCount"], 3)
@@ -55,6 +56,9 @@ class NativeRunHistoryTests(unittest.TestCase):
         })
         self.assertEqual(expanded["status"], "ok")
         self.assertEqual(len(expanded["records"]), 2)
+        self.assertFalse(expanded.get("truncated", False))
+        self.assertTrue(truncated["truncated"])
+        self.assertEqual(len(truncated["records"]), 1)
         self.assertEqual(
             {record["raw"] ["status"] for record in expanded["records"]},
             {"runtime_timeout"},

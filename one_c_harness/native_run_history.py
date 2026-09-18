@@ -120,7 +120,13 @@ def expand(project_root: Path, reference: object, limit: object) -> dict[str, ob
     if reference in groups:
         wanted = set(groups[reference]["recordRefs"])
         selected = [record for record in records if f"{record['source']}:{record['recordId']}" in wanted]
-        return {"status": "ok", "level": "evidence", "evidenceGroup": groups[reference], "records": selected[:limit]}
+        return {
+            "status": "ok",
+            "level": "evidence",
+            "evidenceGroup": groups[reference],
+            "records": selected[:limit],
+            "truncated": len(selected) > limit,
+        }
     prefix = f"finding:native-run-history:"
     if reference.startswith(prefix):
         status = reference[len(prefix):]
