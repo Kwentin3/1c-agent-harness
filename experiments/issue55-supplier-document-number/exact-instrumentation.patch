@@ -1,0 +1,101 @@
+diff --git a/CommonModules/JetServerCall/Ext/Module.bsl b/CommonModules/JetServerCall/Ext/Module.bsl
+index 17aedb7..0cff7c7 100644
+--- a/CommonModules/JetServerCall/Ext/Module.bsl
++++ b/CommonModules/JetServerCall/Ext/Module.bsl
+@@ -14,4 +14,72 @@ Function GetVATRateValue(VATRate) Export
+ 	
+ EndFunction
+ 
+-#EndRegion
+\ No newline at end of file
++#EndRegion
++
++Function Issue55NativeCheck(ReceiptPath, RunId, CaseId, Nonce) Export
++	Writer = New TextWriter(ReceiptPath, TextEncoding.UTF8);
++	ResponseToken = String(New UUID);
++	Issue55Write(Writer, "runId", RunId); Issue55Write(Writer, "caseId", CaseId); Issue55Write(Writer, "nonce", Nonce); Issue55Write(Writer, "responseToken", ResponseToken);
++	Currency = Catalogs.Currencies.CreateItem(); Currency.Description = "I55 currency"; Currency.Write();
++	SupplierA = Catalogs.Counterparties.CreateItem(); SupplierA.Description = "I55 supplier A"; SupplierA.Supplier = True; SupplierA.Write();
++	SupplierB = Catalogs.Counterparties.CreateItem(); SupplierB.Description = "I55 supplier B"; SupplierB.Supplier = True; SupplierB.Write();
++	Unit = Catalogs.Units.CreateItem(); Unit.Description = "I55 unit"; Unit.Write();
++	Product = Catalogs.Products.CreateItem(); Product.Description = "I55 product"; Product.ProductType = Enums.ProductTypes.Inventory; Product.Unit = Unit.Ref; Product.Write();
++	Warehouse = Catalogs.Warehouses.CreateItem(); Warehouse.Description = "I55 warehouse"; Warehouse.Write();
++	Draft = Issue55NewInvoice(Warehouse.Ref, SupplierA.Ref, Currency.Ref, Product.Ref, "");
++	DraftResult = Issue55TryWrite(Draft, False); Issue55Write(Writer, "draft_blank", DraftResult.Succeeded);
++	Missing = Issue55NewInvoice(Warehouse.Ref, SupplierA.Ref, Currency.Ref, Product.Ref, "");
++	MissingResult = Issue55TryWrite(Missing, True); Issue55Write(Writer, "missing_number", MissingResult.Succeeded); Issue55Write(Writer, "missing_number.error", MissingResult.Error); Issue55WriteMovements(Writer, "missing", Missing.Ref);
++	First = Issue55NewInvoice(Warehouse.Ref, SupplierA.Ref, Currency.Ref, Product.Ref, "I55-001");
++	FirstResult = Issue55TryWrite(First, True); Issue55Write(Writer, "first_same_supplier", FirstResult.Succeeded); Issue55Write(Writer, "first_same_supplier.error", FirstResult.Error);
++	Duplicate = Issue55NewInvoice(Warehouse.Ref, SupplierA.Ref, Currency.Ref, Product.Ref, "I55-001");
++	DuplicateResult = Issue55TryWrite(Duplicate, True); Issue55Write(Writer, "duplicate_same_supplier", DuplicateResult.Succeeded); Issue55WriteMovements(Writer, "duplicate", Duplicate.Ref);
++	Other = Issue55NewInvoice(Warehouse.Ref, SupplierB.Ref, Currency.Ref, Product.Ref, "I55-001");
++	OtherResult = Issue55TryWrite(Other, True); Issue55Write(Writer, "same_number_other_supplier", OtherResult.Succeeded);
++	RepostResult = Issue55TryWrite(First, True); Issue55Write(Writer, "repost_same_document", RepostResult.Succeeded);
++	Control = Issue55NewInvoice(Warehouse.Ref, SupplierA.Ref, Currency.Ref, Product.Ref, "I55-002");
++	ControlResult = Issue55TryWrite(Control, True); Issue55Write(Writer, "existing_behavior", ControlResult.Succeeded);
++	ConcurrentA = Issue55NewInvoice(Warehouse.Ref, SupplierA.Ref, Currency.Ref, Product.Ref, "I55-CONCURRENT"); ConcurrentA.Write();
++	ConcurrentB = Issue55NewInvoice(Warehouse.Ref, SupplierA.Ref, Currency.Ref, Product.Ref, "I55-CONCURRENT"); ConcurrentB.Write();
++	ConcurrentAPath = ReceiptPath + ".concurrent-a"; ConcurrentBPath = ReceiptPath + ".concurrent-b";
++	ConcurrentParametersA = New Array; ConcurrentParametersA.Add(ConcurrentAPath); ConcurrentParametersA.Add(ConcurrentA.Ref);
++	ConcurrentParametersB = New Array; ConcurrentParametersB.Add(ConcurrentBPath); ConcurrentParametersB.Add(ConcurrentB.Ref);
++	ConcurrentJobA = BackgroundJobs.Execute("JetServerCall.Issue55ConcurrentPost", ConcurrentParametersA);
++	ConcurrentJobB = BackgroundJobs.Execute("JetServerCall.Issue55ConcurrentPost", ConcurrentParametersB);
++	ConcurrentJobA.WaitForExecutionCompletion(); ConcurrentJobB.WaitForExecutionCompletion();
++	Issue55Write(Writer, "concurrent.jobs_started", 2);
++	Issue55Write(Writer, "concurrent.a.succeeded", Issue55ReadConcurrentResult(ConcurrentAPath)); Issue55WriteMovements(Writer, "concurrent.a", ConcurrentA.Ref);
++	Issue55Write(Writer, "concurrent.b.succeeded", Issue55ReadConcurrentResult(ConcurrentBPath)); Issue55WriteMovements(Writer, "concurrent.b", ConcurrentB.Ref);
++	Issue55Write(Writer, "concurrent.posted_count", Issue55PostedCount(SupplierA.Ref, "I55-CONCURRENT"));
++	Issue55Write(Writer, "complete", "true"); Writer.Close(); Return ResponseToken;
++EndFunction
++
++Function Issue55NewInvoice(Warehouse, Supplier, Currency, Product, Number)
++	DocumentObject = Documents.SupplierInvoice.CreateDocument(); DocumentObject.Date = CurrentDate(); DocumentObject.Warehouse = Warehouse; DocumentObject.Supplier = Supplier; DocumentObject.Currency = Currency; DocumentObject.ExchangeRate = 1; DocumentObject.Multiplier = 1; DocumentObject.SupplierDocumentNumber = Number;
++	Row = DocumentObject.Inventory.Add(); Row.Product = Product; Row.Quantity = 2; Row.Price = 10; Row.Amount = 20; Row.VATAmount = 0; Row.Total = 20; Return DocumentObject;
++EndFunction
++
++Function Issue55TryWrite(DocumentObject, Posting)
++	Result = New Structure("Succeeded,Error", True, ""); Try If Posting Then DocumentObject.Write(DocumentWriteMode.Posting); Else DocumentObject.Write(); EndIf; Except Result.Succeeded = False; Result.Error = ErrorDescription(); EndTry; Return Result;
++EndFunction
++
++Procedure Issue55ConcurrentPost(ResultPath, DocumentRef) Export
++	Result = Issue55TryWrite(DocumentRef.GetObject(), True);
++	Writer = New TextWriter(ResultPath, TextEncoding.UTF8); Writer.Write(String(Result.Succeeded)); Writer.Close();
++EndProcedure
++
++Function Issue55ReadConcurrentResult(ResultPath)
++	Reader = New TextReader(ResultPath, TextEncoding.UTF8); Result = Reader.ReadLine(); Reader.Close(); Return Result;
++EndFunction
++
++Function Issue55PostedCount(Supplier, Number)
++	Query = New Query; Query.Text = "SELECT COUNT(*) AS Rows FROM Document.SupplierInvoice AS SupplierInvoice WHERE SupplierInvoice.Posted AND SupplierInvoice.Supplier = &Supplier AND SupplierInvoice.SupplierDocumentNumber = &Number"; Query.SetParameter("Supplier", Supplier); Query.SetParameter("Number", Number); Selection = Query.Execute().Select(); Selection.Next(); Return Selection.Rows;
++EndFunction
++
++Procedure Issue55WriteMovements(Writer, Prefix, Recorder)
++	Query = New Query; Query.Text = "SELECT COUNT(*) AS Rows FROM AccumulationRegister.Purchases AS Records WHERE Records.Recorder = &Recorder UNION ALL SELECT COUNT(*) FROM AccumulationRegister.InventoryInWarehouses AS Records WHERE Records.Recorder = &Recorder UNION ALL SELECT COUNT(*) FROM AccumulationRegister.SupplierBalance AS Records WHERE Records.Recorder = &Recorder UNION ALL SELECT COUNT(*) FROM AccumulationRegister.InventoryCost AS Records WHERE Records.Recorder = &Recorder"; Query.SetParameter("Recorder", Recorder); Selection = Query.Execute().Select(); Index = 0; While Selection.Next() Do Index = Index + 1; Issue55Write(Writer, Prefix + ".movement" + String(Index), Selection.Rows); EndDo;
++EndProcedure
++
++Procedure Issue55Write(Writer, Key, Value)
++	Writer.Write(Key + "###" + String(Value) + Chars.LF);
++EndProcedure
+diff --git a/Ext/ManagedApplicationModule.bsl b/Ext/ManagedApplicationModule.bsl
+index 03ca2b2..f8c1b93 100644
+--- a/Ext/ManagedApplicationModule.bsl
++++ b/Ext/ManagedApplicationModule.bsl
+@@ -43,6 +43,17 @@ Procedure BeforeStart()
+ 	EndIf;
+ #EndIf
+ 	
++	ClientWriter = New TextWriter(LaunchParameter, TextEncoding.UTF8);
++	RunId = "c7a3c7f6-e309-47e2-98f8-8b62f8654b6e"; CaseId = "supplier-document-number-final"; Nonce = "f3fa050e-d689-4aae-8f62-ced24ff49e99";
++	ClientWriter.Write("runId###" + RunId + Chars.LF + "caseId###" + CaseId + Chars.LF + "nonce###" + Nonce + Chars.LF);
++	Try
++		ResponseToken = JetServerCall.Issue55NativeCheck(LaunchParameter + ".server", RunId, CaseId, Nonce);
++		ClientWriter.Write("responseToken###" + ResponseToken + Chars.LF);
++	Except
++		ClientWriter.Write("clientFailure###" + ErrorDescription() + Chars.LF);
++	EndTry;
++	ClientWriter.Write("complete###true" + Chars.LF); ClientWriter.Close(); Return;
++
+ 	// StandardSubsystems
+ #If MobileClient Then
+ 	Execute("StandardSubsystemsClient.BeforeStart()");
