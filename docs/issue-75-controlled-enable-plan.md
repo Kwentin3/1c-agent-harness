@@ -80,8 +80,9 @@ section. Each step is bounded to the existing VPS Hermes and executor.
    its public schema exposes `command`, `workdir`, timeout, PTY, and lifecycle
    fields only. Therefore install the tracked deployment command
    `hermes-plugin/deployment/one-c-harness` in the Hermes-managed
-   `$HERMES_HOME/bin` directory, which the local terminal backend appends to its
-   sanitized subprocess `PATH`. The plugin invokes only that fixed command. The
+   `$HERMES_HOME/bin` directory and addresses it through that profile-scoped
+   environment variable rather than relying on the local terminal's sanitized
+   subprocess `PATH`. The plugin invokes only that fixed command. The
    deployment command
    validates the base64 token, reuses the existing `TERMINAL_SSH_*` identity,
    requires the standard pinned `known_hosts`, and invokes the fixed executor
