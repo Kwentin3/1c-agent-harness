@@ -11,7 +11,7 @@ from datetime import datetime
 from typing import Any
 
 
-_ALLOWED_KINDS = {"session", "process_sample", "timeout"}
+_ALLOWED_KINDS = {"session", "process_sample", "timeout", "native_run"}
 
 
 def _blocked(reason_code: str, message: str) -> dict[str, str]:
@@ -59,6 +59,50 @@ def investigate(records: object, start: datetime, end: datetime) -> dict[str, ob
         by_source.setdefault(item["source"], []).append(item)
     evidence_groups = [_evidence_group(source, by_source[source]) for source in sorted(by_source)]
     evidence_refs = [group["ref"] for group in evidence_groups]
+
+    native_runs = [item for item in accepted if item["kind"] == "native_run"]
+    if native_runs and len(native_runs) == len(accepted):
+        status_counts: dict[str, int] = {}
+        findings: list[dict[str, object]] = []
+        for item in native_runs:
+            status = item["attributes"].get("status")
+            duration = item["attributes"].get("durationSeconds")
+            if not isinstance(status, str) or type(duration) not in {int, float} or duration < 0:
+                return _blocked("provider_record_invalid", "runtime provider returned an invalid record")
+            status_counts[status] = status_counts.get(status, 0) + 1
+        native_groups: list[dict[str, object]] = []
+        for status in sorted(status_counts):
+            matching = [item for item in native_runs if item["attributes"]["status"] == status]
+            refs = sorted(f"{item['source']}:{item['recordId']}" for item in matching)
+            group = {
+                "ref": f"evidence:native-run-history:{status}:{len(refs)}",
+                "source": "native_run_history",
+                "recordRefs": refs,
+            }
+            native_groups.append(group)
+            if status == "runtime_contract_completed":
+                continue
+            findings.append({
+                "ref": f"finding:native-run-history:{status}",
+                "kind": "runtime_execution_anomaly",
+                "classification": "derived_deterministically",
+                "observed": {
+                    "status": status,
+                    "runCount": len(matching),
+                    "durationMaxSeconds": max(item["attributes"]["durationSeconds"] for item in matching),
+                },
+                "evidenceRefs": [group["ref"]],
+            })
+        return {
+            "status": "ok",
+            "summary": {
+                "recordCount": len(accepted),
+                "statusCounts": dict(sorted(status_counts.items())),
+                "window": {"start": start.isoformat(), "end": end.isoformat()},
+            },
+            "findings": findings,
+            "evidenceGroups": native_groups,
+        }
 
     sessions = [item for item in accepted if item["kind"] == "session"]
     samples = [item for item in accepted if item["kind"] == "process_sample"]

@@ -10,3 +10,5 @@ provides_tools:
   - one_c_open
   - one_c_narrow_context
   - one_c_native_verify
+  - one_c_observe
+  - one_c_expand_observation

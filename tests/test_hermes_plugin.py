@@ -49,17 +49,28 @@ class _Context:
 
 
 class HermesPluginTests(unittest.TestCase):
-    def test_registers_one_skill_and_three_closed_tools(self) -> None:
+    def test_registers_one_skill_and_five_closed_tools(self) -> None:
         plugin = _plugin_module()
         context = _Context({"output": "{}", "exit_code": 1})
 
         plugin.register(context)
 
-        self.assertEqual(set(context.tools), {"one_c_open", "one_c_narrow_context", "one_c_native_verify"})
+        self.assertEqual(set(context.tools), {"one_c_open", "one_c_narrow_context", "one_c_native_verify", "one_c_observe", "one_c_expand_observation"})
         self.assertIsNotNone(context.skill)
         assert context.skill is not None
         self.assertEqual(context.skill[0], "one-c-harness")
         self.assertTrue(context.skill[1].is_file())
+
+    def test_manifest_schema_and_registration_agree_on_observation_tools(self) -> None:
+        plugin = _plugin_module()
+        context = _Context({"output": "{}", "exit_code": 1})
+        plugin.register(context)
+        manifest = (PLUGIN / "plugin.yaml").read_text(encoding="utf-8")
+        for name in ("one_c_observe", "one_c_expand_observation"):
+            self.assertIn(f"- {name}", manifest)
+            self.assertIn(name, context.tools)
+        schema = next(item for item in sys.modules[plugin.__name__ + ".schemas"].TOOLS if item["name"] == "one_c_observe")
+        self.assertEqual(set(schema["parameters"]["properties"]), {"start", "end", "events", "limit"})
 
     def test_open_dispatches_only_the_public_terminal_tool_and_checks_version(self) -> None:
         plugin = _plugin_module()
@@ -76,7 +87,7 @@ class HermesPluginTests(unittest.TestCase):
         self.assertEqual(response, result)
         self.assertEqual(context.calls[0][0], "terminal")
         command = context.calls[0][1]["command"]
-        self.assertIn("one-c-harness --request-base64", command)
+        self.assertIn("../bin/one-c-harness --request-base64", command)
         encoded = command.rsplit(" ", 1)[1]
         payload = json.loads(base64.b64decode(encoded))
         self.assertEqual(payload, {"schemaVersion": 1, "operation": "open", "arguments": {}})
@@ -110,10 +121,10 @@ class HermesPluginTests(unittest.TestCase):
 
         self.assertEqual(response, result)
         command = context.calls[0][1]["command"]
-        self.assertIn("one-c-harness --request-base64", command)
+        self.assertIn("../bin/one-c-harness --request-base64", command)
         self.assertNotIn(hostile, command)
         self.assertNotIn("printf", command)
-        self.assertTrue(all(character.isalnum() or character in "-_=+/ " for character in command))
+        self.assertTrue(all(character.isalnum() or character in "-_=+/. " for character in command))
 
     def test_same_version_with_different_companion_artifact_is_a_stable_blocker(self) -> None:
         plugin = _plugin_module()
