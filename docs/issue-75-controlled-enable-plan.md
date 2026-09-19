@@ -35,8 +35,8 @@ the isolated training-runtime run described in
 [`issue-75-techlog-observations.md`](issue-75-techlog-observations.md). It is
 an existing platform source, not a Harness receipt. The exact source revision
 for this candidate is PR #74 head
-`565bc974fa86fe24b58d3ef5250a3d52da1cce03`, tree
-`34ea5b250569dfd0b23f365078bbf1f51a3e11d3`.
+`4d9ddc766b298e3104d03c9648ac4857654b840b`, tree
+`beb6f5ae30e0b396ded9fda18bf6794f617a2d63`.
 
 ### Why this is the minimal workable location
 
@@ -77,15 +77,17 @@ section. Each step is bounded to the existing VPS Hermes and executor.
    host-key policy. The plugin itself contains no SSH, credentials, executor
    path, or source parser.
 
-   **Admission gate:** before changing `terminal.backend` from `local`, the
-   deployment owner must demonstrate that the active Hermes terminal backend
-   uses the pinned executor host key fail-closed. The current public Hermes
-   documentation describes `StrictHostKeyChecking=accept-new`; a mere configured
-   host or a manual SSH success is not sufficient. If the active deployment
-   cannot provide strict pinned-host-key behavior through its existing supported
-   configuration, stop before plugin activation and report this precise
-   deployment blocker. This plan does not authorize a Hermes-core, SSH-transport,
-   or security-policy change to bypass that gate.
+   **Training-run SSH admission (owner clarification 2026-09-19):** use the
+   existing Hermes SSH backend with `StrictHostKeyChecking=accept-new` only for
+   the previously approved training executor, after copying its already
+   verified `[host]:port` public-key entry into the standard `known_hosts` file
+   used by the Hermes process. Preserve existing records and confirm the exact
+   address/port entry is visible to that process before the harmless terminal
+   canary. Do not disable host-key verification, delete the entry to force a
+   first-use path, or accept a changed/unknown key. This is a bounded training
+   exception, not an assertion that `accept-new` is equivalent to a final
+   strict-pinning policy. Separate SSH/SCP hardening, a three-case canary,
+   backend parameters, and Hermes-core changes are out of scope.
 
 3. **Controlled Gateway restart — Hermes deployment owner.**
    Only after executor and terminal admission succeed: take a config/plugin
@@ -151,5 +153,6 @@ Rollback does not invoke the new plugin:
    unchanged, and that old tools still work.
 
 A failure in terminal admission, plugin discovery, restart health, or the first
-real tool call triggers this rollback. It is not a reason to weaken the host-key
-policy or silently fall back to manual SSH.
+real tool call triggers this rollback. It is not a reason to disable host-key
+verification, accept a changed/unknown executor key, or silently fall back to
+manual SSH.
