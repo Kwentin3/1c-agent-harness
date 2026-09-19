@@ -79,8 +79,10 @@ section. Each step is bounded to the existing VPS Hermes and executor.
    The pinned Hermes version has no public per-call terminal-backend selector;
    its public schema exposes `command`, `workdir`, timeout, PTY, and lifecycle
    fields only. Therefore install the tracked deployment command
-   `hermes-plugin/deployment/one-c-harness` in the Hermes user's existing
-   `PATH`. The plugin invokes only that fixed command. The deployment command
+   `hermes-plugin/deployment/one-c-harness` in the Hermes-managed
+   `$HERMES_HOME/bin` directory, which the local terminal backend appends to its
+   sanitized subprocess `PATH`. The plugin invokes only that fixed command. The
+   deployment command
    validates the base64 token, reuses the existing `TERMINAL_SSH_*` identity,
    requires the standard pinned `known_hosts`, and invokes the fixed executor
    launcher with `BatchMode=yes`, `IdentitiesOnly=yes`, and
@@ -150,7 +152,7 @@ Rollback does not invoke the new plugin:
 2. Restore the pre-enable config/plugin backup if needed; existing coding tools
    remain configured exactly as before.
 3. Remove only `$HERMES_HOME/plugins/one-c-harness`, the installed
-   `$HERMES_HOME/home/.local/bin/one-c-harness` deployment command, and the
+   `$HERMES_HOME/bin/one-c-harness` deployment command, and the
    task-owned `/workspace/1c-agent-harness/.local/issue75-companion/` directory
    after no owned process remains. Do not remove the platform-log source or any
    other `.local/` assets.
