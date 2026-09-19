@@ -54,10 +54,7 @@ def _call(ctx: Any, operation: str, arguments: object, timeout: int) -> str:
     try:
         request = _request(operation, arguments)
         encoded = base64.b64encode(request).decode("ascii")
-        # The deployment-owned companion launcher is addressed only relative to
-        # the selected terminal cwd. The plugin carries no executor path,
-        # transport setting, source root, or credentials.
-        command = f"../bin/one-c-harness --request-base64 {encoded}"
+        command = f"one-c-harness --request-base64 {encoded}"
         raw = ctx.dispatch_tool("terminal", {"command": command, "timeout": timeout})
         response = json.loads(_parse_terminal(raw))
         if not isinstance(response, dict) or response.get("capabilityVersion") != CAPABILITY_VERSION:

@@ -87,7 +87,7 @@ class HermesPluginTests(unittest.TestCase):
         self.assertEqual(response, result)
         self.assertEqual(context.calls[0][0], "terminal")
         command = context.calls[0][1]["command"]
-        self.assertIn("../bin/one-c-harness --request-base64", command)
+        self.assertTrue(command.startswith("one-c-harness --request-base64 "))
         encoded = command.rsplit(" ", 1)[1]
         payload = json.loads(base64.b64decode(encoded))
         self.assertEqual(payload, {"schemaVersion": 1, "operation": "open", "arguments": {}})
@@ -121,7 +121,7 @@ class HermesPluginTests(unittest.TestCase):
 
         self.assertEqual(response, result)
         command = context.calls[0][1]["command"]
-        self.assertIn("../bin/one-c-harness --request-base64", command)
+        self.assertTrue(command.startswith("one-c-harness --request-base64 "))
         self.assertNotIn(hostile, command)
         self.assertNotIn("printf", command)
         self.assertTrue(all(character.isalnum() or character in "-_=+/. " for character in command))

@@ -69,25 +69,28 @@ section. Each step is bounded to the existing VPS Hermes and executor.
    log hash manifest, and that the launcher returns a bounded companion result.
 
 2. **Hermes deployment configuration — Hermes deployment owner.**
-   Copy the tracked `hermes-plugin/` closure from the same exact PR #74 revision
-   into `$HERMES_HOME/plugins/one-c-harness`, enable only `one-c-harness` with
+   Keep the global Hermes terminal backend at its pre-enable `local` value and
+   keep the original local working-directory policy. Copy the tracked
+   `hermes-plugin/` closure from the same exact PR #74 revision into
+   `$HERMES_HOME/plugins/one-c-harness`, enable only `one-c-harness` with
    `allow_tool_override: false`, and enable toolset `one_c` for the existing
-   `cli` WebUI surface. Configure the existing terminal boundary to run in the
-   selected executor workspace, with the already-approved executor identity and
-   host-key policy. The plugin itself contains no SSH, credentials, executor
-   path, or source parser.
+   `cli` WebUI surface.
 
-   **Training-run SSH admission (owner clarification 2026-09-19):** use the
-   existing Hermes SSH backend with `StrictHostKeyChecking=accept-new` only for
-   the previously approved training executor, after copying its already
-   verified `[host]:port` public-key entry into the standard `known_hosts` file
-   used by the Hermes process. Preserve existing records and confirm the exact
-   address/port entry is visible to that process before the harmless terminal
-   canary. Do not disable host-key verification, delete the entry to force a
-   first-use path, or accept a changed/unknown key. This is a bounded training
-   exception, not an assertion that `accept-new` is equivalent to a final
-   strict-pinning policy. Separate SSH/SCP hardening, a three-case canary,
-   backend parameters, and Hermes-core changes are out of scope.
+   The pinned Hermes version has no public per-call terminal-backend selector;
+   its public schema exposes `command`, `workdir`, timeout, PTY, and lifecycle
+   fields only. Therefore install the tracked deployment command
+   `hermes-plugin/deployment/one-c-harness` in the Hermes user's existing
+   `PATH`. The plugin invokes only that fixed command. The deployment command
+   validates the base64 token, reuses the existing `TERMINAL_SSH_*` identity,
+   requires the standard pinned `known_hosts`, and invokes the fixed executor
+   launcher with `BatchMode=yes`, `IdentitiesOnly=yes`, and
+   `StrictHostKeyChecking=yes`. It accepts no model-controlled host, user, port,
+   key, path, or remote command. SSH settings and executor paths remain outside
+   the plugin/domain adapter; no credential is copied to the executor.
+
+   Do not switch the global terminal backend to SSH for this feature. That would
+   redirect unrelated terminal/file/code tools and is outside the bounded
+   integration contract.
 
 3. **Controlled Gateway restart — Hermes deployment owner.**
    Only after executor and terminal admission succeed: take a config/plugin
@@ -122,8 +125,9 @@ an ordinary request such as:
 The required route is:
 
 ```text
-Hermes → registered one_c_observe → public terminal → executor launcher
-→ companion → platform technological journal → summary
+Hermes → registered one_c_observe → public local terminal
+→ fixed Hermes deployment command → strict pinned OpenSSH
+→ executor launcher → companion → platform technological journal → summary
 → registered one_c_expand_observation → retained original selection
 ```
 
@@ -145,10 +149,11 @@ Rollback does not invoke the new plugin:
    supervisor and verify a new chat no longer receives those tools.
 2. Restore the pre-enable config/plugin backup if needed; existing coding tools
    remain configured exactly as before.
-3. Remove only `$HERMES_HOME/plugins/one-c-harness` and the task-owned
-   `/workspace/1c-agent-harness/.local/issue75-companion/` directory after no
-   owned process remains. Do not remove the platform-log source or any other
-   `.local/` assets.
+3. Remove only `$HERMES_HOME/plugins/one-c-harness`, the installed
+   `$HERMES_HOME/home/.local/bin/one-c-harness` deployment command, and the
+   task-owned `/workspace/1c-agent-harness/.local/issue75-companion/` directory
+   after no owned process remains. Do not remove the platform-log source or any
+   other `.local/` assets.
 4. Verify the original executor checkout/source logs and the host-key pin are
    unchanged, and that old tools still work.
 

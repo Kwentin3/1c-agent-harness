@@ -1,0 +1,47 @@
+#!/bin/sh
+set -eu
+
+usage='usage: one-c-harness --request-base64 TOKEN'
+if [ "$#" -ne 2 ] || [ "$1" != '--request-base64' ]; then
+    printf '%s\n' "$usage" >&2
+    exit 64
+fi
+
+token=$2
+case "$token" in
+    ''|*[!A-Za-z0-9+/=]*)
+        printf '%s\n' 'invalid base64 request token' >&2
+        exit 64
+        ;;
+esac
+
+host=${TERMINAL_SSH_HOST:?TERMINAL_SSH_HOST is required}
+user=${TERMINAL_SSH_USER:?TERMINAL_SSH_USER is required}
+port=${TERMINAL_SSH_PORT:-22}
+key=${TERMINAL_SSH_KEY:?TERMINAL_SSH_KEY is required}
+known_hosts=${HOME:?HOME is required}/.ssh/known_hosts
+
+case "$host" in ''|*[!A-Za-z0-9.:-]*) exit 64 ;; esac
+case "$user" in ''|*[!A-Za-z0-9._-]*) exit 64 ;; esac
+case "$user" in [A-Za-z0-9]*) ;; *) exit 64 ;; esac
+case "$port" in ''|*[!0-9]*) exit 64 ;; esac
+
+if [ ! -r "$key" ] || [ ! -r "$known_hosts" ]; then
+    printf '%s\n' 'SSH identity or known_hosts is not readable' >&2
+    exit 69
+fi
+
+remote_cwd=/workspace/1c-agent-harness/.local/issue75-companion/source
+remote_command="cd $remote_cwd && exec ../bin/one-c-harness --request-base64 $token"
+
+exec ssh \
+    -F /dev/null \
+    -o BatchMode=yes \
+    -o IdentitiesOnly=yes \
+    -o StrictHostKeyChecking=yes \
+    -o "UserKnownHostsFile=$known_hosts" \
+    -o ConnectTimeout=10 \
+    -p "$port" \
+    -i "$key" \
+    "$user@$host" \
+    "$remote_command"
