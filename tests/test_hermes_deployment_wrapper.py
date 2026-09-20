@@ -68,7 +68,8 @@ class HermesDeploymentWrapperTests(unittest.TestCase):
             self.assertEqual(
                 argv[-1],
                 "cd /workspace/1c-agent-harness/.local/issue75-companion/source "
-                "&& exec ../bin/one-c-harness --request-base64 " + token,
+                "&& ONE_C_HARNESS_RUNTIME_CONFIG=/workspace/1c-agent-harness/.local/one-c-runtime.json "
+                "exec ../bin/one-c-harness --request-base64 " + token,
             )
 
     def test_wrapper_rejects_option_shaped_ssh_user_before_ssh(self) -> None:

@@ -32,7 +32,8 @@ if [ ! -r "$key" ] || [ ! -r "$known_hosts" ]; then
 fi
 
 remote_cwd=/workspace/1c-agent-harness/.local/issue75-companion/source
-remote_command="cd $remote_cwd && exec ../bin/one-c-harness --request-base64 $token"
+remote_runtime_config=/workspace/1c-agent-harness/.local/one-c-runtime.json
+remote_command="cd $remote_cwd && ONE_C_HARNESS_RUNTIME_CONFIG=$remote_runtime_config exec ../bin/one-c-harness --request-base64 $token"
 
 exec ssh \
     -F /dev/null \
