@@ -4,6 +4,7 @@ import base64
 import importlib.util
 import json
 from pathlib import Path
+import re
 import sys
 import unittest
 
@@ -72,8 +73,12 @@ class HermesPluginTests(unittest.TestCase):
         schema = next(item for item in sys.modules[plugin.__name__ + ".schemas"].TOOLS if item["name"] == "one_c_observe")
         self.assertEqual(set(schema["parameters"]["properties"]), {"start", "end", "events", "filters", "limit"})
         filter_properties = schema["parameters"]["properties"]["filters"]["properties"]
-        self.assertEqual(filter_properties["sourceComponent"]["pattern"], r"^[A-Za-z0-9_.:-]{1,128}$")
-        self.assertEqual(filter_properties["process"]["pattern"], r"^[A-Za-z0-9_.:-]{1,128}$")
+        self.assertEqual(filter_properties["text"]["pattern"], r"\S")
+        self.assertEqual(filter_properties["sourceComponent"]["pattern"], r"^[A-Za-z0-9_.:-]{1,128}(?![\s\S])")
+        self.assertEqual(filter_properties["process"]["pattern"], r"^[A-Za-z0-9_.:-]{1,128}(?![\s\S])")
+        self.assertIsNone(re.search(filter_properties["text"]["pattern"], " "))
+        self.assertIsNone(re.search(filter_properties["sourceComponent"]["pattern"], "abc\n"))
+        self.assertIsNone(re.search(filter_properties["process"]["pattern"], "a" * 128 + "\n"))
         expand_schema = next(item for item in sys.modules[plugin.__name__ + ".schemas"].TOOLS if item["name"] == "one_c_expand_observation")
         self.assertEqual(len(expand_schema["parameters"]["oneOf"]), 3)
 

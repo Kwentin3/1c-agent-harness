@@ -77,9 +77,9 @@ TOOLS = (
             "filters": {
                 "type": "object",
                 "properties": {
-                    "text": {"type": "string", "minLength": 1, "maxLength": 120},
-                    "sourceComponent": {"type": "string", "pattern": "^[A-Za-z0-9_.:-]{1,128}$"},
-                    "process": {"type": "string", "pattern": "^[A-Za-z0-9_.:-]{1,128}$"},
+                    "text": {"type": "string", "minLength": 1, "maxLength": 120, "pattern": "\\S"},
+                    "sourceComponent": {"type": "string", "pattern": "^[A-Za-z0-9_.:-]{1,128}(?![\\s\\S])"},
+                    "process": {"type": "string", "pattern": "^[A-Za-z0-9_.:-]{1,128}(?![\\s\\S])"},
                 },
                 "additionalProperties": False,
                 "description": "Optional AND filters over the safe projected technical content only.",

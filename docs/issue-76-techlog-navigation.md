@@ -20,9 +20,10 @@ query language or Hermes-core change:
 - `one_c_observe` keeps its existing required `events` argument and accepts an optional
   `filters` object. `text`, `sourceComponent` and `process` are AND filters. Text search
   sees only the already-safe projected technical content; hidden raw values cannot
-  become a search side channel. Text is bounded to 120 Unicode characters;
-  `sourceComponent` and `process` accept only the published ASCII technical-token
-  pattern. Session values, when present, are exposed only as
+  become a search side channel. Text is bounded to 120 Unicode characters and must
+  contain a non-whitespace value. `sourceComponent` and `process` accept only the
+  published ASCII technical-token pattern across the complete value, including line
+  endings. Session values, when present, are exposed only as
   selection-scoped opaque fingerprints for comparison inside that retained result,
   not as cross-query filter keys.
 - `one_c_expand_observation` keeps the existing `groupRef` form and adds two explicit
