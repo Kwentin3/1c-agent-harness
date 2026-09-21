@@ -67,11 +67,12 @@ The current candidate made this real question against retained platform logs:
 > «Какие `EXCP` произошли в локальном времени источника с
 > `2026-09-18T15:25:00` по `2026-09-18T15:25:59`?»
 
-It returned a compact result: 44 selected records, 13 distinct `EXCP` groups, 3 files
-and 47,170 bytes read, with complete coverage. Expanding one group returned two
-repeated records at calendar times with the same safe technical exception identifier
-and redacted-description fingerprint; the group reported more pages. Hash manifests
-of every source log matched before and after query; no 1C or Xvfb process remained.
+On the compatible installed candidate it returned 44 selected records in 20 bounded
+`EXCP` groups with complete coverage. Expanding the most frequent group returned a
+retained record whose projected description says that a database file is missing;
+the path is replaced by an explicit redaction marker. The group has four occurrences
+and more pages. Hash manifests of every source log matched before and after query;
+the query did not start 1C or Xvfb.
 
 ## Hermes boundary and delivery state
 
@@ -81,11 +82,13 @@ terminal boundary with closed JSON; the plugin has no SSH, executor path or doma
 parser code. The companion and plugin still require matching existing release
 `artifactId` and capability version.
 
-The real task-local source → companion route was exercised. It is **not** called
-Hermes E2E: the accessible environment has no pinned `hermes` executable, Python
-package or plugin loader, so an isolated-profile load cannot be performed without
-changing/deploying the active runtime. No active profile, deployment or restart was
-changed. This is the one external blocker for the requested full tool route.
+The ordinary Hermes chat previously completed registered `one_c_observe` →
+`one_c_expand_observation` and retained its normal terminal/GitHub access. The
+compatible companion source is now installed without a restart, and its lower route
+returns the bounded description projection above. Final acceptance still requires
+one fresh registered-tool run by the internal Hermes agent; the external delivery
+agent has no authenticated user chat and does not substitute a direct companion call
+for that acceptance.
 
 ## Supported limits
 
