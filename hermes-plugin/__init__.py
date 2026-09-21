@@ -1,7 +1,7 @@
 """Hermes registration for the terminal-bound 1C Harness capability."""
 from pathlib import Path
 
-from .adapter import narrow_context, native_verify, open_target
+from .adapter import expand_observation, narrow_context, native_verify, observe, open_target
 from .schemas import TOOLS
 
 _SYSTEM_RULES = (
@@ -18,6 +18,8 @@ def register(ctx):
         "one_c_open": open_target(ctx),
         "one_c_narrow_context": narrow_context(ctx),
         "one_c_native_verify": native_verify(ctx),
+        "one_c_observe": observe(ctx),
+        "one_c_expand_observation": expand_observation(ctx),
     }
     for schema in TOOLS:
         ctx.register_tool(

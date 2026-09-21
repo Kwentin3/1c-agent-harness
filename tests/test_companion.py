@@ -1,7 +1,9 @@
 from __future__ import annotations
 
+from datetime import datetime, timezone
 import hashlib
 import json
+import os
 from pathlib import Path
 import shutil
 import sys
@@ -124,7 +126,64 @@ class CompanionContractTests(unittest.TestCase):
         self.assertEqual(response["status"], "blocked")
         self.assertEqual(response["reasonCode"], "invalid_request")
         self.assertNotIn("Traceback", json.dumps(response))
+    def test_observe_then_expand_observation_uses_techlog_snapshot(self) -> None:
+        with tempfile.TemporaryDirectory() as temporary:
+            project = Path(temporary) / "project"
+            source = Path(temporary) / "techlog"
+            log = source / "1cv8t_1" / "26091812.log"
+            project.mkdir(); log.parent.mkdir(parents=True)
+            log.write_text("00:00.000001-0,EXCP,1,process=1,Descr='private'\\n", encoding="utf-8")
+            previous = os.environ.get("ONE_C_HARNESS_TECHLOG_ROOT")
+            previous_zone = os.environ.get("ONE_C_HARNESS_TECHLOG_TIME_ZONE")
+            os.environ["ONE_C_HARNESS_TECHLOG_ROOT"] = str(source)
+            os.environ["ONE_C_HARNESS_TECHLOG_TIME_ZONE"] = "UTC"
+            try:
+                observed = companion.execute(_request("observe", {
+                    "start": "2026-09-18T12:00:00", "end": "2026-09-18T12:00:01",
+                    "events": ["EXCP"], "limit": 10,
+                }), project)
+                expanded = companion.execute(_request("expand_observation", {
+                    "groupRef": observed["groups"][0]["ref"], "offset": 0, "limit": 10,
+                }), project)
+            finally:
+                if previous is None: os.environ.pop("ONE_C_HARNESS_TECHLOG_ROOT", None)
+                else: os.environ["ONE_C_HARNESS_TECHLOG_ROOT"] = previous
+                if previous_zone is None: os.environ.pop("ONE_C_HARNESS_TECHLOG_TIME_ZONE", None)
+                else: os.environ["ONE_C_HARNESS_TECHLOG_TIME_ZONE"] = previous_zone
+        self.assertEqual(observed["status"], "ok")
+        self.assertEqual(expanded["status"], "ok")
+        self.assertEqual(expanded["records"][0]["event"], "EXCP")
+        self.assertNotIn("private", json.dumps(expanded))
 
+    def test_investigate_then_expand_exposes_bounded_runtime_receipt_evidence(self) -> None:
+        with tempfile.TemporaryDirectory() as temporary:
+            project = Path(temporary)
+            point = datetime(2026, 9, 18, 8, 0, tzinfo=timezone.utc)
+            for number, status in enumerate(("runtime_contract_completed", "runtime_timeout", "runtime_timeout")):
+                result = project / ".local/runs/native-cycle" / f"run-{number}" / "run/result.json"
+                result.parent.mkdir(parents=True, exist_ok=True)
+                result.write_text(json.dumps({
+                    "status": status,
+                    "totalDurationSeconds": 100 + number,
+                    "environment": {"HOME": "/private/runtime/path"},
+                }), encoding="utf-8")
+                os.utime(result, (point.timestamp(), point.timestamp()))
 
-if __name__ == "__main__":
-    unittest.main()
+            investigated = companion.execute(_request("investigate", {
+                "incident": {"start": "2026-09-18T08:00:00Z", "end": "2026-09-18T08:00:00Z"},
+                "focus": ["native_execution"],
+                "limit": 10,
+            }), project)
+            finding = investigated["findings"][0]
+            expanded = companion.execute(_request("expand", {
+                "evidenceRef": finding["evidenceRefs"][0],
+                "limit": 10,
+            }), project)
+
+        self.assertEqual(investigated["status"], "ok")
+        self.assertEqual(investigated["summary"]["recordCount"], 3)
+        self.assertEqual(finding["observed"]["status"], "runtime_timeout")
+        self.assertEqual(expanded["status"], "ok")
+        self.assertEqual(len(expanded["records"]), 2)
+        self.assertNotIn("/private/runtime/path", json.dumps(expanded))
+        self.assertNotIn(temporary, json.dumps(expanded))

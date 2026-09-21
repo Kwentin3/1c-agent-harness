@@ -64,4 +64,20 @@ TOOLS = (
         ["snapshotRef", "request", "productionPatch", "instrumentationPatch", "oracle", "receipt", "timeoutSeconds"],
         "Run the canonical one-call native route on the admitted SnapshotRef and return a bounded receipt summary.",
     ),
+    _tool(
+        "one_c_observe",
+        {
+            "start": {"type": "string", "description": "Inclusive calendar start in the executor-configured source-local timezone, e.g. 2026-09-18T15:25:00."},
+            "end": {"type": "string", "description": "Inclusive calendar end in the same source-local timezone."},
+            "events": {"type": "array", "minItems": 1, "maxItems": 8, "items": {"type": "string", "minLength": 1, "maxLength": 32}},
+            "limit": {"type": "integer", "minimum": 1, "maximum": 20},
+        }, ["start", "end", "events", "limit"],
+        "Summarize platform-authored technological-journal errors in one calendar interval using the executor-configured source-local timezone.",
+    ),
+    _tool(
+        "one_c_expand_observation",
+        {"groupRef": {"type": "string", "minLength": 1, "maxLength": 256}, "offset": {"type": "integer", "minimum": 0}, "limit": {"type": "integer", "minimum": 1, "maximum": 20}},
+        ["groupRef", "offset", "limit"],
+        "Expand one stable technological-journal group from the exact prior observation.",
+    ),
 )

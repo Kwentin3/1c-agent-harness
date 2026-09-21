@@ -54,7 +54,7 @@ def _call(ctx: Any, operation: str, arguments: object, timeout: int) -> str:
     try:
         request = _request(operation, arguments)
         encoded = base64.b64encode(request).decode("ascii")
-        command = f"one-c-harness --request-base64 {encoded}"
+        command = f'"$HERMES_HOME/bin/one-c-harness" --request-base64 {encoded}'
         raw = ctx.dispatch_tool("terminal", {"command": command, "timeout": timeout})
         response = json.loads(_parse_terminal(raw))
         if not isinstance(response, dict) or response.get("capabilityVersion") != CAPABILITY_VERSION:
@@ -81,6 +81,18 @@ def open_target(ctx: Any) -> Callable[[object], str]:
 def narrow_context(ctx: Any) -> Callable[[object], str]:
     def handler(arguments: object, **_kwargs: object) -> str:
         return _call(ctx, "narrow", arguments, 90)
+    return handler
+
+
+def observe(ctx: Any) -> Callable[[object], str]:
+    def handler(arguments: object, **_kwargs: object) -> str:
+        return _call(ctx, "observe", arguments, 60)
+    return handler
+
+
+def expand_observation(ctx: Any) -> Callable[[object], str]:
+    def handler(arguments: object, **_kwargs: object) -> str:
+        return _call(ctx, "expand_observation", arguments, 60)
     return handler
 
 
