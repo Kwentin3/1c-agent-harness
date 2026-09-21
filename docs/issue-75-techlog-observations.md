@@ -67,12 +67,12 @@ The current candidate made this real question against retained platform logs:
 > «Какие `EXCP` произошли в локальном времени источника с
 > `2026-09-18T15:25:00` по `2026-09-18T15:25:59`?»
 
-On the compatible installed candidate it returned 44 selected records in 20 bounded
-`EXCP` groups with complete coverage. Expanding the most frequent group returned a
-retained record whose projected description says that a database file is missing;
-the path is replaced by an explicit redaction marker. The group has four occurrences
-and more pages. Hash manifests of every source log matched before and after query;
-the query did not start 1C or Xvfb.
+The accepted ordinary-Hermes run returned 44 selected records with complete
+coverage. With `limit=5`, five groups were shown and `groupsTruncated=true` made the
+omitted groups explicit. Expansion used the exact new `groupRef` and returned all
+four records in one repeated group without page truncation. Their projected message
+was `DatabaseException8: Database file is missing '<redacted:path>'`. The path,
+specific file, initiating operation/component and root cause remain unknown.
 
 ## Hermes boundary and delivery state
 
@@ -82,18 +82,19 @@ terminal boundary with closed JSON; the plugin has no SSH, executor path or doma
 parser code. The companion and plugin still require matching existing release
 `artifactId` and capability version.
 
-The ordinary Hermes chat previously completed registered `one_c_observe` →
-`one_c_expand_observation` and retained its normal terminal/GitHub access. The
-compatible companion source is now installed without a restart, and its lower route
-returns the bounded description projection above. Final acceptance still requires
-one fresh registered-tool run by the internal Hermes agent; the external delivery
-agent has no authenticated user chat and does not substitute a direct companion call
-for that acceptance.
+The ordinary Hermes chat completed registered `one_c_observe` →
+`one_c_expand_observation` on installed head
+`7baa1ca47398e9979d66437daa951da019fb8bc7` and retained its normal
+terminal/GitHub access. The accepted transcript is recorded in
+[issue #75](https://github.com/Kwentin3/1c-agent-harness/issues/75#issuecomment-5759499600).
+This proves the first bounded training scenario, not every group, a production
+incident diagnosis or universal platform-log disclosure.
 
 ## Supported limits
 
 - Only the observed 8.5.1.1150 file-mode technological-log grammar is supported.
 - This source does not establish cluster activity, CPU use, BSL causality, or a root
   cause for a production incident.
-- A safe `Descr` message cannot be guaranteed from arbitrary platform text; its
-  existence and stable fingerprint remain visible, its text remains redacted.
+- A safe `Descr` message cannot be guaranteed from arbitrary platform text; a
+  bounded projection is returned when supported, while opaque/unsafe content remains
+  redacted with its existence and stable fingerprint visible.
