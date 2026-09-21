@@ -88,6 +88,16 @@ class TechLogObservationTests(unittest.TestCase):
         self.assertIn("<redacted:path>", fragment)
         self.assertIn("File not found", fragment)
 
+    def test_standalone_opaque_description_stays_redacted(self) -> None:
+        self._log("first", "26091812", [
+            "00:00.000001-1,EXCP,1,Exception=DataError,Descr=private",
+        ])
+        observed = self._observe("2026-09-18T12:00:00", "2026-09-18T12:00:01")
+        page = techlog_observation.expand(self.project, observed["groups"][0]["ref"], 0, 20)
+        description = page["records"][0]["error"]["description"]
+        self.assertEqual(description["status"], "redacted")
+        self.assertNotIn("fragment", description)
+
     def test_hour_files_do_not_mix_same_source_token_and_interval_boundary_is_inclusive(self) -> None:
         self._log("one", "26091812", ["59:59.000000-1,EXCP,1,Exception=AtTwelve,Descr=one"])
         self._log("two", "26091813", ["00:00.000000-1,EXCP,1,Exception=AtThirteen,Descr=two"])
@@ -101,7 +111,7 @@ class TechLogObservationTests(unittest.TestCase):
 
     def test_snapshot_is_stable_paged_and_expired_snapshot_is_not_reused(self) -> None:
         self._log("one", "26091812", [
-            f"00:00.00000{i}-1,EXCP,1,Exception=DataError,Descr=item" for i in range(1, 4)
+            f"00:00.00000{i}-1,EXCP,1,Exception=DataError,Descr=stable item" for i in range(1, 4)
         ])
         observed = self._observe("2026-09-18T12:00:00", "2026-09-18T12:00:01")
         ref = observed["groups"][0]["ref"]
@@ -110,7 +120,7 @@ class TechLogObservationTests(unittest.TestCase):
         page_two = techlog_observation.expand(self.project, ref, 1, 1)
         self.assertEqual(page_one["total"], 3); self.assertEqual(page_two["offset"], 1)
         self.assertTrue(page_one["truncated"])
-        self.assertEqual(page_one["records"][0]["error"]["description"]["fragment"], "item")
+        self.assertEqual(page_one["records"][0]["error"]["description"]["fragment"], "stable item")
         snapshot = self.project / ".local/runs/techlog-observations" / f"{observed['snapshot']['ref']}.json"
         value = json.loads(snapshot.read_text()); value["expiresAt"] = time.time() - 1; snapshot.write_text(json.dumps(value))
         self.assertEqual(techlog_observation.expand(self.project, ref, 0, 1)["reasonCode"], "evidence_not_found")

@@ -147,6 +147,9 @@ def _description_projection(description: str) -> dict[str, object]:
         fragment, count = pattern.subn(replacement, fragment)
         redacted = redacted or bool(count)
     fragment = re.sub(r"\s+", " ", fragment).strip()
+    if fragment and re.fullmatch(r"[\w.-]{1,128}", fragment):
+        fragment = ""
+        redacted = True
     truncated = len(fragment) > _MAX_DESCRIPTION_CHARS
     if truncated:
         fragment = fragment[:_MAX_DESCRIPTION_CHARS - 3].rstrip() + "..."
