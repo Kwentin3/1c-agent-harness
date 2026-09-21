@@ -340,7 +340,7 @@ def _valid_filters(filters: object) -> bool:
         return False
     if "text" in filters:
         text = filters["text"]
-        if not isinstance(text, str) or not text.strip() or len(text.encode("utf-8")) > 120:
+        if not isinstance(text, str) or not text.strip() or len(text) > 120:
             return False
     return all(
         isinstance(value, str) and bool(_SAFE_FILTER.fullmatch(value))

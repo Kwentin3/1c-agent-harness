@@ -122,6 +122,23 @@ class TechLogObservationTests(unittest.TestCase):
         self.assertEqual(result["status"], "blocked")
         self.assertEqual(result["reasonCode"], "invalid_request")
 
+    def test_text_filter_limit_counts_unicode_characters(self) -> None:
+        self._log("one", "26091812", [
+            "00:00.000001-1,EXCP,1,Exception=DataError,Descr=detail",
+        ])
+
+        result = techlog_observation.observe(
+            self.project, "2026-09-18T12:00:00", "2026-09-18T12:00:01",
+            ["EXCP"], 20, {"text": "я" * 120},
+        )
+        too_long = techlog_observation.observe(
+            self.project, "2026-09-18T12:00:00", "2026-09-18T12:00:01",
+            ["EXCP"], 20, {"text": "я" * 121},
+        )
+
+        self.assertNotEqual(result["reasonCode"] if result["status"] == "blocked" else None, "invalid_request")
+        self.assertEqual(too_long["reasonCode"], "invalid_request")
+
     def test_calendar_interval_groups_distinct_errors_and_hides_secret_text(self) -> None:
         self._log("first", "26091812", [
             '00:00.000001-1,EXCP,1,Exception=DataError,Descr="Cannot post document, customer=Alice token=private",SrcName=core',

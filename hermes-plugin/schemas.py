@@ -78,8 +78,8 @@ TOOLS = (
                 "type": "object",
                 "properties": {
                     "text": {"type": "string", "minLength": 1, "maxLength": 120},
-                    "sourceComponent": {"type": "string", "minLength": 1, "maxLength": 128},
-                    "process": {"type": "string", "minLength": 1, "maxLength": 128},
+                    "sourceComponent": {"type": "string", "pattern": "^[A-Za-z0-9_.:-]{1,128}$"},
+                    "process": {"type": "string", "pattern": "^[A-Za-z0-9_.:-]{1,128}$"},
                 },
                 "additionalProperties": False,
                 "description": "Optional AND filters over the safe projected technical content only.",

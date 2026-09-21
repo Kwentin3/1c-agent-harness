@@ -71,6 +71,9 @@ class HermesPluginTests(unittest.TestCase):
             self.assertIn(name, context.tools)
         schema = next(item for item in sys.modules[plugin.__name__ + ".schemas"].TOOLS if item["name"] == "one_c_observe")
         self.assertEqual(set(schema["parameters"]["properties"]), {"start", "end", "events", "filters", "limit"})
+        filter_properties = schema["parameters"]["properties"]["filters"]["properties"]
+        self.assertEqual(filter_properties["sourceComponent"]["pattern"], r"^[A-Za-z0-9_.:-]{1,128}$")
+        self.assertEqual(filter_properties["process"]["pattern"], r"^[A-Za-z0-9_.:-]{1,128}$")
         expand_schema = next(item for item in sys.modules[plugin.__name__ + ".schemas"].TOOLS if item["name"] == "one_c_expand_observation")
         self.assertEqual(len(expand_schema["parameters"]["oneOf"]), 3)
 
