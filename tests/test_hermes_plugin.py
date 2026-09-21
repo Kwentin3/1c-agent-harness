@@ -49,13 +49,13 @@ class _Context:
 
 
 class HermesPluginTests(unittest.TestCase):
-    def test_registers_one_skill_and_five_closed_tools(self) -> None:
+    def test_registers_one_skill_and_six_closed_tools(self) -> None:
         plugin = _plugin_module()
         context = _Context({"output": "{}", "exit_code": 1})
 
         plugin.register(context)
 
-        self.assertEqual(set(context.tools), {"one_c_open", "one_c_narrow_context", "one_c_native_verify", "one_c_observe", "one_c_expand_observation"})
+        self.assertEqual(set(context.tools), {"one_c_open", "one_c_narrow_context", "one_c_native_verify", "one_c_observation_info", "one_c_observe", "one_c_expand_observation"})
         self.assertIsNotNone(context.skill)
         assert context.skill is not None
         self.assertEqual(context.skill[0], "one-c-harness")
@@ -66,17 +66,19 @@ class HermesPluginTests(unittest.TestCase):
         context = _Context({"output": "{}", "exit_code": 1})
         plugin.register(context)
         manifest = (PLUGIN / "plugin.yaml").read_text(encoding="utf-8")
-        for name in ("one_c_observe", "one_c_expand_observation"):
+        for name in ("one_c_observation_info", "one_c_observe", "one_c_expand_observation"):
             self.assertIn(f"- {name}", manifest)
             self.assertIn(name, context.tools)
         schema = next(item for item in sys.modules[plugin.__name__ + ".schemas"].TOOLS if item["name"] == "one_c_observe")
-        self.assertEqual(set(schema["parameters"]["properties"]), {"start", "end", "events", "limit"})
+        self.assertEqual(set(schema["parameters"]["properties"]), {"start", "end", "events", "filters", "limit"})
+        expand_schema = next(item for item in sys.modules[plugin.__name__ + ".schemas"].TOOLS if item["name"] == "one_c_expand_observation")
+        self.assertEqual(len(expand_schema["parameters"]["oneOf"]), 3)
 
     def test_open_dispatches_only_the_public_terminal_tool_and_checks_version(self) -> None:
         plugin = _plugin_module()
         result = {
             "artifactId": _artifact_id(),
-            "capabilityVersion": "0.1.0", "status": "ok", "operation": "open",
+            "capabilityVersion": "0.2.0", "status": "ok", "operation": "open",
             "snapshotRef": {"schemaVersion": 1, "status": "ready"},
         }
         context = _Context({"output": json.dumps(result) + "\n", "exit_code": 0})
@@ -109,7 +111,7 @@ class HermesPluginTests(unittest.TestCase):
         plugin = _plugin_module()
         result = {
             "artifactId": _artifact_id(),
-            "capabilityVersion": "0.1.0", "status": "blocked", "reasonCode": "snapshot_invalid",
+            "capabilityVersion": "0.2.0", "status": "blocked", "reasonCode": "snapshot_invalid",
         }
         context = _Context({"output": json.dumps(result) + "\n", "exit_code": 0})
         plugin.register(context)
@@ -129,7 +131,7 @@ class HermesPluginTests(unittest.TestCase):
     def test_same_version_with_different_companion_artifact_is_a_stable_blocker(self) -> None:
         plugin = _plugin_module()
         context = _Context({"output": json.dumps({
-            "capabilityVersion": "0.1.0", "releaseId": "wrong-artifact", "status": "ok",
+            "capabilityVersion": "0.2.0", "releaseId": "wrong-artifact", "status": "ok",
         }) + "\n", "exit_code": 0})
         plugin.register(context)
 

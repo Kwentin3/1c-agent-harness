@@ -127,17 +127,20 @@ python3 -m pip install --no-deps /immutable/source/revision
 
 Его entrypoint `one-c-harness --request-stdin` принимает один closed JSON envelope
 `{schemaVersion: 1, operation, arguments}` и берёт project root только из текущего `cwd`
-terminal backend. Доступны `open`, `narrow` и `verify`; `narrow` и `verify` принимают только
-точный admitted `SnapshotRef`, а task artifacts для `verify` должны быть repository-relative.
-Он использует уже существующий executor locator `.local/one-c-runtime.json`, поэтому не требует
-`.local/platform`, Harness checkout или SSH credential в business workspace.
+terminal backend. Coding operations остаются `open`, `narrow` и `verify`; `narrow` и `verify`
+принимают только точный admitted `SnapshotRef`, а task artifacts для `verify` должны быть
+repository-relative. Runtime observations добавляют bounded source discovery, safe structured
+filters и stable ref navigation по выбранному deployment технологическому журналу; модель не
+может передать путь к источнику. Существующий executor locator `.local/one-c-runtime.json`
+переиспользуется без нового сервиса или индекса.
 
-Standalone Hermes plugin лежит в [`hermes-plugin/`](hermes-plugin/). Он регистрирует только
-`one_c_open`, `one_c_narrow_context`, `one_c_native_verify` и короткую plugin skill. Plugin
-формирует тот же JSON, вызывает только public `ctx.dispatch_tool("terminal", ...)` и не
-реализует SSH, executor discovery или workspace mapping. Версия plugin и companion сейчас
-`0.1.0`; operator обязан pin-ить оба install sources к одному immutable Git revision. Любой
-несовпадающий `capabilityVersion` блокируется fail-closed.
+Standalone Hermes plugin лежит в [`hermes-plugin/`](hermes-plugin/). Он регистрирует coding tools,
+`one_c_observation_info`, `one_c_observe`, `one_c_expand_observation` и короткую plugin skill.
+Plugin формирует тот же closed JSON, вызывает только public `ctx.dispatch_tool("terminal", ...)`
+и не реализует SSH, executor discovery или domain parser. Версия plugin и companion `0.2.0` —
+source candidate #76; принятой установленной версией остаётся #75 до отдельно разрешённого
+compatible update. Operator обязан pin-ить оба install sources к одному immutable Git revision.
+Любой несовпадающий `capabilityVersion` или `artifactId` блокируется fail-closed.
 
 Эти source artifacts сами по себе не включают SSH backend и не выполняют deployment/restart.
 Remote executor и его selected workspace должны быть явно настроены terminal boundary до
@@ -189,6 +192,7 @@ MVP считается полезным не потому, что агент н�
 - [Runtime Diagnostics KISS design and prototype (issue #71)](docs/issue-71-runtime-diagnostics.md)
 - [First live read-only Runtime Diagnostics slice (issue #73)](docs/issue-73-runtime-diagnostics-live.md)
 - [Platform technological-journal observations (issue #75)](docs/issue-75-techlog-observations.md)
+- [Bounded TechLog discovery and navigation (issue #76)](docs/issue-76-techlog-navigation.md)
 - [Controlled enablement plan for the existing Hermes (issue #75)](docs/issue-75-controlled-enable-plan.md)
 - [Knowledge handoff write-cycle экспериментов](docs/write-cycle-knowledge-handoff.md)
 - [Правила работы кодового агента](AGENTS.md)
