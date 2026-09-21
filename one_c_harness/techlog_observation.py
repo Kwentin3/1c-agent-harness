@@ -47,7 +47,10 @@ _ENDPOINT = re.compile(r"(?i)\b(?:https?|tcp)://[^\s,;]+")
 _EMAIL = re.compile(r"\b[A-Za-z0-9._%+-]+@[A-Za-z0-9.-]+\.[A-Za-z]{2,}\b")
 _IP_ADDRESS = re.compile(r"\b(?:\d{1,3}\.){3}\d{1,3}\b")
 _UUID = re.compile(r"\b[0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{12}\b")
-_PATH = re.compile(r"(?<!\w)(?:[A-Za-z]:[\\/]|/)(?:[^\s,;:'\"]+[\\/])*[^\s,;:'\"]*")
+_PATH = re.compile(
+    r"(?<!\w)(?:(?:[A-Za-z]:)?[\\/]|[A-Za-z0-9_.-]+[\\/])"
+    r"(?:[^\s,;:'\"]+[\\/])*[^\s,;:'\"]*"
+)
 _LONG_HEX = re.compile(r"\b[0-9a-fA-F]{24,}\b")
 
 

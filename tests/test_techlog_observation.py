@@ -76,6 +76,18 @@ class TechLogObservationTests(unittest.TestCase):
         self.assertTrue(description["truncated"])
         self.assertLessEqual(len(description["fragment"]), 480)
 
+    def test_relative_platform_path_is_hidden_without_losing_error_meaning(self) -> None:
+        self._log("first", "26091812", [
+            "00:00.000001-1,EXCP,1,Exception=FileError,"
+            "Descr=src/core/File.cpp(42): File not found, fio_manager_exception type: 1",
+        ])
+        observed = self._observe("2026-09-18T12:00:00", "2026-09-18T12:00:01")
+        page = techlog_observation.expand(self.project, observed["groups"][0]["ref"], 0, 20)
+        fragment = page["records"][0]["error"]["description"]["fragment"]
+        self.assertNotIn("src/core/File.cpp", fragment)
+        self.assertIn("<redacted:path>", fragment)
+        self.assertIn("File not found", fragment)
+
     def test_hour_files_do_not_mix_same_source_token_and_interval_boundary_is_inclusive(self) -> None:
         self._log("one", "26091812", ["59:59.000000-1,EXCP,1,Exception=AtTwelve,Descr=one"])
         self._log("two", "26091813", ["00:00.000000-1,EXCP,1,Exception=AtThirteen,Descr=two"])
