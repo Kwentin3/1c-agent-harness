@@ -28,6 +28,7 @@ _MAX_FILES = 24
 _MAX_DISCOVERED_PATHS = 96
 _MAX_READ_BYTES = 256 * 1024
 _MAX_RECORD_BYTES = 8 * 1024
+_MAX_DESCRIPTION_CHARS = 480
 _MAX_SECONDS = 2.0
 _SNAPSHOT_TTL_SECONDS = 3600
 _EVENT = re.compile(r"^(\d\d):(\d\d)\.(\d{6,})-\d+,([A-Za-z_][A-Za-z0-9_]*),")
@@ -35,7 +36,19 @@ _FILE = re.compile(r"^(\d{6})(\d{2})\.log$")
 _CALENDAR = re.compile(r"^\d{4}-\d\d-\d\dT\d\d:\d\d:\d\d(?:\.\d{1,6})?$")
 _ALLOWED_EVENTS = re.compile(r"[A-Za-z_][A-Za-z0-9_]{0,31}$")
 _SAFE_EXCEPTION = re.compile(r"[A-Za-z0-9_.:-]{1,128}$")
-_KEY_VALUE = re.compile(r"(?:^|,)(Exception|Descr|SrcName)=([^,\r\n]+)")
+_SENSITIVE_ASSIGNMENT = re.compile(
+    r"(?i)\b(password|passwd|pwd|token|secret|authorization|api[_-]?key|"
+    r"connectionstring|user|username|login|email|phone|customer|client|employee|"
+    r"person|fullname|account|inn|taxid|document|order|contract|counterparty|amount|"
+    r"value|пользователь|клиент|контрагент|инн|документ|сумма|значение)\s*=\s*"
+    r"(?:\"(?:[^\"]|\"\")*\"|'(?:[^']|'')*'|[^,;\s]+)"
+)
+_ENDPOINT = re.compile(r"(?i)\b(?:https?|tcp)://[^\s,;]+")
+_EMAIL = re.compile(r"\b[A-Za-z0-9._%+-]+@[A-Za-z0-9.-]+\.[A-Za-z]{2,}\b")
+_IP_ADDRESS = re.compile(r"\b(?:\d{1,3}\.){3}\d{1,3}\b")
+_UUID = re.compile(r"\b[0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{12}\b")
+_PATH = re.compile(r"(?<!\w)(?:[A-Za-z]:[\\/]|/)(?:[^\s,;:'\"]+[\\/])*[^\s,;:'\"]*")
+_LONG_HEX = re.compile(r"\b[0-9a-fA-F]{24,}\b")
 
 
 def _result(status: str, **values: object) -> dict[str, object]:
@@ -71,19 +84,83 @@ def _valid(events: object, limit: object) -> bool:
     )
 
 
-def _safe_error(lines: list[str]) -> tuple[dict[str, object], str]:
-    """Expose only a verified exception token; description content stays redacted.
-
-    This is intentionally not a generic redactor.  The supported 1C fields are
-    parsed by name.  ``Exception`` is emitted only when it is a compact technical
-    token; descriptions, paths, user names, connect strings and arbitrary body
-    lines are never returned.  A deterministic fingerprint preserves distinction
-    when text cannot be safely disclosed.
-    """
+def _properties(lines: list[str]) -> dict[str, str]:
+    """Parse the documented text TechLog name/value grammar for selected fields."""
+    parts = "\n".join(lines).split(",", 3)
+    if len(parts) != 4:
+        return {}
+    text = parts[3]
     values: dict[str, str] = {}
-    for line in lines:
-        for key, value in _KEY_VALUE.findall(line):
-            values.setdefault(key, value.strip().strip('"'))
+    index = 0
+    while index < len(text):
+        while index < len(text) and text[index] in " ,\r\n\t":
+            index += 1
+        equals = text.find("=", index)
+        if equals < 0:
+            break
+        name = text[index:equals].strip()
+        index = equals + 1
+        if index < len(text) and text[index] in "'\"":
+            quote = text[index]
+            index += 1
+            collected: list[str] = []
+            while index < len(text):
+                if text[index] == quote:
+                    if index + 1 < len(text) and text[index + 1] == quote:
+                        collected.append(quote)
+                        index += 2
+                        continue
+                    index += 1
+                    break
+                collected.append(text[index])
+                index += 1
+            value = "".join(collected)
+        else:
+            end = index
+            while end < len(text) and text[end] not in ",\r\n":
+                end += 1
+            value = text[index:end]
+            index = end
+        if name in {"Exception", "Descr", "SrcName"}:
+            values.setdefault(name, value.strip())
+        while index < len(text) and text[index] not in ",\r\n":
+            index += 1
+    return values
+
+
+def _description_projection(description: str) -> dict[str, object]:
+    """Project one authorized TechLog Descr; this is not an arbitrary-text sanitizer."""
+    fragment = description
+    redacted = False
+    for pattern, replacement in (
+        (_SENSITIVE_ASSIGNMENT, lambda match: f"{match.group(1)}=<redacted:value>"),
+        (_ENDPOINT, "<redacted:endpoint>"),
+        (_EMAIL, "<redacted:email>"),
+        (_IP_ADDRESS, "<redacted:address>"),
+        (_UUID, "<redacted:id>"),
+        (_PATH, "<redacted:path>"),
+        (_LONG_HEX, "<redacted:token>"),
+    ):
+        fragment, count = pattern.subn(replacement, fragment)
+        redacted = redacted or bool(count)
+    fragment = re.sub(r"\s+", " ", fragment).strip()
+    truncated = len(fragment) > _MAX_DESCRIPTION_CHARS
+    if truncated:
+        fragment = fragment[:_MAX_DESCRIPTION_CHARS - 3].rstrip() + "..."
+    result: dict[str, object] = {
+        "status": "projected" if fragment else "redacted",
+        "fingerprint": "sha256:" + hashlib.sha256(description.encode("utf-8")).hexdigest()[:16],
+        "redacted": redacted,
+        "truncated": truncated,
+    }
+    if fragment:
+        result["fragment"] = fragment
+    return result
+
+
+def _safe_error(lines: list[str]) -> tuple[dict[str, object], str]:
+    """Expose selected TechLog fields without returning the arbitrary record body."""
+    values = _properties(lines)
     exception = values.get("Exception")
     description = values.get("Descr")
     error: dict[str, object] = {"description": {"status": "redacted"}}
@@ -92,10 +169,7 @@ def _safe_error(lines: list[str]) -> tuple[dict[str, object], str]:
     elif exception:
         error["exceptionType"] = "<redacted>"
     if description:
-        error["description"] = {
-            "status": "redacted",
-            "fingerprint": "sha256:" + hashlib.sha256(description.encode("utf-8")).hexdigest()[:16],
-        }
+        error["description"] = _description_projection(description)
     src_name = values.get("SrcName")
     if src_name and _SAFE_EXCEPTION.fullmatch(src_name):
         error["sourceComponent"] = src_name

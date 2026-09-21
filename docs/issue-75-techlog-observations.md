@@ -29,16 +29,16 @@ record includes:
 - platform event and calendar `occurredAt` (with the configured source offset);
 - an allowlisted compact `Exception` technical token when the field is present and
   token-shaped; and
-- a deterministic fingerprint for `Descr` when its value cannot be safely emitted.
+- a bounded projection of `Descr` plus its deterministic fingerprint.
 
-This makes distinct exception/description combinations and repeats distinguishable
-without exposing arbitrary log body. `Descr` is available in the platform source but
-has no reliable generic privacy contract: it can contain business values, paths,
-connect strings or user data. It is therefore deliberately redacted rather than
-released through heuristic text cleaning. Raw body, description text, usernames,
-connection strings, host/process values and Harness stack traces are never returned.
-This is the remaining semantic limit of the selected safe format, not a claim that
-the missing text does not exist.
+The reader follows the documented text-format quoting rule, so commas and line breaks
+inside a quoted property remain part of the same description. Expansion normalizes
+whitespace and returns at most 480 characters. Credential/identity/business-value
+assignments, paths, endpoints, addresses and opaque long identifiers are replaced by
+explicit `<redacted:...>` markers; `redacted` and `truncated` say whether either loss
+occurred. The projection is deliberately scoped to the authorized training TechLog
+format, not presented as a universal sanitizer for arbitrary text. Raw record body,
+unselected properties and Harness stack traces are never returned.
 
 ## Bounded collection and retained evidence
 

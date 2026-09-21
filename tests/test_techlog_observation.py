@@ -37,19 +37,44 @@ class TechLogObservationTests(unittest.TestCase):
 
     def test_calendar_interval_groups_distinct_errors_and_hides_secret_text(self) -> None:
         self._log("first", "26091812", [
-            "00:00.000001-1,EXCP,1,Exception=DataError,Descr=customer=Alice token=private,SrcName=core",
-            "00:00.000002-1,EXCP,1,Exception=DataError,Descr=customer=Bob token=other,SrcName=core",
-            "00:00.000003-1,EXCP,1,Exception=TransportError,Descr=password=secret,SrcName=net",
+            '00:00.000001-1,EXCP,1,Exception=DataError,Descr="Cannot post document, customer=Alice token=private",SrcName=core',
+            '00:00.000002-1,EXCP,1,Exception=DataError,Descr="Cannot post document, customer=Bob token=other",SrcName=core',
+            '00:00.000003-1,EXCP,1,Exception=TransportError,Descr="password=secret",SrcName=net',
         ])
         observed = self._observe("2026-09-18T12:00:00", "2026-09-18T12:00:01")
         self.assertEqual(observed["status"], "ok")
         self.assertEqual(observed["summary"]["window"]["sourceTimeZone"], "UTC")
         self.assertEqual(len(observed["groups"]), 3)  # descriptions distinguish same exception type
-        page = techlog_observation.expand(self.project, observed["groups"][0]["ref"], 0, 20)
-        rendered = json.dumps([observed, page])
+        pages = [techlog_observation.expand(self.project, group["ref"], 0, 20) for group in observed["groups"]]
+        rendered = json.dumps([observed, pages])
         self.assertNotIn("Alice", rendered); self.assertNotIn("secret", rendered)
         self.assertIn("exceptionType", rendered); self.assertIn("description", rendered)
         self.assertIn("fingerprint", rendered)
+        self.assertIn("Cannot post document", rendered)
+        self.assertIn("<redacted:value>", rendered)
+
+    def test_quoted_description_keeps_meaning_after_comma_and_newline(self) -> None:
+        self._log("first", "26091812", [
+            '00:00.000001-1,EXCP,1,Exception=DatabaseError,Descr="Transaction failed,',
+            'deadlock detected; retry operation",SrcName=core',
+        ])
+        observed = self._observe("2026-09-18T12:00:00", "2026-09-18T12:00:01")
+        page = techlog_observation.expand(self.project, observed["groups"][0]["ref"], 0, 20)
+        description = page["records"][0]["error"]["description"]
+        self.assertEqual(description["status"], "projected")
+        self.assertEqual(description["fragment"], "Transaction failed, deadlock detected; retry operation")
+        self.assertFalse(description["redacted"])
+        self.assertFalse(description["truncated"])
+
+    def test_description_reports_bounded_truncation(self) -> None:
+        self._log("first", "26091812", [
+            '00:00.000001-1,EXCP,1,Exception=DataError,Descr="Technical assertion ' + "x" * 600 + '",SrcName=core',
+        ])
+        observed = self._observe("2026-09-18T12:00:00", "2026-09-18T12:00:01")
+        page = techlog_observation.expand(self.project, observed["groups"][0]["ref"], 0, 20)
+        description = page["records"][0]["error"]["description"]
+        self.assertTrue(description["truncated"])
+        self.assertLessEqual(len(description["fragment"]), 480)
 
     def test_hour_files_do_not_mix_same_source_token_and_interval_boundary_is_inclusive(self) -> None:
         self._log("one", "26091812", ["59:59.000000-1,EXCP,1,Exception=AtTwelve,Descr=one"])
@@ -73,6 +98,7 @@ class TechLogObservationTests(unittest.TestCase):
         page_two = techlog_observation.expand(self.project, ref, 1, 1)
         self.assertEqual(page_one["total"], 3); self.assertEqual(page_two["offset"], 1)
         self.assertTrue(page_one["truncated"])
+        self.assertEqual(page_one["records"][0]["error"]["description"]["fragment"], "item")
         snapshot = self.project / ".local/runs/techlog-observations" / f"{observed['snapshot']['ref']}.json"
         value = json.loads(snapshot.read_text()); value["expiresAt"] = time.time() - 1; snapshot.write_text(json.dumps(value))
         self.assertEqual(techlog_observation.expand(self.project, ref, 0, 1)["reasonCode"], "evidence_not_found")
