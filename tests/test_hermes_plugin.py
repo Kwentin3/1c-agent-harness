@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 import base64
+import copy
 import importlib.util
 import json
 from pathlib import Path
@@ -26,6 +27,16 @@ def _plugin_module():
 
 def _artifact_id() -> str:
     return json.loads((PLUGIN / "release.json").read_text(encoding="utf-8"))["artifactId"]
+
+
+def _restore_common(common: dict[str, object], item: dict[str, object]) -> dict[str, object]:
+    restored = copy.deepcopy(common)
+    for key, value in copy.deepcopy(item).items():
+        if isinstance(value, dict) and isinstance(restored.get(key), dict):
+            restored[key] = _restore_common(restored[key], value)
+        else:
+            restored[key] = value
+    return restored
 
 
 class _Context:
@@ -108,6 +119,291 @@ class HermesPluginTests(unittest.TestCase):
         self.assertEqual(payload, {"schemaVersion": 1, "operation": "open", "arguments": {}})
         self.assertNotIn("ssh", command.lower())
         self.assertNotIn("known_hosts", command.lower())
+
+    def test_successful_complete_observation_moves_only_exact_group_common_fields(self) -> None:
+        plugin = _plugin_module()
+        first_ref = "snapshot:selection:group:EXCP:first"
+        second_ref = "snapshot:selection:group:EXCP:second"
+        result = {
+            "artifactId": _artifact_id(),
+            "capabilityVersion": "0.2.0",
+            "schemaVersion": 1,
+            "operation": "observe",
+            "status": "ok",
+            "groups": [
+                {
+                    "event": "EXCP", "countScope": "retainedFilteredSelection",
+                    "errorSignature": "hmac-sha256:first", "ref": first_ref,
+                    "summary": {"meaning": "File not found"}, "count": 2,
+                },
+                {
+                    "event": "EXCP", "countScope": "retainedFilteredSelection",
+                    "errorSignature": "hmac-sha256:second", "ref": second_ref,
+                    "summary": {"meaning": "File not found"}, "count": 1,
+                },
+            ],
+            "groupsTruncated": True,
+            "observationRef": "snapshot:selection",
+            "snapshot": {"partial": False, "stable": True, "expiresInSeconds": 3600},
+            "summary": {
+                "source": "1c_techlog",
+                "window": {"start": "2026-09-18T15:25:00+00:00", "end": "2026-09-18T15:26:00+00:00", "sourceTimeZone": "UTC"},
+                "filters": {"events": ["EXCP"]},
+                "countScope": "retainedFilteredSelection",
+                "recordCount": 3,
+                "coverage": {"partial": False, "filesRead": 3, "bytesRead": 47170, "recordLimit": 200},
+            },
+        }
+        context = _Context({"output": json.dumps(result) + "\n", "exit_code": 0})
+        plugin.register(context)
+
+        response = json.loads(context.tools["one_c_observe"]({
+            "start": "2026-09-18T15:25:00", "end": "2026-09-18T15:26:00",
+            "events": ["EXCP"], "limit": 2,
+        }))
+
+        self.assertEqual(response["status"], "ok")
+        self.assertNotIn("artifactId", response)
+        self.assertNotIn("capabilityVersion", response)
+        self.assertNotIn("schemaVersion", response)
+        self.assertNotIn("operation", response)
+        self.assertEqual(response["groupCommon"], {
+            "event": "EXCP", "countScope": "retainedFilteredSelection",
+            "summary": {"meaning": "File not found"},
+        })
+        self.assertEqual(response["groupCommonAppliesTo"], "every item in groups in this response")
+        self.assertEqual([group["ref"] for group in response["groups"]], [first_ref, second_ref])
+        self.assertEqual(
+            [group["errorSignature"] for group in response["groups"]],
+            ["hmac-sha256:first", "hmac-sha256:second"],
+        )
+        self.assertEqual(
+            [_restore_common(response["groupCommon"], group) for group in response["groups"]],
+            result["groups"],
+        )
+        self.assertTrue(response["groupsTruncated"])
+        self.assertEqual(response["summary"], result["summary"])
+
+    def test_successful_complete_record_page_preserves_precise_time_and_distinct_fields(self) -> None:
+        plugin = _plugin_module()
+        result = {
+            "artifactId": _artifact_id(), "capabilityVersion": "0.2.0",
+            "schemaVersion": 1, "operation": "expand_observation", "status": "ok",
+            "level": "group", "groupRef": "snapshot:selection:group:EXCP:one",
+            "offset": 0, "total": 2, "truncated": False,
+            "snapshot": {
+                "stable": True,
+                "coverage": {"partial": False, "filesRead": 3, "bytesRead": 47170},
+                "window": {"start": "2026-09-18T15:25:00+00:00", "end": "2026-09-18T15:26:00+00:00", "sourceTimeZone": "UTC"},
+            },
+            "records": [
+                {
+                    "event": "EXCP", "occurredAt": "2026-09-18T15:25:27.123456+00:00",
+                    "sourceTimeToken": "25:27.123456789", "recordId": "techlog:first",
+                    "recordRef": "snapshot:selection:record:1:first", "selectionIndex": 1,
+                    "errorSignature": "hmac-sha256:shared", "technical": {"process": "1cv8t"},
+                    "error": {
+                        "exceptionType": "FileError",
+                        "description": {"fragment": "File not found", "fingerprint": "hmac-sha256:first", "redacted": True, "truncated": False, "status": "projected"},
+                    },
+                },
+                {
+                    "event": "EXCP", "occurredAt": "2026-09-18T15:25:27.123457+00:00",
+                    "sourceTimeToken": "25:27.123457001", "recordId": "techlog:second",
+                    "recordRef": "snapshot:selection:record:2:second", "selectionIndex": 2,
+                    "errorSignature": "hmac-sha256:shared", "technical": {"process": "1cv8t"},
+                    "error": {
+                        "exceptionType": "FileError",
+                        "description": {"fragment": "File not found", "fingerprint": "hmac-sha256:second", "redacted": True, "truncated": False, "status": "projected"},
+                    },
+                },
+            ],
+        }
+        context = _Context({"output": json.dumps(result) + "\n", "exit_code": 0})
+        plugin.register(context)
+
+        response = json.loads(context.tools["one_c_expand_observation"]({
+            "groupRef": result["groupRef"], "offset": 0, "limit": 2,
+        }))
+
+        self.assertEqual(response["status"], "ok")
+        self.assertEqual(response["recordCommon"], {
+            "event": "EXCP", "errorSignature": "hmac-sha256:shared",
+            "technical": {"process": "1cv8t"},
+            "error": {
+                "exceptionType": "FileError",
+                "description": {"fragment": "File not found", "redacted": True, "truncated": False, "status": "projected"},
+            },
+        })
+        self.assertEqual(response["recordCommonAppliesTo"], "every item in records in this response")
+        self.assertEqual(
+            [record["sourceTimeToken"] for record in response["records"]],
+            ["25:27.123456789", "25:27.123457001"],
+        )
+        self.assertEqual(
+            [record["error"]["description"]["fingerprint"] for record in response["records"]],
+            ["hmac-sha256:first", "hmac-sha256:second"],
+        )
+        self.assertEqual(
+            [record["recordRef"] for record in response["records"]],
+            ["snapshot:selection:record:1:first", "snapshot:selection:record:2:second"],
+        )
+        self.assertEqual(
+            [_restore_common(response["recordCommon"], record) for record in response["records"]],
+            result["records"],
+        )
+
+    def test_exact_record_compacts_only_fields_common_to_record_and_neighbors(self) -> None:
+        plugin = _plugin_module()
+        shared = {
+            "event": "EXCP", "technical": {"process": "1cv8t"},
+            "error": {"exceptionType": "FileError", "description": {"fragment": "File not found", "redacted": True, "truncated": False, "status": "projected"}},
+        }
+        def record(index: int, signature: str) -> dict[str, object]:
+            value = copy.deepcopy(shared)
+            value.update({
+                "occurredAt": f"2026-09-18T15:25:27.00000{index}+00:00",
+                "sourceTimeToken": f"25:27.00000{index}123",
+                "recordId": f"techlog:{index}",
+                "recordRef": f"snapshot:selection:record:{index}:token",
+                "selectionIndex": index,
+                "errorSignature": signature,
+            })
+            return value
+        target = record(2, "hmac-sha256:target")
+        result = {
+            "artifactId": _artifact_id(), "capabilityVersion": "0.2.0",
+            "schemaVersion": 1, "operation": "expand_observation", "status": "ok",
+            "level": "record", "recordRef": target["recordRef"],
+            "before": [record(1, "hmac-sha256:before")], "record": target,
+            "after": [record(3, "hmac-sha256:after")],
+            "scope": "retainedFilteredSelection",
+            "relation": "time adjacency only; no causal relationship is implied",
+            "snapshot": {"stable": True, "coverage": {"partial": False}, "window": {"sourceTimeZone": "UTC"}},
+        }
+        context = _Context({"output": json.dumps(result) + "\n", "exit_code": 0})
+        plugin.register(context)
+
+        response = json.loads(context.tools["one_c_expand_observation"]({
+            "recordRef": target["recordRef"], "before": 1, "after": 1,
+        }))
+
+        self.assertEqual(response["recordCommon"]["event"], "EXCP")
+        self.assertEqual(response["recordCommon"]["technical"], {"process": "1cv8t"})
+        self.assertNotIn("errorSignature", response["recordCommon"])
+        self.assertEqual(
+            response["recordCommonAppliesTo"],
+            "every item in before, record and after in this response",
+        )
+        self.assertEqual(response["record"]["recordRef"], target["recordRef"])
+        self.assertEqual(response["record"]["sourceTimeToken"], "25:27.000002123")
+        self.assertEqual(response["before"][0]["errorSignature"], "hmac-sha256:before")
+        self.assertEqual(response["after"][0]["errorSignature"], "hmac-sha256:after")
+        self.assertEqual(
+            [_restore_common(response["recordCommon"], item) for item in response["before"]],
+            result["before"],
+        )
+        self.assertEqual(_restore_common(response["recordCommon"], response["record"]), result["record"])
+        self.assertEqual(
+            [_restore_common(response["recordCommon"], item) for item in response["after"]],
+            result["after"],
+        )
+        self.assertEqual(response["scope"], "retainedFilteredSelection")
+        self.assertEqual(response["relation"], "time adjacency only; no causal relationship is implied")
+
+    def test_incomplete_and_blocked_diagnostic_responses_are_not_compacted(self) -> None:
+        plugin = _plugin_module()
+        cases = [
+            {
+                "artifactId": _artifact_id(), "capabilityVersion": "0.2.0", "schemaVersion": 1,
+                "operation": "observe", "status": "ok", "groups": [], "groupsTruncated": False,
+                "observationRef": "snapshot:partial", "snapshot": {"partial": True, "stable": True},
+                "summary": {"coverage": {"partial": True, "reasonCode": "file_budget"}},
+            },
+            {
+                "artifactId": _artifact_id(), "capabilityVersion": "0.2.0", "schemaVersion": 1,
+                "operation": "observe", "status": "blocked", "reasonCode": "invalid_request",
+                "message": "calendar interval is invalid for the configured source timezone",
+            },
+        ]
+        for result in cases:
+            with self.subTest(status=result["status"]):
+                context = _Context({"output": json.dumps(result) + "\n", "exit_code": 0})
+                plugin.register(context)
+                response = json.loads(context.tools["one_c_observe"]({
+                    "start": "2026-09-18T15:25:00", "end": "2026-09-18T15:26:00",
+                    "events": ["EXCP"], "limit": 2,
+                }))
+                self.assertEqual(response, result)
+
+    def test_empty_complete_page_has_no_invented_common_fields(self) -> None:
+        plugin = _plugin_module()
+        result = {
+            "artifactId": _artifact_id(), "capabilityVersion": "0.2.0", "schemaVersion": 1,
+            "operation": "expand_observation", "status": "ok", "level": "observation",
+            "observationRef": "snapshot:empty", "offset": 0, "total": 0, "truncated": False,
+            "groups": [], "snapshot": {"stable": True, "coverage": {"partial": False}, "window": {"sourceTimeZone": "UTC"}},
+        }
+        context = _Context({"output": json.dumps(result) + "\n", "exit_code": 0})
+        plugin.register(context)
+
+        response = json.loads(context.tools["one_c_expand_observation"]({
+            "observationRef": "snapshot:empty", "offset": 0, "limit": 2,
+        }))
+
+        self.assertEqual(response["status"], "ok")
+        self.assertEqual(response["groups"], [])
+        self.assertNotIn("groupCommon", response)
+        self.assertNotIn("groupCommonAppliesTo", response)
+        self.assertTrue(response["snapshot"]["stable"])
+        self.assertFalse(response["snapshot"]["coverage"]["partial"])
+
+    def test_heterogeneous_groups_reconstruct_without_treating_missing_as_common(self) -> None:
+        plugin = _plugin_module()
+        groups = [
+            {"event": "EXCP", "countScope": "retainedFilteredSelection", "errorSignature": "one", "ref": "group:one", "summary": {"meaning": "same"}},
+            {"event": "EXCPCNTX", "errorSignature": "two", "ref": "group:two", "summary": {"meaning": "same"}},
+        ]
+        result = {
+            "artifactId": _artifact_id(), "capabilityVersion": "0.2.0", "schemaVersion": 1,
+            "operation": "observe", "status": "ok", "groups": groups,
+            "groupsTruncated": False, "observationRef": "snapshot:mixed",
+            "snapshot": {"partial": False, "stable": True},
+            "summary": {"source": "1c_techlog", "coverage": {"partial": False}, "filters": {"events": ["EXCP", "EXCPCNTX"]}},
+        }
+        context = _Context({"output": json.dumps(result) + "\n", "exit_code": 0})
+        plugin.register(context)
+
+        response = json.loads(context.tools["one_c_observe"]({
+            "start": "2026-09-18T15:25:00", "end": "2026-09-18T15:26:00",
+            "events": ["EXCP", "EXCPCNTX"], "limit": 2,
+        }))
+        reconstructed = [
+            _restore_common(response.get("groupCommon", {}), item)
+            for item in response["groups"]
+        ]
+
+        self.assertEqual(reconstructed, groups)
+        self.assertNotIn("event", response.get("groupCommon", {}))
+        self.assertNotIn("countScope", response.get("groupCommon", {}))
+        self.assertEqual([item["ref"] for item in response["groups"]], ["group:one", "group:two"])
+
+    def test_unknown_success_shape_is_returned_unchanged(self) -> None:
+        plugin = _plugin_module()
+        result = {
+            "artifactId": _artifact_id(), "capabilityVersion": "0.2.0",
+            "schemaVersion": 1, "operation": "observe", "status": "ok",
+            "futureShape": {"value": 1},
+        }
+        context = _Context({"output": json.dumps(result) + "\n", "exit_code": 0})
+        plugin.register(context)
+
+        response = json.loads(context.tools["one_c_observe"]({
+            "start": "2026-09-18T15:25:00", "end": "2026-09-18T15:26:00",
+            "events": ["EXCP"], "limit": 2,
+        }))
+
+        self.assertEqual(response, result)
 
     def test_handler_rejects_undeclared_arguments_without_terminal_dispatch(self) -> None:
         plugin = _plugin_module()
