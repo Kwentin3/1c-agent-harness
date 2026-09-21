@@ -73,10 +73,15 @@ class HermesPluginTests(unittest.TestCase):
         schema = next(item for item in sys.modules[plugin.__name__ + ".schemas"].TOOLS if item["name"] == "one_c_observe")
         self.assertEqual(set(schema["parameters"]["properties"]), {"start", "end", "events", "filters", "limit"})
         filter_properties = schema["parameters"]["properties"]["filters"]["properties"]
-        self.assertEqual(filter_properties["text"]["pattern"], r"\S")
+        self.assertEqual(
+            filter_properties["text"]["pattern"],
+            "[^\\u0009-\\u000D\\u001C-\\u0020\\u0085\\u00A0\\u1680\\u2000-\\u200A\\u2028\\u2029\\u202F\\u205F\\u3000]",
+        )
         self.assertEqual(filter_properties["sourceComponent"]["pattern"], r"^[A-Za-z0-9_.:-]{1,128}(?![\s\S])")
         self.assertEqual(filter_properties["process"]["pattern"], r"^[A-Za-z0-9_.:-]{1,128}(?![\s\S])")
         self.assertIsNone(re.search(filter_properties["text"]["pattern"], " "))
+        self.assertIsNone(re.search(filter_properties["text"]["pattern"], "\u0085"))
+        self.assertIsNotNone(re.search(filter_properties["text"]["pattern"], "\ufeff"))
         self.assertIsNone(re.search(filter_properties["sourceComponent"]["pattern"], "abc\n"))
         self.assertIsNone(re.search(filter_properties["process"]["pattern"], "a" * 128 + "\n"))
         expand_schema = next(item for item in sys.modules[plugin.__name__ + ".schemas"].TOOLS if item["name"] == "one_c_expand_observation")

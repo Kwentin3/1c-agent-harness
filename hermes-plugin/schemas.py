@@ -77,7 +77,7 @@ TOOLS = (
             "filters": {
                 "type": "object",
                 "properties": {
-                    "text": {"type": "string", "minLength": 1, "maxLength": 120, "pattern": "\\S"},
+                    "text": {"type": "string", "minLength": 1, "maxLength": 120, "pattern": "[^\\u0009-\\u000D\\u001C-\\u0020\\u0085\\u00A0\\u1680\\u2000-\\u200A\\u2028\\u2029\\u202F\\u205F\\u3000]"},
                     "sourceComponent": {"type": "string", "pattern": "^[A-Za-z0-9_.:-]{1,128}(?![\\s\\S])"},
                     "process": {"type": "string", "pattern": "^[A-Za-z0-9_.:-]{1,128}(?![\\s\\S])"},
                 },

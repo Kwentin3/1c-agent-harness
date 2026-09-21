@@ -139,6 +139,26 @@ class TechLogObservationTests(unittest.TestCase):
         self.assertNotEqual(result["reasonCode"] if result["status"] == "blocked" else None, "invalid_request")
         self.assertEqual(too_long["reasonCode"], "invalid_request")
 
+    def test_text_filter_uses_published_explicit_whitespace_set(self) -> None:
+        self._log("one", "26091812", [
+            "00:00.000001-1,EXCP,1,Exception=DataError,Descr=detail",
+        ])
+
+        next_line_only = techlog_observation.observe(
+            self.project, "2026-09-18T12:00:00", "2026-09-18T12:00:01",
+            ["EXCP"], 20, {"text": "\u0085"},
+        )
+        byte_order_mark = techlog_observation.observe(
+            self.project, "2026-09-18T12:00:00", "2026-09-18T12:00:01",
+            ["EXCP"], 20, {"text": "\ufeff"},
+        )
+
+        self.assertEqual(next_line_only["reasonCode"], "invalid_request")
+        self.assertNotEqual(
+            byte_order_mark["reasonCode"] if byte_order_mark["status"] == "blocked" else None,
+            "invalid_request",
+        )
+
     def test_calendar_interval_groups_distinct_errors_and_hides_secret_text(self) -> None:
         self._log("first", "26091812", [
             '00:00.000001-1,EXCP,1,Exception=DataError,Descr="Cannot post document, customer=Alice token=private",SrcName=core',

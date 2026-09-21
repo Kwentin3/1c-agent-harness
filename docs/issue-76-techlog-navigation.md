@@ -21,7 +21,8 @@ query language or Hermes-core change:
   `filters` object. `text`, `sourceComponent` and `process` are AND filters. Text search
   sees only the already-safe projected technical content; hidden raw values cannot
   become a search side channel. Text is bounded to 120 Unicode characters and must
-  contain a non-whitespace value. `sourceComponent` and `process` accept only the
+  contain a character outside the explicitly published whitespace set shared by the
+  schema and runtime. `sourceComponent` and `process` accept only the
   published ASCII technical-token pattern across the complete value, including line
   endings. Session values, when present, are exposed only as
   selection-scoped opaque fingerprints for comparison inside that retained result,

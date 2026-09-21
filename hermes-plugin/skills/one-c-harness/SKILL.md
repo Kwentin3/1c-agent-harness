@@ -43,7 +43,8 @@ coverage, and `blocked` or `unavailable` as fail-closed. Do not use shell/SSH
 workarounds for product observation.
 
 Observation text filters are bounded to 120 Unicode characters and require at
-least one non-whitespace character. Component and process filters accept only the
+least one character outside the explicitly published whitespace set shared by the
+schema and runtime. Component and process filters accept only the
 published ASCII technical-token pattern across the complete value, including line
 endings; schema-valid arguments must not be narrowed by a different runtime length
 or character rule.

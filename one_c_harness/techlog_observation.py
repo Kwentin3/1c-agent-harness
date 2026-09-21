@@ -39,6 +39,9 @@ _CALENDAR = re.compile(r"^\d{4}-\d\d-\d\dT\d\d:\d\d:\d\d(?:\.\d{1,6})?$")
 _ALLOWED_EVENTS = re.compile(r"[A-Za-z_][A-Za-z0-9_]{0,31}$")
 _SAFE_EXCEPTION = re.compile(r"[A-Za-z0-9_.:-]{1,128}$")
 _SAFE_FILTER = re.compile(r"[A-Za-z0-9_.:-]{1,128}$")
+_NON_WHITESPACE = re.compile(
+    r"[^\u0009-\u000D\u001C-\u0020\u0085\u00A0\u1680\u2000-\u200A\u2028\u2029\u202F\u205F\u3000]"
+)
 _SENSITIVE_ASSIGNMENT = re.compile(
     r"(?i)\b(password|passwd|pwd|token|secret|authorization|api[_-]?key|"
     r"connectionstring|user|username|login|email|phone|customer|client|employee|"
@@ -340,7 +343,7 @@ def _valid_filters(filters: object) -> bool:
         return False
     if "text" in filters:
         text = filters["text"]
-        if not isinstance(text, str) or not text.strip() or len(text) > 120:
+        if not isinstance(text, str) or _NON_WHITESPACE.search(text) is None or len(text) > 120:
             return False
     return all(
         isinstance(value, str) and bool(_SAFE_FILTER.fullmatch(value))
