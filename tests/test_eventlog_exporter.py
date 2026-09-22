@@ -24,6 +24,7 @@ class EventLogExporterTests(unittest.TestCase):
         self.xvfb.write_text(textwrap.dedent("""\
             #!/bin/sh
             [ "$1" = "-a" ] && shift
+            if [ "$1" = "-e" ]; then error_file=$2; shift 2; printf '%s' 'fake xvfb wrapper diagnostics' > "$error_file"; fi
             if [ "$1" = "-s" ]; then shift 2; fi
             exec "$@"
         """), encoding="utf-8")
@@ -139,19 +140,29 @@ class EventLogExporterTests(unittest.TestCase):
         self.assertEqual(receipt["reasonCode"], "source_process_failed")
         diagnostic = receipt["diagnostic"]
         self.assertEqual(diagnostic["stage"], "enterprise_process")
-        self.assertEqual(diagnostic["wrapperExitCode"], 7)
+        self.assertEqual(diagnostic["launcherExitCode"], 7)
         self.assertEqual(diagnostic["receipts"], {
             "client-entered": False, "server-entered": False, "export-started": False,
             "export-returned": False, "complete": False,
         })
         self.assertEqual(diagnostic["stderr"]["message"], "<path-redacted>")
+        self.assertEqual(diagnostic["wrapperLog"]["message"], "fake xvfb wrapper diagnostics")
         self.assertEqual(diagnostic["runtimeLog"]["message"], "External data processor could not be opened")
         self.assertEqual(diagnostic["dumpResult"]["message"], "3")
         self.assertNotIn(str(self.root), json.dumps(receipt))
         self.assertEqual(json.loads(standard_error.getvalue()), {
             "reasonCode": "source_process_failed", "stage": "enterprise_process",
-            "message": "External data processor could not be opened",
+            "message": "fake xvfb wrapper diagnostics",
         })
+
+    def test_prefix_keeps_wrapper_options_outside_xvfb_arguments(self) -> None:
+        self._platform("pass")
+        settings = eventlog_exporter._load_settings()
+        wrapper_log = self.root / "wrapper.log"
+        self.assertEqual(eventlog_exporter._prefix(settings, wrapper_log), [
+            str(self.xvfb), "-a", "-e", str(wrapper_log), "-s",
+            "-screen 0 1024x768x8", str(self.platform),
+        ])
 
     def test_epf_source_has_default_managed_form_and_verified_entry_chain(self) -> None:
         source = Path(eventlog_exporter.__file__).with_name("eventlog_epf")

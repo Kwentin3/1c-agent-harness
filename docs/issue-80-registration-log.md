@@ -131,6 +131,48 @@ that mapping to the platform `Level` filter before `MaximumCount`; the Python
 boundary rejects all other level values before any launch. Local XML filtering
 remains a defensive cross-check, not the source filter.
 
+### Verified launcher contract (maintainers)
+
+The registered registration-log tool reaches the fixed command through this closed
+chain: plugin → public terminal tool → companion `eventlog_select` →
+deployment-selected command → `eventlog_exporter.run_once`. The model supplies
+only the closed JSON request; `_environment` supplies the runtime environment,
+`_prefix` supplies the wrapper invocation, and `run_once` supplies the fixed
+1C child arguments.
+
+The executor profile binds the 8.5.1.1150 training client, a Debian `xvfb-run`
+wrapper (`sha256:97e86a102eee7212bfa3bf87d452b27dd4f16ef6e68658eeae20bca63db2ceee`)
+and its sibling Xvfb binary
+(`sha256:14e8ec7d8209bbaf105f9ade27a80b65f01709346690d18fbadb6116ada34912`).
+The wrapper source and its `--help` establish these boundaries:
+
+- `-a`, `-e <wrapper-log>` and `-s <server-args>` belong to `xvfb-run`;
+- the one string after `-s` is passed to Xvfb; the wrapper itself adds
+  `-nolisten tcp`;
+- `ENTERPRISE`, connection, `/Execute`, `/C`, `/Out` and `/DumpResult` belong
+  to the 1C child.
+
+Accordingly the exporter now passes one `-nolisten tcp` (from the wrapper),
+captures the wrapper's documented `-e` file, and leaves Xvfb arguments as the
+single screen specification. Before this correction the exporter duplicated
+`-nolisten tcp` and omitted `-e`, so wrapper, Xvfb and xauth diagnostics were
+silently directed to the wrapper's default `/dev/null`. This was a real loss of
+evidence; it is **not** evidence that either discrepancy caused the prior timeout.
+
+The wrapper returns the 1C child status after a normal launch, but uses its own
+failure status before that point. `launcherExitCode` therefore names the observed
+wrapper-process exit only; it is not claimed to be a separately observed 1C exit
+code. The bounded `wrapperLog`, `runtimeLog`, `/DumpResult` and child stderr make
+the observable layers explicit without returning paths or arbitrary text.
+
+The actual Xvfb `-help` lists `-fbdir directory`. It can be forwarded only inside
+the existing `-s` argument. No framebuffer option or capture was added here:
+the previous absence claim came from querying wrapper help rather than the X server
+and is corrected below. The 1C client help/version switches are not usable without
+a display in this installation (each returned the GTK display error); the pinned
+runtime profile is the reproducible version identity. This is a launcher audit,
+not a new native acceptance run.
+
 The deployment receipt preserves bounded stderr, `/Out`, `/DumpResult`, process
 exit and five ordered markers. It distinguishes process output/error, entry into
 EPF client/server/export code, and a timeout before client entry. A timeout with
@@ -155,24 +197,28 @@ closure stayed `e437eeb98382c571e42cecb3803d98b6228e4771cabfd81ebe0f79a6275fa594
 
 The candidate companion invoked its fixed exporter exactly once. Selection ended
 as `source_timeout` after 116,059 ms; the exporter lifecycle measured 115,245 ms
-and terminated its owned group (`wrapperExitCode=-15`). There was no XML, no
+and terminated its owned group (the historical receipt field was
+`wrapperExitCode=-15`). There was no XML, no
 client/server/export/complete marker, empty stderr, an empty `/Out`, and no
 `/DumpResult`. Consequently no retained selection exists and page/refinement/record
 operations were not run; a fabricated or historical XML was not substituted.
 
-The installed Xvfb did not expose the documented `-fbdir` option, and no XWD was
-saved. No package, viewer, VNC, GUI automation, common runner or product code was
-added. The task-owned work copy, file IB, platform home, temporary area, logs and
-EPF were removed after the bounded JSON receipts were retained; no 1C or Xvfb
-process remained.
+No XWD was saved in that attempt. The later launcher audit confirmed that Xvfb
+does support `-fbdir`, but the installed executor has no `xwd` reader. No package,
+viewer, VNC, GUI automation, common runner or product code was added. The
+task-owned work copy, file IB, platform home, temporary area, logs and EPF were
+removed after the bounded JSON receipts were retained; no 1C or Xvfb process
+remained.
 
 This attempt proves preparation, EPF compilation and the fixed exporter lifecycle,
 but it does **not** prove that `/Execute` instantiated the EPF or that the EPF,
 native API, or client/server boundary itself failed. The failure is before the
 first observable form handler. The route remains `source_unavailable`, never an
-empty registration log. No deployment command is claimed working. A subsequent
-experiment needs a different authorized observation method; repeating this same
-headless invocation would add no distinguishing evidence.
+empty registration log. No deployment command is claimed working. The one useful
+next native observation, if separately authorized, is a task-owned `-fbdir`
+capture plus the already-added wrapper error log; an `xwd` reader/viewer is the
+single missing observation resource. Repeating the same headless invocation
+without that new evidence would add no distinguishing evidence.
 
 ## Verification and limits
 

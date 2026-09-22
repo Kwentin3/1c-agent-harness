@@ -176,10 +176,14 @@ def _environment(settings: Settings, home: Path, temporary: Path) -> dict[str, s
     return environment
 
 
-def _prefix(settings: Settings) -> list[str]:
-    return [
-        str(settings.xvfb), "-a", "-s", "-screen 0 1024x768x8 -nolisten tcp", str(settings.platform),
+def _prefix(settings: Settings, wrapper_log: Path | None = None) -> list[str]:
+    result = [str(settings.xvfb), "-a"]
+    if wrapper_log is not None:
+        result += ["-e", str(wrapper_log)]
+    result += [
+        "-s", "-screen 0 1024x768x8", str(settings.platform),
     ]
+    return result
 
 
 def _connection(settings: Settings) -> list[str]:
@@ -254,12 +258,13 @@ def _runtime_diagnostic(
 ) -> dict[str, object]:
     return {
         "stage": "enterprise_process",
-        "wrapperExitCode": process.returncode,
+        "launcherExitCode": process.returncode,
         "lifecycleMilliseconds": round((time.monotonic() - started) * 1000),
         "receipts": {name: (root / name).is_file() for name in (
             "client-entered", "server-entered", "export-started", "export-returned", "complete",
         )},
         "stderr": stderr.summary(),
+        "wrapperLog": _file_diagnostic(root / "wrapper.log"),
         "runtimeLog": _file_diagnostic(root / "runtime.log"),
         "dumpResult": _file_diagnostic(root / "runtime.result"),
     }
@@ -284,7 +289,7 @@ def run_once(request: object) -> tuple[bytes, dict[str, object]]:
         home = root / "home"; home.mkdir()
         temporary = root / "tmp"; temporary.mkdir()
         _write_request(root, admitted)
-        argv = _prefix(settings) + [
+        argv = _prefix(settings, root / "wrapper.log") + [
             "ENTERPRISE", *_connection(settings), "/DisableStartupDialogs", "/DisableStartupMessages",
             "/Execute", str(settings.epf), "/C", str(root),
             "/Out", str(root / "runtime.log"), "/DumpResult", str(root / "runtime.result"),
@@ -412,7 +417,7 @@ def _public_failure(reason_code: str, diagnostic: dict[str, object] | None) -> d
     if not isinstance(diagnostic, dict) or diagnostic.get("stage") != "enterprise_process":
         return result
     result["stage"] = "enterprise_process"
-    for name in ("runtimeLog", "stderr", "dumpResult"):
+    for name in ("wrapperLog", "runtimeLog", "stderr", "dumpResult"):
         value = diagnostic.get(name)
         if isinstance(value, dict) and isinstance(value.get("message"), str):
             result["message"] = value["message"]
