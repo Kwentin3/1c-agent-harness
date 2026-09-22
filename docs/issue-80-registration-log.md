@@ -131,71 +131,48 @@ that mapping to the platform `Level` filter before `MaximumCount`; the Python
 boundary rejects all other level values before any launch. Local XML filtering
 remains a defensive cross-check, not the source filter.
 
-For a future one-shot native check the deployment receipt must preserve the
-existing bounded stderr, `/Out`, `/DumpResult`, process exit and five ordered
-markers. It distinguishes (a) process error with platform output, (b) entry into
-EPF client/server/export code, and (c) a timeout before client entry. It does
-not distinguish an unfinished client startup from an EPF load/compile failure
-when that last state yields no platform output. The executor currently has no
-installed independent display-observation utility (`xwd`, `import`,
-`xwininfo`, `xlsclients`, or Pillow); this PR neither installs one nor automates
-the GUI. Any one-time capture of the owned Xvfb screen must be separately
-authorized and declared before the next run.
+The deployment receipt preserves bounded stderr, `/Out`, `/DumpResult`, process
+exit and five ordered markers. It distinguishes process output/error, entry into
+EPF client/server/export code, and a timeout before client entry. A timeout with
+all those channels empty does not distinguish unfinished client startup from an
+EPF load/compile failure.
 
 The exact installed platform `8.5.1.1150` contains both the Designer batch command
 `/LoadExternalDataProcessorOrReportFromFiles` and the Enterprise `/Execute`
-parameter. This made an external EPF the smallest native candidate: it would avoid
-a permanent configuration patch and could run against a deployment-selected base.
+parameter. This makes an external EPF the smallest native candidate: it avoids a
+permanent configuration patch and can run against a deployment-selected base.
 
-Two bounded admission attempts were used in an isolated disposable file infobase:
+### Authorized corrected EPF attempt — still no entry evidence
 
-1. The first launcher stopped before any 1C process because its local `xvfb-run`
-   environment did not expose `xauth`. It produced no receipt/XML and left the
-   source unchanged.
-2. The corrected attempt created the disposable infobase, compiled the minimal
-   EPF from XML (`returnCode=0`, `DumpResult=0`, 4,355-byte EPF) and launched
-   `ENTERPRISE /Execute`. A no-form external processor object module did not obtain
-   control: no entry receipt or XML appeared, and the owned process was terminated
-   at the 90-second bound. The disposable infobase was removed and no 1C/Xvfb
-   process remained.
+On authorized head `8d45df6bcff1b8a52aad0c207af827b93d19ceee`
+(`artifactId sha256:d935aad596f4121b08f7449ea723a198c2f191dfc4edd6a4a2e2d03e147f993e`),
+a fresh task-owned file IB was made from the immutable Jet snapshot copy. The
+preparation completed in 194,416 ms: `CREATEINFOBASE` and
+`/LoadConfigFromFiles … /UpdateDBCfg` each returned `DumpResult=0`; the source
+closure stayed `e437eeb98382c571e42cecb3803d98b6228e4771cabfd81ebe0f79a6275fa594`
+(5,099 files). The single permitted EPF build completed in 21,855 ms, producing
+6,174 bytes (`sha256:9f868a43e92c5c7ee84df070848d1bd4e98a5c11c5a6b92147f12264eeb98f4a`).
 
-The original selected-base attempt had no retained platform diagnostics, so its
-absence of markers/XML did not identify a failing layer. The current exporter
-therefore retains only a bounded failure receipt: lifecycle duration, wrapper exit
-code, six marker-presence bits (including form server creation), and the
-state/SHA-256/path-redacted excerpt of stderr, `/Out` and `/DumpResult`. The raw
-command line, credentials and arbitrary diagnostic text are not returned to the
-plugin. The companion exposes a diagnostic only when stderr is the exact safe
-exporter JSON contract; other stderr remains `source_failed`.
+The candidate companion invoked its fixed exporter exactly once. Selection ended
+as `source_timeout` after 116,059 ms; the exporter lifecycle measured 115,245 ms
+and terminated its owned group (`wrapperExitCode=-15`). There was no XML, no
+client/server/export/complete marker, empty stderr, an empty `/Out`, and no
+`/DumpResult`. Consequently no retained selection exists and page/refinement/record
+operations were not run; a fabricated or historical XML was not substituted.
 
-A later authorized investigation exercised three fresh disposable bases without
-modifying the immutable Jet snapshot, its manifest, the source configuration, or
-a live infobase:
+The installed Xvfb did not expose the documented `-fbdir` option, and no XWD was
+saved. No package, viewer, VNC, GUI automation, common runner or product code was
+added. The task-owned work copy, file IB, platform home, temporary area, logs and
+EPF were removed after the bounded JSON receipts were retained; no 1C or Xvfb
+process remained.
 
-1. A form-bearing EPF built from the diagnostic head (6,194 bytes) was invoked
-   against a blank disposable base. It timed out at the 115-second bound before
-   every form/client/server/export marker, without stderr, `/Out` or `/DumpResult`.
-2. The same EPF was invoked against a fresh disposable base made by copying the
-   immutable snapshot and loading that copy with `CREATEINFOBASE` then
-   `/LoadConfigFromFiles … /UpdateDBCfg` (both `DumpResult=0`). Its snapshot
-   closure hash was unchanged before/after loading. The result was the same timeout
-   before every marker, so an empty base was excluded as the cause.
-3. Platform command-line documentation establishes that `/C` is read through the
-   `LaunchParameter()` global-context method. The EPF had used the Russian alias
-   without `()`. That was corrected and unit-tested; the rebuilt EPF was 6,192
-   bytes (`sha256:5fa1674a02256004ceaa5e12babf0e1b2a491edd6dd2c6bf66f0427fa6c19e5c`).
-   A new immutable-snapshot copy again loaded successfully, then timed out before
-   `OnCreateAtServer`, `OnOpen`, all exporter markers, XML, `/Out` and `/DumpResult`.
-
-These runs establish that the fixed command reaches a persistent 1C client process
-but do **not** establish that `/Execute` instantiated the EPF or that the EPF,
-native API, or client/server boundary itself failed. The failure precedes the first
-observable form handler. The route remains `source_unavailable`, never an empty
-registration log. No deployment command is claimed working.
-
-Further runtime attempts must change the evidence method rather than repeat this
-same headless client invocation: the available platform diagnostics are empty, and
-this project explicitly does not use GUI automation as an alternate interface.
+This attempt proves preparation, EPF compilation and the fixed exporter lifecycle,
+but it does **not** prove that `/Execute` instantiated the EPF or that the EPF,
+native API, or client/server boundary itself failed. The failure is before the
+first observable form handler. The route remains `source_unavailable`, never an
+empty registration log. No deployment command is claimed working. A subsequent
+experiment needs a different authorized observation method; repeating this same
+headless invocation would add no distinguishing evidence.
 
 ## Verification and limits
 
