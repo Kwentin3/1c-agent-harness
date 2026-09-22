@@ -38,6 +38,7 @@ _REQUEST_KEYS = {
     "schemaVersion", "operation", "start", "end", "filters", "columns", "maximumCount", "maximumBytes",
 }
 _FILTERS = {"event", "level", "user", "metadata"}
+_LEVELS = {"Information", "Error", "Warning", "Note"}
 _TIMEOUT_SECONDS = 115
 _MAX_BYTES = 1024 * 1024
 _DIAGNOSTIC_BYTES = 4096
@@ -152,6 +153,8 @@ def _validate_request(value: object) -> dict[str, Any]:
         raise ExportFailure("invalid_request")
     if any(not isinstance(item, str) or not item or len(item) > 128 or any(ord(ch) < 32 for ch in item) for item in filters.values()):
         raise ExportFailure("invalid_request")
+    if "level" in filters and filters["level"] not in _LEVELS:
+        raise ExportFailure("invalid_request")
     if value.get("columns") != list(COLUMNS):
         raise ExportFailure("invalid_request")
     maximum = value.get("maximumCount")
@@ -254,7 +257,7 @@ def _runtime_diagnostic(
         "wrapperExitCode": process.returncode,
         "lifecycleMilliseconds": round((time.monotonic() - started) * 1000),
         "receipts": {name: (root / name).is_file() for name in (
-            "form-server-created", "client-entered", "server-entered", "export-started", "export-returned", "complete",
+            "client-entered", "server-entered", "export-started", "export-returned", "complete",
         )},
         "stderr": stderr.summary(),
         "runtimeLog": _file_diagnostic(root / "runtime.log"),
@@ -328,7 +331,7 @@ def run_once(request: object) -> tuple[bytes, dict[str, object]]:
         diagnostic = _runtime_diagnostic(root, process, stderr, started)
         if process.returncode != 0:
             raise ExportFailure("source_process_failed", diagnostic)
-        required = ("form-server-created", "client-entered", "server-entered", "export-started", "export-returned", "complete")
+        required = ("client-entered", "server-entered", "export-started", "export-returned", "complete")
         if any(not (root / name).is_file() for name in required) or not output.is_file():
             raise ExportFailure("source_incomplete_receipt", diagnostic)
         xml = output.read_bytes()

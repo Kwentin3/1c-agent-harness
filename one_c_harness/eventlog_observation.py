@@ -35,6 +35,7 @@ _FIELDS = (
     "Metadata", "MetadataPresentation", "TransactionStatus",
 )
 _FILTERS = {"event": "Event", "level": "Level", "user": "User", "metadata": "Metadata"}
+_LEVELS = {"Information", "Error", "Warning", "Note"}
 _FIELD_LIMITS = {
     "Date": 32, "Level": 32, "Event": 128, "EventPresentation": 160,
     "User": 80, "UserPresentation": 160, "Metadata": 128,
@@ -112,6 +113,8 @@ def _validated(
     for key, value in filters.items():
         if not isinstance(value, str) or not value.strip() or len(value) > 128 or any(ord(ch) < 32 for ch in value):
             raise ValueError("filters are invalid")
+        if key == "level" and value not in _LEVELS:
+            raise ValueError("filters are invalid")
         clean[key] = value
     if type(maximum_count) is not int or not 1 <= maximum_count <= _MAXIMUM_COUNT:
         raise ValueError("maximumCount is invalid")
@@ -126,6 +129,8 @@ def _clean_filters(filters: object) -> dict[str, str]:
     clean: dict[str, str] = {}
     for key, value in filters.items():
         if not isinstance(value, str) or not value.strip() or len(value) > 128 or any(ord(ch) < 32 for ch in value):
+            raise ValueError("filters are invalid")
+        if key == "level" and value not in _LEVELS:
             raise ValueError("filters are invalid")
         clean[key] = value
     return clean

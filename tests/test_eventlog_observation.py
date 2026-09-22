@@ -178,6 +178,7 @@ class EventLogObservationTests(unittest.TestCase):
             {"limit": 21},
             {"filters": {"unknown": "x"}},
             {"filters": {"event": ""}},
+            {"filters": {"level": "Critical"}},
         ]
         for values in cases:
             with self.subTest(values=values):

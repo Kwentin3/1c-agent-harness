@@ -106,6 +106,42 @@ not projected.
 
 ## Native route decision and bounded evidence
 
+### Exact 8.5.1.1150 entry contract and next observation
+
+The exact installed help file is
+`shcntx_ru.hbk` (`sha256:b8bc0d3a1ee8d00e2f113a800339731304428cc35ae395e5094a8b022773f8ed`).
+Its embedded member
+`objects/Global context/properties/LaunchParameter2287.html`
+(`sha256:4b3998e12dc265604ce73b26de1164d32fdbf7faee4955562ae081dbb5961049`)
+defines `ПараметрЗапуска` / `LaunchParameter` as a read-only `String` property
+for client contexts only (thin, web, mobile and thick client); it exposes the
+`/C` command-line value. It is not a server method.
+
+The EPF therefore reads `ПараметрЗапуска` exactly once in `ПриОткрытии` and
+passes that resulting string to the server procedure. The former
+`ПриСозданииНаСервере` marker was removed: it depended on an unavailable
+client-only property and could not establish whether `/Execute` reached the
+form. Required exporter receipts now begin with `client-entered`, then require
+the server/export/complete chain. A static source test protects that precise
+boundary; it is not a compile or native-run claim.
+
+The same exact Jet `EventLog` module maps the accepted level presentations to
+`EventLogLevel.Information`, `Error`, `Warning`, and `Note`. The EPF now applies
+that mapping to the platform `Level` filter before `MaximumCount`; the Python
+boundary rejects all other level values before any launch. Local XML filtering
+remains a defensive cross-check, not the source filter.
+
+For a future one-shot native check the deployment receipt must preserve the
+existing bounded stderr, `/Out`, `/DumpResult`, process exit and five ordered
+markers. It distinguishes (a) process error with platform output, (b) entry into
+EPF client/server/export code, and (c) a timeout before client entry. It does
+not distinguish an unfinished client startup from an EPF load/compile failure
+when that last state yields no platform output. The executor currently has no
+installed independent display-observation utility (`xwd`, `import`,
+`xwininfo`, `xlsclients`, or Pillow); this PR neither installs one nor automates
+the GUI. Any one-time capture of the owned Xvfb screen must be separately
+authorized and declared before the next run.
+
 The exact installed platform `8.5.1.1150` contains both the Designer batch command
 `/LoadExternalDataProcessorOrReportFromFiles` and the Enterprise `/Execute`
 parameter. This made an external EPF the smallest native candidate: it would avoid

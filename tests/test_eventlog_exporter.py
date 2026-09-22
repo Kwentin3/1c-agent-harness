@@ -141,7 +141,7 @@ class EventLogExporterTests(unittest.TestCase):
         self.assertEqual(diagnostic["stage"], "enterprise_process")
         self.assertEqual(diagnostic["wrapperExitCode"], 7)
         self.assertEqual(diagnostic["receipts"], {
-            "form-server-created": False, "client-entered": False, "server-entered": False, "export-started": False,
+            "client-entered": False, "server-entered": False, "export-started": False,
             "export-returned": False, "complete": False,
         })
         self.assertEqual(diagnostic["stderr"]["message"], "<path-redacted>")
@@ -161,16 +161,26 @@ class EventLogExporterTests(unittest.TestCase):
         self.assertIn("ExternalDataProcessor.Issue80EventLog.Form.Main", root)
         self.assertIn("<Form>Main</Form>", root)
         self.assertIn('<Event name="OnOpen">ПриОткрытии</Event>', form)
-        self.assertIn('<Event name="OnCreateAtServer">ПриСозданииНаСервере</Event>', form)
-        for required in ("&НаКлиенте", "Процедура ПриОткрытии(Отказ)", "Корень = ПараметрЗапуска()", "ВыгрузитьНаСервере(Корень)", "&НаСервере", "Процедура ПриСозданииНаСервере(Отказ, СтандартнаяОбработка)", "ВыгрузитьЖурналРегистрации", "form-server-created", "client-entered", "server-entered", "export-started", "export-returned", "complete", "ПрекратитьРаботуСистемы"):
+        self.assertNotIn("OnCreateAtServer", form)
+        for required in ("&НаКлиенте", "Процедура ПриОткрытии(Отказ)", "Корень = ПараметрЗапуска;", "ВыгрузитьНаСервере(Корень)", "&НаСервере", "ВыгрузитьЖурналРегистрации", "client-entered", "server-entered", "export-started", "export-returned", "complete", "ПрекратитьРаботуСистемы"):
             self.assertIn(required, module)
-        self.assertNotIn("ПараметрЗапуска +", module)
+        self.assertNotIn("ПараметрЗапуска()", module)
+        self.assertNotIn("ПриСозданииНаСервере", module)
+        for level in ("Information", "Error", "Warning", "Note"):
+            self.assertIn(f'EventLogLevel.{level}', module)
+            self.assertIn(f'ИмяУровня = "{level}"', module)
         self.assertNotIn("Выполнить(", module)
         self.assertNotIn("Вычислить(", module)
         project = (Path(eventlog_exporter.__file__).parent.parent / "pyproject.toml").read_text(encoding="utf-8")
         self.assertIn('one-c-eventlog-exporter = "one_c_harness.eventlog_exporter:main"', project)
         self.assertIn('"eventlog_epf/**/*.xml"', project)
         self.assertIn('"eventlog_epf/**/*.bsl"', project)
+
+    def test_unknown_platform_level_is_rejected_before_launch(self) -> None:
+        request = dict(self.request)
+        request["filters"] = {"level": "Critical"}
+        with self.assertRaisesRegex(eventlog_exporter.ExportFailure, "invalid_request"):
+            eventlog_exporter.run_once(request)
 
 
 if __name__ == "__main__":
