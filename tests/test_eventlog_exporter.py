@@ -64,6 +64,7 @@ class EventLogExporterTests(unittest.TestCase):
         self._platform("""
             import pathlib, sys, time
             args=sys.argv[1:]; root=pathlib.Path(args[args.index('/C')+1])
+            (root/'form-server-created').write_text('true')
             (root/'client-entered').write_text('true')
             (root/'server-entered').write_text('true')
             (root/'export-started').write_text('true'); time.sleep(.03)
@@ -140,7 +141,7 @@ class EventLogExporterTests(unittest.TestCase):
         self.assertEqual(diagnostic["stage"], "enterprise_process")
         self.assertEqual(diagnostic["wrapperExitCode"], 7)
         self.assertEqual(diagnostic["receipts"], {
-            "client-entered": False, "server-entered": False, "export-started": False,
+            "form-server-created": False, "client-entered": False, "server-entered": False, "export-started": False,
             "export-returned": False, "complete": False,
         })
         self.assertEqual(diagnostic["stderr"]["message"], "<path-redacted>")
@@ -160,7 +161,8 @@ class EventLogExporterTests(unittest.TestCase):
         self.assertIn("ExternalDataProcessor.Issue80EventLog.Form.Main", root)
         self.assertIn("<Form>Main</Form>", root)
         self.assertIn('<Event name="OnOpen">ПриОткрытии</Event>', form)
-        for required in ("&НаКлиенте", "Процедура ПриОткрытии(Отказ)", "Корень = ПараметрЗапуска", "ВыгрузитьНаСервере(Корень)", "&НаСервере", "ВыгрузитьЖурналРегистрации", "client-entered", "server-entered", "export-started", "export-returned", "complete", "ПрекратитьРаботуСистемы"):
+        self.assertIn('<Event name="OnCreateAtServer">ПриСозданииНаСервере</Event>', form)
+        for required in ("&НаКлиенте", "Процедура ПриОткрытии(Отказ)", "Корень = ПараметрЗапуска", "ВыгрузитьНаСервере(Корень)", "&НаСервере", "Процедура ПриСозданииНаСервере(Отказ, СтандартнаяОбработка)", "ВыгрузитьЖурналРегистрации", "form-server-created", "client-entered", "server-entered", "export-started", "export-returned", "complete", "ПрекратитьРаботуСистемы"):
             self.assertIn(required, module)
         self.assertNotIn("Выполнить(", module)
         self.assertNotIn("Вычислить(", module)

@@ -254,7 +254,7 @@ def _runtime_diagnostic(
         "wrapperExitCode": process.returncode,
         "lifecycleMilliseconds": round((time.monotonic() - started) * 1000),
         "receipts": {name: (root / name).is_file() for name in (
-            "client-entered", "server-entered", "export-started", "export-returned", "complete",
+            "form-server-created", "client-entered", "server-entered", "export-started", "export-returned", "complete",
         )},
         "stderr": stderr.summary(),
         "runtimeLog": _file_diagnostic(root / "runtime.log"),
@@ -328,7 +328,7 @@ def run_once(request: object) -> tuple[bytes, dict[str, object]]:
         diagnostic = _runtime_diagnostic(root, process, stderr, started)
         if process.returncode != 0:
             raise ExportFailure("source_process_failed", diagnostic)
-        required = ("client-entered", "server-entered", "export-started", "export-returned", "complete")
+        required = ("form-server-created", "client-entered", "server-entered", "export-started", "export-returned", "complete")
         if any(not (root / name).is_file() for name in required) or not output.is_file():
             raise ExportFailure("source_incomplete_receipt", diagnostic)
         xml = output.read_bytes()
