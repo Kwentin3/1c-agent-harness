@@ -229,18 +229,54 @@ argument. It created a private 64×64 own-display capture (7,328 bytes,
 copied it through the existing authenticated path, and verified the copied hash.
 The wrapper log was empty and no Xvfb or 1C process remained.
 
-The capture was **not** accepted as a readable observation: no `xwud`, `xv`,
-`xloadimage`, ImageMagick, FFmpeg or Pillow was installed on the executor or in
-the available diagnostic environment, and the available image reader rejected
-the XWD format. Creation and hash equality alone are not a viewed image.
-Consequently no file IB was prepared and no EPF build, exporter invocation or
-`ENTERPRISE /Execute` run consumed the newly authorized native budget. The
-private preflight capture remains task-local and is not published.
+The capture was **not** accepted as a readable observation at that point: no
+`xwud`, `xv`, `xloadimage`, ImageMagick, FFmpeg or Pillow was available. Creation
+and hash equality alone are not a viewed image. Consequently no file IB was
+prepared and no EPF build, exporter invocation or `ENTERPRISE /Execute` run
+consumed the newly authorized native budget. The private preflight capture
+remained task-local and was not published.
 
-The exact remaining prerequisite is one already-available, locally usable XWD
-reader/converter. It must be admitted and proven on this retained harmless
-capture before another 1C launch can be considered; no package, custom decoder,
-public conversion service or GUI automation was added.
+The authorized next step admitted one ready-made reader, Debian `netpbm 11.10.2`,
+with its declared runtime libraries into a task-local `.local/` root only. Its
+`xwdtopnm` opened the retained XWD; its `pnmtopng` made a PNG that the available
+reader displayed. No executor/global package, custom decoder, public conversion
+service or GUI automation was added.
+
+### Authorized framebuffer observation — client process visible, EPF still unentered
+
+The exact candidate was `01245895bf5854b5d2515325149e748239c6fd3c`
+(`artifactId sha256:2abb57cef4c01d6015f688d24a45829d53beecaed98f6081049c5358901230eb`).
+A detached, clean worktree at that commit was used; tracked product source and
+EPF source were not changed. Two task-owned file-IB preparations each returned
+`DumpResult=0` for `CREATEINFOBASE` and `/LoadConfigFromFiles … /UpdateDBCfg`.
+Both before/after checks retained the immutable snapshot closure
+`e437eeb98382c571e42cecb3803d98b6228e4771cabfd81ebe0f79a6275fa594`.
+
+One EPF build succeeded: 6,174 bytes,
+`sha256:083648ac188c42237d86cc93b8dd8744086bdf7b18625cff3025684ba227ac3a`.
+The fixed exporter was then invoked exactly once through the candidate companion.
+It returned `source_timeout` at `stage=enterprise_process`; exporter lifecycle was
+115,071 ms and its owned process group ended with observed
+`launcherExitCode=-15`. XML, all five EPF markers, stderr, runtime `/Out`,
+`/DumpResult` and wrapper log were absent/empty. This remains an unavailable
+source, not an empty registration log; no retained selection, page, refinement or
+record was created.
+
+The task-local `-fbdir` watcher saved 1,115 copies of the live Xvfb framebuffer;
+the last is 789,664 bytes
+(`sha256:4b0d72e63a56bf82fe75cb7113f378eb995abd25cf04d670fe58049be3824f95`).
+`netpbm` converted it to a readable 1024×768 PNG. It shows a black screen with a
+single pointer and no visible 1C window or error text. The watcher also recorded
+only the owned `xvfb-run`, Xvfb and `1cv8t` process tree while active; cleanup
+reported no remaining 1C/Xvfb processes. This proves client-process and
+framebuffer existence during the bounded run, but does **not** prove that the EPF
+form opened or identify the cause of the timeout.
+
+The disposable IBs, work copies, homes, temporary areas, logs and remote
+worktree were removed after bounded receipts and the task-local screenshot were
+copied. No production CF, live infobase, immutable snapshot or deployment setting
+changed. A further native launch needs separate owner authorization; repeating this
+same candidate is not justified by this evidence.
 
 ## Verification and limits
 
