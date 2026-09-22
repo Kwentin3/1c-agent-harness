@@ -123,29 +123,43 @@ Two bounded admission attempts were used in an isolated disposable file infobase
    at the 90-second bound. The disposable infobase was removed and no 1C/Xvfb
    process remained.
 
-The latest selected-base attempt created the prepared EPF and invoked the exporter
-once, but produced none of its five EPF markers, XML, `/Out`, `/DumpResult` or a
-retained runtime exit code. This is not evidence that the form, `/Execute`, native
-API or client/server boundary failed: the then-current exporter sent stderr to
-`DEVNULL`, mapped every nonzero wrapper exit to `source_failed`, and removed its
-temporary directory before preserving the platform files.
+The original selected-base attempt had no retained platform diagnostics, so its
+absence of markers/XML did not identify a failing layer. The current exporter
+therefore retains only a bounded failure receipt: lifecycle duration, wrapper exit
+code, six marker-presence bits (including form server creation), and the
+state/SHA-256/path-redacted excerpt of stderr, `/Out` and `/DumpResult`. The raw
+command line, credentials and arbitrary diagnostic text are not returned to the
+plugin. The companion exposes a diagnostic only when stderr is the exact safe
+exporter JSON contract; other stderr remains `source_failed`.
 
-The minimal correction preserves one bounded failure receipt at that existing
-exporter boundary: lifecycle duration, wrapper exit code, five marker-presence
-bits, and the state/SHA-256/path-redacted excerpt of stderr, `/Out` and
-`/DumpResult`. The raw command line, credentials and arbitrary diagnostic text are
-not returned to the plugin. The companion exposes a diagnostic only when stderr is
-the exact safe exporter JSON contract; other stderr remains `source_failed`.
+A later authorized investigation exercised three fresh disposable bases without
+modifying the immutable Jet snapshot, its manifest, the source configuration, or
+a live infobase:
 
-No new native launch is authorized by this correction. Consequently this PR does
-**not** claim that a working deployment exporter or selected-base round trip
-exists. One future distinguishing run of this exact new head would separate: a
-platform/wrapper exit with its bounded message and code, an entrypoint failure with
-the marker pattern, and a successful XML receipt. It uses the existing selected
-disposable file infobase, one exporter invocation, the same timeout/XML cap and
-process cleanup; it persists only the bounded failure receipt under the existing
-task-local metrics path. It does not fall back to a blank infobase or use the
-historical temporary configuration patch as a permanent source.
+1. A form-bearing EPF built from the diagnostic head (6,194 bytes) was invoked
+   against a blank disposable base. It timed out at the 115-second bound before
+   every form/client/server/export marker, without stderr, `/Out` or `/DumpResult`.
+2. The same EPF was invoked against a fresh disposable base made by copying the
+   immutable snapshot and loading that copy with `CREATEINFOBASE` then
+   `/LoadConfigFromFiles … /UpdateDBCfg` (both `DumpResult=0`). Its snapshot
+   closure hash was unchanged before/after loading. The result was the same timeout
+   before every marker, so an empty base was excluded as the cause.
+3. Platform command-line documentation establishes that `/C` is read through the
+   `LaunchParameter()` global-context method. The EPF had used the Russian alias
+   without `()`. That was corrected and unit-tested; the rebuilt EPF was 6,192
+   bytes (`sha256:5fa1674a02256004ceaa5e12babf0e1b2a491edd6dd2c6bf66f0427fa6c19e5c`).
+   A new immutable-snapshot copy again loaded successfully, then timed out before
+   `OnCreateAtServer`, `OnOpen`, all exporter markers, XML, `/Out` and `/DumpResult`.
+
+These runs establish that the fixed command reaches a persistent 1C client process
+but do **not** establish that `/Execute` instantiated the EPF or that the EPF,
+native API, or client/server boundary itself failed. The failure precedes the first
+observable form handler. The route remains `source_unavailable`, never an empty
+registration log. No deployment command is claimed working.
+
+Further runtime attempts must change the evidence method rather than repeat this
+same headless client invocation: the available platform diagnostics are empty, and
+this project explicitly does not use GUI automation as an alternate interface.
 
 ## Verification and limits
 
