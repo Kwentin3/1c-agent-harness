@@ -87,6 +87,33 @@ class EventLogObservationTests(unittest.TestCase):
         self.assertEqual(record["record"]["metadata"]["name"], "Document.Invoice")
         self.assertNotIn("broken", json.dumps([page, record]))
 
+    def test_page_can_refine_retained_selection_without_exporting_again(self) -> None:
+        selected = self._select()
+        self.request_capture.unlink()
+        refined = eventlog_observation.page(
+            self.project, selected["selectionRef"], 0, 20,
+            {"level": "Error", "user": "alice", "metadata": "Document.Invoice"},
+        )
+
+        self.assertFalse(self.request_capture.exists())
+        self.assertEqual(refined["status"], "ok")
+        self.assertEqual(refined["total"], 1)
+        self.assertEqual(refined["records"][0]["user"]["name"], "alice")
+        self.assertEqual(refined["summary"]["countScope"], "refinedRetainedSelection")
+        self.assertEqual(refined["summary"]["filters"], {"level": "Error", "user": "alice", "metadata": "Document.Invoice"})
+        self.assertEqual(refined["summary"]["baseSelectionRef"], selected["selectionRef"])
+        self.assertEqual(refined["summary"]["window"]["sourceTimeZone"], "UTC")
+        self.assertTrue(refined["summary"]["coverage"]["limitedToRetainedSelection"])
+
+    def test_record_is_self_describing_without_repeating_runtime_packaging(self) -> None:
+        selected = self._select()
+        record = eventlog_observation.record(self.project, selected["records"][1]["recordRef"])
+        self.assertEqual(record["source"], "1c_registration_log")
+        self.assertEqual(record["selectionRef"], selected["selectionRef"])
+        self.assertEqual(record["window"]["sourceTimeZone"], "UTC")
+        self.assertEqual(record["filters"], {})
+        self.assertNotIn("artifactId", record)
+
     def test_exact_filters_are_reapplied_to_xml_in_domain_code(self) -> None:
         selected = self._select(filters={"user": "alice"})
         page = eventlog_observation.page(self.project, selected["selectionRef"], 0, 20)
@@ -155,21 +182,38 @@ class EventLogObservationTests(unittest.TestCase):
         self.assertEqual(result["reasonCode"], "source_invalid")
 
     def test_timeout_nonzero_and_byte_limit_are_typed_failures(self) -> None:
-        self.command.write_text("#!/usr/bin/env python3\nimport time; time.sleep(1)\n", encoding="utf-8")
+        survivor = self.root / "survivor"
+        self.command.write_text(textwrap.dedent(f"""\
+            #!/usr/bin/env python3
+            import subprocess, sys, time
+            subprocess.Popen([sys.executable, '-c', "import time,pathlib; time.sleep(.2); pathlib.Path({str(survivor)!r}).write_text('late')"])
+            time.sleep(1)
+        """), encoding="utf-8")
         with mock.patch.object(eventlog_observation, "_TIMEOUT_SECONDS", 0.02):
             timed_out = self._select()
+        time.sleep(.3)
         self.assertEqual(timed_out["status"], "unavailable")
         self.assertEqual(timed_out["reasonCode"], "source_timeout")
+        self.assertFalse(survivor.exists())
 
         self.command.write_text("#!/usr/bin/env python3\nraise SystemExit(2)\n", encoding="utf-8")
         failed = self._select()
         self.assertEqual(failed["reasonCode"], "source_failed")
 
-        self.command.write_text("#!/usr/bin/env python3\nimport sys; sys.stdin.buffer.read(); sys.stdout.write('x' * 64)\n", encoding="utf-8")
-        with mock.patch.object(eventlog_observation, "_MAX_XML_BYTES", 32):
+        completed = self.root / "completed"
+        self.command.write_text(textwrap.dedent(f"""\
+            #!/usr/bin/env python3
+            import pathlib, sys, time
+            sys.stdin.buffer.read()
+            for _ in range(100):
+                sys.stdout.buffer.write(b'x' * 1024); sys.stdout.buffer.flush(); time.sleep(.01)
+            pathlib.Path({str(completed)!r}).write_text('unbounded')
+        """), encoding="utf-8")
+        with mock.patch.object(eventlog_observation, "_MAX_XML_BYTES", 4096):
             too_large = self._select()
         self.assertEqual(too_large["status"], "blocked")
         self.assertEqual(too_large["reasonCode"], "source_byte_limit")
+        self.assertFalse(completed.exists())
 
     def test_unsafe_xml_and_symlinked_cache_fail_closed(self) -> None:
         self.xml.write_text('<!DOCTYPE x [<!ENTITY y "z">]><v8e:EventLog xmlns:v8e="http://v8.1c.ru/eventLog"/>', encoding="utf-8")

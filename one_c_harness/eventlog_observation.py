@@ -9,6 +9,8 @@ import json
 import os
 from pathlib import Path
 import secrets
+import selectors
+import signal
 import stat
 import subprocess
 import tempfile
@@ -95,28 +97,87 @@ def _validated(
     return str(start), str(end), clean, maximum_count, limit, start_value, end_value
 
 
+def _clean_filters(filters: object) -> dict[str, str]:
+    if not isinstance(filters, dict) or set(filters) - set(_FILTERS):
+        raise ValueError("filters are invalid")
+    clean: dict[str, str] = {}
+    for key, value in filters.items():
+        if not isinstance(value, str) or not value.strip() or len(value) > 128 or any(ord(ch) < 32 for ch in value):
+            raise ValueError("filters are invalid")
+        clean[key] = value
+    return clean
+
+
 def _export(command: Path, request: dict[str, object], project_root: Path) -> tuple[bytes | None, dict[str, object] | None]:
     cache = project_root / _CACHE
     if cache.is_symlink():
         return None, _blocked("source_invalid", "registration log cache is invalid")
     cache.mkdir(parents=True, exist_ok=True)
-    with tempfile.TemporaryFile(dir=cache) as output:
+    encoded = json.dumps(request, ensure_ascii=False, sort_keys=True, separators=(",", ":")).encode("utf-8")
+    try:
+        process = subprocess.Popen(
+            [str(command)], stdin=subprocess.PIPE, stdout=subprocess.PIPE, stderr=subprocess.DEVNULL,
+            start_new_session=True,
+        )
+    except OSError:
+        return None, _result("unavailable", reasonCode="source_unavailable", message="registration log source is unavailable")
+    assert process.stdin is not None and process.stdout is not None
+
+    def stop_owned_group() -> None:
         try:
-            completed = subprocess.run(
-                [str(command)], input=json.dumps(request, ensure_ascii=False, sort_keys=True, separators=(",", ":")).encode("utf-8"),
-                stdout=output, stderr=subprocess.DEVNULL, timeout=_TIMEOUT_SECONDS, check=False,
-            )
+            os.killpg(process.pid, signal.SIGTERM)
+        except ProcessLookupError:
+            pass
+        try:
+            process.wait(timeout=.5)
         except subprocess.TimeoutExpired:
-            return None, _result("unavailable", reasonCode="source_timeout", message="registration log source timed out")
-        except OSError:
-            return None, _result("unavailable", reasonCode="source_unavailable", message="registration log source is unavailable")
-        if completed.returncode != 0:
-            return None, _result("unavailable", reasonCode="source_failed", message="registration log source failed")
-        size = output.tell()
-        if size > _MAX_XML_BYTES:
-            return None, _blocked("source_byte_limit", "registration log XML exceeded the byte limit")
-        output.seek(0)
-        return output.read(), None
+            try:
+                os.killpg(process.pid, signal.SIGKILL)
+            except ProcessLookupError:
+                pass
+            process.wait(timeout=1)
+
+    try:
+        process.stdin.write(encoded)
+        process.stdin.close()
+    except (BrokenPipeError, OSError):
+        stop_owned_group()
+        return None, _result("unavailable", reasonCode="source_failed", message="registration log source failed")
+
+    received = bytearray()
+    selector = selectors.DefaultSelector()
+    selector.register(process.stdout, selectors.EVENT_READ)
+    deadline = time.monotonic() + _TIMEOUT_SECONDS
+    eof = False
+    try:
+        while not eof:
+            if time.monotonic() >= deadline:
+                stop_owned_group()
+                return None, _result("unavailable", reasonCode="source_timeout", message="registration log source timed out")
+            for key, _mask in selector.select(timeout=min(.05, max(0, deadline - time.monotonic()))):
+                chunk = os.read(key.fd, 65536)
+                if not chunk:
+                    eof = True
+                    break
+                received.extend(chunk)
+                if len(received) > _MAX_XML_BYTES:
+                    stop_owned_group()
+                    return None, _blocked("source_byte_limit", "registration log XML exceeded the byte limit")
+            if process.poll() is not None and not selector.select(timeout=0):
+                chunk = os.read(process.stdout.fileno(), 65536)
+                if chunk:
+                    received.extend(chunk)
+                    if len(received) > _MAX_XML_BYTES:
+                        return None, _blocked("source_byte_limit", "registration log XML exceeded the byte limit")
+                else:
+                    eof = True
+    finally:
+        selector.close()
+        process.stdout.close()
+    return_code = process.wait(timeout=1)
+    if return_code != 0:
+        return None, _result("unavailable", reasonCode="source_failed", message="registration log source failed")
+    return bytes(received), None
 
 
 def _text(element: ET.Element, name: str) -> str | None:
@@ -225,6 +286,19 @@ def _facets(records: list[dict[str, object]]) -> dict[str, list[dict[str, object
     return result
 
 
+def _record_filter_value(record: dict[str, object], key: str) -> object:
+    if key == "event":
+        return record.get("event")
+    if key == "level":
+        return record.get("level")
+    container = record.get(key)
+    return container.get("name") if isinstance(container, dict) else None
+
+
+def _matches(record: dict[str, object], filters: dict[str, str]) -> bool:
+    return all(_record_filter_value(record, key) == value for key, value in filters.items())
+
+
 def select(
     project_root: Path, start: object, end: object, filters: object,
     maximumCount: object, limit: object,
@@ -296,18 +370,38 @@ def select(
     )
 
 
-def page(project_root: Path, selection_ref: object, offset: object, limit: object) -> dict[str, object]:
+def page(
+    project_root: Path, selection_ref: object, offset: object, limit: object,
+    filters: object | None = None,
+) -> dict[str, object]:
     if type(offset) is not int or offset < 0 or type(limit) is not int or not 1 <= limit <= _MAX_PAGE:
         return _blocked("invalid_request", "page arguments are invalid")
+    try:
+        refinement = _clean_filters({} if filters is None else filters)
+    except ValueError:
+        return _blocked("invalid_request", "page filters are invalid")
     selection = _read_selection(project_root, selection_ref)
     if selection is None or selection_ref != f"eventlog:{selection['id']}":
         return _blocked("evidence_not_found", "registration log selection is unavailable")
-    records = selection["records"]
+    base_filters = selection["filters"]
+    if any(key in base_filters and base_filters[key] != value for key, value in refinement.items()):
+        return _blocked("invalid_request", "page filters must narrow the retained selection")
+    effective_filters = {**base_filters, **refinement}
+    records = [value for value in selection["records"] if _matches(value, effective_filters)]
     page_records = records[offset:offset + limit]
+    coverage = dict(selection["coverage"])
+    coverage["limitedToRetainedSelection"] = True
     return _result(
         "partial" if selection["coverage"]["partial"] else "ok",
         selectionRef=selection_ref, offset=offset, total=len(records), truncated=offset + len(page_records) < len(records),
-        records=page_records, coverage=selection["coverage"], snapshot={"stable": True},
+        records=page_records,
+        summary={
+            "source": "1c_registration_log", "window": selection["window"], "filters": effective_filters,
+            "baseSelectionRef": selection_ref, "recordCount": len(records),
+            "countScope": "refinedRetainedSelection" if refinement else "retainedFilteredSelection",
+            "coverage": coverage,
+        },
+        coverage=coverage, snapshot={"stable": True},
     )
 
 
@@ -319,6 +413,8 @@ def record(project_root: Path, record_ref: object) -> dict[str, object]:
         if value.get("recordRef") == record_ref:
             return _result(
                 "partial" if selection["coverage"]["partial"] else "ok",
+                source="1c_registration_log", selectionRef=f"eventlog:{selection['id']}",
+                window=selection["window"], filters=selection["filters"],
                 record=value, coverage=selection["coverage"], snapshot={"stable": True},
             )
     return _blocked("evidence_not_found", "registration log record is unavailable")

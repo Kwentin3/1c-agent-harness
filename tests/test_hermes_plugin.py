@@ -132,6 +132,9 @@ class HermesPluginTests(unittest.TestCase):
         self.assertEqual(select_schema["properties"]["maximumCount"]["maximum"], 100)
         self.assertEqual(select_schema["properties"]["limit"]["maximum"], 20)
         self.assertEqual(set(select_schema["properties"]["filters"]["properties"]), {"event", "level", "user", "metadata"})
+        page_schema = schemas["one_c_page_registration_log"]["parameters"]
+        self.assertIn("filters", page_schema["properties"])
+        self.assertNotIn("filters", page_schema["required"])
 
         response = json.loads(context.tools["one_c_select_registration_log"]({
             "start": "2026-09-22T06:44:00", "end": "2026-09-22T06:45:00",
@@ -141,6 +144,47 @@ class HermesPluginTests(unittest.TestCase):
         payload = json.loads(base64.b64decode(encoded))
         self.assertEqual(payload["operation"], "eventlog_select")
         self.assertEqual(response["selectionRef"], "eventlog:abc")
+
+    def test_registration_log_compaction_preserves_scope_and_partial_coverage(self) -> None:
+        plugin = _plugin_module()
+        common = {
+            "level": "Information", "event": "_$Session$_.Start",
+            "user": {"name": "alice", "presentation": "Alice"},
+            "metadata": {"name": None, "presentation": None}, "transactionStatus": "NotApplicable",
+        }
+        result = {
+            "artifactId": _artifact_id(), "capabilityVersion": "0.3.0", "schemaVersion": 1,
+            "operation": "eventlog_page", "status": "partial", "selectionRef": "eventlog:abc",
+            "offset": 0, "total": 2, "truncated": False,
+            "summary": {
+                "source": "1c_registration_log", "window": {"start": "a", "end": "b", "sourceTimeZone": "UTC"},
+                "filters": {"event": "_$Session$_.Start"}, "baseSelectionRef": "eventlog:abc",
+                "recordCount": 2, "countScope": "refinedRetainedSelection",
+                "coverage": {"complete": False, "partial": True, "reasonCode": "maximum_count_boundary", "limitedToRetainedSelection": True},
+            },
+            "coverage": {"complete": False, "partial": True, "reasonCode": "maximum_count_boundary", "limitedToRetainedSelection": True},
+            "records": [
+                {**common, "occurredAt": "2026-09-22T09:00:00", "recordRef": "eventlog:abc:record:0:x", "selectionIndex": 0, "eventPresentation": "Start"},
+                {**common, "occurredAt": "2026-09-22T09:00:01", "recordRef": "eventlog:abc:record:1:y", "selectionIndex": 1, "eventPresentation": "Start"},
+            ],
+            "snapshot": {"stable": True},
+        }
+        context = _Context({"output": json.dumps(result) + "\n", "exit_code": 0})
+        plugin.register(context)
+
+        response = json.loads(context.tools["one_c_page_registration_log"]({
+            "selectionRef": "eventlog:abc", "offset": 0, "limit": 20,
+            "filters": {"event": "_$Session$_.Start"},
+        }))
+
+        self.assertNotIn("artifactId", response)
+        self.assertNotIn("operation", response)
+        self.assertEqual(response["status"], "partial")
+        self.assertFalse(response["coverage"]["complete"])
+        self.assertEqual(response["summary"]["countScope"], "refinedRetainedSelection")
+        self.assertEqual(response["recordCommon"]["event"], "_$Session$_.Start")
+        self.assertNotIn("event", response["records"][0])
+        self.assertIn("recordRef", response["records"][0])
 
     def test_open_dispatches_only_the_public_terminal_tool_and_checks_version(self) -> None:
         plugin = _plugin_module()

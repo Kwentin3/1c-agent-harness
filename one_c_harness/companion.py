@@ -254,9 +254,11 @@ def _eventlog_select(arguments: dict[str, object], project_root: Path) -> dict[s
 
 
 def _eventlog_page(arguments: dict[str, object], project_root: Path) -> dict[str, object]:
-    if set(arguments) != {"selectionRef", "offset", "limit"}:
+    if set(arguments) not in ({"selectionRef", "offset", "limit"}, {"selectionRef", "offset", "limit", "filters"}):
         raise CompanionError("eventlog_page arguments are invalid")
-    result = eventlog_observation.page(project_root, arguments["selectionRef"], arguments["offset"], arguments["limit"])
+    result = eventlog_observation.page(
+        project_root, arguments["selectionRef"], arguments["offset"], arguments["limit"], arguments.get("filters"),
+    )
     return {"artifactId": ARTIFACT_ID, "capabilityVersion": CAPABILITY_VERSION, "operation": "eventlog_page", "schemaVersion": SCHEMA_VERSION, **result}
 
 

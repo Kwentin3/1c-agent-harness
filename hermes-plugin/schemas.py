@@ -35,6 +35,17 @@ def _tool(name: str, properties: dict[str, object], required: list[str], descrip
     }
 
 
+def _eventlog_filters() -> dict[str, object]:
+    return {
+        "type": "object",
+        "properties": {
+            name: {"type": "string", "minLength": 1, "maxLength": 128}
+            for name in ("event", "level", "user", "metadata")
+        },
+        "additionalProperties": False,
+    }
+
+
 TOOLS = (
     _tool("one_c_open", {}, [], "Open the admitted target in the currently selected Hermes terminal workspace."),
     _tool(
@@ -105,16 +116,7 @@ TOOLS = (
         {
             "start": {"type": "string", "description": "Inclusive source-local calendar start without an offset."},
             "end": {"type": "string", "description": "Inclusive source-local calendar end without an offset; at most 24 hours after start."},
-            "filters": {
-                "type": "object",
-                "properties": {
-                    "event": {"type": "string", "minLength": 1, "maxLength": 128},
-                    "level": {"type": "string", "minLength": 1, "maxLength": 128},
-                    "user": {"type": "string", "minLength": 1, "maxLength": 128},
-                    "metadata": {"type": "string", "minLength": 1, "maxLength": 128},
-                },
-                "additionalProperties": False,
-            },
+            "filters": _eventlog_filters(),
             "maximumCount": {"type": "integer", "minimum": 1, "maximum": 100},
             "limit": {"type": "integer", "minimum": 1, "maximum": 20},
         },
@@ -127,6 +129,7 @@ TOOLS = (
             "selectionRef": {"type": "string", "minLength": 1, "maxLength": 128},
             "offset": {"type": "integer", "minimum": 0},
             "limit": {"type": "integer", "minimum": 1, "maximum": 20},
+            "filters": _eventlog_filters(),
         },
         ["selectionRef", "offset", "limit"],
         "Page records from one exact retained registration-log selection.",

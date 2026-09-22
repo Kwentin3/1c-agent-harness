@@ -11,10 +11,11 @@ license = {text = "UNLICENSED"}
 
 [project.scripts]
 one-c-harness = "one_c_harness.companion:main"
+one-c-eventlog-exporter = "one_c_harness.eventlog_exporter:main"
 
 [tool.setuptools]
 packages = ["one_c_harness"]
 
 [tool.setuptools.package-data]
-one_c_harness = ["release.json"]
+one_c_harness = ["release.json", "eventlog_epf/**/*.xml", "eventlog_epf/**/*.bsl"]
 

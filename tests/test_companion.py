@@ -218,6 +218,7 @@ sys.stdout.write('<?xml version="1.0"?><v8e:EventLog xmlns:v8e="http://v8.1c.ru/
                 }), project)
                 page = companion.execute(_request("eventlog_page", {
                     "selectionRef": selected["selectionRef"], "offset": 0, "limit": 20,
+                    "filters": {"level": "Error"},
                 }), project)
                 record = companion.execute(_request("eventlog_record", {
                     "recordRef": page["records"][0]["recordRef"],
@@ -230,6 +231,7 @@ sys.stdout.write('<?xml version="1.0"?><v8e:EventLog xmlns:v8e="http://v8.1c.ru/
 
         self.assertEqual(selected["operation"], "eventlog_select")
         self.assertEqual(page["operation"], "eventlog_page")
+        self.assertEqual(page["summary"]["countScope"], "refinedRetainedSelection")
         self.assertEqual(record["operation"], "eventlog_record")
         self.assertEqual(record["record"]["metadata"]["name"], "Document.Invoice")
 
