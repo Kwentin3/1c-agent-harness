@@ -220,6 +220,28 @@ capture plus the already-added wrapper error log; an `xwd` reader/viewer is the
 single missing observation resource. Repeating the same headless invocation
 without that new evidence would add no distinguishing evidence.
 
+### Observation preflight after launcher correction
+
+The authorized no-1C preflight used the same executor, Debian `xvfb-run`, its
+documented `-e` wrapper log and Xvfb `-fbdir` through the wrapper's `-s` server
+argument. It created a private 64×64 own-display capture (7,328 bytes,
+`sha256:5828e5437285391f814db0988f2e73dd951ab8af7f047c1c53ce9d1cf027da7a`),
+copied it through the existing authenticated path, and verified the copied hash.
+The wrapper log was empty and no Xvfb or 1C process remained.
+
+The capture was **not** accepted as a readable observation: no `xwud`, `xv`,
+`xloadimage`, ImageMagick, FFmpeg or Pillow was installed on the executor or in
+the available diagnostic environment, and the available image reader rejected
+the XWD format. Creation and hash equality alone are not a viewed image.
+Consequently no file IB was prepared and no EPF build, exporter invocation or
+`ENTERPRISE /Execute` run consumed the newly authorized native budget. The
+private preflight capture remains task-local and is not published.
+
+The exact remaining prerequisite is one already-available, locally usable XWD
+reader/converter. It must be admitted and proven on this retained harmless
+capture before another 1C launch can be considered; no package, custom decoder,
+public conversion service or GUI automation was added.
+
 ## Verification and limits
 
 Static tests cover:
