@@ -155,6 +155,20 @@ class EventLogExporterTests(unittest.TestCase):
             "message": "fake xvfb wrapper diagnostics",
         })
 
+    def test_environment_isolates_xdg_state_below_task_owned_home(self) -> None:
+        self._platform("pass")
+        settings = eventlog_exporter._load_settings()
+        home = self.root / "owned-home"; home.mkdir()
+        temporary = self.root / "owned-tmp"; temporary.mkdir()
+
+        environment = eventlog_exporter._environment(settings, home, temporary)
+
+        self.assertEqual(environment["HOME"], str(home))
+        self.assertEqual(environment["TMPDIR"], str(temporary))
+        for key, name in (("XDG_CACHE_HOME", "xdg-cache"), ("XDG_CONFIG_HOME", "xdg-config"), ("XDG_DATA_HOME", "xdg-data")):
+            self.assertEqual(environment[key], str(home / name))
+            self.assertTrue((home / name).is_dir())
+
     def test_prefix_keeps_wrapper_options_outside_xvfb_arguments(self) -> None:
         self._platform("pass")
         settings = eventlog_exporter._load_settings()
