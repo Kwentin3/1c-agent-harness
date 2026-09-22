@@ -173,14 +173,6 @@ def _environment(settings: Settings, home: Path, temporary: Path) -> dict[str, s
     environment["PATH"] = f"{settings.xvfb.parent}:{environment.get('PATH', '')}"
     environment["HOME"] = str(home)
     environment["TMPDIR"] = str(temporary)
-    for key, name in (
-        ("XDG_CACHE_HOME", "xdg-cache"),
-        ("XDG_CONFIG_HOME", "xdg-config"),
-        ("XDG_DATA_HOME", "xdg-data"),
-    ):
-        location = home / name
-        location.mkdir(exist_ok=True)
-        environment[key] = str(location)
     return environment
 
 
