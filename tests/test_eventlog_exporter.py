@@ -162,8 +162,9 @@ class EventLogExporterTests(unittest.TestCase):
         self.assertIn("<Form>Main</Form>", root)
         self.assertIn('<Event name="OnOpen">ПриОткрытии</Event>', form)
         self.assertIn('<Event name="OnCreateAtServer">ПриСозданииНаСервере</Event>', form)
-        for required in ("&НаКлиенте", "Процедура ПриОткрытии(Отказ)", "Корень = ПараметрЗапуска", "ВыгрузитьНаСервере(Корень)", "&НаСервере", "Процедура ПриСозданииНаСервере(Отказ, СтандартнаяОбработка)", "ВыгрузитьЖурналРегистрации", "form-server-created", "client-entered", "server-entered", "export-started", "export-returned", "complete", "ПрекратитьРаботуСистемы"):
+        for required in ("&НаКлиенте", "Процедура ПриОткрытии(Отказ)", "Корень = ПараметрЗапуска()", "ВыгрузитьНаСервере(Корень)", "&НаСервере", "Процедура ПриСозданииНаСервере(Отказ, СтандартнаяОбработка)", "ВыгрузитьЖурналРегистрации", "form-server-created", "client-entered", "server-entered", "export-started", "export-returned", "complete", "ПрекратитьРаботуСистемы"):
             self.assertIn(required, module)
+        self.assertNotIn("ПараметрЗапуска +", module)
         self.assertNotIn("Выполнить(", module)
         self.assertNotIn("Вычислить(", module)
         project = (Path(eventlog_exporter.__file__).parent.parent / "pyproject.toml").read_text(encoding="utf-8")
