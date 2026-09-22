@@ -274,9 +274,52 @@ form opened or identify the cause of the timeout.
 
 The disposable IBs, work copies, homes, temporary areas, logs and remote
 worktree were removed after bounded receipts and the task-local screenshot were
-copied. No production CF, live infobase, immutable snapshot or deployment setting
-changed. A further native launch needs separate owner authorization; repeating this
-same candidate is not justified by this evidence.
+No production CF, live infobase, immutable snapshot or deployment setting changed. A
+further native launch needs separate owner authorization; repeating this same
+candidate is not justified by this evidence.
+
+### Authorized startup-route controls after issue comment 5782298368
+
+The new authorization allowed at most eight `ENTERPRISE` launches and 45 minutes
+across all 1C commands. The bounded investigation used **six** `ENTERPRISE`
+controls and one `DESIGNER /Execute` control; each lifecycle, including its
+disposable preparation and EPF build, took at most 173,000 ms. The aggregate was
+below the 45-minute cap. One `ENTERPRISE` launch remains unused intentionally:
+there is no further material hypothesis that it would distinguish.
+
+Every control used a fresh file IB made from a copy of the same immutable Jet
+snapshot, a task-owned external EPF whose object-module `ПриОткрытии` can only
+write a `<receipt>.entered` marker, and a 120-second maximum runtime. It does
+not invoke `UnloadEventLog`. Preparation and build completed, then each control
+ended without the marker. The snapshot closure remained
+`e437eeb98382c571e42cecb3803d98b6228e4771cabfd81ebe0f79a6275fa594`; each
+owned process group was cleaned up. The controls were:
+
+- thick client with the object-module entry rather than the candidate form;
+- the same client plus isolated `XDG_*` state;
+- the same launch with bounded `strace` and framebuffer observation;
+- the same launch without `DisableStartupDialogs` or `DisableStartupMessages`;
+- `DESIGNER /Execute` with the same EPF;
+- thick client at the prior v3 screen geometry `1280x1024x8`;
+- the installed matching-version thin client `1cv8ct`.
+
+The trace run reached its 8 MiB diagnostic cap rather than the timer. Its
+sanitized aggregate contains only Unix-display connects, no Internet connects,
+no refused/timed-out/access-denied connect result, repeated waits, and repeated
+attempts to read absent new-session/cache files. It does not identify a causal
+missing file. The readable framebuffer from the no-dialog control is a black
+1024x768 screen with a pointer and no 1C window, dialog, or error. Therefore the
+only supported conclusion is that ordinary application startup has not reached
+`/Execute`'s EPF object-module entry under these disposable headless controls.
+It is not evidence about an empty log, an EPF compilation failure, or a specific
+platform defect.
+
+The short-lived `XDG_*` exporter patch was tested but did not change the control
+result; it was reverted before this documentation update. No new runtime route,
+deployment setting, source-configuration change, or retained selection is
+claimed. A productive next step requires a new owner decision on a different
+standard, non-configuration-patch acquisition route or additional environment
+resources that can be shown to distinguish this startup boundary.
 
 ## Verification and limits
 
