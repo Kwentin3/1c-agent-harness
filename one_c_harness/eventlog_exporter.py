@@ -7,6 +7,7 @@ from __future__ import annotations
 
 from dataclasses import dataclass
 from datetime import datetime
+import hashlib
 import json
 import os
 from pathlib import Path
@@ -16,6 +17,7 @@ import stat
 import subprocess
 import sys
 import tempfile
+import threading
 import time
 from typing import Any
 
@@ -38,10 +40,37 @@ _REQUEST_KEYS = {
 _FILTERS = {"event", "level", "user", "metadata"}
 _TIMEOUT_SECONDS = 115
 _MAX_BYTES = 1024 * 1024
+_DIAGNOSTIC_BYTES = 4096
+_DIAGNOSTIC_MESSAGE_BYTES = 512
 
 
 class ExportFailure(RuntimeError):
     """Stable non-secret exporter failure."""
+
+    def __init__(self, reason_code: str, diagnostic: dict[str, object] | None = None):
+        super().__init__(reason_code)
+        self.diagnostic = diagnostic
+
+
+class _BoundedStderr:
+    def __init__(self) -> None:
+        self._digest = hashlib.sha256()
+        self._payload = bytearray()
+        self.byte_count = 0
+
+    def consume(self, stream: object) -> None:
+        assert hasattr(stream, "read")
+        while chunk := stream.read(4096):
+            self.byte_count += len(chunk)
+            self._digest.update(chunk)
+            if len(self._payload) < _DIAGNOSTIC_BYTES:
+                self._payload.extend(chunk[:_DIAGNOSTIC_BYTES - len(self._payload)])
+
+    def join(self, reader: threading.Thread) -> None:
+        reader.join(timeout=2)
+
+    def summary(self) -> dict[str, object]:
+        return _diagnostic_summary(bytes(self._payload), self.byte_count, self._digest.hexdigest())
 
 
 @dataclass(frozen=True)
@@ -174,6 +203,65 @@ def _stop_group(process: subprocess.Popen[bytes]) -> None:
         process.wait(timeout=2)
 
 
+def _safe_message(payload: bytes) -> str | None:
+    text = payload.decode("utf-8", errors="replace")
+    lines = []
+    for raw_line in text.splitlines():
+        line = " ".join(raw_line.split())
+        if not line:
+            continue
+        line = line.replace("\x00", "")
+        if "/" in line:
+            line = "<path-redacted>"
+        if len(line.encode("utf-8")) > _DIAGNOSTIC_MESSAGE_BYTES:
+            line = line.encode("utf-8")[:_DIAGNOSTIC_MESSAGE_BYTES].decode("utf-8", errors="ignore")
+        lines.append(line)
+        break
+    return lines[0] if lines else None
+
+
+def _diagnostic_summary(payload: bytes, byte_count: int, digest: str) -> dict[str, object]:
+    if byte_count == 0:
+        return {"state": "empty"}
+    result: dict[str, object] = {
+        "state": "captured" if byte_count <= len(payload) else "truncated",
+        "byteCount": byte_count,
+        "sha256": digest,
+    }
+    message = _safe_message(payload)
+    if message is not None:
+        result["message"] = message
+    return result
+
+
+def _file_diagnostic(path: Path) -> dict[str, object]:
+    if not path.is_file() or path.is_symlink():
+        return {"state": "not_created"}
+    try:
+        with path.open("rb") as stream:
+            payload = stream.read(_DIAGNOSTIC_BYTES)
+        byte_count = path.stat().st_size
+    except OSError:
+        return {"state": "unreadable"}
+    return _diagnostic_summary(payload, byte_count, hashlib.sha256(payload).hexdigest())
+
+
+def _runtime_diagnostic(
+    root: Path, process: subprocess.Popen[bytes], stderr: _BoundedStderr, started: float,
+) -> dict[str, object]:
+    return {
+        "stage": "enterprise_process",
+        "wrapperExitCode": process.returncode,
+        "lifecycleMilliseconds": round((time.monotonic() - started) * 1000),
+        "receipts": {name: (root / name).is_file() for name in (
+            "client-entered", "server-entered", "export-started", "export-returned", "complete",
+        )},
+        "stderr": stderr.summary(),
+        "runtimeLog": _file_diagnostic(root / "runtime.log"),
+        "dumpResult": _file_diagnostic(root / "runtime.result"),
+    }
+
+
 def _write_request(root: Path, request: dict[str, Any]) -> None:
     start = datetime.fromisoformat(request["start"]).strftime("%Y%m%d%H%M%S")
     end = datetime.fromisoformat(request["end"]).strftime("%Y%m%d%H%M%S")
@@ -201,10 +289,14 @@ def run_once(request: object) -> tuple[bytes, dict[str, object]]:
         try:
             process = subprocess.Popen(
                 argv, env=_environment(settings, home, temporary), stdin=subprocess.DEVNULL,
-                stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL, start_new_session=True,
+                stdout=subprocess.DEVNULL, stderr=subprocess.PIPE, start_new_session=True,
             )
         except OSError:
             raise ExportFailure("source_unavailable") from None
+        assert process.stderr is not None
+        stderr = _BoundedStderr()
+        reader = threading.Thread(target=stderr.consume, args=(process.stderr,), daemon=True)
+        reader.start()
         deadline = started + _TIMEOUT_SECONDS
         export_started: float | None = None
         export_returned: float | None = None
@@ -221,20 +313,27 @@ def run_once(request: object) -> tuple[bytes, dict[str, object]]:
                 output_size = 0
             if output_size > admitted["maximumBytes"]:
                 _stop_group(process)
-                raise ExportFailure("source_byte_limit")
+                stderr.join(reader)
+                process.stderr.close()
+                raise ExportFailure("source_byte_limit", _runtime_diagnostic(root, process, stderr, started))
             if now >= deadline:
                 _stop_group(process)
-                raise ExportFailure("source_timeout")
+                stderr.join(reader)
+                process.stderr.close()
+                raise ExportFailure("source_timeout", _runtime_diagnostic(root, process, stderr, started))
             time.sleep(.02)
         ended = time.monotonic()
+        stderr.join(reader)
+        process.stderr.close()
+        diagnostic = _runtime_diagnostic(root, process, stderr, started)
         if process.returncode != 0:
-            raise ExportFailure("source_process_failed")
+            raise ExportFailure("source_process_failed", diagnostic)
         required = ("client-entered", "server-entered", "export-started", "export-returned", "complete")
         if any(not (root / name).is_file() for name in required) or not output.is_file():
-            raise ExportFailure("source_incomplete_receipt")
+            raise ExportFailure("source_incomplete_receipt", diagnostic)
         xml = output.read_bytes()
         if len(xml) > admitted["maximumBytes"]:
-            raise ExportFailure("source_byte_limit")
+            raise ExportFailure("source_byte_limit", diagnostic)
         if export_started is None:
             export_started = started
         if export_returned is None:
@@ -280,7 +379,7 @@ def build_epf(destination: Path) -> dict[str, object]:
         return {"status": "ok", "epfBytes": destination.stat().st_size}
 
 
-def _write_failure_receipt(reason_code: str) -> None:
+def _write_failure_receipt(reason_code: str, diagnostic: dict[str, object] | None = None) -> None:
     raw = os.environ.get("ONE_C_HARNESS_EVENTLOG_METRICS")
     if not raw:
         return
@@ -290,8 +389,11 @@ def _write_failure_receipt(reason_code: str) -> None:
         return
     temporary = path.with_suffix(".tmp")
     try:
+        receipt: dict[str, object] = {"reasonCode": reason_code, "status": "failed"}
+        if diagnostic is not None:
+            receipt["diagnostic"] = diagnostic
         temporary.write_text(
-            json.dumps({"reasonCode": reason_code, "status": "failed"}, sort_keys=True, separators=(",", ":")),
+            json.dumps(receipt, sort_keys=True, separators=(",", ":")),
             encoding="utf-8",
         )
         os.replace(temporary, path)
@@ -302,7 +404,21 @@ def _write_failure_receipt(reason_code: str) -> None:
             pass
 
 
+def _public_failure(reason_code: str, diagnostic: dict[str, object] | None) -> dict[str, object]:
+    result: dict[str, object] = {"reasonCode": reason_code}
+    if not isinstance(diagnostic, dict) or diagnostic.get("stage") != "enterprise_process":
+        return result
+    result["stage"] = "enterprise_process"
+    for name in ("runtimeLog", "stderr", "dumpResult"):
+        value = diagnostic.get(name)
+        if isinstance(value, dict) and isinstance(value.get("message"), str):
+            result["message"] = value["message"]
+            break
+    return result
+
+
 def main() -> int:
+    diagnostic: dict[str, object] | None = None
     try:
         if len(sys.argv) == 3 and sys.argv[1] == "--build":
             result = build_epf(Path(sys.argv[2]))
@@ -318,8 +434,9 @@ def main() -> int:
         failure = "invalid_request"
     except ExportFailure as exc:
         failure = str(exc)
-    _write_failure_receipt(failure)
-    sys.stderr.write(failure + "\n")
+        diagnostic = exc.diagnostic
+    _write_failure_receipt(failure, diagnostic)
+    sys.stderr.write(json.dumps(_public_failure(failure, diagnostic), sort_keys=True, separators=(",", ":")) + "\n")
     return 2
 
 

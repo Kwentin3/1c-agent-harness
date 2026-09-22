@@ -114,18 +114,43 @@ class EventLogExporterTests(unittest.TestCase):
     def test_failed_command_writes_safe_deployment_receipt(self) -> None:
         metrics = self.root / "failure.json"
         os.environ["ONE_C_HARNESS_EVENTLOG_METRICS"] = str(metrics)
-        self._platform("raise SystemExit(7)\n")
+        self._platform("""
+            import pathlib, sys
+            args=sys.argv[1:]; root=pathlib.Path(args[args.index('/C')+1])
+            sys.stderr.write('wrapper failure at /private/runtime\\n')
+            (root/'runtime.log').write_text('External data processor could not be opened')
+            (root/'runtime.result').write_text('3')
+            raise SystemExit(7)
+        """)
         stdin = type("Input", (), {"buffer": io.BytesIO(json.dumps(self.request).encode())})()
         stdout = type("Output", (), {"buffer": io.BytesIO()})()
+        standard_error = io.StringIO()
         with (
             mock.patch.object(eventlog_exporter.sys, "argv", ["one-c-eventlog-exporter"]),
             mock.patch.object(eventlog_exporter.sys, "stdin", stdin),
             mock.patch.object(eventlog_exporter.sys, "stdout", stdout),
-            mock.patch.object(eventlog_exporter.sys, "stderr", io.StringIO()),
+            mock.patch.object(eventlog_exporter.sys, "stderr", standard_error),
         ):
             code = eventlog_exporter.main()
         self.assertEqual(code, 2)
-        self.assertEqual(json.loads(metrics.read_text()), {"reasonCode": "source_process_failed", "status": "failed"})
+        receipt = json.loads(metrics.read_text())
+        self.assertEqual(receipt["status"], "failed")
+        self.assertEqual(receipt["reasonCode"], "source_process_failed")
+        diagnostic = receipt["diagnostic"]
+        self.assertEqual(diagnostic["stage"], "enterprise_process")
+        self.assertEqual(diagnostic["wrapperExitCode"], 7)
+        self.assertEqual(diagnostic["receipts"], {
+            "client-entered": False, "server-entered": False, "export-started": False,
+            "export-returned": False, "complete": False,
+        })
+        self.assertEqual(diagnostic["stderr"]["message"], "<path-redacted>")
+        self.assertEqual(diagnostic["runtimeLog"]["message"], "External data processor could not be opened")
+        self.assertEqual(diagnostic["dumpResult"]["message"], "3")
+        self.assertNotIn(str(self.root), json.dumps(receipt))
+        self.assertEqual(json.loads(standard_error.getvalue()), {
+            "reasonCode": "source_process_failed", "stage": "enterprise_process",
+            "message": "External data processor could not be opened",
+        })
 
     def test_epf_source_has_default_managed_form_and_verified_entry_chain(self) -> None:
         source = Path(eventlog_exporter.__file__).with_name("eventlog_epf")

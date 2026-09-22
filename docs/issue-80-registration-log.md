@@ -66,9 +66,11 @@ reapplies the interval and every exact filter to the returned XML rather than
 trusting the deployment command alone.
 
 If the fixed command or timezone is absent, invalid, times out or exits nonzero,
-the source is `unavailable`; it is never reported as an empty selection. Malformed,
-unsafe or oversized XML is blocked. A valid empty `EventLog` is an `ok` selection
-with zero records.
+the source is `unavailable`; it is never reported as an empty selection. A known
+exporter failure may expose only the closed tuple `reasonCode`,
+`stage=enterprise_process` and a bounded, path-redacted message. Arbitrary stderr
+is not exposed. Malformed, unsafe or oversized XML is blocked. A valid empty
+`EventLog` is an `ok` selection with zero records.
 
 ## Selection, page and record semantics
 
@@ -121,13 +123,29 @@ Two bounded admission attempts were used in an isolated disposable file infobase
    at the 90-second bound. The disposable infobase was removed and no 1C/Xvfb
    process remained.
 
-The native budget is exhausted. Consequently this PR does **not** claim that a
-working deployment exporter or selected-base round trip exists. It implements and
-tests the safe product boundary and returns `source_unavailable` until deployment
-provides a separately verified fixed exporter (most likely an EPF with a valid
-managed form/entrypoint) and explicitly authorizes installation. It does not fall
-back to a new blank infobase and does not use the historical temporary
-configuration patch as a permanent source.
+The latest selected-base attempt created the prepared EPF and invoked the exporter
+once, but produced none of its five EPF markers, XML, `/Out`, `/DumpResult` or a
+retained runtime exit code. This is not evidence that the form, `/Execute`, native
+API or client/server boundary failed: the then-current exporter sent stderr to
+`DEVNULL`, mapped every nonzero wrapper exit to `source_failed`, and removed its
+temporary directory before preserving the platform files.
+
+The minimal correction preserves one bounded failure receipt at that existing
+exporter boundary: lifecycle duration, wrapper exit code, five marker-presence
+bits, and the state/SHA-256/path-redacted excerpt of stderr, `/Out` and
+`/DumpResult`. The raw command line, credentials and arbitrary diagnostic text are
+not returned to the plugin. The companion exposes a diagnostic only when stderr is
+the exact safe exporter JSON contract; other stderr remains `source_failed`.
+
+No new native launch is authorized by this correction. Consequently this PR does
+**not** claim that a working deployment exporter or selected-base round trip
+exists. One future distinguishing run of this exact new head would separate: a
+platform/wrapper exit with its bounded message and code, an entrypoint failure with
+the marker pattern, and a successful XML receipt. It uses the existing selected
+disposable file infobase, one exporter invocation, the same timeout/XML cap and
+process cleanup; it persists only the bounded failure receipt under the existing
+task-local metrics path. It does not fall back to a blank infobase or use the
+historical temporary configuration patch as a permanent source.
 
 ## Verification and limits
 

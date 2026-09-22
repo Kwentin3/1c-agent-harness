@@ -14,6 +14,7 @@ import signal
 import stat
 import subprocess
 import tempfile
+import threading
 import time
 from typing import Any
 import xml.etree.ElementTree as ET
@@ -28,6 +29,7 @@ _MAXIMUM_COUNT = 100
 _MAX_PAGE = 20
 _MAX_XML_BYTES = 1024 * 1024
 _TIMEOUT_SECONDS = 120
+_MAX_SOURCE_ERROR_BYTES = 1024
 _FIELDS = (
     "Date", "Level", "Event", "EventPresentation", "User", "UserPresentation",
     "Metadata", "MetadataPresentation", "TransactionStatus",
@@ -46,6 +48,27 @@ def _result(status: str, **values: object) -> dict[str, object]:
 
 def _blocked(reason: str, message: str) -> dict[str, object]:
     return _result("blocked", reasonCode=reason, message=message)
+
+
+def _source_error(stderr: bytes) -> dict[str, object]:
+    try:
+        value = json.loads(stderr.decode("utf-8"))
+    except (UnicodeDecodeError, json.JSONDecodeError):
+        value = None
+    if (
+        isinstance(value, dict)
+        and set(value) in ({"reasonCode"}, {"reasonCode", "stage"}, {"reasonCode", "stage", "message"})
+        and value.get("reasonCode") in {"source_process_failed", "source_timeout", "source_byte_limit", "source_incomplete_receipt"}
+        and value.get("stage") in {None, "enterprise_process"}
+        and ("message" not in value or (isinstance(value["message"], str) and 0 < len(value["message"].encode("utf-8")) <= 512 and "\n" not in value["message"] and "\r" not in value["message"]))
+    ):
+        result: dict[str, object] = {"status": "unavailable", "reasonCode": value["reasonCode"], "message": "registration log source failed"}
+        if value.get("stage") == "enterprise_process":
+            result["stage"] = "enterprise_process"
+        if "message" in value:
+            result["message"] = value["message"]
+        return result
+    return _result("unavailable", reasonCode="source_failed", message="registration log source failed")
 
 
 def _source() -> tuple[Path, str] | None:
@@ -116,12 +139,21 @@ def _export(command: Path, request: dict[str, object], project_root: Path) -> tu
     encoded = json.dumps(request, ensure_ascii=False, sort_keys=True, separators=(",", ":")).encode("utf-8")
     try:
         process = subprocess.Popen(
-            [str(command)], stdin=subprocess.PIPE, stdout=subprocess.PIPE, stderr=subprocess.DEVNULL,
+            [str(command)], stdin=subprocess.PIPE, stdout=subprocess.PIPE, stderr=subprocess.PIPE,
             start_new_session=True,
         )
     except OSError:
         return None, _result("unavailable", reasonCode="source_unavailable", message="registration log source is unavailable")
-    assert process.stdin is not None and process.stdout is not None
+    assert process.stdin is not None and process.stdout is not None and process.stderr is not None
+    stderr = bytearray()
+
+    def drain_stderr() -> None:
+        while chunk := process.stderr.read(4096):
+            if len(stderr) < _MAX_SOURCE_ERROR_BYTES:
+                stderr.extend(chunk[:_MAX_SOURCE_ERROR_BYTES - len(stderr)])
+
+    stderr_reader = threading.Thread(target=drain_stderr, daemon=True)
+    stderr_reader.start()
 
     def stop_owned_group() -> None:
         try:
@@ -174,9 +206,11 @@ def _export(command: Path, request: dict[str, object], project_root: Path) -> tu
     finally:
         selector.close()
         process.stdout.close()
+        stderr_reader.join(timeout=2)
+        process.stderr.close()
     return_code = process.wait(timeout=1)
     if return_code != 0:
-        return None, _result("unavailable", reasonCode="source_failed", message="registration log source failed")
+        return None, _source_error(bytes(stderr))
     return bytes(received), None
 
 

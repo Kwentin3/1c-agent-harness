@@ -148,6 +148,28 @@ class EventLogObservationTests(unittest.TestCase):
         self.assertEqual(empty["status"], "ok")
         self.assertEqual(empty["summary"]["recordCount"], 0)
 
+    def test_only_closed_safe_exporter_failure_is_exposed(self) -> None:
+        self.command.write_text(textwrap.dedent("""\
+            #!/usr/bin/env python3
+            import json, sys
+            sys.stderr.write(json.dumps({
+                "reasonCode": "source_process_failed", "stage": "enterprise_process",
+                "message": "External data processor could not be opened",
+            }))
+            raise SystemExit(2)
+        """), encoding="utf-8")
+        result = self._select()
+        self.assertEqual(result, {
+            "status": "unavailable", "reasonCode": "source_process_failed",
+            "stage": "enterprise_process", "message": "External data processor could not be opened",
+        })
+
+        self.command.write_text("#!/usr/bin/env python3\nimport sys; sys.stderr.write('/private/token'); raise SystemExit(2)\n", encoding="utf-8")
+        result = self._select()
+        self.assertEqual(result, {
+            "status": "unavailable", "reasonCode": "source_failed", "message": "registration log source failed",
+        })
+
     def test_invalid_request_is_blocked_before_command(self) -> None:
         cases = [
             {"start": "bad"},
