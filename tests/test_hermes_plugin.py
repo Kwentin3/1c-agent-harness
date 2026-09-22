@@ -3,6 +3,7 @@ from __future__ import annotations
 import base64
 import copy
 import importlib.util
+import hashlib
 import json
 from pathlib import Path
 import re
@@ -61,13 +62,29 @@ class _Context:
 
 
 class HermesPluginTests(unittest.TestCase):
-    def test_registers_one_skill_and_six_closed_tools(self) -> None:
+    def test_release_artifact_binds_companion_plugin_and_skill_closure(self) -> None:
+        paths = []
+        for pattern in ("one_c_harness/*.py", "hermes-plugin/*.py"):
+            paths.extend(ROOT.glob(pattern))
+        paths += [PLUGIN / "plugin.yaml", PLUGIN / "skills/one-c-harness/SKILL.md", ROOT / "pyproject.toml"]
+        digest = hashlib.sha256()
+        for path in sorted(path for path in paths if path.name != "release.json"):
+            relative = path.relative_to(ROOT).as_posix().encode()
+            payload = path.read_bytes()
+            digest.update(len(relative).to_bytes(4, "big")); digest.update(relative)
+            digest.update(len(payload).to_bytes(8, "big")); digest.update(payload)
+        expected = "sha256:" + digest.hexdigest()
+        companion = json.loads((ROOT / "one_c_harness/release.json").read_text())["artifactId"]
+        self.assertEqual(expected, companion)
+        self.assertEqual(expected, _artifact_id())
+
+    def test_registers_one_skill_and_nine_closed_tools(self) -> None:
         plugin = _plugin_module()
         context = _Context({"output": "{}", "exit_code": 1})
 
         plugin.register(context)
 
-        self.assertEqual(set(context.tools), {"one_c_open", "one_c_narrow_context", "one_c_native_verify", "one_c_observation_info", "one_c_observe", "one_c_expand_observation"})
+        self.assertEqual(set(context.tools), {"one_c_open", "one_c_narrow_context", "one_c_native_verify", "one_c_observation_info", "one_c_observe", "one_c_expand_observation", "one_c_select_registration_log", "one_c_page_registration_log", "one_c_read_registration_log_record"})
         self.assertIsNotNone(context.skill)
         assert context.skill is not None
         self.assertEqual(context.skill[0], "one-c-harness")
@@ -98,11 +115,38 @@ class HermesPluginTests(unittest.TestCase):
         expand_schema = next(item for item in sys.modules[plugin.__name__ + ".schemas"].TOOLS if item["name"] == "one_c_expand_observation")
         self.assertEqual(len(expand_schema["parameters"]["oneOf"]), 3)
 
+    def test_registration_log_tools_have_closed_bounded_schemas_and_dispatch_operations(self) -> None:
+        plugin = _plugin_module()
+        result = {
+            "artifactId": _artifact_id(), "capabilityVersion": "0.3.0",
+            "schemaVersion": 1, "operation": "eventlog_select", "status": "ok",
+            "selectionRef": "eventlog:abc", "records": [], "recordsTruncated": False,
+            "summary": {"coverage": {"complete": True, "partial": False}},
+            "snapshot": {"stable": True},
+        }
+        context = _Context({"output": json.dumps(result) + "\n", "exit_code": 0})
+        plugin.register(context)
+        schemas = {item["name"]: item for item in sys.modules[plugin.__name__ + ".schemas"].TOOLS}
+        select_schema = schemas["one_c_select_registration_log"]["parameters"]
+        self.assertEqual(select_schema["additionalProperties"], False)
+        self.assertEqual(select_schema["properties"]["maximumCount"]["maximum"], 100)
+        self.assertEqual(select_schema["properties"]["limit"]["maximum"], 20)
+        self.assertEqual(set(select_schema["properties"]["filters"]["properties"]), {"event", "level", "user", "metadata"})
+
+        response = json.loads(context.tools["one_c_select_registration_log"]({
+            "start": "2026-09-22T06:44:00", "end": "2026-09-22T06:45:00",
+            "filters": {}, "maximumCount": 100, "limit": 20,
+        }))
+        encoded = context.calls[-1][1]["command"].rsplit(" ", 1)[1]
+        payload = json.loads(base64.b64decode(encoded))
+        self.assertEqual(payload["operation"], "eventlog_select")
+        self.assertEqual(response["selectionRef"], "eventlog:abc")
+
     def test_open_dispatches_only_the_public_terminal_tool_and_checks_version(self) -> None:
         plugin = _plugin_module()
         result = {
             "artifactId": _artifact_id(),
-            "capabilityVersion": "0.2.0", "status": "ok", "operation": "open",
+            "capabilityVersion": "0.3.0", "status": "ok", "operation": "open",
             "snapshotRef": {"schemaVersion": 1, "status": "ready"},
         }
         context = _Context({"output": json.dumps(result) + "\n", "exit_code": 0})
@@ -126,7 +170,7 @@ class HermesPluginTests(unittest.TestCase):
         second_ref = "snapshot:selection:group:EXCP:second"
         result = {
             "artifactId": _artifact_id(),
-            "capabilityVersion": "0.2.0",
+            "capabilityVersion": "0.3.0",
             "schemaVersion": 1,
             "operation": "observe",
             "status": "ok",
@@ -187,7 +231,7 @@ class HermesPluginTests(unittest.TestCase):
     def test_successful_complete_record_page_preserves_precise_time_and_distinct_fields(self) -> None:
         plugin = _plugin_module()
         result = {
-            "artifactId": _artifact_id(), "capabilityVersion": "0.2.0",
+            "artifactId": _artifact_id(), "capabilityVersion": "0.3.0",
             "schemaVersion": 1, "operation": "expand_observation", "status": "ok",
             "level": "group", "groupRef": "snapshot:selection:group:EXCP:one",
             "offset": 0, "total": 2, "truncated": False,
@@ -272,7 +316,7 @@ class HermesPluginTests(unittest.TestCase):
             return value
         target = record(2, "hmac-sha256:target")
         result = {
-            "artifactId": _artifact_id(), "capabilityVersion": "0.2.0",
+            "artifactId": _artifact_id(), "capabilityVersion": "0.3.0",
             "schemaVersion": 1, "operation": "expand_observation", "status": "ok",
             "level": "record", "recordRef": target["recordRef"],
             "before": [record(1, "hmac-sha256:before")], "record": target,
@@ -315,13 +359,13 @@ class HermesPluginTests(unittest.TestCase):
         plugin = _plugin_module()
         cases = [
             {
-                "artifactId": _artifact_id(), "capabilityVersion": "0.2.0", "schemaVersion": 1,
+                "artifactId": _artifact_id(), "capabilityVersion": "0.3.0", "schemaVersion": 1,
                 "operation": "observe", "status": "ok", "groups": [], "groupsTruncated": False,
                 "observationRef": "snapshot:partial", "snapshot": {"partial": True, "stable": True},
                 "summary": {"coverage": {"partial": True, "reasonCode": "file_budget"}},
             },
             {
-                "artifactId": _artifact_id(), "capabilityVersion": "0.2.0", "schemaVersion": 1,
+                "artifactId": _artifact_id(), "capabilityVersion": "0.3.0", "schemaVersion": 1,
                 "operation": "observe", "status": "blocked", "reasonCode": "invalid_request",
                 "message": "calendar interval is invalid for the configured source timezone",
             },
@@ -339,7 +383,7 @@ class HermesPluginTests(unittest.TestCase):
     def test_empty_complete_page_has_no_invented_common_fields(self) -> None:
         plugin = _plugin_module()
         result = {
-            "artifactId": _artifact_id(), "capabilityVersion": "0.2.0", "schemaVersion": 1,
+            "artifactId": _artifact_id(), "capabilityVersion": "0.3.0", "schemaVersion": 1,
             "operation": "expand_observation", "status": "ok", "level": "observation",
             "observationRef": "snapshot:empty", "offset": 0, "total": 0, "truncated": False,
             "groups": [], "snapshot": {"stable": True, "coverage": {"partial": False}, "window": {"sourceTimeZone": "UTC"}},
@@ -365,7 +409,7 @@ class HermesPluginTests(unittest.TestCase):
             {"event": "EXCPCNTX", "errorSignature": "two", "ref": "group:two", "summary": {"meaning": "same"}},
         ]
         result = {
-            "artifactId": _artifact_id(), "capabilityVersion": "0.2.0", "schemaVersion": 1,
+            "artifactId": _artifact_id(), "capabilityVersion": "0.3.0", "schemaVersion": 1,
             "operation": "observe", "status": "ok", "groups": groups,
             "groupsTruncated": False, "observationRef": "snapshot:mixed",
             "snapshot": {"partial": False, "stable": True},
@@ -391,7 +435,7 @@ class HermesPluginTests(unittest.TestCase):
     def test_unknown_success_shape_is_returned_unchanged(self) -> None:
         plugin = _plugin_module()
         result = {
-            "artifactId": _artifact_id(), "capabilityVersion": "0.2.0",
+            "artifactId": _artifact_id(), "capabilityVersion": "0.3.0",
             "schemaVersion": 1, "operation": "observe", "status": "ok",
             "futureShape": {"value": 1},
         }
@@ -420,7 +464,7 @@ class HermesPluginTests(unittest.TestCase):
         plugin = _plugin_module()
         result = {
             "artifactId": _artifact_id(),
-            "capabilityVersion": "0.2.0", "status": "blocked", "reasonCode": "snapshot_invalid",
+            "capabilityVersion": "0.3.0", "status": "blocked", "reasonCode": "snapshot_invalid",
         }
         context = _Context({"output": json.dumps(result) + "\n", "exit_code": 0})
         plugin.register(context)
@@ -440,7 +484,7 @@ class HermesPluginTests(unittest.TestCase):
     def test_same_version_with_different_companion_artifact_is_a_stable_blocker(self) -> None:
         plugin = _plugin_module()
         context = _Context({"output": json.dumps({
-            "capabilityVersion": "0.2.0", "releaseId": "wrong-artifact", "status": "ok",
+            "capabilityVersion": "0.3.0", "releaseId": "wrong-artifact", "status": "ok",
         }) + "\n", "exit_code": 0})
         plugin.register(context)
 

@@ -14,7 +14,7 @@ from typing import Any
 
 try:  # Installed package.
     from . import ARTIFACT_ID, CAPABILITY_VERSION
-    from . import project_target, shared_task_route, snapshot_search, native_run_history, techlog_observation
+    from . import project_target, shared_task_route, snapshot_search, native_run_history, techlog_observation, eventlog_observation
     from .target_admission import TargetBlocked, resolve_snapshot_value
 except ImportError:  # Repository-local compatibility for focused tests.
     from __init__ import ARTIFACT_ID, CAPABILITY_VERSION
@@ -23,6 +23,7 @@ except ImportError:  # Repository-local compatibility for focused tests.
     import snapshot_search
     import native_run_history
     import techlog_observation
+    import eventlog_observation
     from target_admission import TargetBlocked, resolve_snapshot_value
 
 SCHEMA_VERSION = 1
@@ -242,6 +243,30 @@ def _expand_observation(arguments: dict[str, object], project_root: Path) -> dic
     return {"artifactId": ARTIFACT_ID, "capabilityVersion": CAPABILITY_VERSION, "operation": "expand_observation", "schemaVersion": SCHEMA_VERSION, **result}
 
 
+def _eventlog_select(arguments: dict[str, object], project_root: Path) -> dict[str, object]:
+    if set(arguments) != {"start", "end", "filters", "maximumCount", "limit"}:
+        raise CompanionError("eventlog_select arguments are invalid")
+    result = eventlog_observation.select(
+        project_root, arguments["start"], arguments["end"], arguments["filters"],
+        arguments["maximumCount"], arguments["limit"],
+    )
+    return {"artifactId": ARTIFACT_ID, "capabilityVersion": CAPABILITY_VERSION, "operation": "eventlog_select", "schemaVersion": SCHEMA_VERSION, **result}
+
+
+def _eventlog_page(arguments: dict[str, object], project_root: Path) -> dict[str, object]:
+    if set(arguments) != {"selectionRef", "offset", "limit"}:
+        raise CompanionError("eventlog_page arguments are invalid")
+    result = eventlog_observation.page(project_root, arguments["selectionRef"], arguments["offset"], arguments["limit"])
+    return {"artifactId": ARTIFACT_ID, "capabilityVersion": CAPABILITY_VERSION, "operation": "eventlog_page", "schemaVersion": SCHEMA_VERSION, **result}
+
+
+def _eventlog_record(arguments: dict[str, object], project_root: Path) -> dict[str, object]:
+    if set(arguments) != {"recordRef"}:
+        raise CompanionError("eventlog_record arguments are invalid")
+    result = eventlog_observation.record(project_root, arguments["recordRef"])
+    return {"artifactId": ARTIFACT_ID, "capabilityVersion": CAPABILITY_VERSION, "operation": "eventlog_record", "schemaVersion": SCHEMA_VERSION, **result}
+
+
 def execute(raw: bytes, project_root: Path) -> dict[str, object]:
     """Run one closed request against the selected terminal workspace only."""
     try:
@@ -265,6 +290,12 @@ def execute(raw: bytes, project_root: Path) -> dict[str, object]:
             return _observe(arguments, root)
         if operation == "expand_observation":
             return _expand_observation(arguments, root)
+        if operation == "eventlog_select":
+            return _eventlog_select(arguments, root)
+        if operation == "eventlog_page":
+            return _eventlog_page(arguments, root)
+        if operation == "eventlog_record":
+            return _eventlog_record(arguments, root)
         raise CompanionError("operation is invalid")
     except snapshot_search.SearchBlocked as exc:
         return _blocked(exc.reason_code, exc.message)

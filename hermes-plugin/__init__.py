@@ -1,7 +1,10 @@
 """Hermes registration for the terminal-bound 1C Harness capability."""
 from pathlib import Path
 
-from .adapter import expand_observation, narrow_context, native_verify, observation_info, observe, open_target
+from .adapter import (
+    expand_observation, narrow_context, native_verify, observation_info, observe, open_target,
+    page_registration_log, read_registration_log_record, select_registration_log,
+)
 from .schemas import TOOLS
 
 _SYSTEM_RULES = (
@@ -10,6 +13,8 @@ _SYSTEM_RULES = (
     "one_c_native_verify; never substitute a path. For technological-journal work, use "
     "one_c_observation_info when the available interval is unknown, then preserve exact "
     "observationRef/groupRef/recordRef values for paging and retained-selection neighbors. "
+    "For registration-log work, preserve exact selectionRef/recordRef values and treat any "
+    "maximum-count boundary as partial. Source unavailable is not an empty journal. "
     "Partial discovery is not complete history, and time adjacency is not causality. The "
     "selected Hermes terminal workspace is the only project-root authority. The plugin does "
     "not manage SSH, credentials, deployment, or 1C runtime installation."
@@ -24,6 +29,9 @@ def register(ctx):
         "one_c_observation_info": observation_info(ctx),
         "one_c_observe": observe(ctx),
         "one_c_expand_observation": expand_observation(ctx),
+        "one_c_select_registration_log": select_registration_log(ctx),
+        "one_c_page_registration_log": page_registration_log(ctx),
+        "one_c_read_registration_log_record": read_registration_log_record(ctx),
     }
     for schema in TOOLS:
         ctx.register_tool(

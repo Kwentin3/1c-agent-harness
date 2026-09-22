@@ -197,6 +197,47 @@ class CompanionContractTests(unittest.TestCase):
         self.assertEqual(neighbors["level"], "record")
         self.assertEqual(neighbors["scope"], "retainedFilteredSelection")
 
+    def test_registration_log_select_page_and_record_are_closed_requests(self) -> None:
+        with tempfile.TemporaryDirectory() as temporary:
+            project = Path(temporary) / "project"; project.mkdir()
+            exporter = Path(temporary) / "exporter.py"
+            exporter.write_text("""#!/usr/bin/env python3
+import sys
+sys.stdin.buffer.read()
+sys.stdout.write('<?xml version="1.0"?><v8e:EventLog xmlns:v8e="http://v8.1c.ru/eventLog"><v8e:Event><v8e:Level>Error</v8e:Level><v8e:Date>2026-09-22T06:44:16</v8e:Date><v8e:Event>_$Data$_.Update</v8e:Event><v8e:User>alice</v8e:User><v8e:Metadata>Document.Invoice</v8e:Metadata></v8e:Event></v8e:EventLog>')
+""", encoding="utf-8")
+            exporter.chmod(0o755)
+            previous_command = os.environ.get("ONE_C_HARNESS_EVENTLOG_COMMAND")
+            previous_zone = os.environ.get("ONE_C_HARNESS_EVENTLOG_TIME_ZONE")
+            os.environ["ONE_C_HARNESS_EVENTLOG_COMMAND"] = str(exporter)
+            os.environ["ONE_C_HARNESS_EVENTLOG_TIME_ZONE"] = "UTC"
+            try:
+                selected = companion.execute(_request("eventlog_select", {
+                    "start": "2026-09-22T06:44:00", "end": "2026-09-22T06:45:00",
+                    "filters": {"level": "Error"}, "maximumCount": 100, "limit": 20,
+                }), project)
+                page = companion.execute(_request("eventlog_page", {
+                    "selectionRef": selected["selectionRef"], "offset": 0, "limit": 20,
+                }), project)
+                record = companion.execute(_request("eventlog_record", {
+                    "recordRef": page["records"][0]["recordRef"],
+                }), project)
+            finally:
+                if previous_command is None: os.environ.pop("ONE_C_HARNESS_EVENTLOG_COMMAND", None)
+                else: os.environ["ONE_C_HARNESS_EVENTLOG_COMMAND"] = previous_command
+                if previous_zone is None: os.environ.pop("ONE_C_HARNESS_EVENTLOG_TIME_ZONE", None)
+                else: os.environ["ONE_C_HARNESS_EVENTLOG_TIME_ZONE"] = previous_zone
+
+        self.assertEqual(selected["operation"], "eventlog_select")
+        self.assertEqual(page["operation"], "eventlog_page")
+        self.assertEqual(record["operation"], "eventlog_record")
+        self.assertEqual(record["record"]["metadata"]["name"], "Document.Invoice")
+
+    def test_registration_log_requests_reject_unknown_fields(self) -> None:
+        result = companion.execute(_request("eventlog_record", {"recordRef": "x", "path": "/tmp/raw"}), self.root if hasattr(self, "root") else Path.cwd())
+        self.assertEqual(result["status"], "blocked")
+        self.assertEqual(result["reasonCode"], "invalid_request")
+
     def test_investigate_then_expand_exposes_bounded_runtime_receipt_evidence(self) -> None:
         with tempfile.TemporaryDirectory() as temporary:
             project = Path(temporary)

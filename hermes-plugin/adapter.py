@@ -270,6 +270,24 @@ def expand_observation(ctx: Any) -> Callable[[object], str]:
     return handler
 
 
+def select_registration_log(ctx: Any) -> Callable[[object], str]:
+    def handler(arguments: object, **_kwargs: object) -> str:
+        return _call(ctx, "eventlog_select", arguments, 150)
+    return handler
+
+
+def page_registration_log(ctx: Any) -> Callable[[object], str]:
+    def handler(arguments: object, **_kwargs: object) -> str:
+        return _call(ctx, "eventlog_page", arguments, 60)
+    return handler
+
+
+def read_registration_log_record(ctx: Any) -> Callable[[object], str]:
+    def handler(arguments: object, **_kwargs: object) -> str:
+        return _call(ctx, "eventlog_record", arguments, 60)
+    return handler
+
+
 def native_verify(ctx: Any) -> Callable[[object], str]:
     def handler(arguments: object, **_kwargs: object) -> str:
         if not isinstance(arguments, dict) or type(arguments.get("timeoutSeconds")) is not int:

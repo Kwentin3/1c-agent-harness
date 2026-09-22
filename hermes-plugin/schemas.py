@@ -4,7 +4,7 @@ from __future__ import annotations
 import json
 from pathlib import Path
 
-CAPABILITY_VERSION = "0.2.0"
+CAPABILITY_VERSION = "0.3.0"
 _release = json.loads((Path(__file__).with_name("release.json")).read_text(encoding="utf-8"))
 if set(_release) != {"schemaVersion", "artifactId"} or _release["schemaVersion"] != 1 or not isinstance(_release["artifactId"], str):
     raise RuntimeError("invalid one-c-harness plugin release manifest")
@@ -100,4 +100,41 @@ TOOLS = (
             ],
         },
     },
+    _tool(
+        "one_c_select_registration_log",
+        {
+            "start": {"type": "string", "description": "Inclusive source-local calendar start without an offset."},
+            "end": {"type": "string", "description": "Inclusive source-local calendar end without an offset; at most 24 hours after start."},
+            "filters": {
+                "type": "object",
+                "properties": {
+                    "event": {"type": "string", "minLength": 1, "maxLength": 128},
+                    "level": {"type": "string", "minLength": 1, "maxLength": 128},
+                    "user": {"type": "string", "minLength": 1, "maxLength": 128},
+                    "metadata": {"type": "string", "minLength": 1, "maxLength": 128},
+                },
+                "additionalProperties": False,
+            },
+            "maximumCount": {"type": "integer", "minimum": 1, "maximum": 100},
+            "limit": {"type": "integer", "minimum": 1, "maximum": 20},
+        },
+        ["start", "end", "filters", "maximumCount", "limit"],
+        "Create one bounded retained selection from the configured 1C registration log source. A result at the maximum-count boundary is partial, never complete.",
+    ),
+    _tool(
+        "one_c_page_registration_log",
+        {
+            "selectionRef": {"type": "string", "minLength": 1, "maxLength": 128},
+            "offset": {"type": "integer", "minimum": 0},
+            "limit": {"type": "integer", "minimum": 1, "maximum": 20},
+        },
+        ["selectionRef", "offset", "limit"],
+        "Page records from one exact retained registration-log selection.",
+    ),
+    _tool(
+        "one_c_read_registration_log_record",
+        {"recordRef": {"type": "string", "minLength": 1, "maxLength": 192}},
+        ["recordRef"],
+        "Read one exact record from one retained registration-log selection.",
+    ),
 )
