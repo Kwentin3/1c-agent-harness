@@ -332,11 +332,37 @@ training runtime. The returned XML is correctly empty for the fresh disposable
 IB and does **not** prove the supplied candidate can retrieve the prior history
 of a separately selected persistent IB. Its tracked `/Execute` exporter has not
 been requalified; no fabricated retained selection, page, or record is claimed.
-The remaining product boundary is source binding: authorize one bounded,
-read-only way to run the proven temporary `OnStart` probe against a copy of the
-selected training IB (or supply an equivalent already-authorized execution seam).
-No new runtime route, deployment setting, source-configuration change, or
-retained selection is claimed by this correction.
+
+### Bounded selected-log and positive-data controls: blocked inside native export
+
+A copy of the already retained training IB (including its 570,348-byte `.lgp`
+segment) was used three times with the proven `OnStart → server` entry. The
+three differentiating requests were: the retained two-day interval with maximum
+10, the same interval with maximum 1, and a one-second interval with maximum 1.
+Each entered both client and server in 6.3–8.1 seconds and created
+`export-started`, but none returned from `UnloadEventLog` before the 120-second
+bound. All had empty runtime/stderr/wrapper logs, no XML, and full cleanup. The
+source IB and configuration checksums were unchanged in every run. Thus neither
+large result volume nor the broad time interval explains the observed block;
+this does not establish a platform defect or an empty selected journal.
+
+A final positive-data attempt then created a disposable IB and tried to write a
+fresh `Issue80Probe` event before exporting it. The initial two-phase form
+reached its harmless seed marker but stopped before the export preparation due
+to an invalid generated-module anchor. Two one-run variants then stopped at
+runtime compilation before client entry with the exact receipt
+`ManagedApplicationModule(64,1): Unknown operator`. The installed exact-version
+help payload contains the token `WriteLogEvent`, but the retained error does not
+identify which generated expression or signature is rejected; it is therefore
+recorded as an instrumentation compile failure, not as evidence about export or
+journal contents.
+
+This consumes the current issue-cycle allowance of eight experimental execution
+operations: two fresh-IB entry/export controls, three selected-log controls, the
+successful seed-only control, and two one-run seed/export compile controls. No
+further native command is run under this cycle. No new runtime route,
+deployment setting, source-configuration change, or retained selection is
+claimed by this correction.
 
 ## Verification and limits
 
