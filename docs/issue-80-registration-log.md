@@ -337,14 +337,17 @@ been requalified; no fabricated retained selection, page, or record is claimed.
 
 A copy of the already retained training IB (including its 570,348-byte `.lgp`
 segment) was used three times with the proven `OnStart → server` entry. The
-three differentiating requests were: the retained two-day interval with maximum
-10, the same interval with maximum 1, and a one-second interval with maximum 1.
+three differentiating requests were: a two-day interval with maximum 10, the
+same interval with maximum 1, and a one-second interval with maximum 1.
 Each entered both client and server in 6.3–8.1 seconds and created
 `export-started`, but none returned from `UnloadEventLog` before the 120-second
 bound. All had empty runtime/stderr/wrapper logs, no XML, and full cleanup. The
-source IB and configuration checksums were unchanged in every run. Thus neither
-large result volume nor the broad time interval explains the observed block;
-this does not establish a platform defect or an empty selected journal.
+source IB and configuration checksums were unchanged in every run. Later
+inspection showed **the requested September 20–21 interval did not contain
+this segment's records**: the segment is named `20260920000000.lgp`, but its
+actual events date to September 22. These controls therefore must not be used
+to infer either an empty selected log or that a broad result volume caused the
+block. A subsequent September 22 control also blocked; see below.
 
 A final positive-data attempt then created a disposable IB and tried to write a
 fresh `Issue80Probe` event before exporting it. The initial two-phase form
@@ -363,6 +366,93 @@ successful seed-only control, and two one-run seed/export compile controls. No
 further native command is run under this cycle. No new runtime route,
 deployment setting, source-configuration change, or retained selection is
 claimed by this correction.
+
+### Expanded-budget cycle: real records through the native file-input parameter
+
+The owner tripled the testing/research/R&D limits for the *same* issue cycle
+(24 application executions and 135 minutes of native commands total, inclusive
+of the previously counted eight). This continuation made nine additional
+`ENTERPRISE` attempts in eight bounded controls: 800,455 ms of native
+create/load/Enterprise execution in those controls. Each Enterprise attempt
+remained at or below 120 seconds; the revised execution count is 17/24. Do
+not reset this tally on a new session. The prior cycle's exact native-minute
+total is not reconstructed here, so 800,455 ms is a **new-cycle** subtotal,
+not a claim about the overall 135-minute remainder.
+
+A corrected two-phase seed control appended the `&AtServer` procedure *after*
+the existing `OnStart` procedure rather than inside it. The exact installed
+8.5.1.1150 help member
+`shcntx_ru.hbk:objects/Global context/methods/catalog3403/WriteLogEvent1234.html`
+confirms the six-argument `WriteLogEvent` signature and server availability.
+The fresh disposable IB reached `seed-written` after its server call, proving
+that this instrumentation compiles and writes an event; a second session
+reached `export-started` but did not return in 120 seconds. An attempt to call
+`Exit(True, True)` after the seed marker (also found in the configuration's
+own BSL) did not exit the startup client within 120 seconds, so the planned
+closed-log comparison was **not** made. Neither result establishes why the
+current-IB export stalls. A selected-IB-copy control with the *correct*
+September 22 date and maximum 1 still reached `export-started` but did not
+return within 120 seconds. Source IB and snapshot closures remained unchanged.
+
+The installed help member
+`shcntx_ru.hbk:objects/Global context/methods/catalog3403/UnloadEventLog4040.html`
+documents a fourth `InputFileName` argument. On the retained selected training
+IB, the 570,348-byte `1Cv8Log/20260920000000.lgp` actually contains events
+between `2026-09-22T10:56:10` and `10:59:33`; its *filename is not an event
+time bound*. An isolated fresh IB with a copied `.lgp` passed as the input
+returned the empty 193-byte XML in 20 ms even when the interval covered those
+events. This does **not** mean the source file is empty. When the intact
+`1Cv8Log` directory was copied and its **`1Cv8.lgf`** passed as the input,
+`UnloadEventLog` returned **4,504 top-level Event records** (1,279,419 XML
+bytes) in 61 ms for the September 22 interval. The requested maximum 10 was
+not honored as a strict record bound in that probe. A one-second interval
+`10:56:10`–`10:56:11` with maximum 1 produced **two** top-level records,
+799 XML bytes, in 41 ms (XML SHA-256
+`54b039e2527a18fc00223b4c2240e34efde61503caa732035e1362ed4e3c2b20`).
+The initial probe counted nested `<Event>` field tags as records; this corrected
+count comes from the XML root's immediate children. The two real events have
+native names `_$Session$_.Authentication` and `_$Session$_.Start`, both at
+`2026-09-22T10:56:10`, level `Information`, with `NotApplicable` transaction
+status in the selected columns. No user, metadata, or cause is inferred;
+source time zone is **not established** by these receipts. The native XML
+represents selected historical records from the retained training IB, not
+synthetic Harness rows and not the fresh IB's own history.
+
+The 799-byte real XML was replayed unchanged (hash above) once to the existing
+`companion eventlog_select` domain path: two records, one retained selection,
+then `eventlog_page` and `eventlog_record`; a later retained refinement to
+`_$Session$_.Start` returned one record with **zero additional source calls**.
+This proves the downstream parsing/retention on real native XML, not the live
+exporter/companion seam. The 1,279,419-byte broad export exceeds the current
+1 MiB source byte cap and must be reported as limited/unavailable rather than
+silently accepted. A one-second file-input query can still exceed the source
+limit, and `MaximumCount` cannot be trusted as the only cap.
+
+**Unresolved product entry.** All successful nonempty native acquisitions
+injected `OnStart` solely into a disposable configuration work-copy for the
+experiment. The final route is explicitly forbidden to depend on that change.
+The previously built form-bound `/Execute` EPF had already timed out before
+`client-entered` on the training configuration. A distinguishing control used
+that **same EPF** on a newly created empty disposable IB: create succeeded in
+993 ms, but `/Execute` again produced no form/client marker, stderr, XML or
+runtime log before the 120-second bound. This does not diagnose the 1C client,
+but repeated `/Execute` without a new entry mechanism is not a valid final
+route. `ibcmd` is absent from the installed training-client distribution; the
+server utility's compatibility with this retained legacy log has not been
+tested. A copied, stable historical journal was used here; no claim is made
+about coherent copying of a *live-writing* production journal.
+
+**Decision boundary.** The work has established a fast native method to read
+real records when supplied a stable `1Cv8.lgf` plus its segments, and a working
+retained-selection pipeline, but **not** a compliant product execution seam.
+The smallest concrete way to continue with this installed runtime is owner
+permission for a routine isolated disposable configuration work-copy/IB as the
+bounded exporter (never a change to the selected source IB or immutable
+snapshot). This is a change to the explicit final-route constraint and requires
+an owner decision before implementation. An independently provisioned,
+compatible official `ibcmd` would instead avoid that exception, but is not
+present or verified on this executor. PR #81 remains draft; no deployment,
+restart, merge, or issue closure is authorized.
 
 ## Verification and limits
 
