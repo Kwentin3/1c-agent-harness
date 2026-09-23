@@ -15,7 +15,7 @@ from one_c_harness import eventlog_observation
 XML = """<?xml version="1.0" encoding="UTF-8"?>
 <v8e:EventLog xmlns:v8e="http://v8.1c.ru/eventLog">
   <v8e:Event><v8e:Level>Information</v8e:Level><v8e:Date>2026-09-22T06:44:15</v8e:Date><v8e:Event>_$Session$_.Start</v8e:Event><v8e:EventPresentation>Session. Beginning</v8e:EventPresentation><v8e:User>alice</v8e:User><v8e:UserPresentation>Alice</v8e:UserPresentation><v8e:Metadata>Document.Order</v8e:Metadata><v8e:MetadataPresentation>Order</v8e:MetadataPresentation><v8e:TransactionStatus>NotApplicable</v8e:TransactionStatus></v8e:Event>
-  <v8e:Event><v8e:Level>Error</v8e:Level><v8e:Date>2026-09-22T06:44:16</v8e:Date><v8e:Event>_$Data$_.Update</v8e:Event><v8e:EventPresentation>Data. Change</v8e:EventPresentation><v8e:User>bob</v8e:User><v8e:UserPresentation>Bob</v8e:UserPresentation><v8e:Metadata>Document.Invoice</v8e:Metadata><v8e:MetadataPresentation>Invoice</v8e:MetadataPresentation><v8e:TransactionStatus>Committed</v8e:TransactionStatus></v8e:Event>
+  <v8e:Event><v8e:Level>Error</v8e:Level><v8e:Date>2026-09-22T06:44:16</v8e:Date><v8e:Event>_$Data$_.Update</v8e:Event><v8e:EventPresentation>Data. Change</v8e:EventPresentation><v8e:User>bob</v8e:User><v8e:UserPresentation>Bob</v8e:UserPresentation><v8e:Metadata>Document.Invoice</v8e:Metadata><v8e:MetadataPresentation>Invoice</v8e:MetadataPresentation><v8e:TransactionStatus>Committed</v8e:TransactionStatus><v8e:Comment>Invoice changed</v8e:Comment></v8e:Event>
   <v8e:Event><v8e:Level>Error</v8e:Level><v8e:Date>2026-09-22T06:44:17</v8e:Date><v8e:Event>_$Data$_.Update</v8e:Event><v8e:EventPresentation>Data. Change</v8e:EventPresentation><v8e:User>alice</v8e:User><v8e:UserPresentation>Alice</v8e:UserPresentation><v8e:Metadata>Document.Invoice</v8e:Metadata><v8e:MetadataPresentation>Invoice</v8e:MetadataPresentation><v8e:TransactionStatus>Committed</v8e:TransactionStatus></v8e:Event>
 </v8e:EventLog>
 """
@@ -84,6 +84,7 @@ class EventLogObservationTests(unittest.TestCase):
         self.assertEqual(page["total"], 3)
         self.assertEqual(page["records"][0]["event"], "_$Data$_.Update")
         self.assertEqual(record["record"]["user"]["presentation"], "Bob")
+        self.assertEqual(record["record"]["comment"], "Invoice changed")
         self.assertEqual(record["record"]["metadata"]["name"], "Document.Invoice")
         self.assertNotIn("broken", json.dumps([page, record]))
 

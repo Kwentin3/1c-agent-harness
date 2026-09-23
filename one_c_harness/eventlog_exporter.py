@@ -22,8 +22,8 @@ import time
 from typing import Any
 
 COLUMNS = (
-    "Date", "Level", "Event", "EventPresentation", "User", "UserPresentation",
-    "Metadata", "MetadataPresentation", "TransactionStatus",
+    "Date", "Level", "Event", "EventPresentation", "User",
+    "Metadata", "MetadataPresentation", "TransactionStatus", "Comment",
 )
 ENVIRONMENT_KEYS = (
     "ONE_C_HARNESS_EVENTLOG_RUNTIME_PROFILE",

@@ -30,16 +30,20 @@ _MAX_PAGE = 20
 _MAX_XML_BYTES = 1024 * 1024
 _TIMEOUT_SECONDS = 120
 _MAX_SOURCE_ERROR_BYTES = 1024
+_EXPORT_FIELDS = (
+    "Date", "Level", "Event", "EventPresentation", "User",
+    "Metadata", "MetadataPresentation", "TransactionStatus", "Comment",
+)
 _FIELDS = (
     "Date", "Level", "Event", "EventPresentation", "User", "UserPresentation",
-    "Metadata", "MetadataPresentation", "TransactionStatus",
+    "Metadata", "MetadataPresentation", "TransactionStatus", "Comment",
 )
 _FILTERS = {"event": "Event", "level": "Level", "user": "User", "metadata": "Metadata"}
 _LEVELS = {"Information", "Error", "Warning", "Note"}
 _FIELD_LIMITS = {
     "Date": 32, "Level": 32, "Event": 128, "EventPresentation": 160,
     "User": 80, "UserPresentation": 160, "Metadata": 128,
-    "MetadataPresentation": 160, "TransactionStatus": 32,
+    "MetadataPresentation": 160, "TransactionStatus": 32, "Comment": _MAX_XML_BYTES,
 }
 
 
@@ -265,6 +269,7 @@ def _parse(payload: bytes, start: datetime, end: datetime, filters: dict[str, st
             "user": {"name": values["User"], "presentation": values["UserPresentation"]},
             "metadata": {"name": values["Metadata"], "presentation": values["MetadataPresentation"]},
             "transactionStatus": values["TransactionStatus"],
+            "comment": values["Comment"],
         })
     return source_count, records
 
@@ -354,7 +359,7 @@ def select(
     command, zone_name = source
     request = {
         "schemaVersion": 1, "operation": "unloadEventLog", "start": start_text, "end": end_text,
-        "filters": clean_filters, "columns": list(_FIELDS), "maximumCount": maximum_count,
+        "filters": clean_filters, "columns": list(_EXPORT_FIELDS), "maximumCount": maximum_count,
         "maximumBytes": _MAX_XML_BYTES,
     }
     payload, failure = _export(command, request, project_root)

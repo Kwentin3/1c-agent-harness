@@ -17,6 +17,7 @@ import subprocess
 import sys
 import tempfile
 import time
+from typing import Any
 import xml.etree.ElementTree as ET
 
 import eventlog_exporter as base
@@ -61,10 +62,10 @@ SERVER = ("\r\n&AtClient\r\nProcedure WriteIssue80Marker(Path)\r\n"
           "\tElsIf LevelName = \"Warning\" Then\r\n\t\tFilter.Insert(\"Level\", EventLogLevel.Warning);\r\n"
           "\tElsIf LevelName = \"Note\" Then\r\n\t\tFilter.Insert(\"Level\", EventLogLevel.Note);\r\n\tEndIf;\r\n"
           "\tMaximum = Number(Issue80Read(Root + \"/maximum-count.txt\"));\r\n"
+          "\tColumns = Issue80Read(Root + \"/columns.txt\");\r\n"
+          "\tInputFile = Issue80Read(Root + \"/input-file.txt\");\r\n"
           "\tIssue80ServerMarker(Root + \"/export-started\");\r\n"
-          "\tUnloadEventLog(Root + \"/output.xml\", Filter, "
-          "\"Date,Level,Event,EventPresentation,TransactionStatus\", "
-          "Root + \"/1Cv8Log/1Cv8.lgf\", Maximum);\r\n"
+          "\tUnloadEventLog(Root + \"/output.xml\", Filter, Columns, InputFile, Maximum);\r\n"
           "\tIssue80ServerMarker(Root + \"/export-returned\");\r\n"
           "EndProcedure\r\n")
 
@@ -130,12 +131,111 @@ def _server_for(filters: dict[str, str]) -> str:
     }
     # Only include the fixed BSL branch when that optional filter was supplied.
     for name in ("event", "user", "metadata", "level"):
-        if name not in filters:
+        if name not in filters or name in {"user", "metadata"}:
             start, end = blocks[name]
             prefix, rest = result.split(start, 1)
             _discard, suffix = rest.split(end, 1)
             result = prefix + end + suffix
     return result
+
+
+_EXPORT_COLUMNS = {
+    "comment": (*base.COLUMNS[:4], "TransactionStatus", "Comment"),
+    "user": (*base.COLUMNS[:4], "TransactionStatus", "User"),
+    "metadata": (*base.COLUMNS[:4], "TransactionStatus", "Metadata"),
+    "metadata-presentation": (*base.COLUMNS[:4], "TransactionStatus", "MetadataPresentation"),
+}
+_IDENTITY_COLUMNS = ("Date", "Level", "Event", "EventPresentation", "TransactionStatus")
+
+
+def _xml_child(record: ET.Element, field: str) -> ET.Element | None:
+    return next((item for item in record if item.tag.rsplit("}", 1)[-1] == field), None)
+
+
+def _xml_value(record: ET.Element, field: str) -> str | None:
+    child = _xml_child(record, field)
+    return "".join(child.itertext()) if child is not None else None
+
+
+def _merge_exports(documents: dict[str, ET.Element], maximum_bytes: int) -> bytes:
+    if set(documents) != set(_EXPORT_COLUMNS):
+        raise base.ExportFailure("source_incomplete_receipt")
+    primary = documents["comment"]
+    if any(len(document) != len(primary) for document in documents.values()):
+        raise base.ExportFailure("source_incomplete_receipt")
+    additions = {"user": "User", "metadata": "Metadata", "metadata-presentation": "MetadataPresentation"}
+    for index, record in enumerate(primary):
+        identity = tuple(_xml_value(record, field) for field in _IDENTITY_COLUMNS)
+        for source, field in additions.items():
+            other = documents[source][index]
+            if tuple(_xml_value(other, name) for name in _IDENTITY_COLUMNS) != identity:
+                raise base.ExportFailure("source_incomplete_receipt")
+            value = _xml_child(other, field)
+            if value is not None:
+                record.append(value)
+    payload = ET.tostring(primary, encoding="utf-8", xml_declaration=True)
+    if len(payload) > maximum_bytes:
+        raise base.ExportFailure("source_byte_limit")
+    return payload
+
+
+def _export_session(
+    settings: base.Settings, ib: Path, journal: Path, root: Path,
+    request: dict[str, Any], columns: tuple[str, ...], deadline: float,
+) -> tuple[ET.Element, int]:
+    global _active
+    root.mkdir()
+    home = root / "home"; home.mkdir()
+    temporary = root / "tmp"; temporary.mkdir()
+    base._write_request(root, request)
+    (root / "columns.txt").write_text(",".join(columns), encoding="utf-8")
+    (root / "input-file.txt").write_text(str(journal / "1Cv8.lgf"), encoding="utf-8")
+    if deadline <= time.monotonic():
+        raise base.ExportFailure("source_timeout")
+    try:
+        process = subprocess.Popen(
+            base._prefix(settings, root / "wrapper.log") + [
+                "ENTERPRISE", "/F", str(ib), "/DisableStartupDialogs", "/DisableStartupMessages",
+                "/C", str(root), "/Out", str(root / "runtime.log"),
+                "/DumpResult", str(root / "runtime.result"),
+            ],
+            env=base._environment(settings, home, temporary), stdin=subprocess.DEVNULL,
+            stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL, start_new_session=True,
+        )
+    except OSError:
+        raise base.ExportFailure("source_unavailable") from None
+    _active = process
+    started = time.monotonic()
+    required = ("client-entered", "server-entered", "export-started", "export-returned", "complete")
+    output = root / "output.xml"
+    try:
+        while process.poll() is None and time.monotonic() < deadline:
+            if all((root / marker).is_file() for marker in required):
+                break
+            if output.is_file() and output.stat().st_size > request["maximumBytes"]:
+                raise base.ExportFailure("source_byte_limit")
+            time.sleep(.02)
+    except OSError:
+        raise base.ExportFailure("source_unavailable") from None
+    finally:
+        timed_out = process.poll() is None and not all((root / marker).is_file() for marker in required)
+        if process.poll() is None:
+            base._stop_group(process)
+        _active = None
+    if timed_out:
+        raise base.ExportFailure("source_timeout")
+    if not all((root / marker).is_file() for marker in required) or not output.is_file():
+        raise base.ExportFailure("source_incomplete_receipt")
+    payload = output.read_bytes()
+    if len(payload) > request["maximumBytes"]:
+        raise base.ExportFailure("source_byte_limit")
+    try:
+        document = ET.fromstring(payload)
+    except ET.ParseError:
+        raise base.ExportFailure("source_incomplete_receipt") from None
+    if document.tag.rsplit("}", 1)[-1] != "EventLog":
+        raise base.ExportFailure("source_incomplete_receipt")
+    return document, round((time.monotonic() - started) * 1000)
 
 
 def _batch(argv: list[str], env: dict[str, str], receipt: Path, deadline: float) -> None:
@@ -193,10 +293,6 @@ def _overlaps(left: Path, right: Path) -> bool:
 def run_once(request: object) -> tuple[bytes, dict[str, object]]:
     global _active
     admitted = base._validate_request(request)
-    # These columns block on this exact runtime, so a local post-filter would
-    # silently turn real records into an apparently empty selection.
-    if set(admitted["filters"]) & {"user", "metadata"}:
-        raise base.ExportFailure("source_process_failed")
     settings = _settings()
     snapshot = Path(os.environ.get(SNAPSHOT_ENV, ""))
     journal = Path(os.environ.get(JOURNAL_ENV, ""))
@@ -260,72 +356,40 @@ def run_once(request: object) -> tuple[bytes, dict[str, object]]:
                     or _digest_tree(journal, max_files=_MAX_JOURNAL_FILES,
                                     max_bytes=_MAX_JOURNAL_BYTES, deadline=deadline) != source_journal):
                 raise base.ExportFailure("source_incomplete_receipt")
-            argv = prefix + ["ENTERPRISE", "/F", str(ib), "/DisableStartupDialogs",
-                             "/DisableStartupMessages", "/C", str(evidence),
-                             "/Out", str(evidence / "runtime.log"), "/DumpResult", str(evidence / "runtime.result")]
             stage = "enterprise"
-            try:
-                process = subprocess.Popen(argv, env=env, stdin=subprocess.DEVNULL,
-                                           stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL,
-                                           start_new_session=True)
-            except OSError:
-                raise base.ExportFailure("source_unavailable") from None
-            _active = process
-            observed: set[str] = set()
-            export_start: float | None = None
-            export_end: float | None = None
-            output = evidence / "output.xml"
-            try:
-                while process.poll() is None and time.monotonic() < deadline:
-                    for marker in ("client-entered", "server-entered", "export-started", "export-returned", "complete"):
-                        if marker not in observed and (evidence / marker).is_file():
-                            observed.add(marker)
-                            if marker == "export-started": export_start = time.monotonic()
-                            if marker == "export-returned": export_end = time.monotonic()
-                    if "complete" in observed: break
-                    if output.is_file() and output.stat().st_size > admitted["maximumBytes"]:
-                        raise base.ExportFailure("source_byte_limit")
-                    time.sleep(.02)
-            finally:
-                timed_out = process.poll() is None and "complete" not in observed
-                if process.poll() is None:
-                    base._stop_group(process)
-                _active = None
-            if timed_out:
-                raise base.ExportFailure("source_timeout")
-            if not set(("client-entered", "server-entered", "export-started", "export-returned", "complete")) <= observed:
-                raise base.ExportFailure("source_incomplete_receipt")
-            if not output.is_file():
-                raise base.ExportFailure("source_incomplete_receipt")
-            if output.stat().st_size > admitted["maximumBytes"]:
-                raise base.ExportFailure("source_byte_limit")
+            documents: dict[str, ET.Element] = {}
+            export_milliseconds = 0
+            copied_journal = evidence / "1Cv8Log"
+            for name, columns in _EXPORT_COLUMNS.items():
+                document, elapsed = _export_session(
+                    settings, ib, copied_journal, evidence / f"export-{name}",
+                    admitted, columns, deadline,
+                )
+                documents[name] = document
+                export_milliseconds += elapsed
             stage = "xml"
-            xml = output.read_bytes()
-            try:
-                document = ET.fromstring(xml)
-            except ET.ParseError:
-                raise base.ExportFailure("source_incomplete_receipt") from None
-            if document.tag.rsplit("}", 1)[-1] != "EventLog":
-                raise base.ExportFailure("source_incomplete_receipt")
+            xml = _merge_exports(documents, admitted["maximumBytes"])
+            document = ET.fromstring(xml)
             if (_digest_tree(snapshot, deadline=deadline) != source_snapshot
                     or _digest_tree(journal, max_files=_MAX_JOURNAL_FILES,
                                     max_bytes=_MAX_JOURNAL_BYTES, deadline=deadline) != source_journal):
                 raise base.ExportFailure("source_incomplete_receipt")
             metrics: dict[str, object] = {"status": "ok", "selectedInfoBase": "configured_stable_journal",
-                                          "exporterInvocations": 1,
+                                          "exporterInvocations": 1, "nativeExportSessions": len(documents),
                                           "lifecycleMilliseconds": round((time.monotonic() - started) * 1000),
-                                          "exportMilliseconds": round(1000 * (export_end - export_start)) if export_end and export_start else None,
+                                          "exportMilliseconds": export_milliseconds,
                                           "xmlBytes": len(xml), "recordCount": len(document)}
             if settings.metrics:
                 settings.metrics.write_text(json.dumps(metrics, sort_keys=True), encoding="utf-8")
             return xml, metrics
         except base.ExportFailure as error:
             if settings.metrics:
+                diagnostic_root = evidence / "export-comment"
                 status = {"status": "failed", "reasonCode": str(error), "stage": stage,
-                          "markers": {name: (evidence / name).is_file() for name in
+                          "markers": {name: (diagnostic_root / name).is_file() for name in
                                       ("client-entered", "server-entered", "export-started",
                                        "export-returned", "complete")},
-                          "runtimeLog": base._file_diagnostic(evidence / "runtime.log"),
+                          "runtimeLog": base._file_diagnostic(diagnostic_root / "runtime.log"),
                           "loadLog": base._file_diagnostic(evidence / "load.log")}
                 settings.metrics.write_text(json.dumps(status, sort_keys=True), encoding="utf-8")
             raise

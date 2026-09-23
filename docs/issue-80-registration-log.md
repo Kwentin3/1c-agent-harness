@@ -542,7 +542,8 @@ The exact source remains the retained copy, not a live-writing IB.
 | `combined-1` with `event=_$Session$_.Start`, `level=Information` | One real event, 497 bytes and the same XML hash as `filter-1`; 42,296 ms total; clean owned work root. |
 | `byte-limit-1` with 4 KiB output limit | The native method returned and all five lifecycle markers appeared, but the candidate returned exit 2 / `source_byte_limit`, **zero XML stdout**, and removed its owned work root. |
 
-The production candidate keeps the **five proven output columns** and refuses
+At the end of this 50-operation stage, the production candidate kept the
+**five proven output columns** and refused
 `user` / `metadata` filters before native launch. Returning zero rows for these
 filters would be a false absence claim: the companion's post-filter cannot
 match fields missing from native output. `event` and `level` are proven
@@ -610,8 +611,8 @@ were present in the separately exported rows. A final candidate attempted four
 individually safe native exports in one reader session and an identity-checked
 XML merge. Its configuration loaded successfully in 30,823 ms, but the bounded
 companion call stopped inside the first export before any XML was created. This
-failed candidate was removed; the tracked five-column historical exporter
-remains the rollback-safe implementation.
+failed candidate was removed; the tracked five-column historical exporter was
+the rollback-safe implementation at the end of that stage.
 
 The direct utility is named **`ibcmd`**. Official 1C documentation confirms
 `ibcmd eventlog export` as the shortest candidate because it reads an event-log
@@ -623,7 +624,8 @@ download is account/license-acceptance gated. No mirror or unverified binary was
 used. Consequently its real version/help, compatibility with this 8.5.1.1150
 journal, fields and output have not been tested.
 
-**Stage verdict: partially ready / stopped.** The stage proves current lab event
+**40-operation stage verdict: partially ready / stopped (superseded below).**
+That stage proved current lab event
 creation, a bounded quiescent cut, and the presence of useful user/metadata/text
 fields, but it does not provide one supported acquisition that returns those
 fields together while the source remains running. The minimum external resource
@@ -632,6 +634,69 @@ contains `ibcmd` (preferably the matching 8.5.1.1150 build), made available in
 the executor's task-owned `.local/` area or through an authenticated vendor
 download handoff. Installation, deployment, restart, merge and issue closure
 remain outside this result.
+
+### Supported split-session exporter (100-operation stage)
+
+The owner increased the total native budget from 40 to **100 operations**. The
+previous single-reader-session merge failed because this exact training runtime
+can block when several `UnloadEventLog` calls are made in one Enterprise
+session. The successful minimum changes only that lifecycle boundary: one
+request still creates and loads one disposable reader IB, but each known-safe
+column group is exported by its own short Enterprise session. Four exports use
+the common identity columns `Date,Level,Event,EventPresentation,
+TransactionStatus` plus, respectively, `Comment`, `User`, `Metadata`, or
+`MetadataPresentation`. The host accepts the result only when all four XML
+documents have the same row count and every ordered identity tuple matches;
+otherwise it fails closed. `UserPresentation` is not requested because its
+isolated native probe timed out.
+
+The isolated pre-product proof loaded the reader in 49,167 ms and returned 75
+`Issue80.Lab.Page` rows from each session in 5,978 / 3,426 / 3,093 / 3,136 ms.
+The identity-checked merged XML was 38,113 bytes, SHA-256
+`797da150de585b70810d828536d2865836a352727250ffb3062a47784e53bb0a`.
+The immutable snapshot still contained 5,099 files with closure
+`e437eeb98382c571e42cecb3803d98b6228e4771cabfd81ebe0f79a6275fa594`.
+
+The exact production candidate then passed through the real companion:
+
+- one `eventlog_select` returned all 75 page events in 56,676 ms; exporter
+  lifecycle was 55,388 ms and the four native exports totalled 10,928 ms;
+- records simultaneously contain a meaningful comment, non-empty technical
+  user UUID, metadata identifier/presentation, event, level and transaction
+  status;
+- `eventlog_page` at offset 10 with exact event/level/user/metadata refinement
+  returned ten matching records in 4 ms;
+- `eventlog_record` returned the cited row in 1 ms;
+- the metrics mtime did not change during page/record, proving zero repeated
+  source export; the owned work root was empty afterward;
+- the admitted journal copy remained two files with closure
+  `0912787526bd5e3c8971a41034293fbb9023ea856e2b0e04954c9ff50a577f24`,
+  and the source snapshot closure was unchanged.
+
+A new writer session then appended events to the disposable source IB. The old
+selection file retained the same hash and continued to serve its old page
+without changing exporter metrics. A new combined exact filter for event,
+level, user and metadata returned 39 complete matches. A broad request returned
+324 source rows, retained 100 and correctly reported `partial` /
+`maximum_count_exceeded`. That request exposed a real 16,423-character system
+comment; the earlier per-comment 512-character parser cap was removed because
+the whole XML is already bounded to 1 MiB. The broad XML was 174,718 bytes.
+Addressed product selections prove `Committed` and `NotApplicable`; an exact
+`Issue80.Lab.Rollback` selection returned three rows with comment
+`Rolled back company check`, `Catalog.Companies`, level `Warning`, the same
+technical user and transaction status `RolledBack`.
+
+`event` and `level` remain native filters in every split export. `user` and
+`metadata` are deliberately reapplied in the domain over the merged bounded
+selection because their native filters block on this runtime. Coverage remains
+honest: if acquisition exceeds `maximumCount`, refinements are explicitly
+limited to the retained selection and cannot prove absence outside it.
+
+The stage used **88/100** authorized native operations. The final task-owned
+process check was empty. No source/snapshot bytes, deployment, service, Hermes
+runtime, restart or live production IB were changed. `ibcmd` remains the
+shorter future replacement when an official server distribution is available,
+but is no longer a blocker for this bounded training-runtime path.
 
 ## Verification and limits
 
@@ -645,10 +710,14 @@ Static tests cover:
 - tamper, expiry, forged-ref and unknown-field rejection;
 - companion/plugin/schema/manifest registration parity.
 
-The prior successful patched-configuration probe proves the native method and XML
-shape on 8.5.1.1150. It does not prove this new external-EPF acquisition route.
-No deployment, credentials, service, database, index, Hermes core, source
-configuration, snapshot, live infobase or production code is changed by this PR.
+The exact split-session candidate is proven on the retained quiescent cut from
+the running disposable 8.5.1.1150 source. It does not claim atomic acquisition
+from an arbitrarily changing production journal, compatibility with other 1C
+builds, or availability of `ibcmd`. The local suite contains 314 tests; exact-
+head CI must pass on Python 3.9 and 3.12 before the PR result is accepted. No
+deployment, credentials, service, database, index, Hermes core, source
+configuration, snapshot, live infobase or production environment is changed by
+this PR.
 
 ## Rollback
 
