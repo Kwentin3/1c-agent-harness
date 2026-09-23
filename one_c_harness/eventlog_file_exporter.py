@@ -23,6 +23,10 @@ import eventlog_exporter as base
 
 SNAPSHOT_ENV = "ONE_C_HARNESS_EVENTLOG_SNAPSHOT"
 JOURNAL_ENV = "ONE_C_HARNESS_EVENTLOG_JOURNAL"
+_MAX_SNAPSHOT_BYTES = 128 * 1024 * 1024
+_MAX_JOURNAL_BYTES = 64 * 1024 * 1024
+_MAX_SNAPSHOT_FILES = 10000
+_MAX_JOURNAL_FILES = 128
 MODULE = Path("Ext/ManagedApplicationModule.bsl")
 ANCHOR = "Procedure OnStart()\r\n\t\r\n"
 CLIENT = ("Procedure OnStart()\r\n"
@@ -73,18 +77,38 @@ def _terminate(_signum: int, _frame: object) -> None:
     raise base.ExportFailure("source_timeout")
 
 
-def _digest_tree(root: Path) -> tuple[int, str]:
+def _digest_tree(root: Path, *, max_files: int = _MAX_SNAPSHOT_FILES,
+                 max_bytes: int = _MAX_SNAPSHOT_BYTES,
+                 deadline: float | None = None) -> tuple[int, str]:
     digest = hashlib.sha256()
     count = 0
+    total = 0
     for path in sorted(root.rglob("*")):
+        if deadline is not None and time.monotonic() >= deadline:
+            raise base.ExportFailure("source_timeout")
         if path.is_symlink() or not (path.is_file() or path.is_dir()):
             raise base.ExportFailure("configuration_invalid")
         if path.is_file():
-            rel = path.relative_to(root).as_posix().encode()
-            payload = path.read_bytes()
-            digest.update(len(rel).to_bytes(4, "big")); digest.update(rel)
-            digest.update(len(payload).to_bytes(8, "big")); digest.update(payload)
             count += 1
+            size = path.stat().st_size
+            total += size
+            if count > max_files or total > max_bytes:
+                raise base.ExportFailure("source_byte_limit")
+            rel = path.relative_to(root).as_posix().encode()
+            digest.update(len(rel).to_bytes(4, "big")); digest.update(rel)
+            digest.update(size.to_bytes(8, "big"))
+            with path.open("rb") as stream:
+                remaining = size
+                while remaining:
+                    if deadline is not None and time.monotonic() >= deadline:
+                        raise base.ExportFailure("source_timeout")
+                    chunk = stream.read(min(65536, remaining))
+                    if not chunk:
+                        raise base.ExportFailure("source_incomplete_receipt")
+                    digest.update(chunk)
+                    remaining -= len(chunk)
+                if stream.read(1):
+                    raise base.ExportFailure("source_incomplete_receipt")
     return count, digest.hexdigest()
 
 
@@ -160,26 +184,40 @@ def _settings() -> base.Settings:
                          work_root, None, None, metrics)
 
 
+def _overlaps(left: Path, right: Path) -> bool:
+    left = left.resolve()
+    right = right.resolve()
+    return left == right or left in right.parents or right in left.parents
+
+
 def run_once(request: object) -> tuple[bytes, dict[str, object]]:
     global _active
     admitted = base._validate_request(request)
+    # These columns block on this exact runtime, so a local post-filter would
+    # silently turn real records into an apparently empty selection.
+    if set(admitted["filters"]) & {"user", "metadata"}:
+        raise base.ExportFailure("source_process_failed")
     settings = _settings()
     snapshot = Path(os.environ.get(SNAPSHOT_ENV, ""))
     journal = Path(os.environ.get(JOURNAL_ENV, ""))
     if (not snapshot.is_absolute() or snapshot.is_symlink() or not snapshot.is_dir()
             or not journal.is_absolute() or journal.is_symlink() or not journal.is_dir()
             or not base._plain_file(journal / "1Cv8.lgf")
-            or snapshot == journal or snapshot in journal.parents or journal in snapshot.parents
-            or any(settings.work_root == source or settings.work_root in source.parents
-                   or source in settings.work_root.parents for source in (snapshot, journal))):
+            or _overlaps(snapshot, journal)
+            or any(_overlaps(settings.work_root, source) or
+                   (settings.metrics is not None and
+                    (settings.metrics.resolve() == source.resolve() or
+                     source.resolve() in settings.metrics.resolve().parents))
+                   for source in (snapshot, journal))):
         raise base.ExportFailure("configuration_invalid")
-    source_snapshot = _digest_tree(snapshot)
-    source_journal = _digest_tree(journal)
+    started = time.monotonic()
+    deadline = started + 110
+    source_snapshot = _digest_tree(snapshot, deadline=deadline)
+    source_journal = _digest_tree(journal, max_files=_MAX_JOURNAL_FILES,
+                                  max_bytes=_MAX_JOURNAL_BYTES, deadline=deadline)
     if source_snapshot[0] == 0 or source_journal[0] < 2:
         raise base.ExportFailure("configuration_invalid")
     settings.work_root.mkdir(parents=True, exist_ok=True)
-    started = time.monotonic()
-    deadline = started + 110
     stage = "copy"
     with tempfile.TemporaryDirectory(prefix="journal-", dir=settings.work_root) as raw:
         root = Path(raw)
@@ -192,10 +230,14 @@ def run_once(request: object) -> tuple[bytes, dict[str, object]]:
         base._write_request(evidence, admitted)
         try:
             shutil.copytree(journal, evidence / "1Cv8Log", symlinks=False)
-            if _digest_tree(evidence / "1Cv8Log") != source_journal or _digest_tree(journal) != source_journal:
+            if (_digest_tree(evidence / "1Cv8Log", max_files=_MAX_JOURNAL_FILES,
+                             max_bytes=_MAX_JOURNAL_BYTES, deadline=deadline) != source_journal
+                    or _digest_tree(journal, max_files=_MAX_JOURNAL_FILES,
+                                    max_bytes=_MAX_JOURNAL_BYTES, deadline=deadline) != source_journal):
                 raise base.ExportFailure("source_incomplete_receipt")
             shutil.copytree(snapshot, copy, symlinks=False)
-            if _digest_tree(copy) != source_snapshot or _digest_tree(snapshot) != source_snapshot:
+            if (_digest_tree(copy, deadline=deadline) != source_snapshot
+                    or _digest_tree(snapshot, deadline=deadline) != source_snapshot):
                 raise base.ExportFailure("source_incomplete_receipt")
             module = copy / MODULE
             module.chmod(module.stat().st_mode | stat.S_IWUSR)
@@ -214,7 +256,9 @@ def run_once(request: object) -> tuple[bytes, dict[str, object]]:
                              "/DisableStartupMessages", "/LoadConfigFromFiles", str(copy),
                              "/UpdateDBCfg", "/Out", str(evidence / "load.log"),
                              "/DumpResult", str(evidence / "load.result")], env, evidence / "load.result", deadline)
-            if _digest_tree(snapshot) != source_snapshot or _digest_tree(journal) != source_journal:
+            if (_digest_tree(snapshot, deadline=deadline) != source_snapshot
+                    or _digest_tree(journal, max_files=_MAX_JOURNAL_FILES,
+                                    max_bytes=_MAX_JOURNAL_BYTES, deadline=deadline) != source_journal):
                 raise base.ExportFailure("source_incomplete_receipt")
             argv = prefix + ["ENTERPRISE", "/F", str(ib), "/DisableStartupDialogs",
                              "/DisableStartupMessages", "/C", str(evidence),
@@ -263,7 +307,9 @@ def run_once(request: object) -> tuple[bytes, dict[str, object]]:
                 raise base.ExportFailure("source_incomplete_receipt") from None
             if document.tag.rsplit("}", 1)[-1] != "EventLog":
                 raise base.ExportFailure("source_incomplete_receipt")
-            if _digest_tree(snapshot) != source_snapshot or _digest_tree(journal) != source_journal:
+            if (_digest_tree(snapshot, deadline=deadline) != source_snapshot
+                    or _digest_tree(journal, max_files=_MAX_JOURNAL_FILES,
+                                    max_bytes=_MAX_JOURNAL_BYTES, deadline=deadline) != source_journal):
                 raise base.ExportFailure("source_incomplete_receipt")
             metrics: dict[str, object] = {"status": "ok", "selectedInfoBase": "configured_stable_journal",
                                           "exporterInvocations": 1,

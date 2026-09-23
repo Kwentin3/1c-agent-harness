@@ -64,6 +64,10 @@ calendar interval is inclusive, source-local, offset-free and at most 24 hours.
 The process timeout is 120 seconds. XML is capped at 1 MiB. The domain layer
 reapplies the interval and every exact filter to the returned XML rather than
 trusting the deployment command alone.
+**The specific training-file exporter below supports only `event` and `level`
+filters**. `user` and `metadata` remain in the source-neutral request contract,
+but this exporter refuses them as unavailable before launching 1C. Do not use
+the four-filter example above as a claim that this runtime supports all four.
 
 If the fixed command or timezone is absent, invalid, times out or exits nonzero,
 the source is `unavailable`; it is never reported as an empty selection. A known
@@ -514,8 +518,47 @@ other log formats, broad requests over the 1 MiB limit, or filters not
 individually exercised natively. The final verified candidate only emits five
 columns (`Date,Level,Event,EventPresentation,TransactionStatus`); user and
 metadata remain unavailable, **not** empty or known. No deployment or merge
-has occurred. The total authorized execution count is **24/24** (17 prior,
+has occurred. The original cycle used **24/24** native invocations (17 prior,
 seven candidate invocations, including the connected companion attempt).
+The owner then expanded the *total* budget to 50; see the bounded follow-up
+below. The prior 24/24 statement is not the current budget.
+
+### Follow-up without deployment or restart (expanded budget)
+
+Five further isolated native runs on the same selected retained training
+`1Cv8Log` brought the total to **29/50**. Each generated its own disposable
+configuration and file IB under executor `.local/`; the candidate checked
+source-tree content at admission, after copying and after load (and also after
+export on successful paths), then removed its owned runtime work directory.
+Raw receipts stay in the executor's `.local/issue80-cycle/candidate-{filter-1,
+full-columns-1,complete-1,combined-1,byte-limit-1}/` directories, not Git.
+The exact source remains the retained copy, not a live-writing IB.
+
+| Control | Observed result |
+| --- | --- |
+| `filter-1` with `event=_$Session$_.Start` | One real event, 497 XML bytes, SHA-256 `80a8f170ad95a1d4224f066aafea51267e0d886e12e3f61b426fd87b3eb699b3`, 21 ms native export; clean owned work root. |
+| `full-columns-1` with all nine requested output columns | Entered client/server and `export-started`, but did not return within 110 s; zero XML, `source_timeout`, clean owned work root. **Neither user nor metadata is observable from this exporter.** |
+| `complete-1` through actual companion with `maximumCount=10` | Two records in 799 XML bytes, `coverage.complete=true`, 45,219 ms total, 20 ms native export. Retained page narrowed to one `_$Session$_.Start` record; record read succeeded, zero subsequent exporter invocations. |
+| `combined-1` with `event=_$Session$_.Start`, `level=Information` | One real event, 497 bytes and the same XML hash as `filter-1`; 42,296 ms total; clean owned work root. |
+| `byte-limit-1` with 4 KiB output limit | The native method returned and all five lifecycle markers appeared, but the candidate returned exit 2 / `source_byte_limit`, **zero XML stdout**, and removed its owned work root. |
+
+The production candidate keeps the **five proven output columns** and refuses
+`user` / `metadata` filters before native launch. Returning zero rows for these
+filters would be a false absence claim: the companion's post-filter cannot
+match fields missing from native output. `event` and `level` are proven
+individually/combined on this historical slice; other combinations and runtime
+builds remain unproven. The candidate now streams source-tree hashes, caps the
+snapshot at 10,000 files / 128 MiB and the historical journal at 128 files /
+64 MiB, and starts its 110-second deadline before the initial content hash.
+The caller's 120-second bound remains outside that deadline. Oversized or
+timed-out acquisitions fail closed; temporary copies are cleaned. These are
+limits for this candidate, not a general capacity specification.
+
+**Still unknown:** the retained `1Cv8Log` files have owner-write filesystem
+permission. Their unchanged hashes during a request do not establish an atomic
+or quiescent origin, and the exporter does not implement live-journal snapshot
+acquisition. No fresh consistency guarantee or supported production source is
+claimed. A running 1C installation or Hermes deployment was not restarted.
 
 ## Verification and limits
 
