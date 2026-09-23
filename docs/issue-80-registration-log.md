@@ -560,6 +560,79 @@ or quiescent origin, and the exporter does not implement live-journal snapshot
 acquisition. No fresh consistency guarantee or supported production source is
 claimed. A running 1C installation or Hermes deployment was not restarted.
 
+### Live-source and meaningful-field continuation (40-operation stage)
+
+The owner opened a new 20-operation stage for the live-source goal and later
+expanded that stage to **40 total operations**. All 40 were used; preparation,
+source sessions and reader calls were counted conservatively as separate
+operations. Every native command remained bounded to at most 120 seconds. The
+immutable 5,099-file snapshot retained closure
+`e437eeb98382c571e42cecb3803d98b6228e4771cabfd81ebe0f79a6275fa594`,
+and no task-owned 1C process remained after the final timeout.
+
+A disposable training IB wrote real platform journal events through the exact
+8.5.1.1150 `WriteLogEvent` API. The useful rows include:
+
+- `Issue80.Lab.Commit`, `Information`, `Document.SalesInvoice`, transaction
+  `Committed`, comment `Committed invoice check`;
+- `Issue80.Lab.Rollback`, `Warning`, `Catalog.Companies`, transaction
+  `RolledBack`, comment `Rolled back company check`;
+- `Issue80.Lab.Independent`, `Note`, `Document.InventoryWriteOff`, transaction
+  `NotApplicable`, comment `Independent inventory check`;
+- 25 `Issue80.Lab.Page` rows per writer session for paging controls.
+
+The training runtime would not admit the planned named laboratory user: a
+password is forbidden by the training-license boundary, while disabling standard
+1C authentication would leave no authenticated administrator. The events were
+therefore authored by the existing disposable-IB administrator. Its exported
+technical `User` value is a non-empty UUID; no user presentation is inferred.
+
+A coordinated lab copy was taken only after the writer emitted its
+`events-written`/`source-ready` markers while that source session remained alive.
+Before/source-after/copy closures matched: two files, 68,035 bytes, SHA-256
+`99b4c039637979623e0a2fa755e0619c92e7b7350910ca949600d2b0aac540ce`.
+This proves a quiescent application-controlled laboratory cut, not an atomic
+snapshot of an arbitrarily live-writing production journal.
+
+Column-isolation on that copy produced 324 native records for the day. The five
+baseline columns returned in 4,382 ms. Adding each field separately returned:
+`Comment` in 2,439 ms (124,834 XML bytes), technical `User` in 2,590 ms
+(116,497 bytes), technical `Metadata` in 2,226 ms (110,181 bytes), and
+`MetadataPresentation` in 2,121 ms (116,636 bytes). The fields are populated in
+the known events above. `UserPresentation` alone reached `export-started` but
+returned no XML within 45 seconds.
+
+The limitation is interaction-sensitive rather than a blanket absence of these
+fields. `User + Metadata`, with and without `Comment`, did not return within 40
+seconds. Native `User` and `Metadata` filters likewise reached `export-started`
+but returned no XML within 40 seconds, even though those same technical values
+were present in the separately exported rows. A final candidate attempted four
+individually safe native exports in one reader session and an identity-checked
+XML merge. Its configuration loaded successfully in 30,823 ms, but the bounded
+companion call stopped inside the first export before any XML was created. This
+failed candidate was removed; the tracked five-column historical exporter
+remains the rollback-safe implementation.
+
+The direct utility is named **`ibcmd`**. Official 1C documentation confirms
+`ibcmd eventlog export` as the shortest candidate because it reads an event-log
+directory without a service infobase. The installed official training client
+distribution contains no `ibcmd`; the utility is supplied by the Linux x86-64
+**server** distribution. No server distribution or separately redistributable
+official binary is present in the executor/workspace caches, and the official
+download is account/license-acceptance gated. No mirror or unverified binary was
+used. Consequently its real version/help, compatibility with this 8.5.1.1150
+journal, fields and output have not been tested.
+
+**Stage verdict: partially ready / stopped.** The stage proves current lab event
+creation, a bounded quiescent cut, and the presence of useful user/metadata/text
+fields, but it does not provide one supported acquisition that returns those
+fields together while the source remains running. The minimum external resource
+for the primary KISS path is an official Linux x86-64 server distribution that
+contains `ibcmd` (preferably the matching 8.5.1.1150 build), made available in
+the executor's task-owned `.local/` area or through an authenticated vendor
+download handoff. Installation, deployment, restart, merge and issue closure
+remain outside this result.
+
 ## Verification and limits
 
 Static tests cover:
