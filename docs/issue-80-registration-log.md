@@ -302,12 +302,41 @@ but their black framebuffer, empty marker, and trace are no longer used to
 conclude that ordinary startup did not reach an object-module entry. They neither
 prove an empty log nor an EPF compilation/platform defect.
 
-The current owner-authorized cycle begins its own budget. Before its first native
-attempt, the executor route must be admitted on the exact prepared remote
-workspace and the first control must use the form-bound entry above (or another
-entry with an equally direct, version-supported positive contract). No new
-runtime route, deployment setting, source-configuration change, or retained
-selection is claimed by this correction.
+### Current cycle: the `OnStart` route and native export are confirmed
+
+The exact executor route was admitted on an isolated worktree at
+`4fab3258e0e144211a7ec749410f0538318a5e59` (tree
+`6efeaa41cb1b48f1a07bc96cdca16de5a0104233`). A first, harmless disposable
+control injected an early managed-application `OnStart` marker before normal
+startup, then returned. It reached that marker in **4,433 ms**; create and load
+completed in **2,304 ms** and **30,199 ms** respectively. This establishes the
+entry that the earlier object-module controls did not.
+
+A subsequent disposable `OnStart → &AtServer → UnloadEventLog` probe had one
+static correction before retry: `TerminateSystem` is not defined by the exact
+English BSL runtime; the platform returned that compile diagnostic before any
+marker or export. It was removed rather than treated as a log failure.
+
+The corrected run reached all ordered markers: `client-entered` at 9,767 ms,
+`server-entered` and `export-started` at 9,767 ms, then `export-returned` and
+`complete` at 9,789 ms. `UnloadEventLog` returned in **21 ms** and wrote a valid,
+**193-byte** empty `EventLog` XML document
+(`sha256:53cf6cd324804ee85e3e85f5c5cc2c9766444fc5c69fad097048f0156f821617`).
+The process group was stopped only after `complete`; all disposable work-copy,
+file-IB, HOME and TMP roots were removed. The immutable snapshot remained
+5,099 files with closure
+`e437eeb98382c571e42cecb3803d98b6228e4771cabfd81ebe0f79a6275fa594`.
+
+This proves the native method and a client/server acquisition route on the exact
+training runtime. The returned XML is correctly empty for the fresh disposable
+IB and does **not** prove the supplied candidate can retrieve the prior history
+of a separately selected persistent IB. Its tracked `/Execute` exporter has not
+been requalified; no fabricated retained selection, page, or record is claimed.
+The remaining product boundary is source binding: authorize one bounded,
+read-only way to run the proven temporary `OnStart` probe against a copy of the
+selected training IB (or supply an equivalent already-authorized execution seam).
+No new runtime route, deployment setting, source-configuration change, or
+retained selection is claimed by this correction.
 
 ## Verification and limits
 
