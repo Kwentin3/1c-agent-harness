@@ -442,17 +442,80 @@ server utility's compatibility with this retained legacy log has not been
 tested. A copied, stable historical journal was used here; no claim is made
 about coherent copying of a *live-writing* production journal.
 
-**Decision boundary.** The work has established a fast native method to read
-real records when supplied a stable `1Cv8.lgf` plus its segments, and a working
-retained-selection pipeline, but **not** a compliant product execution seam.
-The smallest concrete way to continue with this installed runtime is owner
-permission for a routine isolated disposable configuration work-copy/IB as the
-bounded exporter (never a change to the selected source IB or immutable
-snapshot). This is a change to the explicit final-route constraint and requires
-an owner decision before implementation. An independently provisioned,
-compatible official `ibcmd` would instead avoid that exception, but is not
-present or verified on this executor. PR #81 remains draft; no deployment,
-restart, merge, or issue closure is authorized.
+**Historical decision boundary (superseded).** Before the owner's subsequent
+permission, this work had proved the native file-input method and retained
+selection independently, but no compliant product execution seam. A routine
+disposable configuration work-copy was then an exception needing a decision.
+The owner granted permission to proceed with that isolated option; its tested
+outcome and remaining limits follow. This does not authorize deployment,
+restart, merge or issue closure.
+
+### Authorized disposable exporter candidate and connected companion proof
+
+After the owner explicitly granted permission to continue, a fixed-command
+candidate was added at `one_c_harness/eventlog_file_exporter.py`. It uses the
+already selected read-only **retained, quiescent** `1Cv8Log` directory and
+the immutable snapshot. It copies both into a private `.local/` request root,
+inserts an early-returning `OnStart` into that **copy only**, creates a fresh
+file IB, loads the copy through the installed Designer, and calls the native
+`UnloadEventLog` with the copied `1Cv8.lgf` as its explicit input. It checks
+source-tree hashes before and after, terminates its owned native process group
+on a deadline or byte breach, rejects an incomplete result, and removes the
+disposable configuration and IB. The existing companion and retained-selection
+domain are unchanged; no new service, plugin or Hermes runtime change exists.
+The selected source itself is never passed as the launched IB.
+
+The first candidate failed before client entry on exact-runtime BSL
+`ManagedApplicationModule(144,9): Unknown operator`: `ElseIf` was the wrong
+English keyword; the snapshot itself uses `ElsIf`. After correction, client
+and server entered but export timed out when the generated module read empty
+optional-filter files. Substituting the five proven columns and then lowering
+`MaximumCount` to one did not change that result. The static difference to the
+successful minimal control was the optional-filter reads. The generator now
+omits each absent filter block entirely; no caller string is interpolated into
+BSL. The next run returned **exactly the earlier native 799-byte XML**,
+SHA-256 `54b039e2527a18fc00223b4c2240e34efde61503caa732035e1362ed4e3c2b20`,
+with two historical records, 41 ms export and 40,986 ms total native request.
+Its owned work root was empty afterward. These timings include one disposable
+create/load and startup, not a claim of a 41 ms user-facing selection.
+
+The connected test used the *actual* existing companion in the exact executor
+worktree, its `eventlog_select` operation, the executable candidate command,
+the retained selected journal, and `eventlog_page`/`eventlog_record`. With
+`maximumCount=1`, native export returned **two** rows, while the domain kept
+one and correctly labeled selection, page and record as `partial` /
+`maximum_count_exceeded`. The retained record was
+`_$Session$_.Authentication` at `2026-09-22T10:56:10`, level `Information`,
+transaction status `NotApplicable`. A refinement for `_$Session$_.Start`
+returned zero **within the incomplete retained selection**; it must not be
+reported as absence from the actual log. A later page/record call on the same
+selection had no additional exporter invocation (metrics mtime unchanged).
+Connected receipt: **56,039 ms** lifecycle, 40 ms native export, 799 XML bytes,
+one source invocation and zero subsequent invocations. The 1C training host's
+current system zone is UTC and `UTC` was supplied as a *deployment setting*;
+the timezone embedded in historical log events remains independently unproven.
+This is a companion→candidate→native source E2E, **not** an installed Hermes
+chat-plugin E2E. No source or snapshot file changed in the verified run.
+
+The candidate's command contract is one closed JSON request on stdin, XML on
+stdout, typed error JSON on stderr. Deployment binds
+`ONE_C_HARNESS_EVENTLOG_COMMAND` to the executable file exporter,
+`ONE_C_HARNESS_EVENTLOG_RUNTIME_PROFILE` to the pinned training runtime,
+`ONE_C_HARNESS_EVENTLOG_SNAPSHOT` to the admitted immutable hierarchical
+snapshot, `ONE_C_HARNESS_EVENTLOG_JOURNAL` to a preselected **stable copied**
+`1Cv8Log` directory, `ONE_C_HARNESS_EVENTLOG_WORK_ROOT` to a task-owned
+`.local/` directory, and `ONE_C_HARNESS_EVENTLOG_TIME_ZONE` to an explicitly
+configured IANA zone. The candidate needs a full matching training runtime
+and this workload takes tens of seconds per *new* selection; pages/records
+reuse the cached selection. A changing/live-writing source is **not admitted**:
+before/after hashes can detect some concurrent changes, but cannot prove an
+atomic snapshot. No compatibility claim is made for a production 1C build,
+other log formats, broad requests over the 1 MiB limit, or filters not
+individually exercised natively. The final verified candidate only emits five
+columns (`Date,Level,Event,EventPresentation,TransactionStatus`); user and
+metadata remain unavailable, **not** empty or known. No deployment or merge
+has occurred. The total authorized execution count is **24/24** (17 prior,
+seven candidate invocations, including the connected companion attempt).
 
 ## Verification and limits
 
