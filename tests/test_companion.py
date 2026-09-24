@@ -197,6 +197,259 @@ class CompanionContractTests(unittest.TestCase):
         self.assertEqual(neighbors["level"], "record")
         self.assertEqual(neighbors["scope"], "retainedFilteredSelection")
 
+    def test_registration_log_select_page_and_record_are_closed_requests(self) -> None:
+        with tempfile.TemporaryDirectory() as temporary:
+            project = Path(temporary) / "project"; project.mkdir()
+            exporter = Path(temporary) / "exporter.py"
+            exporter.write_text("""#!/usr/bin/env python3
+import sys
+sys.stdin.buffer.read()
+sys.stdout.write('<?xml version="1.0"?><v8e:EventLog xmlns:v8e="http://v8.1c.ru/eventLog"><v8e:Event><v8e:Level>Error</v8e:Level><v8e:Date>2026-09-22T06:44:16</v8e:Date><v8e:Event>_$Data$_.Update</v8e:Event><v8e:User>alice</v8e:User><v8e:Metadata>Document.Invoice</v8e:Metadata></v8e:Event></v8e:EventLog>')
+""", encoding="utf-8")
+            exporter.chmod(0o755)
+            previous_command = os.environ.get("ONE_C_HARNESS_EVENTLOG_COMMAND")
+            previous_zone = os.environ.get("ONE_C_HARNESS_EVENTLOG_TIME_ZONE")
+            os.environ["ONE_C_HARNESS_EVENTLOG_COMMAND"] = str(exporter)
+            os.environ["ONE_C_HARNESS_EVENTLOG_TIME_ZONE"] = "UTC"
+            try:
+                selected = companion.execute(_request("eventlog_select", {
+                    "start": "2026-09-22T06:44:00", "end": "2026-09-22T06:45:00",
+                    "filters": {"level": "Error"}, "maximumCount": 100, "limit": 20,
+                }), project)
+                page = companion.execute(_request("eventlog_page", {
+                    "selectionRef": selected["selectionRef"], "offset": 0, "limit": 20,
+                    "filters": {"level": "Error"},
+                }), project)
+                record = companion.execute(_request("eventlog_record", {
+                    "recordRef": page["records"][0]["recordRef"],
+                }), project)
+            finally:
+                if previous_command is None: os.environ.pop("ONE_C_HARNESS_EVENTLOG_COMMAND", None)
+                else: os.environ["ONE_C_HARNESS_EVENTLOG_COMMAND"] = previous_command
+                if previous_zone is None: os.environ.pop("ONE_C_HARNESS_EVENTLOG_TIME_ZONE", None)
+                else: os.environ["ONE_C_HARNESS_EVENTLOG_TIME_ZONE"] = previous_zone
+
+        self.assertEqual(selected["operation"], "eventlog_select")
+        self.assertEqual(page["operation"], "eventlog_page")
+        self.assertEqual(page["summary"]["countScope"], "refinedRetainedSelection")
+        self.assertEqual(record["operation"], "eventlog_record")
+        self.assertEqual(record["record"]["metadata"]["name"], "Document.Invoice")
+
+    def test_long_registration_log_text_is_bounded_and_recoverable_without_reexport(self) -> None:
+        with tempfile.TemporaryDirectory() as temporary:
+            root = Path(temporary)
+            project = root / "project"; project.mkdir()
+            source = root / "source.xml"
+            calls = root / "calls"
+            long_comment = "Ж" * 16423
+            comments = [long_comment] + [f"{number}:" + "Я" * 2000 for number in range(1, 10)]
+            events = "".join(
+                "<v8e:Event><v8e:Level>Information</v8e:Level>"
+                f"<v8e:Date>2026-09-22T06:44:{number:02d}</v8e:Date>"
+                f"<v8e:Event>Long.{number}</v8e:Event><v8e:Comment>{comment}</v8e:Comment></v8e:Event>"
+                for number, comment in enumerate(comments)
+            )
+            source.write_text(
+                '<?xml version="1.0"?><v8e:EventLog xmlns:v8e="http://v8.1c.ru/eventLog">'
+                + events + '</v8e:EventLog>', encoding="utf-8",
+            )
+            exporter = root / "exporter.py"
+            exporter.write_text(
+                "#!/usr/bin/env python3\n"
+                "import os,pathlib,sys\n"
+                "sys.stdin.buffer.read()\n"
+                "p=pathlib.Path(os.environ['CALLS']); p.write_text(p.read_text()+'x' if p.exists() else 'x')\n"
+                "sys.stdout.buffer.write(pathlib.Path(os.environ['SOURCE_XML']).read_bytes())\n",
+                encoding="utf-8",
+            )
+            exporter.chmod(0o755)
+            previous = {name: os.environ.get(name) for name in (
+                "ONE_C_HARNESS_EVENTLOG_COMMAND", "ONE_C_HARNESS_EVENTLOG_TIME_ZONE", "SOURCE_XML", "CALLS",
+            )}
+            os.environ.update({
+                "ONE_C_HARNESS_EVENTLOG_COMMAND": str(exporter),
+                "ONE_C_HARNESS_EVENTLOG_TIME_ZONE": "UTC",
+                "SOURCE_XML": str(source), "CALLS": str(calls),
+            })
+            try:
+                selected = companion.execute(_request("eventlog_select", {
+                    "start": "2026-09-22T06:44:00", "end": "2026-09-22T06:45:00",
+                    "filters": {}, "maximumCount": 100, "limit": 10,
+                }), project)
+                selected_wire = companion._dump(selected).encode("utf-8")
+                page = companion.execute(_request("eventlog_page", {
+                    "selectionRef": selected["selectionRef"], "offset": 0, "limit": 10,
+                }), project)
+                page_wire = companion._dump(page).encode("utf-8")
+                record_ref = page["records"][0]["recordRef"]
+                pieces: list[str] = []
+                offset = 0
+                while True:
+                    record = companion.execute(_request("eventlog_record", {
+                        "recordRef": record_ref, "commentOffset": offset, "commentMaxBytes": 16384,
+                    }), project)
+                    wire = companion._dump(record).encode("utf-8")
+                    self.assertLessEqual(len(wire), companion.MAX_OUTPUT_BYTES)
+                    self.assertNotEqual(json.loads(wire)["status"], "blocked")
+                    pieces.append(record["record"]["comment"])
+                    continuation = record["record"]["commentContinuation"]
+                    if continuation["complete"]:
+                        break
+                    offset = continuation["nextOffsetBytes"]
+                invalid = companion.execute(_request("eventlog_record", {
+                    "recordRef": record_ref, "commentOffset": 1, "commentMaxBytes": 4096,
+                }), project)
+                call_receipt = calls.read_text()
+            finally:
+                for name, value in previous.items():
+                    if value is None: os.environ.pop(name, None)
+                    else: os.environ[name] = value
+
+        self.assertEqual(selected["status"], "ok")
+        self.assertEqual(page["total"], 10)
+        self.assertEqual(len(page["records"]), 10)
+        self.assertLessEqual(len(selected_wire), companion.MAX_OUTPUT_BYTES)
+        self.assertLessEqual(len(page_wire), companion.MAX_OUTPUT_BYTES)
+        self.assertNotEqual(json.loads(selected_wire)["status"], "blocked")
+        self.assertNotEqual(json.loads(page_wire)["status"], "blocked")
+        self.assertFalse(page["records"][0]["commentContinuation"]["complete"])
+        self.assertEqual("".join(pieces), long_comment)
+        self.assertEqual(invalid["reasonCode"], "invalid_request")
+        self.assertEqual(call_receipt, "x")
+
+    def test_registration_log_final_wire_pages_without_losing_records(self) -> None:
+        with tempfile.TemporaryDirectory() as temporary:
+            root = Path(temporary)
+            project = root / "project"; project.mkdir()
+            source = root / "source.xml"
+            calls = root / "calls"
+            event = (
+                "<v8e:Event><v8e:Level>Information</v8e:Level>"
+                "<v8e:Date>2026-09-22T06:44:{second:02d}</v8e:Date>"
+                "<v8e:Event>" + "С" * 125 + "{second}</v8e:Event>"
+                "<v8e:EventPresentation>" + "Представление" * 12 + "</v8e:EventPresentation>"
+                "<v8e:User>" + "П" * 80 + "</v8e:User><v8e:UserPresentation>" + "Пользователь" * 13 + "</v8e:UserPresentation>"
+                "<v8e:Metadata>" + "М" * 128 + "</v8e:Metadata><v8e:MetadataPresentation>" + "Документ" * 20 + "</v8e:MetadataPresentation>"
+                "<v8e:TransactionStatus>Committed</v8e:TransactionStatus>"
+                "<v8e:Comment>" + "Я" * 512 + "</v8e:Comment></v8e:Event>"
+            )
+            source.write_text(
+                '<?xml version="1.0"?><v8e:EventLog xmlns:v8e="http://v8.1c.ru/eventLog">'
+                + "".join(event.format(second=index) for index in range(20))
+                + '</v8e:EventLog>', encoding="utf-8",
+            )
+            exporter = root / "exporter.py"
+            exporter.write_text(
+                "#!/usr/bin/env python3\nimport os,pathlib,sys\n"
+                "sys.stdin.buffer.read()\n"
+                "p=pathlib.Path(os.environ['CALLS']); p.write_text(p.read_text()+'x' if p.exists() else 'x')\n"
+                "sys.stdout.buffer.write(pathlib.Path(os.environ['SOURCE_XML']).read_bytes())\n",
+                encoding="utf-8",
+            )
+            exporter.chmod(0o755)
+            previous = {name: os.environ.get(name) for name in (
+                "ONE_C_HARNESS_EVENTLOG_COMMAND", "ONE_C_HARNESS_EVENTLOG_TIME_ZONE", "SOURCE_XML", "CALLS",
+            )}
+            os.environ.update({
+                "ONE_C_HARNESS_EVENTLOG_COMMAND": str(exporter), "ONE_C_HARNESS_EVENTLOG_TIME_ZONE": "UTC",
+                "SOURCE_XML": str(source), "CALLS": str(calls),
+            })
+            try:
+                selected = json.loads(companion._dump(companion.execute(_request("eventlog_select", {
+                    "start": "2026-09-22T06:44:00", "end": "2026-09-22T06:45:00",
+                    "filters": {}, "maximumCount": 100, "limit": 20,
+                }), project)))
+                shown = list(selected["records"])
+                offset = selected["nextOffset"]
+                self.assertLess(offset, 20)
+                self.assertTrue(selected["display"]["partial"])
+                self.assertEqual(selected["display"]["returnedCount"], len(shown))
+                while offset < selected["summary"]["recordCount"]:
+                    page = json.loads(companion._dump(companion.execute(_request("eventlog_page", {
+                        "selectionRef": selected["selectionRef"], "offset": offset, "limit": 20,
+                    }), project)))
+                    self.assertNotEqual(page["status"], "blocked")
+                    self.assertLessEqual(len(companion._dump(page).encode("utf-8")), companion.MAX_OUTPUT_BYTES)
+                    self.assertEqual(page["coverage"], {"complete": True, "partial": False, "limitedToRetainedSelection": True})
+                    self.assertEqual(page["summary"]["countScope"], "retainedFilteredSelection")
+                    shown.extend(page["records"])
+                    self.assertGreater(page["nextOffset"], offset)
+                    offset = page["nextOffset"]
+                call_receipt = calls.read_text()
+            finally:
+                for name, value in previous.items():
+                    if value is None: os.environ.pop(name, None)
+                    else: os.environ[name] = value
+
+        self.assertEqual([record["selectionIndex"] for record in shown], list(range(20)))
+        self.assertEqual(len({record["recordRef"] for record in shown}), 20)
+        self.assertEqual(selected["summary"]["coverage"], {"complete": True, "partial": False})
+        self.assertEqual(call_receipt, "x")
+
+    def test_registration_log_escaped_comment_is_wire_bounded_and_exactly_recoverable(self) -> None:
+        with tempfile.TemporaryDirectory() as temporary:
+            root = Path(temporary)
+            project = root / "project"; project.mkdir()
+            source = root / "source.xml"
+            calls = root / "calls"
+            comment = "\\" * 20000 + "ЯЯ"
+            source.write_text(
+                '<?xml version="1.0"?><v8e:EventLog xmlns:v8e="http://v8.1c.ru/eventLog">'
+                '<v8e:Event><v8e:Level>Error</v8e:Level><v8e:Date>2026-09-22T06:44:00</v8e:Date>'
+                f'<v8e:Event>Long</v8e:Event><v8e:Comment>{comment}</v8e:Comment></v8e:Event></v8e:EventLog>',
+                encoding="utf-8",
+            )
+            exporter = root / "exporter.py"
+            exporter.write_text(
+                "#!/usr/bin/env python3\nimport os,pathlib,sys\nsys.stdin.buffer.read()\n"
+                "p=pathlib.Path(os.environ['CALLS']); p.write_text(p.read_text()+'x' if p.exists() else 'x')\n"
+                "sys.stdout.buffer.write(pathlib.Path(os.environ['SOURCE_XML']).read_bytes())\n",
+                encoding="utf-8",
+            )
+            exporter.chmod(0o755)
+            previous = {name: os.environ.get(name) for name in (
+                "ONE_C_HARNESS_EVENTLOG_COMMAND", "ONE_C_HARNESS_EVENTLOG_TIME_ZONE", "SOURCE_XML", "CALLS",
+            )}
+            os.environ.update({
+                "ONE_C_HARNESS_EVENTLOG_COMMAND": str(exporter), "ONE_C_HARNESS_EVENTLOG_TIME_ZONE": "UTC",
+                "SOURCE_XML": str(source), "CALLS": str(calls),
+            })
+            try:
+                selected = companion.execute(_request("eventlog_select", {
+                    "start": "2026-09-22T06:44:00", "end": "2026-09-22T06:45:00",
+                    "filters": {}, "maximumCount": 100, "limit": 1,
+                }), project)
+                record_ref = selected["records"][0]["recordRef"]
+                pieces: list[str] = []
+                offset = 0
+                while True:
+                    wire = companion._dump(companion.execute(_request("eventlog_record", {
+                        "recordRef": record_ref, "commentOffset": offset, "commentMaxBytes": 16384,
+                    }), project))
+                    result = json.loads(wire)
+                    self.assertNotEqual(result["status"], "blocked")
+                    self.assertLessEqual(len(wire.encode("utf-8")), companion.MAX_OUTPUT_BYTES)
+                    self.assertLessEqual(len(wire.encode("utf-8")), companion._EVENTLOG_OUTPUT_TARGET_BYTES)
+                    pieces.append(result["record"]["comment"])
+                    continuation = result["record"]["commentContinuation"]
+                    if continuation["complete"]:
+                        break
+                    self.assertGreater(continuation["nextOffsetBytes"], offset)
+                    offset = continuation["nextOffsetBytes"]
+                call_receipt = calls.read_text()
+            finally:
+                for name, value in previous.items():
+                    if value is None: os.environ.pop(name, None)
+                    else: os.environ[name] = value
+
+        self.assertEqual("".join(pieces), comment)
+        self.assertEqual(call_receipt, "x")
+
+    def test_registration_log_requests_reject_unknown_fields(self) -> None:
+        result = companion.execute(_request("eventlog_record", {"recordRef": "x", "path": "/tmp/raw"}), self.root if hasattr(self, "root") else Path.cwd())
+        self.assertEqual(result["status"], "blocked")
+        self.assertEqual(result["reasonCode"], "invalid_request")
+
     def test_investigate_then_expand_exposes_bounded_runtime_receipt_evidence(self) -> None:
         with tempfile.TemporaryDirectory() as temporary:
             project = Path(temporary)

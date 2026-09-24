@@ -4,7 +4,7 @@ from __future__ import annotations
 import json
 from pathlib import Path
 
-CAPABILITY_VERSION = "0.2.0"
+CAPABILITY_VERSION = "0.3.0"
 _release = json.loads((Path(__file__).with_name("release.json")).read_text(encoding="utf-8"))
 if set(_release) != {"schemaVersion", "artifactId"} or _release["schemaVersion"] != 1 or not isinstance(_release["artifactId"], str):
     raise RuntimeError("invalid one-c-harness plugin release manifest")
@@ -32,6 +32,17 @@ def _tool(name: str, properties: dict[str, object], required: list[str], descrip
             "required": required,
             "additionalProperties": False,
         },
+    }
+
+
+def _eventlog_filters() -> dict[str, object]:
+    return {
+        "type": "object",
+        "properties": {
+            name: {"type": "string", "minLength": 1, "maxLength": 128}
+            for name in ("event", "level", "user", "metadata")
+        },
+        "additionalProperties": False,
     }
 
 
@@ -97,6 +108,56 @@ TOOLS = (
                 {"properties": {"observationRef": {"type": "string", "minLength": 1, "maxLength": 256}, "offset": {"type": "integer", "minimum": 0}, "limit": {"type": "integer", "minimum": 1, "maximum": 20}}, "required": ["observationRef", "offset", "limit"], "additionalProperties": False},
                 {"properties": {"groupRef": {"type": "string", "minLength": 1, "maxLength": 256}, "offset": {"type": "integer", "minimum": 0}, "limit": {"type": "integer", "minimum": 1, "maximum": 20}}, "required": ["groupRef", "offset", "limit"], "additionalProperties": False},
                 {"properties": {"recordRef": {"type": "string", "minLength": 1, "maxLength": 256}, "before": {"type": "integer", "minimum": 0, "maximum": 5}, "after": {"type": "integer", "minimum": 0, "maximum": 5}}, "required": ["recordRef", "before", "after"], "additionalProperties": False},
+            ],
+        },
+    },
+    _tool(
+        "one_c_select_registration_log",
+        {
+            "start": {"type": "string", "description": "Inclusive source-local calendar start without an offset."},
+            "end": {"type": "string", "description": "Inclusive source-local calendar end without an offset; at most 24 hours after start."},
+            "filters": _eventlog_filters(),
+            "maximumCount": {"type": "integer", "minimum": 1, "maximum": 100},
+            "limit": {"type": "integer", "minimum": 1, "maximum": 20},
+        },
+        ["start", "end", "filters", "maximumCount", "limit"],
+        "Create one bounded retained selection from the configured 1C registration log source. At the maximum-count boundary the result is partial, never complete; an unavailable source is not an empty journal.",
+    ),
+    _tool(
+        "one_c_page_registration_log",
+        {
+            "selectionRef": {"type": "string", "minLength": 1, "maxLength": 128},
+            "offset": {"type": "integer", "minimum": 0},
+            "limit": {"type": "integer", "minimum": 1, "maximum": 20},
+            "filters": _eventlog_filters(),
+        },
+        ["selectionRef", "offset", "limit"],
+        "Page one exact retained registration-log selection. If display.partial is true, continue at the returned nextOffset; this does not re-export.",
+    ),
+    {
+        "name": "one_c_read_registration_log_record",
+        "description": (
+            "Read one exact retained registration-log record. If commentContinuation is incomplete, "
+            "repeat with its nextOffsetBytes as commentOffset to read the next UTF-8-safe chunk without re-exporting."
+        ),
+        "parameters": {
+            "type": "object",
+            "oneOf": [
+                {
+                    "properties": {
+                        "recordRef": {"type": "string", "minLength": 1, "maxLength": 192},
+                    },
+                    "required": ["recordRef"], "additionalProperties": False,
+                },
+                {
+                    "properties": {
+                        "recordRef": {"type": "string", "minLength": 1, "maxLength": 192},
+                        "commentOffset": {"type": "integer", "minimum": 0},
+                        "commentMaxBytes": {"type": "integer", "minimum": 4, "maximum": 16384},
+                    },
+                    "required": ["recordRef", "commentOffset", "commentMaxBytes"],
+                    "additionalProperties": False,
+                },
             ],
         },
     },

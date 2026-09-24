@@ -131,15 +131,25 @@ terminal backend. Coding operations остаются `open`, `narrow` и `verify
 принимают только точный admitted `SnapshotRef`, а task artifacts для `verify` должны быть
 repository-relative. Runtime observations добавляют bounded source discovery, safe structured
 filters и stable ref navigation по выбранному deployment технологическому журналу; модель не
-может передать путь к источнику. Существующий executor locator `.local/one-c-runtime.json`
-переиспользуется без нового сервиса или индекса.
+может передать путь к источнику. Candidate #80 тем же способом добавляет bounded selection/page/record
+для журнала регистрации: deployment выбирает фиксированную команду выгрузки, официальный
+`ibcmd` и стабильную копию `1Cv8Log`; companion повторно проверяет XML и удерживает opaque refs
+один час. Без проверенной команды источник честно остаётся `source_unavailable`. Один нативный
+`ibcmd eventlog export` заменяет прежний экспериментальный путь через disposable ИБ и несколько
+`UnloadEventLog`-сеансов; новый сервис или индекс не требуются. Длинные комментарии в списках
+показываются ограниченно и дочитываются по `commentContinuation` из той же retained-выборки без
+нового экспорта. Окончательная JSON-выдача измеряется целиком: если запрошенная страница не
+помещается в компактный бюджет, она сохраняет факты и refs, возвращает фактический `nextOffset`
+и дочитывается из той же выборки. Ненулевой `ibcmd` возвращает безопасные stage/exit/message и opaque evidence ref;
+ограниченный исходный stderr остаётся только в task-owned evidence с TTL.
 
 Standalone Hermes plugin лежит в [`hermes-plugin/`](hermes-plugin/). Он регистрирует coding tools,
-`one_c_observation_info`, `one_c_observe`, `one_c_expand_observation` и короткую plugin skill.
+TechLog tools и три registration-log tools `one_c_select_registration_log`,
+`one_c_page_registration_log`, `one_c_read_registration_log_record`, а также короткую plugin skill.
 Plugin формирует тот же closed JSON, вызывает только public `ctx.dispatch_tool("terminal", ...)`
-и не реализует SSH, executor discovery или domain parser. Версия plugin и companion `0.2.0` —
-source candidate #76; принятой установленной версией остаётся #75 до отдельно разрешённого
-compatible update. Operator обязан pin-ить оба install sources к одному immutable Git revision.
+и не реализует SSH, executor discovery или domain parser. Версия plugin и companion `0.3.0` — stacked source candidate #80 поверх #76/#78;
+принятой установленной версией остаётся #75 до отдельно разрешённого compatible update.
+Operator обязан pin-ить оба install sources к одному immutable Git revision.
 Любой несовпадающий `capabilityVersion` или `artifactId` блокируется fail-closed.
 
 Эти source artifacts сами по себе не включают SSH backend и не выполняют deployment/restart.
@@ -194,6 +204,7 @@ MVP считается полезным не потому, что агент н�
 - [Platform technological-journal observations (issue #75)](docs/issue-75-techlog-observations.md)
 - [Bounded TechLog discovery and navigation (issue #76)](docs/issue-76-techlog-navigation.md)
 - [Compact model-facing diagnostic responses (issue #78)](docs/issue-78-compact-diagnostic-responses.md)
+- [Registration log as a bounded evidence source (issue #80)](docs/issue-80-registration-log.md)
 - [Controlled enablement plan for the existing Hermes (issue #75)](docs/issue-75-controlled-enable-plan.md)
 - [Knowledge handoff write-cycle экспериментов](docs/write-cycle-knowledge-handoff.md)
 - [Правила работы кодового агента](AGENTS.md)

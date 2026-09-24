@@ -4,17 +4,18 @@ build-backend = "setuptools.build_meta"
 
 [project]
 name = "one-c-harness"
-version = "0.2.0"
+version = "0.3.0"
 description = "Deterministic 1C Harness executor companion."
 requires-python = ">=3.10"
 license = {text = "UNLICENSED"}
 
 [project.scripts]
 one-c-harness = "one_c_harness.companion:main"
+one-c-eventlog-exporter = "one_c_harness.eventlog_exporter:main"
 
 [tool.setuptools]
 packages = ["one_c_harness"]
 
 [tool.setuptools.package-data]
-one_c_harness = ["release.json"]
+one_c_harness = ["release.json", "eventlog_epf/**/*.xml", "eventlog_epf/**/*.bsl"]
 

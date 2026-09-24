@@ -112,6 +112,45 @@ def _compact_records(records: list[dict[str, Any]]) -> tuple[dict[str, Any], lis
     return common, compact
 
 
+def _compact_registration_response(response: dict[str, Any], operation: str) -> dict[str, Any]:
+    if operation not in {"eventlog_select", "eventlog_page", "eventlog_record"}:
+        return response
+    if response.get("operation") != operation or response.get("status") not in {"ok", "partial"}:
+        return response
+    if operation == "eventlog_record":
+        known = (
+            isinstance(response.get("record"), dict)
+            and response.get("source") == "1c_registration_log"
+            and isinstance(response.get("window"), dict)
+            and isinstance(response.get("filters"), dict)
+        )
+    else:
+        known = (
+            isinstance(response.get("selectionRef"), str)
+            and isinstance(response.get("records"), list)
+            and all(isinstance(record, dict) for record in response["records"])
+            and isinstance(response.get("summary"), dict)
+            and response["summary"].get("source") == "1c_registration_log"
+        )
+    if not known:
+        return response
+    compact = copy.deepcopy(response)
+    for key in ("artifactId", "capabilityVersion", "schemaVersion", "operation"):
+        compact.pop(key, None)
+    records = compact.get("records")
+    if isinstance(records, list) and len(records) > 1:
+        common: dict[str, Any] = {}
+        for key in ("level", "event", "eventPresentation", "user", "metadata", "transactionStatus"):
+            if _all_have_equal(records, key):
+                common[key] = records[0][key]
+                for record in records:
+                    del record[key]
+        if common:
+            compact["recordCommon"] = common
+            compact["recordCommonAppliesTo"] = "every item in records in this response"
+    return compact
+
+
 def _has_incomplete_read(value: object) -> bool:
     if isinstance(value, dict):
         if value.get("partial") is True or value.get("complete") is False:
@@ -226,6 +265,7 @@ def _call(ctx: Any, operation: str, arguments: object, timeout: int) -> str:
             return _blocked("companion_version_mismatch", "installed executor companion version does not match plugin")
         if response.get("artifactId") != ARTIFACT_ID:
             return _blocked("companion_artifact_mismatch", "installed executor companion artifact does not match plugin")
+        response = _compact_registration_response(response, operation)
         response = _compact_diagnostic_response(response, operation)
         return json.dumps(response, ensure_ascii=False, sort_keys=True, separators=(",", ":"))
     except ValueError as exc:
@@ -267,6 +307,24 @@ def observe(ctx: Any) -> Callable[[object], str]:
 def expand_observation(ctx: Any) -> Callable[[object], str]:
     def handler(arguments: object, **_kwargs: object) -> str:
         return _call(ctx, "expand_observation", arguments, 60)
+    return handler
+
+
+def select_registration_log(ctx: Any) -> Callable[[object], str]:
+    def handler(arguments: object, **_kwargs: object) -> str:
+        return _call(ctx, "eventlog_select", arguments, 150)
+    return handler
+
+
+def page_registration_log(ctx: Any) -> Callable[[object], str]:
+    def handler(arguments: object, **_kwargs: object) -> str:
+        return _call(ctx, "eventlog_page", arguments, 60)
+    return handler
+
+
+def read_registration_log_record(ctx: Any) -> Callable[[object], str]:
+    def handler(arguments: object, **_kwargs: object) -> str:
+        return _call(ctx, "eventlog_record", arguments, 60)
     return handler
 
 

@@ -1,0 +1,23 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<MetaDataObject xmlns="http://v8.1c.ru/8.3/MDClasses" xmlns:app="http://v8.1c.ru/8.2/managed-application/core" xmlns:cfg="http://v8.1c.ru/8.1/data/enterprise/current-config" xmlns:cmi="http://v8.1c.ru/8.2/managed-application/cmi" xmlns:ent="http://v8.1c.ru/8.1/data/enterprise" xmlns:lf="http://v8.1c.ru/8.2/managed-application/logform" xmlns:style="http://v8.1c.ru/8.1/data/ui/style" xmlns:sys="http://v8.1c.ru/8.1/data/ui/fonts/system" xmlns:v8="http://v8.1c.ru/8.1/data/core" xmlns:v8ui="http://v8.1c.ru/8.1/data/ui" xmlns:web="http://v8.1c.ru/8.1/data/ui/colors/web" xmlns:win="http://v8.1c.ru/8.1/data/ui/colors/windows" xmlns:xen="http://v8.1c.ru/8.3/xcf/enums" xmlns:xpr="http://v8.1c.ru/8.3/xcf/predef" xmlns:xr="http://v8.1c.ru/8.3/xcf/readable" xmlns:xs="http://www.w3.org/2001/XMLSchema" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" version="2.18">
+  <ExternalDataProcessor uuid="5fc88e2c-e5ce-4f3a-a1c4-9ff82ab3f358">
+    <InternalInfo>
+      <xr:ContainedObject>
+        <xr:ClassId>c3831ec8-d8d5-4f93-8a22-f9bfae07327f</xr:ClassId>
+        <xr:ObjectId>9bcd44b2-b6b5-4bf8-94ce-8aa784ff9b3e</xr:ObjectId>
+      </xr:ContainedObject>
+      <xr:GeneratedType name="ExternalDataProcessorObject.Issue80EventLog" category="Object">
+        <xr:TypeId>21df6b8d-c3fe-4962-b0d5-d9854ca8fd14</xr:TypeId>
+        <xr:ValueId>566559cb-27d4-4da2-afc0-55284f0e041f</xr:ValueId>
+      </xr:GeneratedType>
+    </InternalInfo>
+    <Properties>
+      <Name>Issue80EventLog</Name>
+      <Synonym><v8:item><v8:lang>en</v8:lang><v8:content>Issue 80 Event Log</v8:content></v8:item></Synonym>
+      <Comment/>
+      <DefaultForm>ExternalDataProcessor.Issue80EventLog.Form.Main</DefaultForm>
+      <AuxiliaryForm/>
+    </Properties>
+    <ChildObjects><Form>Main</Form></ChildObjects>
+  </ExternalDataProcessor>
+</MetaDataObject>
