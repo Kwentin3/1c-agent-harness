@@ -4,7 +4,7 @@ from __future__ import annotations
 import json
 from pathlib import Path
 
-CAPABILITY_VERSION = "0.1.0"
+CAPABILITY_VERSION = "0.2.0"
 _release = json.loads((Path(__file__).with_name("release.json")).read_text(encoding="utf-8"))
 if set(_release) != {"schemaVersion", "artifactId"} or _release["schemaVersion"] != 1 or not isinstance(_release["artifactId"], str):
     raise RuntimeError("invalid one-c-harness plugin release manifest")
@@ -65,19 +65,39 @@ TOOLS = (
         "Run the canonical one-call native route on the admitted SnapshotRef and return a bounded receipt summary.",
     ),
     _tool(
+        "one_c_observation_info", {}, [],
+        "Inspect the configured technological-journal source with bounded coverage and report its timezone, observed interval, events and supported filters.",
+    ),
+    _tool(
         "one_c_observe",
         {
             "start": {"type": "string", "description": "Inclusive calendar start in the executor-configured source-local timezone, e.g. 2026-09-18T15:25:00."},
             "end": {"type": "string", "description": "Inclusive calendar end in the same source-local timezone."},
             "events": {"type": "array", "minItems": 1, "maxItems": 8, "items": {"type": "string", "minLength": 1, "maxLength": 32}},
+            "filters": {
+                "type": "object",
+                "properties": {
+                    "text": {"type": "string", "minLength": 1, "maxLength": 120, "pattern": "[^\\u0009-\\u000D\\u001C-\\u0020\\u0085\\u00A0\\u1680\\u2000-\\u200A\\u2028\\u2029\\u202F\\u205F\\u3000]"},
+                    "sourceComponent": {"type": "string", "pattern": "^[A-Za-z0-9_.:-]{1,128}(?![\\s\\S])"},
+                    "process": {"type": "string", "pattern": "^[A-Za-z0-9_.:-]{1,128}(?![\\s\\S])"},
+                },
+                "additionalProperties": False,
+                "description": "Optional AND filters over the safe projected technical content only.",
+            },
             "limit": {"type": "integer", "minimum": 1, "maximum": 20},
         }, ["start", "end", "events", "limit"],
         "Summarize platform-authored technological-journal errors in one calendar interval using the executor-configured source-local timezone.",
     ),
-    _tool(
-        "one_c_expand_observation",
-        {"groupRef": {"type": "string", "minLength": 1, "maxLength": 256}, "offset": {"type": "integer", "minimum": 0}, "limit": {"type": "integer", "minimum": 1, "maximum": 20}},
-        ["groupRef", "offset", "limit"],
-        "Expand one stable technological-journal group from the exact prior observation.",
-    ),
+    {
+        "name": "one_c_expand_observation",
+        "description": "Page groups or records from one retained observation, or show bounded time-adjacent records around one exact retained record.",
+        "parameters": {
+            "type": "object",
+            "oneOf": [
+                {"properties": {"observationRef": {"type": "string", "minLength": 1, "maxLength": 256}, "offset": {"type": "integer", "minimum": 0}, "limit": {"type": "integer", "minimum": 1, "maximum": 20}}, "required": ["observationRef", "offset", "limit"], "additionalProperties": False},
+                {"properties": {"groupRef": {"type": "string", "minLength": 1, "maxLength": 256}, "offset": {"type": "integer", "minimum": 0}, "limit": {"type": "integer", "minimum": 1, "maximum": 20}}, "required": ["groupRef", "offset", "limit"], "additionalProperties": False},
+                {"properties": {"recordRef": {"type": "string", "minLength": 1, "maxLength": 256}, "before": {"type": "integer", "minimum": 0, "maximum": 5}, "after": {"type": "integer", "minimum": 0, "maximum": 5}}, "required": ["recordRef", "before", "after"], "additionalProperties": False},
+            ],
+        },
+    },
 )

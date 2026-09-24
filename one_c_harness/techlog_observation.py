@@ -11,10 +11,12 @@ from __future__ import annotations
 from collections import Counter
 from datetime import datetime, timedelta
 import hashlib
+import hmac
 import json
 import os
 from pathlib import Path
 import re
+import secrets
 import time
 from typing import Any
 from zoneinfo import ZoneInfo, ZoneInfoNotFoundError
@@ -36,6 +38,10 @@ _FILE = re.compile(r"^(\d{6})(\d{2})\.log$")
 _CALENDAR = re.compile(r"^\d{4}-\d\d-\d\dT\d\d:\d\d:\d\d(?:\.\d{1,6})?$")
 _ALLOWED_EVENTS = re.compile(r"[A-Za-z_][A-Za-z0-9_]{0,31}$")
 _SAFE_EXCEPTION = re.compile(r"[A-Za-z0-9_.:-]{1,128}$")
+_SAFE_FILTER = re.compile(r"[A-Za-z0-9_.:-]{1,128}$")
+_NON_WHITESPACE = re.compile(
+    r"[^\u0009-\u000D\u001C-\u0020\u0085\u00A0\u1680\u2000-\u200A\u2028\u2029\u202F\u205F\u3000]"
+)
 _SENSITIVE_ASSIGNMENT = re.compile(
     r"(?i)\b(password|passwd|pwd|token|secret|authorization|api[_-]?key|"
     r"connectionstring|user|username|login|email|phone|customer|client|employee|"
@@ -124,7 +130,7 @@ def _properties(lines: list[str]) -> dict[str, str]:
                 end += 1
             value = text[index:end]
             index = end
-        if name in {"Exception", "Descr", "SrcName"}:
+        if name in {"Exception", "Descr", "SrcName", "process", "SessionID"}:
             values.setdefault(name, value.strip())
         while index < len(text) and text[index] not in ",\r\n":
             index += 1
@@ -164,7 +170,7 @@ def _description_projection(description: str) -> dict[str, object]:
     return result
 
 
-def _safe_error(lines: list[str]) -> tuple[dict[str, object], str]:
+def _safe_error(lines: list[str]) -> tuple[dict[str, object], dict[str, str], str]:
     """Expose selected TechLog fields without returning the arbitrary record body."""
     values = _properties(lines)
     exception = values.get("Exception")
@@ -179,8 +185,15 @@ def _safe_error(lines: list[str]) -> tuple[dict[str, object], str]:
     src_name = values.get("SrcName")
     if src_name and _SAFE_EXCEPTION.fullmatch(src_name):
         error["sourceComponent"] = src_name
+    technical: dict[str, str] = {}
+    process = values.get("process")
+    if process and _SAFE_EXCEPTION.fullmatch(process):
+        technical["process"] = process
+    session = values.get("SessionID")
+    if session:
+        technical["_sessionValue"] = session
     signature_basis = "\x1f".join((str(error.get("exceptionType", "")), str(error.get("sourceComponent", "")), json.dumps(error["description"], sort_keys=True)))
-    return error, "sha256:" + hashlib.sha256(signature_basis.encode("utf-8")).hexdigest()[:16]
+    return error, technical, "sha256:" + hashlib.sha256(signature_basis.encode("utf-8")).hexdigest()[:16]
 
 
 def _candidates(root: Path, start: datetime, end: datetime, began: float) -> tuple[list[tuple[datetime, Path]], str | None]:
@@ -220,14 +233,14 @@ def _candidates(root: Path, start: datetime, end: datetime, began: float) -> tup
     return wanted, None
 
 
-def _read(root: Path, start: datetime, end: datetime, wanted: set[str]) -> tuple[list[dict[str, object]], dict[str, object], str | None] | None:
+def _read(root: Path, start: datetime, end: datetime, wanted: set[str] | None) -> tuple[list[dict[str, object]], dict[str, object], str | None] | None:
     began = time.monotonic()
     candidates, incomplete = _candidates(root, start, end, began)
     records: list[dict[str, object]] = []
     read_bytes = 0
     files_read = 0
     for hour, path in candidates:
-        if incomplete or time.monotonic() - began > _MAX_SECONDS:
+        if time.monotonic() - began > _MAX_SECONDS:
             incomplete = incomplete or "time_budget"
             break
         current: list[str] = []
@@ -263,28 +276,30 @@ def _read(root: Path, start: datetime, end: datetime, wanted: set[str]) -> tuple
             records = records[:_MAX_RECORDS]
             break
     records.sort(key=lambda record: (record["occurredAt"], record["recordId"]))
+    for index, record in enumerate(records):
+        record["selectionIndex"] = index
     coverage = {"filesRead": files_read, "bytesRead": read_bytes, "recordLimit": _MAX_RECORDS, "partial": bool(incomplete)}
     if incomplete:
         coverage["reasonCode"] = incomplete
     return records, coverage, incomplete
 
 
-def _commit(records: list[dict[str, object]], lines: list[str], hour: datetime, start: datetime, end: datetime, wanted: set[str]) -> None:
+def _commit(records: list[dict[str, object]], lines: list[str], hour: datetime, start: datetime, end: datetime, wanted: set[str] | None) -> None:
     match = _EVENT.match(lines[0])
     if not match:
         return
     minute, second, micros, event = match.groups()
-    if event not in wanted:
+    if wanted is not None and event not in wanted:
         return
     occurred = hour.replace(minute=int(minute), second=int(second), microsecond=int(micros[:6]))
     if not start <= occurred <= end:
         return
-    error, signature = _safe_error(lines)
+    error, technical, signature = _safe_error(lines)
     digest = hashlib.sha256("\n".join(lines).encode("utf-8")).hexdigest()[:24]
     records.append({
         "recordId": f"techlog:{digest}", "occurredAt": occurred.isoformat(),
         "sourceTimeToken": f"{minute}:{second}.{micros}", "event": event,
-        "error": error, "errorSignature": signature,
+        "error": error, "technical": technical, "errorSignature": signature,
     })
 
 
@@ -294,7 +309,100 @@ def _snapshot_path(project_root: Path, payload: bytes) -> Path:
 
 def _groups(records: list[dict[str, object]]) -> list[dict[str, object]]:
     grouped: Counter[tuple[str, str]] = Counter((str(record["event"]), str(record["errorSignature"])) for record in records)
-    return [{"ref": f"group:{event}:{signature.rsplit(':', 1)[-1]}", "event": event, "errorSignature": signature, "count": count} for (event, signature), count in sorted(grouped.items())]
+    result: list[dict[str, object]] = []
+    for (event, signature), count in sorted(grouped.items()):
+        matching = [record for record in records if record["event"] == event and record["errorSignature"] == signature]
+        sample = matching[0]
+        error = sample.get("error", {})
+        if not isinstance(error, dict):
+            error = {}
+        description = error.get("description", {})
+        fragment = description.get("fragment") if isinstance(description, dict) else None
+        pieces = [str(error.get("exceptionType", event))]
+        if fragment:
+            pieces.append(str(fragment))
+        result.append({
+            "ref": f"group:{event}:{signature.rsplit(':', 1)[-1]}",
+            "event": event,
+            "errorSignature": signature,
+            "count": count,
+            "countScope": "retainedFilteredSelection",
+            "firstOccurredAt": matching[0]["occurredAt"],
+            "lastOccurredAt": matching[-1]["occurredAt"],
+            "summary": {"meaning": ": ".join(pieces)},
+        })
+    return sorted(result, key=lambda group: (
+        str(group["event"]), str(group["summary"]["meaning"]), str(group["errorSignature"]),
+    ))
+
+
+def _valid_filters(filters: object) -> bool:
+    if filters is None:
+        return True
+    if not isinstance(filters, dict) or not set(filters) <= {"text", "sourceComponent", "process"}:
+        return False
+    if "text" in filters:
+        text = filters["text"]
+        if not isinstance(text, str) or _NON_WHITESPACE.search(text) is None or len(text) > 120:
+            return False
+    return all(
+        isinstance(value, str) and bool(_SAFE_FILTER.fullmatch(value))
+        for key, value in filters.items() if key != "text"
+    )
+
+
+def _matches(record: dict[str, object], filters: dict[str, str]) -> bool:
+    error = record.get("error", {})
+    technical = record.get("technical", {})
+    if not isinstance(error, dict) or not isinstance(technical, dict):
+        return False
+    description = error.get("description", {})
+    fragment = description.get("fragment", "") if isinstance(description, dict) else ""
+    searchable = " ".join((
+        str(record.get("event", "")), str(error.get("exceptionType", "")),
+        str(error.get("sourceComponent", "")), str(technical.get("process", "")), str(fragment),
+    )).casefold()
+    if "text" in filters and filters["text"].casefold() not in searchable:
+        return False
+    for key in ("sourceComponent", "process"):
+        if key not in filters:
+            continue
+        actual = error.get(key) if key == "sourceComponent" else technical.get(key)
+        if actual != filters[key]:
+            return False
+    return True
+
+
+def _project_private_tokens(records: list[dict[str, object]]) -> None:
+    """Replace correlatable private digests with selection-scoped opaque tokens."""
+    key = secrets.token_bytes(32)
+    for record in records:
+        raw_record_id = record.get("recordId")
+        if isinstance(raw_record_id, str):
+            digest = hmac.new(key, b"record\0" + raw_record_id.encode("ascii"), hashlib.sha256).hexdigest()[:24]
+            record["recordId"] = "techlog:" + digest
+        technical = record.get("technical")
+        if isinstance(technical, dict):
+            session = technical.pop("_sessionValue", None)
+            if isinstance(session, str):
+                digest = hmac.new(key, b"session\0" + session.encode("utf-8"), hashlib.sha256).hexdigest()[:16]
+                technical["sessionFingerprint"] = "hmac-sha256:" + digest
+        error = record.get("error")
+        if not isinstance(error, dict):
+            continue
+        description = error.get("description")
+        if isinstance(description, dict):
+            fingerprint = description.get("fingerprint")
+            if isinstance(fingerprint, str):
+                digest = hmac.new(key, b"description\0" + fingerprint.encode("ascii"), hashlib.sha256).hexdigest()[:16]
+                description["fingerprint"] = "hmac-sha256:" + digest
+        signature_basis = "\x1f".join((
+            str(error.get("exceptionType", "")),
+            str(error.get("sourceComponent", "")),
+            json.dumps(error.get("description", {}), sort_keys=True),
+        ))
+        digest = hmac.new(key, b"error\0" + signature_basis.encode("utf-8"), hashlib.sha256).hexdigest()[:16]
+        record["errorSignature"] = "hmac-sha256:" + digest
 
 
 def _prune(project_root: Path, now: float) -> None:
@@ -307,8 +415,39 @@ def _prune(project_root: Path, now: float) -> None:
         pass
 
 
-def observe(project_root: Path, start: object, end: object, events: object, limit: object) -> dict[str, object]:
-    if not _valid(events, limit):
+def source_info(project_root: Path) -> dict[str, object]:
+    """Describe the configured source through one bounded observation pass."""
+    del project_root  # The source is deployment-selected; discovery retains nothing.
+    source = _source()
+    if source is None:
+        return _result("unavailable", reasonCode="source_unavailable", message="technological journal source or timezone is unavailable")
+    root, zone, zone_name = source
+    start = datetime(2000, 1, 1, tzinfo=zone)
+    end = datetime(2099, 12, 31, 23, 59, 59, 999999, tzinfo=zone)
+    read = _read(root, start, end, None)
+    if read is None:
+        return _result("partial", reasonCode="source_unreadable", message="technological journal could not be inspected")
+    records, coverage, incomplete = read
+    interval = None
+    if records:
+        interval = {
+            "start": records[0]["occurredAt"],
+            "end": records[-1]["occurredAt"],
+            "complete": not bool(incomplete),
+        }
+    return _result(
+        "partial" if incomplete else "ok",
+        source=_SOURCE,
+        sourceTimeZone=zone_name,
+        observedInterval=interval,
+        observedEvents=sorted({str(record["event"]) for record in records}),
+        supportedFilters=["events", "text", "sourceComponent", "process"],
+        coverage=coverage,
+    )
+
+
+def observe(project_root: Path, start: object, end: object, events: object, limit: object, filters: object = None) -> dict[str, object]:
+    if not _valid(events, limit) or not _valid_filters(filters):
         return _result("blocked", reasonCode="invalid_request", message="technological-journal request is invalid")
     source = _source()
     if source is None:
@@ -321,6 +460,10 @@ def observe(project_root: Path, start: object, end: object, events: object, limi
     if read is None:
         return _result("partial", reasonCode="source_unreadable", message="technological journal could not be read")
     records, coverage, incomplete = read
+    _project_private_tokens(records)
+    selected_filters = dict(filters) if isinstance(filters, dict) else {}
+    if selected_filters:
+        records = [record for record in records if _matches(record, selected_filters)]
     groups = _groups(records)
     now = time.time()
     snapshot = {"schemaVersion": 2, "expiresAt": now + _SNAPSHOT_TTL_SECONDS, "records": records, "groups": groups, "window": {"start": parsed_start.isoformat(), "end": parsed_end.isoformat(), "sourceTimeZone": zone_name}, "coverage": coverage}
@@ -337,22 +480,103 @@ def observe(project_root: Path, start: object, end: object, events: object, limi
         return _result("partial", reasonCode="snapshot_unavailable", message="technological-journal selection could not be retained")
     public_groups = [{**group, "ref": f"snapshot:{path.stem}:{group['ref']}"} for group in groups]
     status = "partial" if incomplete else "ok"
-    return _result(status, summary={"source": _SOURCE, "recordCount": len(records), "window": snapshot["window"], "coverage": coverage}, groups=public_groups[:limit], groupsTruncated=len(public_groups) > limit, snapshot={"ref": path.stem, "stable": True, "partial": bool(incomplete), "expiresInSeconds": _SNAPSHOT_TTL_SECONDS})
+    public_filters = {"events": list(events), **selected_filters}
+    return _result(status, summary={"source": _SOURCE, "recordCount": len(records), "countScope": "retainedFilteredSelection", "filters": public_filters, "window": snapshot["window"], "coverage": coverage}, groups=public_groups[:limit], groupsTruncated=len(public_groups) > limit, observationRef=f"snapshot:{path.stem}", snapshot={"ref": path.stem, "stable": True, "partial": bool(incomplete), "expiresInSeconds": _SNAPSHOT_TTL_SECONDS})
+
+
+def _load_snapshot(project_root: Path, snapshot_id: str) -> dict[str, Any] | None:
+    if not re.fullmatch(r"[a-f0-9]{32}", snapshot_id):
+        return None
+    path = project_root / _CACHE / f"{snapshot_id}.json"
+    try:
+        raw = path.read_bytes()
+        if hashlib.sha256(raw).hexdigest()[:32] != snapshot_id:
+            raise ValueError
+        value = json.loads(raw)
+        if not isinstance(value, dict) or value.get("schemaVersion") != 2 or not isinstance(value.get("records"), list) or not isinstance(value.get("groups"), list) or time.time() > value.get("expiresAt", 0):
+            raise ValueError
+        return value
+    except (OSError, ValueError, json.JSONDecodeError):
+        return None
+
+
+def _evidence_missing() -> dict[str, object]:
+    return _result("blocked", reasonCode="evidence_not_found", message="technological-journal evidence is unavailable")
+
+
+def _public_record(snapshot_id: str, record: dict[str, object]) -> dict[str, object]:
+    digest = str(record.get("recordId", "")).removeprefix("techlog:")
+    index = record.get("selectionIndex")
+    return {**record, "recordRef": f"snapshot:{snapshot_id}:record:{index}:{digest}"}
+
+
+def expand_groups(project_root: Path, reference: object, offset: object, limit: object) -> dict[str, object]:
+    if not isinstance(reference, str) or type(offset) is not int or offset < 0 or type(limit) is not int or not 1 <= limit <= 20:
+        return _result("blocked", reasonCode="invalid_request", message="technological-journal expansion request is invalid")
+    parts = reference.split(":")
+    if len(parts) != 2 or parts[0] != "snapshot":
+        return _evidence_missing()
+    value = _load_snapshot(project_root, parts[1])
+    if value is None:
+        return _evidence_missing()
+    groups = [{**group, "ref": f"snapshot:{parts[1]}:{group['ref']}"} for group in value["groups"] if isinstance(group, dict)]
+    return _result(
+        "ok", level="observation", observationRef=reference,
+        groups=groups[offset:offset + limit], offset=offset,
+        truncated=offset + limit < len(groups), total=len(groups),
+        snapshot={"stable": True, "window": value["window"], "coverage": value["coverage"]},
+    )
 
 
 def expand(project_root: Path, reference: object, offset: object, limit: object) -> dict[str, object]:
-    if not isinstance(reference, str) or not reference.startswith("snapshot:") or type(offset) is not int or offset < 0 or type(limit) is not int or not 1 <= limit <= 20:
+    if not isinstance(reference, str) or type(offset) is not int or offset < 0 or type(limit) is not int or not 1 <= limit <= 20:
         return _result("blocked", reasonCode="invalid_request", message="technological-journal expansion request is invalid")
     parts = reference.split(":", 3)
-    if len(parts) != 4 or not re.fullmatch(r"[a-f0-9]{32}", parts[1]) or parts[2] != "group" or not re.fullmatch(r"[A-Za-z_][A-Za-z0-9_]{0,31}", parts[3].split(":")[0]):
-        return _result("blocked", reasonCode="evidence_not_found", message="technological-journal evidence is unavailable")
-    path = project_root / _CACHE / f"{parts[1]}.json"
-    try:
-        value = json.loads(path.read_text(encoding="utf-8"))
-        if not isinstance(value, dict) or value.get("schemaVersion") != 2 or not isinstance(value.get("records"), list) or time.time() > value.get("expiresAt", 0):
-            raise ValueError
-    except (OSError, ValueError, json.JSONDecodeError):
-        return _result("blocked", reasonCode="evidence_not_found", message="technological-journal evidence is unavailable")
-    event, fingerprint = parts[3].split(":", 1)
-    selected = [record for record in value["records"] if isinstance(record, dict) and record.get("event") == event and str(record.get("errorSignature", "")).endswith(fingerprint)]
-    return _result("ok", level="group", groupRef=reference, records=selected[offset:offset + limit], offset=offset, truncated=offset + limit < len(selected), total=len(selected), snapshot={"stable": True, "window": value["window"], "coverage": value["coverage"]})
+    if len(parts) != 4 or parts[0] != "snapshot" or parts[2] != "group" or not re.fullmatch(r"[A-Za-z_][A-Za-z0-9_]{0,31}", parts[3].split(":")[0]):
+        return _evidence_missing()
+    value = _load_snapshot(project_root, parts[1])
+    if value is None:
+        return _evidence_missing()
+    canonical_refs = {
+        f"snapshot:{parts[1]}:{group.get('ref')}"
+        for group in value["groups"] if isinstance(group, dict)
+    }
+    if reference not in canonical_refs:
+        return _evidence_missing()
+    canonical_group = next(
+        group for group in value["groups"]
+        if isinstance(group, dict) and f"snapshot:{parts[1]}:{group.get('ref')}" == reference
+    )
+    selected = [
+        record for record in value["records"]
+        if isinstance(record, dict)
+        and record.get("event") == canonical_group.get("event")
+        and record.get("errorSignature") == canonical_group.get("errorSignature")
+    ]
+    records = [_public_record(parts[1], record) for record in selected[offset:offset + limit]]
+    return _result("ok", level="group", groupRef=reference, records=records, offset=offset, truncated=offset + limit < len(selected), total=len(selected), snapshot={"stable": True, "window": value["window"], "coverage": value["coverage"]})
+
+
+def expand_record(project_root: Path, reference: object, before: object, after: object) -> dict[str, object]:
+    if not isinstance(reference, str) or type(before) is not int or type(after) is not int or not 0 <= before <= 5 or not 0 <= after <= 5:
+        return _result("blocked", reasonCode="invalid_request", message="technological-journal record expansion request is invalid")
+    parts = reference.split(":")
+    if len(parts) != 5 or parts[0] != "snapshot" or parts[2] != "record" or not parts[3].isdigit() or not re.fullmatch(r"[a-f0-9]{24}", parts[4]):
+        return _evidence_missing()
+    value = _load_snapshot(project_root, parts[1])
+    if value is None:
+        return _evidence_missing()
+    records = [record for record in value["records"] if isinstance(record, dict)]
+    wanted_index = int(parts[3])
+    index = next((position for position, record in enumerate(records) if record.get("selectionIndex") == wanted_index and record.get("recordId") == f"techlog:{parts[4]}"), None)
+    if index is None:
+        return _evidence_missing()
+    return _result(
+        "ok", level="record", recordRef=reference,
+        record=_public_record(parts[1], records[index]),
+        before=[_public_record(parts[1], record) for record in records[max(0, index - before):index]],
+        after=[_public_record(parts[1], record) for record in records[index + 1:index + 1 + after]],
+        scope="retainedFilteredSelection",
+        relation="time adjacency only; no causal relationship is implied",
+        snapshot={"stable": True, "window": value["window"], "coverage": value["coverage"]},
+    )

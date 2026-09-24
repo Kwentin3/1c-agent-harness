@@ -84,6 +84,14 @@ def narrow_context(ctx: Any) -> Callable[[object], str]:
     return handler
 
 
+def observation_info(ctx: Any) -> Callable[[object], str]:
+    def handler(arguments: object, **_kwargs: object) -> str:
+        if arguments != {}:
+            return _blocked("invalid_request", "observation_info does not accept arguments")
+        return _call(ctx, "observation_info", arguments, 60)
+    return handler
+
+
 def observe(ctx: Any) -> Callable[[object], str]:
     def handler(arguments: object, **_kwargs: object) -> str:
         return _call(ctx, "observe", arguments, 60)

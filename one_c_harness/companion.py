@@ -212,20 +212,33 @@ def _expand(arguments: dict[str, object], project_root: Path) -> dict[str, objec
     return {"artifactId": ARTIFACT_ID, "capabilityVersion": CAPABILITY_VERSION, "operation": "expand", "schemaVersion": SCHEMA_VERSION, **result}
 
 
+def _observation_info(arguments: dict[str, object], project_root: Path) -> dict[str, object]:
+    if arguments:
+        raise CompanionError("observation_info arguments are invalid")
+    result = techlog_observation.source_info(project_root)
+    return {"artifactId": ARTIFACT_ID, "capabilityVersion": CAPABILITY_VERSION, "operation": "observation_info", "schemaVersion": SCHEMA_VERSION, **result}
+
+
 def _observe(arguments: dict[str, object], project_root: Path) -> dict[str, object]:
-    if set(arguments) != {"start", "end", "events", "limit"}:
+    if set(arguments) not in ({"start", "end", "events", "limit"}, {"start", "end", "events", "filters", "limit"}):
         raise CompanionError("observe arguments are invalid")
     result = techlog_observation.observe(
         project_root, arguments["start"], arguments["end"], arguments["events"],
-        _positive(arguments["limit"], "limit", 20, 20),
+        _positive(arguments["limit"], "limit", 20, 20), arguments.get("filters"),
     )
     return {"artifactId": ARTIFACT_ID, "capabilityVersion": CAPABILITY_VERSION, "operation": "observe", "schemaVersion": SCHEMA_VERSION, **result}
 
 
 def _expand_observation(arguments: dict[str, object], project_root: Path) -> dict[str, object]:
-    if set(arguments) != {"groupRef", "offset", "limit"}:
+    keys = set(arguments)
+    if keys == {"observationRef", "offset", "limit"}:
+        result = techlog_observation.expand_groups(project_root, arguments["observationRef"], arguments["offset"], _positive(arguments["limit"], "limit", 20, 20))
+    elif keys == {"groupRef", "offset", "limit"}:
+        result = techlog_observation.expand(project_root, arguments["groupRef"], arguments["offset"], _positive(arguments["limit"], "limit", 20, 20))
+    elif keys == {"recordRef", "before", "after"}:
+        result = techlog_observation.expand_record(project_root, arguments["recordRef"], arguments["before"], arguments["after"])
+    else:
         raise CompanionError("expand_observation arguments are invalid")
-    result = techlog_observation.expand(project_root, arguments["groupRef"], arguments["offset"], _positive(arguments["limit"], "limit", 20, 20))
     return {"artifactId": ARTIFACT_ID, "capabilityVersion": CAPABILITY_VERSION, "operation": "expand_observation", "schemaVersion": SCHEMA_VERSION, **result}
 
 
@@ -246,6 +259,8 @@ def execute(raw: bytes, project_root: Path) -> dict[str, object]:
             return _investigate(arguments, root)
         if operation == "expand":
             return _expand(arguments, root)
+        if operation == "observation_info":
+            return _observation_info(arguments, root)
         if operation == "observe":
             return _observe(arguments, root)
         if operation == "expand_observation":
