@@ -73,6 +73,9 @@ class _BoundedStderr:
     def summary(self) -> dict[str, object]:
         return _diagnostic_summary(bytes(self._payload), self.byte_count, self._digest.hexdigest())
 
+    def payload(self) -> bytes:
+        return bytes(self._payload)
+
 
 @dataclass(frozen=True)
 class Settings:

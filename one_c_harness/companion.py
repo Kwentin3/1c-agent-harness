@@ -263,9 +263,14 @@ def _eventlog_page(arguments: dict[str, object], project_root: Path) -> dict[str
 
 
 def _eventlog_record(arguments: dict[str, object], project_root: Path) -> dict[str, object]:
-    if set(arguments) != {"recordRef"}:
+    if set(arguments) not in (
+        {"recordRef"}, {"recordRef", "commentOffset", "commentMaxBytes"},
+    ):
         raise CompanionError("eventlog_record arguments are invalid")
-    result = eventlog_observation.record(project_root, arguments["recordRef"])
+    result = eventlog_observation.record(
+        project_root, arguments["recordRef"],
+        arguments.get("commentOffset", 0), arguments.get("commentMaxBytes", 4096),
+    )
     return {"artifactId": ARTIFACT_ID, "capabilityVersion": CAPABILITY_VERSION, "operation": "eventlog_record", "schemaVersion": SCHEMA_VERSION, **result}
 
 

@@ -30,6 +30,9 @@ _MAX_PAGE = 20
 _MAX_XML_BYTES = 1024 * 1024
 _TIMEOUT_SECONDS = 120
 _MAX_SOURCE_ERROR_BYTES = 1024
+_COMMENT_PREVIEW_BYTES = 256
+_COMMENT_CHUNK_BYTES = 4096
+_MAX_COMMENT_CHUNK_BYTES = 16 * 1024
 _EXPORT_FIELDS = (
     "Date", "Level", "Event", "EventPresentation", "User",
     "Metadata", "MetadataPresentation", "TransactionStatus", "Comment",
@@ -60,16 +63,38 @@ def _source_error(stderr: bytes) -> dict[str, object]:
         value = json.loads(stderr.decode("utf-8"))
     except (UnicodeDecodeError, json.JSONDecodeError):
         value = None
+    diagnostic = value.get("diagnostic") if isinstance(value, dict) else None
+    diagnostic_valid = (
+        diagnostic is None
+        or (
+            isinstance(diagnostic, dict)
+            and set(diagnostic) == {"state", "evidenceRef", "expiresInSeconds"}
+            and diagnostic.get("state") in {"empty", "captured", "truncated"}
+            and isinstance(diagnostic.get("evidenceRef"), str)
+            and diagnostic["evidenceRef"].startswith("eventlog-export:")
+            and len(diagnostic["evidenceRef"]) == 40
+            and diagnostic.get("expiresInSeconds") == 3600
+        )
+    )
     if (
         isinstance(value, dict)
-        and set(value) in ({"reasonCode"}, {"reasonCode", "stage"}, {"reasonCode", "stage", "message"})
+        and set(value) <= {"reasonCode", "stage", "message", "exitCode", "diagnostic"}
+        and "reasonCode" in value
         and value.get("reasonCode") in {"source_process_failed", "source_timeout", "source_byte_limit", "source_incomplete_receipt"}
-        and value.get("stage") in {None, "enterprise_process"}
-        and ("message" not in value or (isinstance(value["message"], str) and 0 < len(value["message"].encode("utf-8")) <= 512 and "\n" not in value["message"] and "\r" not in value["message"]))
+        and value.get("stage") in {None, "enterprise_process", "ibcmd_process"}
+        and ("exitCode" not in value or type(value["exitCode"]) is int)
+        and diagnostic_valid
+        and ("message" not in value or (isinstance(value["message"], str) and 0 < len(value["message"].encode("utf-8")) <= 515 and "\n" not in value["message"] and "\r" not in value["message"]))
     ):
         result: dict[str, object] = {"status": "unavailable", "reasonCode": value["reasonCode"], "message": "registration log source failed"}
         if value.get("stage") == "enterprise_process":
             result["stage"] = "enterprise_process"
+        elif value.get("stage") == "ibcmd_process":
+            result["stage"] = "ibcmd_process"
+        if "exitCode" in value:
+            result["exitCode"] = value["exitCode"]
+        if diagnostic is not None:
+            result["diagnostic"] = diagnostic
         if "message" in value:
             result["message"] = value["message"]
         return result
@@ -343,6 +368,46 @@ def _matches(record: dict[str, object], filters: dict[str, str]) -> bool:
     return all(_record_filter_value(record, key) == value for key, value in filters.items())
 
 
+def _comment_chunk(value: str, offset: int, maximum_bytes: int) -> tuple[str, dict[str, object]]:
+    payload = value.encode("utf-8")
+    if offset < 0 or offset > len(payload):
+        raise ValueError("commentOffset is invalid")
+    try:
+        payload[:offset].decode("utf-8")
+    except UnicodeDecodeError as exc:
+        raise ValueError("commentOffset is invalid") from exc
+    end = min(len(payload), offset + maximum_bytes)
+    while end > offset:
+        try:
+            fragment = payload[offset:end].decode("utf-8")
+            break
+        except UnicodeDecodeError:
+            end -= 1
+    else:
+        fragment = ""
+    complete = end == len(payload)
+    continuation: dict[str, object] = {
+        "complete": complete, "offsetBytes": offset,
+        "returnedBytes": end - offset, "totalBytes": len(payload),
+    }
+    if not complete:
+        continuation["nextOffsetBytes"] = end
+    return fragment, continuation
+
+
+def _public_record(
+    record_value: dict[str, object], *, comment_offset: int = 0,
+    comment_max_bytes: int = _COMMENT_PREVIEW_BYTES,
+) -> dict[str, object]:
+    result = dict(record_value)
+    comment = record_value.get("comment")
+    if isinstance(comment, str):
+        result["comment"], result["commentContinuation"] = _comment_chunk(
+            comment, comment_offset, comment_max_bytes,
+        )
+    return result
+
+
 def select(
     project_root: Path, start: object, end: object, filters: object,
     maximumCount: object, limit: object,
@@ -398,7 +463,7 @@ def select(
         return _blocked("source_invalid", "registration log selection storage is unavailable")
     selection_ref = f"eventlog:{selection_id}"
     status = "partial" if reason else "ok"
-    first_page = retained[:page_limit]
+    first_page = [_public_record(value) for value in retained[:page_limit]]
     return _result(
         status,
         selectionRef=selection_ref,
@@ -438,7 +503,7 @@ def page(
     return _result(
         "partial" if selection["coverage"]["partial"] else "ok",
         selectionRef=selection_ref, offset=offset, total=len(records), truncated=offset + len(page_records) < len(records),
-        records=page_records,
+        records=[_public_record(value) for value in page_records],
         summary={
             "source": "1c_registration_log", "window": selection["window"], "filters": effective_filters,
             "baseSelectionRef": selection_ref, "recordCount": len(records),
@@ -449,16 +514,32 @@ def page(
     )
 
 
-def record(project_root: Path, record_ref: object) -> dict[str, object]:
+def record(
+    project_root: Path, record_ref: object, comment_offset: object = 0,
+    comment_max_bytes: object = _COMMENT_CHUNK_BYTES,
+) -> dict[str, object]:
+    if (
+        type(comment_offset) is not int or comment_offset < 0
+        or type(comment_max_bytes) is not int
+        or not 1 <= comment_max_bytes <= _MAX_COMMENT_CHUNK_BYTES
+    ):
+        return _blocked("invalid_request", "record continuation arguments are invalid")
     selection = _read_selection(project_root, record_ref)
     if selection is None or not isinstance(record_ref, str):
         return _blocked("evidence_not_found", "registration log record is unavailable")
     for value in selection["records"]:
         if value.get("recordRef") == record_ref:
+            try:
+                public = _public_record(
+                    value, comment_offset=comment_offset,
+                    comment_max_bytes=comment_max_bytes,
+                )
+            except ValueError:
+                return _blocked("invalid_request", "record continuation arguments are invalid")
             return _result(
                 "partial" if selection["coverage"]["partial"] else "ok",
                 source="1c_registration_log", selectionRef=f"eventlog:{selection['id']}",
                 window=selection["window"], filters=selection["filters"],
-                record=value, coverage=selection["coverage"], snapshot={"stable": True},
+                record=public, coverage=selection["coverage"], snapshot={"stable": True},
             )
     return _blocked("evidence_not_found", "registration log record is unavailable")

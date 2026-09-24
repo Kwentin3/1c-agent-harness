@@ -3,14 +3,18 @@
 from __future__ import annotations
 
 import hashlib
+import base64
 import json
 import os
 from pathlib import Path
+import re
+import secrets
 import signal
 import stat
 import subprocess
 import sys
 import tempfile
+import threading
 import time
 from typing import Any
 import xml.etree.ElementTree as ET
@@ -24,6 +28,8 @@ METRICS_ENV = "ONE_C_HARNESS_EVENTLOG_METRICS"
 _MAX_JOURNAL_BYTES = 64 * 1024 * 1024
 _MAX_JOURNAL_FILES = 128
 _TIMEOUT_SECONDS = 30
+_EVIDENCE_TTL_SECONDS = 3600
+_MAX_EVIDENCE_FILES = 8
 _NAMESPACE = "http://v8.1c.ru/eventLog"
 _REQUIRED_SOURCE_FIELDS = ("Date", "Level", "Event")
 _XML_FIELDS = (
@@ -231,6 +237,78 @@ def _write_metrics(path: Path | None, value: dict[str, object]) -> None:
         path.write_text(json.dumps(value, sort_keys=True), encoding="utf-8")
 
 
+def _safe_diagnostic_message(payload: bytes) -> str | None:
+    text = payload.decode("utf-8", errors="replace")
+    line = next((" ".join(item.split()) for item in text.splitlines() if item.strip()), "")
+    if not line:
+        return None
+    patterns = (
+        (r"(?i)\b(password|passwd|pwd|token|secret|api[_-]?key)\s*[:=]\s*\S+", r"\1=<redacted>"),
+        (r"https?://\S+", "<redacted:endpoint>"),
+        (r"\b[\w.+-]+@[\w.-]+\.[A-Za-z]{2,}\b", "<redacted:email>"),
+        (r"(?<!\w)/(?:[^\s/]+/)*[^\s]*", "<redacted:path>"),
+        (r"\b[A-Fa-f0-9]{32,}\b", "<redacted:token>"),
+    )
+    for pattern, replacement in patterns:
+        line = re.sub(pattern, replacement, line)
+    encoded = line.encode("utf-8")
+    if len(encoded) > 512:
+        encoded = encoded[:512]
+        while encoded:
+            try:
+                line = encoded.decode("utf-8").rstrip() + "..."
+                break
+            except UnicodeDecodeError:
+                encoded = encoded[:-1]
+    return line or None
+
+
+def _retain_failure_evidence(
+    settings: Settings, stderr: base._BoundedStderr, exit_code: int,
+) -> dict[str, object]:
+    root = settings.work_root / ".evidence"
+    if root.is_symlink() or (root.exists() and not root.is_dir()):
+        raise base.ExportFailure("configuration_invalid")
+    root.mkdir(mode=0o700, exist_ok=True)
+    now = time.time()
+    retained: list[Path] = []
+    for path in sorted(root.glob("ibcmd-*.json"), key=lambda item: item.stat().st_mtime):
+        if path.is_symlink() or not path.is_file():
+            raise base.ExportFailure("configuration_invalid")
+        try:
+            value = json.loads(path.read_text(encoding="utf-8"))
+            expired = value.get("expiresAt", 0) < now
+        except (OSError, json.JSONDecodeError, AttributeError, TypeError):
+            expired = True
+        if expired:
+            path.unlink()
+        else:
+            retained.append(path)
+    while len(retained) >= _MAX_EVIDENCE_FILES:
+        retained.pop(0).unlink()
+    token = secrets.token_hex(12)
+    evidence_ref = f"eventlog-export:{token}"
+    summary = stderr.summary()
+    receipt = {
+        "schemaVersion": 1, "evidenceRef": evidence_ref,
+        "createdAt": now, "expiresAt": now + _EVIDENCE_TTL_SECONDS,
+        "stage": "ibcmd_process", "exitCode": exit_code,
+        "stderr": {
+            "state": summary["state"], "byteCount": stderr.byte_count,
+            "sha256": summary.get("sha256"),
+            "payloadBase64": base64.b64encode(stderr.payload()).decode("ascii"),
+        },
+    }
+    path = root / f"ibcmd-{token}.json"
+    descriptor = os.open(path, os.O_WRONLY | os.O_CREAT | os.O_EXCL, 0o600)
+    with os.fdopen(descriptor, "w", encoding="utf-8") as stream:
+        json.dump(receipt, stream, sort_keys=True, separators=(",", ":"))
+    return {
+        "state": summary["state"], "evidenceRef": evidence_ref,
+        "expiresInSeconds": _EVIDENCE_TTL_SECONDS,
+    }
+
+
 def _run_ibcmd(settings: Settings, request: dict[str, Any], root: Path, deadline: float) -> tuple[bytes, int]:
     global _active
     output = root / "eventlog.json"
@@ -240,11 +318,17 @@ def _run_ibcmd(settings: Settings, request: dict[str, Any], root: Path, deadline
         str(settings.journal),
     ]
     started = time.monotonic()
+    process: subprocess.Popen[bytes] | None = None
+    stderr = base._BoundedStderr()
+    stderr_reader: threading.Thread | None = None
     try:
         process = subprocess.Popen(
             argv, stdin=subprocess.DEVNULL, stdout=subprocess.DEVNULL,
-            stderr=subprocess.DEVNULL, start_new_session=True,
+            stderr=subprocess.PIPE, start_new_session=True,
         )
+        assert process.stderr is not None
+        stderr_reader = threading.Thread(target=stderr.consume, args=(process.stderr,), daemon=True)
+        stderr_reader.start()
         _active = process
         while process.poll() is None:
             if time.monotonic() >= deadline:
@@ -254,12 +338,24 @@ def _run_ibcmd(settings: Settings, request: dict[str, Any], root: Path, deadline
                 base._stop_group(process)
                 raise base.ExportFailure("source_byte_limit")
             time.sleep(.02)
+        base._stop_group(process)
     except OSError:
         raise base.ExportFailure("source_unavailable") from None
     finally:
         _active = None
+        if stderr_reader is not None:
+            stderr.join(stderr_reader)
+        if process is not None and process.stderr is not None:
+            process.stderr.close()
+    assert process is not None
     if process.returncode != 0:
-        raise base.ExportFailure("source_process_failed")
+        diagnostic = _retain_failure_evidence(settings, stderr, process.returncode)
+        message = _safe_diagnostic_message(stderr.payload())
+        raise base.ExportFailure("source_process_failed", {
+            "stage": "ibcmd_process", "exitCode": process.returncode,
+            "message": message or "ibcmd exited without a diagnostic message",
+            "diagnostic": diagnostic,
+        })
     try:
         if output.stat().st_size > request["maximumBytes"]:
             raise base.ExportFailure("source_byte_limit")
@@ -301,12 +397,18 @@ def run_once(request: object) -> tuple[bytes, dict[str, object]]:
             _write_metrics(settings.metrics, metrics)
             return xml, metrics
     except base.ExportFailure as error:
-        _write_metrics(settings.metrics, {"status": "failed", "backend": "ibcmd", "reasonCode": str(error)})
+        failed: dict[str, object] = {
+            "status": "failed", "backend": "ibcmd", "reasonCode": str(error),
+        }
+        if error.diagnostic is not None:
+            failed["diagnostic"] = error.diagnostic
+        _write_metrics(settings.metrics, failed)
         raise
 
 
 def main() -> int:
     signal.signal(signal.SIGTERM, _terminate)
+    details: dict[str, object] = {}
     try:
         request = json.loads(sys.stdin.buffer.read(65537))
         xml, _metrics = run_once(request)
@@ -316,9 +418,11 @@ def main() -> int:
         failure = "invalid_request"
     except base.ExportFailure as error:
         failure = str(error)
+        if error.diagnostic is not None:
+            details = error.diagnostic
     except (OSError, ValueError, ET.ParseError):
         failure = "source_failed"
-    sys.stderr.write(json.dumps({"reasonCode": failure}, sort_keys=True) + "\n")
+    sys.stderr.write(json.dumps({"reasonCode": failure, **details}, sort_keys=True) + "\n")
     return 2
 
 

@@ -134,10 +134,31 @@ TOOLS = (
         ["selectionRef", "offset", "limit"],
         "Page records from one exact retained registration-log selection.",
     ),
-    _tool(
-        "one_c_read_registration_log_record",
-        {"recordRef": {"type": "string", "minLength": 1, "maxLength": 192}},
-        ["recordRef"],
-        "Read one exact record from one retained registration-log selection.",
-    ),
+    {
+        "name": "one_c_read_registration_log_record",
+        "description": (
+            "Read one exact retained registration-log record. If commentContinuation is incomplete, "
+            "repeat with its nextOffsetBytes as commentOffset to read the next UTF-8-safe chunk without re-exporting."
+        ),
+        "parameters": {
+            "type": "object",
+            "oneOf": [
+                {
+                    "properties": {
+                        "recordRef": {"type": "string", "minLength": 1, "maxLength": 192},
+                    },
+                    "required": ["recordRef"], "additionalProperties": False,
+                },
+                {
+                    "properties": {
+                        "recordRef": {"type": "string", "minLength": 1, "maxLength": 192},
+                        "commentOffset": {"type": "integer", "minimum": 0},
+                        "commentMaxBytes": {"type": "integer", "minimum": 1, "maximum": 16384},
+                    },
+                    "required": ["recordRef", "commentOffset", "commentMaxBytes"],
+                    "additionalProperties": False,
+                },
+            ],
+        },
+    },
 )

@@ -769,6 +769,41 @@ reported `partial` / `maximum_count_exceeded`. Native export time was 504–544 
 per selection. The work root was empty and the two-file, 68,035-byte journal
 closure still matched after all three runs.
 
+### Agent-usable long text and failure diagnostics
+
+The follow-up review exposed two response-boundary defects outside native
+acquisition. First, a permitted long comment could make the complete 32 KiB
+companion response collapse to `blocked/output_limit`. Select and page now return
+a 256-byte UTF-8-safe comment preview plus `commentContinuation`; the complete
+comment remains in the existing retained selection. `eventlog_record` accepts an
+optional closed pair `commentOffset` / `commentMaxBytes` (maximum 16 KiB), returns
+the next character-aligned chunk and its exact byte counts, and rejects offsets
+inside a UTF-8 code point. Source coverage and visible-text continuation are
+separate: preview truncation does not change event counts or coverage.
+
+The offline end-to-end regression uses one 16,423-character Cyrillic comment and
+nine 2,002-character Cyrillic comments. Select, a ten-record page and every
+record chunk remain within the final 32 KiB serialized companion envelope. The
+long comment reconstructs byte-for-byte from generated offsets, an invalid byte
+offset fails closed, and an exporter call receipt remains exactly one. A separate
+worst-case twenty-record page combines every bounded semantic field with long
+Cyrillic comments and also remains below the final envelope.
+
+Second, `ibcmd` stderr is no longer discarded. A dedicated reader drains it
+concurrently, hashes all received bytes and retains at most the first 4 KiB. On
+nonzero exit the public response contains the observed `ibcmd_process` stage,
+integer exit code, a one-line 512-byte safe projection (or an explicit absence
+message), and an opaque evidence ref. Credentials, paths, endpoints, email-like
+values and long token-like values are redacted from that projection. The bounded
+original prefix, total byte count and digest are stored mode 0600 under the
+deployment-owned work root with a one-hour logical TTL and an eight-receipt cap;
+expired receipts are removed on a later failure. The stdout protocol remains
+clean, oversized stderr is drained without unbounded memory/disk use, and the
+owned process group is stopped so descendants cannot outlive the failed export.
+Offline regressions cover safe exit-7 text, empty stderr and a 12 KiB sensitive
+stderr stream; they verify safe model-visible output, retained evidence, explicit
+truncation and descendant cleanup.
+
 ## Verification and limits
 
 Static tests cover:

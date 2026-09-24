@@ -135,6 +135,14 @@ class HermesPluginTests(unittest.TestCase):
         page_schema = schemas["one_c_page_registration_log"]["parameters"]
         self.assertIn("filters", page_schema["properties"])
         self.assertNotIn("filters", page_schema["required"])
+        record_schema = schemas["one_c_read_registration_log_record"]["parameters"]
+        self.assertEqual(len(record_schema["oneOf"]), 2)
+        continuation = record_schema["oneOf"][1]
+        self.assertEqual(
+            set(continuation["required"]),
+            {"recordRef", "commentOffset", "commentMaxBytes"},
+        )
+        self.assertEqual(continuation["properties"]["commentMaxBytes"]["maximum"], 16384)
 
         response = json.loads(context.tools["one_c_select_registration_log"]({
             "start": "2026-09-22T06:44:00", "end": "2026-09-22T06:45:00",

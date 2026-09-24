@@ -1,6 +1,8 @@
 from __future__ import annotations
 
+import base64
 import hashlib
+import io
 import json
 import os
 from pathlib import Path
@@ -9,9 +11,12 @@ import subprocess
 import sys
 import tempfile
 import textwrap
+import time
 import unittest
 from unittest import mock
 import xml.etree.ElementTree as ET
+
+from one_c_harness import eventlog_observation as observation
 
 sys.path.insert(0, str(Path(__file__).resolve().parents[1] / "one_c_harness"))
 import eventlog_file_exporter as exporter
@@ -31,6 +36,76 @@ REQUEST = {
 
 
 class FileJournalExporterTests(unittest.TestCase):
+    def test_ibcmd_failure_is_safe_explainable_and_retained_as_bounded_evidence(self) -> None:
+        cases = (
+            ("safe", "License service unavailable", "captured"),
+            ("empty", "", "empty"),
+            ("sensitive", "password=hunter2 /private/customer user@example.test " + "X" * 12000, "truncated"),
+        )
+        for name, diagnostic, state in cases:
+            with self.subTest(name=name), tempfile.TemporaryDirectory() as raw:
+                root = Path(raw)
+                project = root / "project"; project.mkdir()
+                journal = root / "journal"; journal.mkdir()
+                (journal / "1Cv8.lgf").write_bytes(b"index")
+                (journal / "segment.lgp").write_bytes(b"segment")
+                work = root / "work"
+                metrics = root / "metrics.json"
+                survivor = root / "survivor"
+                ibcmd = root / "ibcmd"
+                ibcmd.write_text(textwrap.dedent(f"""\
+                    #!{sys.executable}
+                    import subprocess, sys
+                    subprocess.Popen([sys.executable, '-c', "import pathlib,time; time.sleep(.3); pathlib.Path({str(survivor)!r}).write_text('late')"], stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL)
+                    sys.stderr.write({diagnostic!r})
+                    sys.stderr.flush()
+                    raise SystemExit(7)
+                """), encoding="utf-8")
+                ibcmd.chmod(ibcmd.stat().st_mode | stat.S_IXUSR)
+                environment = {
+                    "PATH": str(Path(sys.executable).parent) + os.pathsep + os.defpath,
+                    "ONE_C_HARNESS_EVENTLOG_COMMAND": str(Path(exporter.__file__).resolve()),
+                    "ONE_C_HARNESS_EVENTLOG_TIME_ZONE": "UTC",
+                    exporter.IBCMD_ENV: str(ibcmd), exporter.JOURNAL_ENV: str(journal),
+                    exporter.WORK_ROOT_ENV: str(work), exporter.METRICS_ENV: str(metrics),
+                }
+                with mock.patch.dict("os.environ", environment, clear=True):
+                    result = observation.select(
+                        project, REQUEST["start"], REQUEST["end"], {}, 100, 10,
+                    )
+                time.sleep(.4)
+
+                self.assertEqual(result["status"], "unavailable")
+                self.assertEqual(result["reasonCode"], "source_process_failed")
+                self.assertEqual(result["stage"], "ibcmd_process")
+                self.assertEqual(result["exitCode"], 7)
+                self.assertEqual(result["diagnostic"]["state"], state)
+                self.assertFalse(survivor.exists())
+                public = json.dumps(result, ensure_ascii=False)
+                self.assertNotIn("hunter2", public)
+                self.assertNotIn("/private/customer", public)
+                self.assertNotIn("user@example.test", public)
+                evidence = list((work / ".evidence").glob("ibcmd-*.json"))
+                self.assertEqual(len(evidence), 1)
+                self.assertLessEqual(evidence[0].stat().st_size, 8192)
+                receipt = json.loads(evidence[0].read_text())
+                self.assertEqual(receipt["exitCode"], 7)
+                self.assertEqual(receipt["stderr"]["state"], state)
+                self.assertEqual(receipt["evidenceRef"], result["diagnostic"]["evidenceRef"])
+                self.assertEqual(stat.S_IMODE(evidence[0].stat().st_mode), 0o600)
+                self.assertLessEqual(receipt["expiresAt"] - receipt["createdAt"], 3600)
+                self.assertEqual(
+                    base64.b64decode(receipt["stderr"]["payloadBase64"]),
+                    diagnostic.encode("utf-8")[:4096],
+                )
+                metric = json.loads(metrics.read_text())
+                self.assertEqual(
+                    metric["diagnostic"]["diagnostic"]["evidenceRef"],
+                    receipt["evidenceRef"],
+                )
+                if diagnostic:
+                    self.assertGreater(receipt["stderr"]["byteCount"], 0)
+
     def test_streamed_digest_keeps_original_tree_identity(self) -> None:
         with tempfile.TemporaryDirectory() as raw:
             root = Path(raw)
@@ -165,7 +240,7 @@ class FileJournalExporterTests(unittest.TestCase):
             self.assertEqual(result["nativeExportSessions"], 1)
             self.assertEqual(json.loads(metrics.read_text())["recordCount"], 1)
             self.assertEqual(list(work.iterdir()), [])
-            self.assertIs(popen.call_args.kwargs["stderr"], subprocess.DEVNULL)
+            self.assertIs(popen.call_args.kwargs["stderr"], subprocess.PIPE)
 
     def test_post_exit_byte_limit_is_checked_before_reading_output(self) -> None:
         with tempfile.TemporaryDirectory() as raw:
@@ -190,6 +265,7 @@ class FileJournalExporterTests(unittest.TestCase):
                 work_path = Path(work)
                 process = mock.Mock(returncode=0)
                 process.poll.return_value = 0
+                process.stderr = io.BytesIO()
 
                 def launch(argv, **_kwargs):
                     output = Path(next(value.split("=", 1)[1] for value in argv if value.startswith("--out=")))
@@ -197,6 +273,7 @@ class FileJournalExporterTests(unittest.TestCase):
                     return process
 
                 with mock.patch.object(exporter.subprocess, "Popen", side_effect=launch), \
+                     mock.patch.object(exporter.base, "_stop_group"), \
                      mock.patch.object(Path, "read_bytes", side_effect=AssertionError("oversized output was read")):
                     with self.assertRaises(base.ExportFailure) as caught:
                         exporter._run_ibcmd(settings, request, work_path, exporter.time.monotonic() + 5)

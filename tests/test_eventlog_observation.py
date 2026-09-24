@@ -9,7 +9,7 @@ import time
 import unittest
 from unittest import mock
 
-from one_c_harness import eventlog_observation
+from one_c_harness import companion, eventlog_observation
 
 
 XML = """<?xml version="1.0" encoding="UTF-8"?>
@@ -262,13 +262,19 @@ class EventLogObservationTests(unittest.TestCase):
             "<v8e:EventPresentation>" + "P" * 160 + "</v8e:EventPresentation>"
             "<v8e:User>" + "U" * 80 + "</v8e:User><v8e:UserPresentation>" + "Q" * 160 + "</v8e:UserPresentation>"
             "<v8e:Metadata>" + "M" * 128 + "</v8e:Metadata><v8e:MetadataPresentation>" + "N" * 160 + "</v8e:MetadataPresentation>"
-            "<v8e:TransactionStatus>" + "T" * 32 + "</v8e:TransactionStatus></v8e:Event>"
+            "<v8e:TransactionStatus>" + "T" * 32 + "</v8e:TransactionStatus>"
+            "<v8e:Comment>" + "Ж" * 512 + "</v8e:Comment></v8e:Event>"
         )
         self.xml.write_text('<?xml version="1.0"?><v8e:EventLog xmlns:v8e="http://v8.1c.ru/eventLog">' + event * 20 + '</v8e:EventLog>', encoding="utf-8")
         selected = self._select()
-        serialized = json.dumps(selected, ensure_ascii=False, sort_keys=True, separators=(",", ":")).encode("utf-8") + b"\n"
+        serialized = companion._dump({
+            "artifactId": companion.ARTIFACT_ID,
+            "capabilityVersion": companion.CAPABILITY_VERSION,
+            "operation": "eventlog_select", "schemaVersion": 1, **selected,
+        }).encode("utf-8")
         self.assertEqual(selected["summary"]["recordCount"], 20)
         self.assertLessEqual(len(serialized), 32 * 1024)
+        self.assertNotEqual(json.loads(serialized)["status"], "blocked")
 
 
 if __name__ == "__main__":

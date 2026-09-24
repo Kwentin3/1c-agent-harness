@@ -136,7 +136,10 @@ filters и stable ref navigation по выбранному deployment техно
 `ibcmd` и стабильную копию `1Cv8Log`; companion повторно проверяет XML и удерживает opaque refs
 один час. Без проверенной команды источник честно остаётся `source_unavailable`. Один нативный
 `ibcmd eventlog export` заменяет прежний экспериментальный путь через disposable ИБ и несколько
-`UnloadEventLog`-сеансов; новый сервис или индекс не требуются.
+`UnloadEventLog`-сеансов; новый сервис или индекс не требуются. Длинные комментарии в списках
+показываются ограниченно и дочитываются по `commentContinuation` из той же retained-выборки без
+нового экспорта. Ненулевой `ibcmd` возвращает безопасные stage/exit/message и opaque evidence ref;
+ограниченный исходный stderr остаётся только в task-owned evidence с TTL.
 
 Standalone Hermes plugin лежит в [`hermes-plugin/`](hermes-plugin/). Он регистрирует coding tools,
 TechLog tools и три registration-log tools `one_c_select_registration_log`,
