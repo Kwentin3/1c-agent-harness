@@ -700,6 +700,12 @@ runtime, restart or live production IB were changed. This split-session
 implementation was a verified fallback, but it is superseded by the direct
 official utility below.
 
+The official-utility work conservatively counted nine subsequent invocations
+(version/help discovery, two direct controls and repeated exact-product runs),
+bringing the ledger to **97/100**. The owner then added 100 operations, making
+the cumulative authorization **200**. The three final filter/coverage cases
+below bring the current ledger to **100/200**, leaving **100** operations.
+
 ### Supported official `ibcmd` exporter (final candidate)
 
 The owner-returned goal required rechecking the previously supplied complete
@@ -734,7 +740,9 @@ in every path component, source/work overlap and metrics hardlinks to either the
 journal or executable, hashes the bounded selected journal before and after,
 runs exactly one fixed-argument `ibcmd eventlog export --format=json
 --skip-root`, enforces a 30-second process deadline and the request byte bound,
-and projects the JSON sequence into the existing XML contract. `UserName` maps
+applies the four admitted exact filters before XML projection, and projects the
+remaining JSON sequence into the existing XML contract. The domain layer
+reapplies the same filters rather than trusting the exporter. `UserName` maps
 to user presentation. `MetadataPresentation` is the stable technical metadata
 name (`Document.SalesInvoice`, `Catalog.Companies`) and maps to both metadata
 name and presentation; the source UUID is not mislabeled as a metadata name.
@@ -750,15 +758,16 @@ including the `Committed`, `RolledBack` and `NotApplicable` laboratory records.
 The two-file, 68,035-byte journal closure was unchanged:
 `0912787526bd5e3c8971a41034293fbb9023ea856e2b0e04954c9ff50a577f24`.
 
-The exact product E2E then invoked the real companion and current exporter. One
-`eventlog_select` completed in 618 ms; its one native export took 524 ms and
-produced 324 source records / 185,480 XML bytes. The event filter matched and
-retained all 75 `Issue80.Lab.Page` rows. The first cited record contains comment
-`Page event 01`, user `071523a4-516f-4fce-ba4b-0d11ab7a1893`, metadata
-`Document.SalesInvoice` and `NotApplicable`. Refined retained paging and exact
-record lookup each completed in 1 ms without changing exporter metrics, proving
-that neither queried the native source again. The work root was empty and the
-journal closure still matched after the run.
+The final exact-product E2E invoked the real companion three times. A combined
+event + level + user + metadata selection completed in 630 ms, produced 39
+matching rows / 18,825 XML bytes and correctly reported complete coverage. Its
+retained page and exact record lookup each completed in 1 ms without changing
+exporter metrics. A nonexistent event completed in 574 ms and returned a valid
+complete-empty result (zero rows / 92 XML bytes). A broad unfiltered request
+completed in 618 ms, saw 324 rows / 185,480 XML bytes, retained 100 and correctly
+reported `partial` / `maximum_count_exceeded`. Native export time was 504–544 ms
+per selection. The work root was empty and the two-file, 68,035-byte journal
+closure still matched after all three runs.
 
 ## Verification and limits
 

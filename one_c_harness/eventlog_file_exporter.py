@@ -30,6 +30,10 @@ _XML_FIELDS = (
     "Date", "Level", "Event", "EventPresentation", "User", "UserPresentation",
     "Metadata", "MetadataPresentation", "TransactionStatus", "Comment",
 )
+_FILTER_FIELDS = {
+    "event": "Event", "level": "Level", "user": "User",
+    "metadata": "MetadataPresentation",
+}
 
 _active: subprocess.Popen[bytes] | None = None
 
@@ -174,7 +178,9 @@ def _source_value(record: dict[str, Any], field: str) -> object:
     return record.get(field)
 
 
-def _json_sequence_to_xml(payload: bytes, maximum_bytes: int) -> bytes:
+def _json_sequence_to_xml(
+    payload: bytes, maximum_bytes: int, filters: dict[str, str] | None = None,
+) -> bytes:
     try:
         text = payload.decode("utf-8")
     except UnicodeDecodeError:
@@ -197,7 +203,11 @@ def _json_sequence_to_xml(payload: bytes, maximum_bytes: int) -> bytes:
                 source = _source_value(value, name)
                 if source is not None and not isinstance(source, str):
                     raise ValueError
-            records.append(value)
+            if all(
+                value.get(_FILTER_FIELDS[key]) == expected
+                for key, expected in (filters or {}).items()
+            ):
+                records.append(value)
     except (json.JSONDecodeError, ValueError, TypeError):
         raise base.ExportFailure("source_incomplete_receipt") from None
 
@@ -275,7 +285,9 @@ def run_once(request: object) -> tuple[bytes, dict[str, object]]:
     try:
         with tempfile.TemporaryDirectory(prefix="eventlog-ibcmd-", dir=settings.work_root) as raw:
             payload, export_milliseconds = _run_ibcmd(settings, admitted, Path(raw), deadline)
-            xml = _json_sequence_to_xml(payload, admitted["maximumBytes"])
+            xml = _json_sequence_to_xml(
+                payload, admitted["maximumBytes"], admitted["filters"],
+            )
             document = ET.fromstring(xml)
             if _digest_tree(settings.journal, deadline=deadline) != source_journal:
                 raise base.ExportFailure("source_incomplete_receipt")

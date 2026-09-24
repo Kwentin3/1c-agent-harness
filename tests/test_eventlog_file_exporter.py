@@ -79,6 +79,37 @@ class FileJournalExporterTests(unittest.TestCase):
         self.assertEqual(second["TransactionStatus"], "RolledBack")
         self.assertEqual(second["Comment"], "Page event 02")
 
+    def test_json_sequence_applies_all_exact_filters_before_xml(self) -> None:
+        rows = [
+            {
+                "Date": "2026-09-23T18:22:32", "Level": "Information",
+                "Event": "Issue80.Lab.Page", "User": "user-id",
+                "MetadataPresentation": "Document.SalesInvoice",
+            },
+            {
+                "Date": "2026-09-23T18:22:33", "Level": "Warning",
+                "Event": "Issue80.Lab.Page", "User": "user-id",
+                "MetadataPresentation": "Catalog.Companies",
+            },
+            {
+                "Date": "2026-09-23T18:22:34", "Level": "Information",
+                "Event": "Other.Event", "User": "user-id",
+                "MetadataPresentation": "Document.SalesInvoice",
+            },
+        ]
+        payload = "\n".join(json.dumps(row) for row in rows).encode()
+
+        xml = exporter._json_sequence_to_xml(payload, 1048576, {
+            "event": "Issue80.Lab.Page", "level": "Information",
+            "user": "user-id", "metadata": "Document.SalesInvoice",
+        })
+
+        records = list(ET.fromstring(xml))
+        self.assertEqual(len(records), 1)
+        values = {child.tag.rsplit("}", 1)[-1]: child.text for child in records[0]}
+        self.assertEqual(values["Event"], "Issue80.Lab.Page")
+        self.assertEqual(values["Metadata"], "Document.SalesInvoice")
+
     def test_invalid_json_or_missing_required_field_fails_closed(self) -> None:
         for payload in (b"not json", b'{"Date":"2026-09-23T18:22:32"}'):
             with self.subTest(payload=payload):
