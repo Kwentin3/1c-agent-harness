@@ -16,6 +16,7 @@ import unittest
 from unittest import mock
 import xml.etree.ElementTree as ET
 
+from one_c_harness import companion
 from one_c_harness import eventlog_observation as observation
 
 sys.path.insert(0, str(Path(__file__).resolve().parents[1] / "one_c_harness"))
@@ -154,9 +155,13 @@ class FileJournalExporterTests(unittest.TestCase):
                     exporter.WORK_ROOT_ENV: str(work), exporter.METRICS_ENV: str(metrics),
                 }
                 with mock.patch.dict("os.environ", environment, clear=True):
-                    result = observation.select(
-                        project, REQUEST["start"], REQUEST["end"], {}, 100, 10,
-                    )
+                    result = companion.execute(json.dumps({
+                        "schemaVersion": 1, "operation": "eventlog_select",
+                        "arguments": {
+                            "start": REQUEST["start"], "end": REQUEST["end"],
+                            "filters": {}, "maximumCount": 100, "limit": 10,
+                        },
+                    }).encode("utf-8"), project)
 
                 raw_error = captured.read_bytes()
                 exported = json.loads(raw_error)
