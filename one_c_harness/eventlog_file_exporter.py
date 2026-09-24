@@ -353,7 +353,7 @@ def _run_ibcmd(settings: Settings, request: dict[str, Any], root: Path, deadline
         message = _safe_diagnostic_message(stderr.payload())
         raise base.ExportFailure("source_process_failed", {
             "stage": "ibcmd_process", "exitCode": process.returncode,
-            "message": message or "ibcmd exited without a diagnostic message",
+            **({"message": message} if message else {}),
             "diagnostic": diagnostic,
         })
     try:
@@ -422,7 +422,7 @@ def main() -> int:
             details = error.diagnostic
     except (OSError, ValueError, ET.ParseError):
         failure = "source_failed"
-    sys.stderr.write(json.dumps({"reasonCode": failure, **details}, sort_keys=True) + "\n")
+    sys.stderr.write(json.dumps({"reasonCode": failure, **details}, ensure_ascii=False, sort_keys=True, separators=(",", ":")) + "\n")
     return 2
 
 

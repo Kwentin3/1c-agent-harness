@@ -276,6 +276,34 @@ class EventLogObservationTests(unittest.TestCase):
         self.assertLessEqual(len(serialized), 32 * 1024)
         self.assertNotEqual(json.loads(serialized)["status"], "blocked")
 
+    def test_comment_continuation_rejects_a_chunk_too_small_for_one_codepoint(self) -> None:
+        self.xml.write_text(
+            '<?xml version="1.0"?><v8e:EventLog xmlns:v8e="http://v8.1c.ru/eventLog">'
+            '<v8e:Event><v8e:Level>Error</v8e:Level><v8e:Date>2026-09-22T06:44:00</v8e:Date>'
+            '<v8e:Event>Unicode</v8e:Event><v8e:Comment>Я😀Я</v8e:Comment></v8e:Event></v8e:EventLog>',
+            encoding="utf-8",
+        )
+        selected = self._select(limit=1)
+        result = eventlog_observation.record(
+            self.project, selected["records"][0]["recordRef"], 0, 1,
+        )
+        self.assertEqual(result["status"], "blocked")
+        self.assertEqual(result["reasonCode"], "invalid_request")
+        pieces: list[str] = []
+        offset = 0
+        while True:
+            result = eventlog_observation.record(
+                self.project, selected["records"][0]["recordRef"], offset, 4,
+            )
+            self.assertNotEqual(result["status"], "blocked")
+            pieces.append(result["record"]["comment"])
+            continuation = result["record"]["commentContinuation"]
+            if continuation["complete"]:
+                break
+            self.assertGreater(continuation["nextOffsetBytes"], offset)
+            offset = continuation["nextOffsetBytes"]
+        self.assertEqual("".join(pieces), "Я😀Я")
+
 
 if __name__ == "__main__":
     unittest.main()

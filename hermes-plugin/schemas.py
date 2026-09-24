@@ -132,7 +132,7 @@ TOOLS = (
             "filters": _eventlog_filters(),
         },
         ["selectionRef", "offset", "limit"],
-        "Page records from one exact retained registration-log selection.",
+        "Page one exact retained registration-log selection. If display.partial is true, continue at the returned nextOffset; this does not re-export.",
     ),
     {
         "name": "one_c_read_registration_log_record",
@@ -153,7 +153,7 @@ TOOLS = (
                     "properties": {
                         "recordRef": {"type": "string", "minLength": 1, "maxLength": 192},
                         "commentOffset": {"type": "integer", "minimum": 0},
-                        "commentMaxBytes": {"type": "integer", "minimum": 1, "maximum": 16384},
+                        "commentMaxBytes": {"type": "integer", "minimum": 4, "maximum": 16384},
                     },
                     "required": ["recordRef", "commentOffset", "commentMaxBytes"],
                     "additionalProperties": False,

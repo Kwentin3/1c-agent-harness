@@ -143,6 +143,7 @@ class HermesPluginTests(unittest.TestCase):
             {"recordRef", "commentOffset", "commentMaxBytes"},
         )
         self.assertEqual(continuation["properties"]["commentMaxBytes"]["maximum"], 16384)
+        self.assertEqual(continuation["properties"]["commentMaxBytes"]["minimum"], 4)
 
         response = json.loads(context.tools["one_c_select_registration_log"]({
             "start": "2026-09-22T06:44:00", "end": "2026-09-22T06:45:00",
@@ -163,7 +164,11 @@ class HermesPluginTests(unittest.TestCase):
         result = {
             "artifactId": _artifact_id(), "capabilityVersion": "0.3.0", "schemaVersion": 1,
             "operation": "eventlog_page", "status": "partial", "selectionRef": "eventlog:abc",
-            "offset": 0, "total": 2, "truncated": False,
+            "offset": 0, "total": 2, "truncated": True, "nextOffset": 1,
+            "display": {
+                "complete": False, "partial": True, "reasonCode": "response_byte_limit",
+                "returnedCount": 1, "requestedLimit": 20, "nextOffset": 1,
+            },
             "summary": {
                 "source": "1c_registration_log", "window": {"start": "a", "end": "b", "sourceTimeZone": "UTC"},
                 "filters": {"event": "_$Session$_.Start"}, "baseSelectionRef": "eventlog:abc",
@@ -173,7 +178,6 @@ class HermesPluginTests(unittest.TestCase):
             "coverage": {"complete": False, "partial": True, "reasonCode": "maximum_count_boundary", "limitedToRetainedSelection": True},
             "records": [
                 {**common, "occurredAt": "2026-09-22T09:00:00", "recordRef": "eventlog:abc:record:0:x", "selectionIndex": 0, "eventPresentation": "Start"},
-                {**common, "occurredAt": "2026-09-22T09:00:01", "recordRef": "eventlog:abc:record:1:y", "selectionIndex": 1, "eventPresentation": "Start"},
             ],
             "snapshot": {"stable": True},
         }
@@ -190,8 +194,9 @@ class HermesPluginTests(unittest.TestCase):
         self.assertEqual(response["status"], "partial")
         self.assertFalse(response["coverage"]["complete"])
         self.assertEqual(response["summary"]["countScope"], "refinedRetainedSelection")
-        self.assertEqual(response["recordCommon"]["event"], "_$Session$_.Start")
-        self.assertNotIn("event", response["records"][0])
+        self.assertEqual(response["display"]["reasonCode"], "response_byte_limit")
+        self.assertEqual(response["nextOffset"], 1)
+        self.assertEqual(response["records"][0]["event"], "_$Session$_.Start")
         self.assertIn("recordRef", response["records"][0])
 
     def test_open_dispatches_only_the_public_terminal_tool_and_checks_version(self) -> None:

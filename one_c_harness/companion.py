@@ -6,6 +6,7 @@ from datetime import datetime
 import argparse
 import base64
 import binascii
+import copy
 import hashlib
 import json
 from pathlib import Path, PurePosixPath
@@ -29,6 +30,7 @@ except ImportError:  # Repository-local compatibility for focused tests.
 SCHEMA_VERSION = 1
 MAX_REQUEST_BYTES = 16 * 1024
 MAX_OUTPUT_BYTES = 32 * 1024
+_EVENTLOG_OUTPUT_TARGET_BYTES = 24 * 1024
 
 
 class CompanionError(ValueError):
@@ -55,7 +57,97 @@ def _blocked(reason_code: str, message: str) -> dict[str, object]:
     }
 
 
+def _wire_size(value: dict[str, object]) -> int:
+    return len((json.dumps(value, ensure_ascii=False, sort_keys=True, separators=(",", ":")) + "\n").encode("utf-8"))
+
+
+def _fit_record_comment(value: dict[str, object], record: dict[str, object], maximum: int) -> None:
+    comment = record.get("comment")
+    continuation = record.get("commentContinuation")
+    if not isinstance(comment, str) or not isinstance(continuation, dict) or _wire_size(value) <= maximum:
+        return
+    offset = continuation.get("offsetBytes")
+    total = continuation.get("totalBytes")
+    original_complete = continuation.get("complete")
+    if type(offset) is not int or type(total) is not int or not isinstance(original_complete, bool):
+        return
+    low, high = 0, len(comment)
+    while low < high:
+        middle = (low + high + 1) // 2
+        fragment = comment[:middle]
+        returned = len(fragment.encode("utf-8"))
+        record["comment"] = fragment
+        record["commentContinuation"] = {
+            "complete": original_complete and middle == len(comment),
+            "offsetBytes": offset, "returnedBytes": returned, "totalBytes": total,
+            **({"nextOffsetBytes": offset + returned} if not (original_complete and middle == len(comment)) else {}),
+        }
+        if _wire_size(value) <= maximum:
+            low = middle
+        else:
+            high = middle - 1
+    fragment = comment[:low]
+    returned = len(fragment.encode("utf-8"))
+    complete = original_complete and low == len(comment)
+    record["comment"] = fragment
+    record["commentContinuation"] = {
+        "complete": complete, "offsetBytes": offset, "returnedBytes": returned, "totalBytes": total,
+        **({"nextOffsetBytes": offset + returned} if not complete else {}),
+    }
+
+
+def _bounded_eventlog_response(original: dict[str, object]) -> dict[str, object]:
+    operation = original.get("operation")
+    if operation not in {"eventlog_select", "eventlog_page", "eventlog_record"} or original.get("status") not in {"ok", "partial"}:
+        return original
+    value = copy.deepcopy(original)
+    if operation == "eventlog_record":
+        record = value.get("record")
+        if isinstance(record, dict):
+            _fit_record_comment(value, record, _EVENTLOG_OUTPUT_TARGET_BYTES)
+        return value
+
+    records = value.get("records")
+    if not isinstance(records, list) or not all(isinstance(record, dict) for record in records):
+        return value
+    offset = value.get("offset", 0)
+    if type(offset) is not int:
+        return value
+    requested_limit = value.pop("requestedLimit", len(records))
+    if type(requested_limit) is not int:
+        requested_limit = len(records)
+    value["display"] = {
+        "complete": True, "partial": False, "returnedCount": len(records),
+        "requestedLimit": requested_limit, "nextOffset": offset + len(records),
+    }
+    value["nextOffset"] = offset + len(records)
+    while len(records) > 1 and _wire_size(value) > _EVENTLOG_OUTPUT_TARGET_BYTES:
+        records.pop()
+        value["display"] = {
+            "complete": False, "partial": True, "reasonCode": "response_byte_limit",
+            "returnedCount": len(records), "requestedLimit": requested_limit,
+            "nextOffset": offset + len(records),
+        }
+        value["nextOffset"] = offset + len(records)
+        if operation == "eventlog_select":
+            value["recordsTruncated"] = True
+        else:
+            value["truncated"] = True
+    if _wire_size(value) > _EVENTLOG_OUTPUT_TARGET_BYTES and records:
+        _fit_record_comment(value, records[0], _EVENTLOG_OUTPUT_TARGET_BYTES)
+    summary = value.get("summary")
+    facets = summary.get("facets") if isinstance(summary, dict) else None
+    if isinstance(facets, dict):
+        facet_lists = [items for items in facets.values() if isinstance(items, list)]
+        if _wire_size(value) > _EVENTLOG_OUTPUT_TARGET_BYTES and any(facet_lists):
+            summary["facetsDisplay"] = {"complete": False, "reasonCode": "response_byte_limit"}
+            while _wire_size(value) > _EVENTLOG_OUTPUT_TARGET_BYTES and any(facet_lists):
+                max(facet_lists, key=len).pop()
+    return value
+
+
 def _dump(value: dict[str, object]) -> str:
+    value = _bounded_eventlog_response(value)
     payload = json.dumps(value, ensure_ascii=False, sort_keys=True, separators=(",", ":"))
     if len((payload + "\n").encode("utf-8")) > MAX_OUTPUT_BYTES:
         payload = json.dumps(_blocked("output_limit", "response exceeds byte limit"), separators=(",", ":"))
@@ -250,7 +342,7 @@ def _eventlog_select(arguments: dict[str, object], project_root: Path) -> dict[s
         project_root, arguments["start"], arguments["end"], arguments["filters"],
         arguments["maximumCount"], arguments["limit"],
     )
-    return {"artifactId": ARTIFACT_ID, "capabilityVersion": CAPABILITY_VERSION, "operation": "eventlog_select", "schemaVersion": SCHEMA_VERSION, **result}
+    return {"artifactId": ARTIFACT_ID, "capabilityVersion": CAPABILITY_VERSION, "operation": "eventlog_select", "schemaVersion": SCHEMA_VERSION, "requestedLimit": arguments["limit"], **result}
 
 
 def _eventlog_page(arguments: dict[str, object], project_root: Path) -> dict[str, object]:
@@ -259,7 +351,7 @@ def _eventlog_page(arguments: dict[str, object], project_root: Path) -> dict[str
     result = eventlog_observation.page(
         project_root, arguments["selectionRef"], arguments["offset"], arguments["limit"], arguments.get("filters"),
     )
-    return {"artifactId": ARTIFACT_ID, "capabilityVersion": CAPABILITY_VERSION, "operation": "eventlog_page", "schemaVersion": SCHEMA_VERSION, **result}
+    return {"artifactId": ARTIFACT_ID, "capabilityVersion": CAPABILITY_VERSION, "operation": "eventlog_page", "schemaVersion": SCHEMA_VERSION, "requestedLimit": arguments["limit"], **result}
 
 
 def _eventlog_record(arguments: dict[str, object], project_root: Path) -> dict[str, object]:

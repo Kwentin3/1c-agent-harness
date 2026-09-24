@@ -138,7 +138,9 @@ filters и stable ref navigation по выбранному deployment техно
 `ibcmd eventlog export` заменяет прежний экспериментальный путь через disposable ИБ и несколько
 `UnloadEventLog`-сеансов; новый сервис или индекс не требуются. Длинные комментарии в списках
 показываются ограниченно и дочитываются по `commentContinuation` из той же retained-выборки без
-нового экспорта. Ненулевой `ibcmd` возвращает безопасные stage/exit/message и opaque evidence ref;
+нового экспорта. Окончательная JSON-выдача измеряется целиком: если запрошенная страница не
+помещается в компактный бюджет, она сохраняет факты и refs, возвращает фактический `nextOffset`
+и дочитывается из той же выборки. Ненулевой `ibcmd` возвращает безопасные stage/exit/message и opaque evidence ref;
 ограниченный исходный stderr остаётся только в task-owned evidence с TTL.
 
 Standalone Hermes plugin лежит в [`hermes-plugin/`](hermes-plugin/). Он регистрирует coding tools,

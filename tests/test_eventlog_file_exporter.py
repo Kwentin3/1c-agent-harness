@@ -106,6 +106,43 @@ class FileJournalExporterTests(unittest.TestCase):
                 if diagnostic:
                     self.assertGreater(receipt["stderr"]["byteCount"], 0)
 
+    def test_safe_russian_ibcmd_error_survives_the_complete_exporter_transport(self) -> None:
+        with tempfile.TemporaryDirectory() as raw:
+            root = Path(raw)
+            project = root / "project"; project.mkdir()
+            journal = root / "journal"; journal.mkdir()
+            (journal / "1Cv8.lgf").write_bytes(b"index")
+            (journal / "segment.lgp").write_bytes(b"segment")
+            work = root / "work"
+            metrics = root / "metrics.json"
+            message = "Ошибка лицензии: " + "Я" * 242
+            ibcmd = root / "ibcmd"
+            ibcmd.write_text(
+                f"#!{sys.executable}\nimport sys\nsys.stderr.write({message!r})\nraise SystemExit(9)\n",
+                encoding="utf-8",
+            )
+            ibcmd.chmod(ibcmd.stat().st_mode | stat.S_IXUSR)
+            environment = {
+                "PATH": str(Path(sys.executable).parent) + os.pathsep + os.defpath,
+                "ONE_C_HARNESS_EVENTLOG_COMMAND": str(Path(exporter.__file__).resolve()),
+                "ONE_C_HARNESS_EVENTLOG_TIME_ZONE": "UTC",
+                exporter.IBCMD_ENV: str(ibcmd), exporter.JOURNAL_ENV: str(journal),
+                exporter.WORK_ROOT_ENV: str(work), exporter.METRICS_ENV: str(metrics),
+            }
+            with mock.patch.dict("os.environ", environment, clear=True):
+                result = observation.select(
+                    project, REQUEST["start"], REQUEST["end"], {}, 100, 10,
+                )
+
+            self.assertEqual(result["status"], "unavailable")
+            self.assertEqual(result["reasonCode"], "source_process_failed")
+            self.assertEqual(result["stage"], "ibcmd_process")
+            self.assertEqual(result["exitCode"], 9)
+            self.assertEqual(result["message"], exporter._safe_diagnostic_message(message.encode("utf-8")))
+            self.assertTrue(result["message"].startswith("Ошибка лицензии:"))
+            self.assertTrue(result["diagnostic"]["evidenceRef"].startswith("eventlog-export:"))
+            self.assertLessEqual(len(json.dumps(result, ensure_ascii=False).encode("utf-8")), 1024)
+
     def test_streamed_digest_keeps_original_tree_identity(self) -> None:
         with tempfile.TemporaryDirectory() as raw:
             root = Path(raw)

@@ -792,8 +792,9 @@ Cyrillic comments and also remains below the final envelope.
 Second, `ibcmd` stderr is no longer discarded. A dedicated reader drains it
 concurrently, hashes all received bytes and retains at most the first 4 KiB. On
 nonzero exit the public response contains the observed `ibcmd_process` stage,
-integer exit code, a one-line 512-byte safe projection (or an explicit absence
-message), and an opaque evidence ref. Credentials, paths, endpoints, email-like
+integer exit code, a one-line 512-byte safe projection when stderr has safe
+content, and an opaque evidence ref. Empty stderr is marked empty rather than
+given an invented process message. Credentials, paths, endpoints, email-like
 values and long token-like values are redacted from that projection. The bounded
 original prefix, total byte count and digest are stored mode 0600 under the
 deployment-owned work root with a one-hour logical TTL and an eight-receipt cap;
@@ -803,6 +804,57 @@ owned process group is stopped so descendants cannot outlive the failed export.
 Offline regressions cover safe exit-7 text, empty stderr and a 12 KiB sensitive
 stderr stream; they verify safe model-visible output, retained evidence, explicit
 truncation and descendant cleanup.
+
+The later full-wire review found three remaining presentation defects and the
+same response layer now closes them. Registration-log select/page/record output
+is measured after the complete compact JSON envelope, UTF-8 encoding, JSON
+escaping and final newline. List responses target 24 KiB rather than treating
+the 32 KiB hard ceiling as a normal payload size. When all requested rows do not
+fit, the response keeps window/filter/count context, source coverage, selection/record
+refs and at least one useful row, and adds a separate `display` state with the
+actual `returnedCount` and strictly advancing `nextOffset`. Following that
+offset pages the retained selection without gaps or another export. Source
+coverage, response display and comment continuation remain three distinct
+states. Facets may be shortened only after rows; this is marked separately and
+the underlying facts remain addressable through retained pages/records.
+
+An exact-record comment is also fitted against the final serialized envelope,
+so JSON escaping (including many backslashes) cannot turn the whole response
+into `output_limit`. The returned UTF-8 byte offset is recalculated from the
+actual shown fragment. Continuation requests smaller than four bytes are
+rejected; every successful incomplete read is non-empty and advances. Offline
+controls reconstruct a 20,004-byte backslash/Cyrillic comment exactly, reconstruct
+`Я😀Я` with four-byte requests, page twenty maximal-field Cyrillic records with
+no skipped or duplicate `selectionIndex`/`recordRef`, and observe exactly one
+exporter invocation across select/page/record continuation.
+
+Exporter failure JSON now uses unescaped UTF-8 and compact separators before
+the existing 1,024-byte bounded receiver. A safe 515-byte Russian diagnostic
+therefore retains `source_process_failed`, `ibcmd_process`, exit code, safe
+meaning and the opaque private-evidence ref rather than becoming generic
+`source_failed`. Empty stderr has no invented process message and remains
+explicit through `diagnostic.state=empty`. The prior bounded capture, redaction,
+mode 0600, one-hour TTL, eight-receipt cap, process-group cleanup and clean
+stdout protocol are unchanged.
+
+Example of the short model interpretation produced from the real tool chain on
+the offline synthetic fixture:
+
+```text
+В выборке два события, coverage complete. В 10:00:01 пользователь u-1 записал
+Document.SalesInvoice; результат Committed, комментарий «Счет записан».
+В 10:00:02 тот же пользователь изменял Catalog.Companies; результат RolledBack,
+комментарий «Изменение отменено». Текст обоих комментариев показан полностью.
+```
+
+The next detail call is direct, not a guessed byte-budget retry:
+
+```json
+{"recordRef":"<exact recordRef from the chosen row>"}
+```
+
+If `display.partial=true`, the next page call instead uses the same exact
+`selectionRef`, the returned `nextOffset`, and a small `limit`.
 
 ## Verification and limits
 

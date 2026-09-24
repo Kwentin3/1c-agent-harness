@@ -521,7 +521,7 @@ def record(
     if (
         type(comment_offset) is not int or comment_offset < 0
         or type(comment_max_bytes) is not int
-        or not 1 <= comment_max_bytes <= _MAX_COMMENT_CHUNK_BYTES
+        or not 4 <= comment_max_bytes <= _MAX_COMMENT_CHUNK_BYTES
     ):
         return _blocked("invalid_request", "record continuation arguments are invalid")
     selection = _read_selection(project_root, record_ref)
