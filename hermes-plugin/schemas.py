@@ -66,13 +66,13 @@ TOOLS = (
     ),
     _tool(
         "one_c_observation_info", {}, [],
-        "Inspect the configured technological-journal source with bounded coverage and report its timezone, observed interval, events and supported filters.",
+        "Inspect bounded technological-journal coverage and report the source timezone, observed interval, events and filters. For a later observe call in that same source timezone, preserve the returned calendar date/time and fractional seconds but omit its Z or numeric offset.",
     ),
     _tool(
         "one_c_observe",
         {
-            "start": {"type": "string", "description": "Inclusive calendar start in the executor-configured source-local timezone, e.g. 2026-09-18T15:25:00."},
-            "end": {"type": "string", "description": "Inclusive calendar end in the same source-local timezone."},
+            "start": {"type": "string", "description": "Inclusive calendar start in the configured source timezone, without Z or a numeric offset; preserve fractional seconds, e.g. 2026-09-18T15:25:00.123456."},
+            "end": {"type": "string", "description": "Inclusive calendar end in that same source timezone, without Z or a numeric offset; preserve fractional seconds."},
             "events": {"type": "array", "minItems": 1, "maxItems": 8, "items": {"type": "string", "minLength": 1, "maxLength": 32}},
             "filters": {
                 "type": "object",
@@ -86,11 +86,11 @@ TOOLS = (
             },
             "limit": {"type": "integer", "minimum": 1, "maximum": 20},
         }, ["start", "end", "events", "limit"],
-        "Summarize platform-authored technological-journal errors in one calendar interval using the executor-configured source-local timezone.",
+        "Summarize platform-authored technological-journal errors in one source-local calendar interval. Successful complete pages may use groupCommon for fields shared by every returned group.",
     ),
     {
         "name": "one_c_expand_observation",
-        "description": "Page groups or records from one retained observation, or show bounded time-adjacent records around one exact retained record.",
+        "description": "Page groups or records from one retained observation, or show bounded time-adjacent records around one exact retained record. On successful complete pages, groupCommon applies to every returned group and recordCommon to every returned record named by the response.",
         "parameters": {
             "type": "object",
             "oneOf": [

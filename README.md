@@ -193,6 +193,7 @@ MVP считается полезным не потому, что агент н�
 - [First live read-only Runtime Diagnostics slice (issue #73)](docs/issue-73-runtime-diagnostics-live.md)
 - [Platform technological-journal observations (issue #75)](docs/issue-75-techlog-observations.md)
 - [Bounded TechLog discovery and navigation (issue #76)](docs/issue-76-techlog-navigation.md)
+- [Compact model-facing diagnostic responses (issue #78)](docs/issue-78-compact-diagnostic-responses.md)
 - [Controlled enablement plan for the existing Hermes (issue #75)](docs/issue-75-controlled-enable-plan.md)
 - [Knowledge handoff write-cycle экспериментов](docs/write-cycle-knowledge-handoff.md)
 - [Правила работы кодового агента](AGENTS.md)
