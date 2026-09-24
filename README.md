@@ -132,10 +132,11 @@ terminal backend. Coding operations остаются `open`, `narrow` и `verify
 repository-relative. Runtime observations добавляют bounded source discovery, safe structured
 filters и stable ref navigation по выбранному deployment технологическому журналу; модель не
 может передать путь к источнику. Candidate #80 тем же способом добавляет bounded selection/page/record
-для журнала регистрации: deployment выбирает фиксированную команду выгрузки, companion повторно
-проверяет XML и удерживает opaque refs один час. Без проверенной команды источник честно остаётся
-`source_unavailable`; внешний EPF-маршрут ещё не доказан end-to-end. Существующий executor locator
-`.local/one-c-runtime.json` переиспользуется без нового сервиса или индекса.
+для журнала регистрации: deployment выбирает фиксированную команду выгрузки, официальный
+`ibcmd` и стабильную копию `1Cv8Log`; companion повторно проверяет XML и удерживает opaque refs
+один час. Без проверенной команды источник честно остаётся `source_unavailable`. Один нативный
+`ibcmd eventlog export` заменяет прежний экспериментальный путь через disposable ИБ и несколько
+`UnloadEventLog`-сеансов; новый сервис или индекс не требуются.
 
 Standalone Hermes plugin лежит в [`hermes-plugin/`](hermes-plugin/). Он регистрирует coding tools,
 TechLog tools и три registration-log tools `one_c_select_registration_log`,

@@ -30,10 +30,11 @@ ONE_C_HARNESS_EVENTLOG_TIME_ZONE=UTC
 ```
 
 The companion invokes that executable with no arguments, sends one JSON request
-to stdin and accepts only XML on stdout. The executable is deployment-owned and
-is the only place that may bind a file or client/server infobase, credentials,
-platform runtime and the native `UnloadEventLog` call. The tracked candidate does
-not manage SSH, secrets, deployment or installation.
+to stdin and accepts only XML on stdout. The tracked executable binds only an
+administrator-selected stable `1Cv8Log` directory and an official `ibcmd`
+binary. It executes one fixed `ibcmd eventlog export` command; no caller value
+can add an executable or arbitrary argument. The tracked candidate does not
+manage SSH, secrets, deployment or installation.
 
 Request schema v1:
 
@@ -64,10 +65,12 @@ calendar interval is inclusive, source-local, offset-free and at most 24 hours.
 The process timeout is 120 seconds. XML is capped at 1 MiB. The domain layer
 reapplies the interval and every exact filter to the returned XML rather than
 trusting the deployment command alone.
-**The specific training-file exporter below supports only `event` and `level`
-filters**. `user` and `metadata` remain in the source-neutral request contract,
-but this exporter refuses them as unavailable before launching 1C. Do not use
-the four-filter example above as a claim that this runtime supports all four.
+The `ibcmd` backend applies the bounded time window natively. The domain layer
+then reapplies `event`, `level`, `user` and `metadata` exactly over the returned
+bounded document. This is deliberate: `ibcmd eventlog export` 8.5.1.1150 has no
+native options for those four filters. Coverage is classified from the complete
+bounded source result before local filtering, so a retained refinement cannot be
+misreported as proof of absence outside a partial selection.
 
 If the fixed command or timezone is absent, invalid, times out or exits nonzero,
 the source is `unavailable`; it is never reported as an empty selection. A known
@@ -454,10 +457,12 @@ The owner granted permission to proceed with that isolated option; its tested
 outcome and remaining limits follow. This does not authorize deployment,
 restart, merge or issue closure.
 
-### Authorized disposable exporter candidate and connected companion proof
+### Superseded disposable `UnloadEventLog` candidate and connected proof
 
-After the owner explicitly granted permission to continue, a fixed-command
-candidate was added at `one_c_harness/eventlog_file_exporter.py`. It uses the
+This section records the predecessor that was tested before the official
+server distribution was recovered. It is retained as historical evidence, not
+as the current implementation. After the owner explicitly granted permission
+to continue, a fixed-command candidate used the
 already selected read-only **retained, quiescent** `1Cv8Log` directory and
 the immutable snapshot. It copies both into a private `.local/` request root,
 inserts an early-returning `OnStart` into that **copy only**, creates a fresh
@@ -501,12 +506,12 @@ the timezone embedded in historical log events remains independently unproven.
 This is a companion→candidate→native source E2E, **not** an installed Hermes
 chat-plugin E2E. No source or snapshot file changed in the verified run.
 
-The candidate's command contract is one closed JSON request on stdin, XML on
-stdout, typed error JSON on stderr. Deployment binds
+The superseded candidate's command contract was one closed JSON request on
+stdin, XML on stdout and typed error JSON on stderr. It bound
 `ONE_C_HARNESS_EVENTLOG_COMMAND` to the executable file exporter,
 `ONE_C_HARNESS_EVENTLOG_RUNTIME_PROFILE` to the pinned training runtime,
 `ONE_C_HARNESS_EVENTLOG_SNAPSHOT` to the admitted immutable hierarchical
-snapshot, `ONE_C_HARNESS_EVENTLOG_JOURNAL` to a preselected **stable copied**
+snapshot, and `ONE_C_HARNESS_EVENTLOG_JOURNAL` to a preselected **stable copied**
 `1Cv8Log` directory, `ONE_C_HARNESS_EVENTLOG_WORK_ROOT` to a task-owned
 `.local/` directory, and `ONE_C_HARNESS_EVENTLOG_TIME_ZONE` to an explicitly
 configured IANA zone. The candidate needs a full matching training runtime
@@ -518,7 +523,7 @@ other log formats, broad requests over the 1 MiB limit, or filters not
 individually exercised natively. The final verified candidate only emits five
 columns (`Date,Level,Event,EventPresentation,TransactionStatus`); user and
 metadata remain unavailable, **not** empty or known. No deployment or merge
-has occurred. The original cycle used **24/24** native invocations (17 prior,
+occurred. The original cycle used **24/24** native invocations (17 prior,
 seven candidate invocations, including the connected companion attempt).
 The owner then expanded the *total* budget to 50; see the bounded follow-up
 below. The prior 24/24 statement is not the current budget.
@@ -614,15 +619,12 @@ companion call stopped inside the first export before any XML was created. This
 failed candidate was removed; the tracked five-column historical exporter was
 the rollback-safe implementation at the end of that stage.
 
-The direct utility is named **`ibcmd`**. Official 1C documentation confirms
-`ibcmd eventlog export` as the shortest candidate because it reads an event-log
-directory without a service infobase. The installed official training client
-distribution contains no `ibcmd`; the utility is supplied by the Linux x86-64
-**server** distribution. No server distribution or separately redistributable
-official binary is present in the executor/workspace caches, and the official
-download is account/license-acceptance gated. No mirror or unverified binary was
-used. Consequently its real version/help, compatibility with this 8.5.1.1150
-journal, fields and output have not been tested.
+The direct utility is named **`ibcmd`**. Official 1C documentation identifies
+`ibcmd eventlog export` as the shortest route because it reads an event-log
+directory without a service infobase. The installed training-client subset did
+not contain it. At this historical stage the previously supplied complete
+server archive had not yet been recovered; the conclusion below was therefore
+provisional and is superseded by the final `ibcmd` section.
 
 **40-operation stage verdict: partially ready / stopped (superseded below).**
 That stage proved current lab event
@@ -694,15 +696,76 @@ limited to the retained selection and cannot prove absence outside it.
 
 The stage used **88/100** authorized native operations. The final task-owned
 process check was empty. No source/snapshot bytes, deployment, service, Hermes
-runtime, restart or live production IB were changed. `ibcmd` remains the
-shorter future replacement when an official server distribution is available,
-but is no longer a blocker for this bounded training-runtime path.
+runtime, restart or live production IB were changed. This split-session
+implementation was a verified fallback, but it is superseded by the direct
+official utility below.
+
+### Supported official `ibcmd` exporter (final candidate)
+
+The owner-returned goal required rechecking the previously supplied complete
+Linux distribution rather than treating it as absent. The recovered official
+archive is `server64_with_all_clients_8_5_1_1150.zip`, 3,410,800,413 bytes,
+SHA-256 `5fdea4f52861460c62fde833becee863b12f291b5f065e34ed2a8635d8bf2280`.
+It contains `setup-full-8.5.1.1150-x86_64.run`. Only task-owned `.local/`
+directories were used. An isolated non-root extraction installed the selected
+`server,server_admin` components behind private `/opt` and `/usr/local/bin`
+bindings; canaries verified that the executor's real paths were unchanged.
+
+The resulting official ELF x86-64 binary reports `ibcmd --version` =
+`8.5.1.1150` with exit code 0. It is 55,310,040 bytes with SHA-256
+`62e72e15bb4550c4ffcf421f962c27fd1e1ddde1ba31e5bc0d7c9e0c2352dde7`.
+Its own `ibcmd help eventlog` documents XML/JSON export, `--skip-root`, inclusive
+`--from`/`--to`, `--out` and a positional event-log directory. No mirror or
+third-party `ibcmd` binary was used.
+
+The production candidate at `one_c_harness/eventlog_file_exporter.py` now uses
+that interface directly. Deployment binds:
+
+```text
+ONE_C_HARNESS_EVENTLOG_COMMAND=/absolute/eventlog_file_exporter.py
+ONE_C_HARNESS_EVENTLOG_IBCMD=/absolute/ibcmd
+ONE_C_HARNESS_EVENTLOG_JOURNAL=/absolute/stable/1Cv8Log
+ONE_C_HARNESS_EVENTLOG_WORK_ROOT=/absolute/task-owned/.local/work
+ONE_C_HARNESS_EVENTLOG_TIME_ZONE=UTC
+```
+
+The exporter validates all paths before creating its work root, rejects symlinks
+in every path component, source/work overlap and metrics hardlinks to either the
+journal or executable, hashes the bounded selected journal before and after,
+runs exactly one fixed-argument `ibcmd eventlog export --format=json
+--skip-root`, enforces a 30-second process deadline and the request byte bound,
+and projects the JSON sequence into the existing XML contract. `UserName` maps
+to user presentation. `MetadataPresentation` is the stable technical metadata
+name (`Document.SalesInvoice`, `Catalog.Companies`) and maps to both metadata
+name and presentation; the source UUID is not mislabeled as a metadata name.
+Malformed records, missing required fields, nonzero exit, timeout, oversized
+output and changed journal closure fail closed. The prior snapshot copy,
+disposable IB, BSL injection, Designer load and four Enterprise sessions have
+been removed; there is no automatic legacy fallback.
+
+A direct bounded control exported the retained September 23 journal in JSON:
+324 records, 240,777 bytes, 564 ms, exit code 0 and empty stderr. It contained
+all required event, level, user, metadata, transaction-status and comment fields,
+including the `Committed`, `RolledBack` and `NotApplicable` laboratory records.
+The two-file, 68,035-byte journal closure was unchanged:
+`0912787526bd5e3c8971a41034293fbb9023ea856e2b0e04954c9ff50a577f24`.
+
+The exact product E2E then invoked the real companion and current exporter. One
+`eventlog_select` completed in 618 ms; its one native export took 524 ms and
+produced 324 source records / 185,480 XML bytes. The event filter matched and
+retained all 75 `Issue80.Lab.Page` rows. The first cited record contains comment
+`Page event 01`, user `071523a4-516f-4fce-ba4b-0d11ab7a1893`, metadata
+`Document.SalesInvoice` and `NotApplicable`. Refined retained paging and exact
+record lookup each completed in 1 ms without changing exporter metrics, proving
+that neither queried the native source again. The work root was empty and the
+journal closure still matched after the run.
 
 ## Verification and limits
 
 Static tests cover:
 
-- exact event/level/user/metadata filters and request forwarding;
+- fixed `ibcmd` argv, JSON-sequence projection and exact event/level/user/metadata filtering;
+- symlink/source-overlap rejection, byte/deadline bounds and immutable-journal checks;
 - domain-side filter reapplication;
 - valid empty versus unavailable and malformed source results;
 - the platform-over-return and exact-boundary partial states;
@@ -710,11 +773,12 @@ Static tests cover:
 - tamper, expiry, forged-ref and unknown-field rejection;
 - companion/plugin/schema/manifest registration parity.
 
-The exact split-session candidate is proven on the retained quiescent cut from
-the running disposable 8.5.1.1150 source. It does not claim atomic acquisition
-from an arbitrarily changing production journal, compatibility with other 1C
-builds, or availability of `ibcmd`. The local suite contains 314 tests; exact-
-head CI must pass on Python 3.9 and 3.12 before the PR result is accepted. No
+The exact `ibcmd` candidate is proven on the retained quiescent cut from the
+running disposable 8.5.1.1150 source. It does not claim atomic acquisition from
+an arbitrarily changing production journal or compatibility with other 1C
+builds. An operator must first produce a stable copied journal cut and provide
+the matching official utility. The complete local suite and exact-head CI on
+Python 3.9 and 3.12 must pass before the PR result is accepted. No
 deployment, credentials, service, database, index, Hermes core, source
 configuration, snapshot, live infobase or production environment is changed by
 this PR.
