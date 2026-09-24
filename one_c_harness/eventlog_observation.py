@@ -78,11 +78,12 @@ def _source_error(stderr: bytes) -> dict[str, object]:
     )
     if (
         isinstance(value, dict)
-        and set(value) <= {"reasonCode", "stage", "message", "exitCode", "diagnostic"}
+        and set(value) <= {"reasonCode", "stage", "message", "messageTruncated", "exitCode", "diagnostic"}
         and "reasonCode" in value
         and value.get("reasonCode") in {"source_process_failed", "source_timeout", "source_byte_limit", "source_incomplete_receipt"}
         and value.get("stage") in {None, "enterprise_process", "ibcmd_process"}
         and ("exitCode" not in value or type(value["exitCode"]) is int)
+        and ("messageTruncated" not in value or value["messageTruncated"] is True)
         and diagnostic_valid
         and ("message" not in value or (isinstance(value["message"], str) and 0 < len(value["message"].encode("utf-8")) <= 515 and "\n" not in value["message"] and "\r" not in value["message"]))
     ):
@@ -97,6 +98,8 @@ def _source_error(stderr: bytes) -> dict[str, object]:
             result["diagnostic"] = diagnostic
         if "message" in value:
             result["message"] = value["message"]
+        if value.get("messageTruncated") is True:
+            result["messageTruncated"] = True
         return result
     return _result("unavailable", reasonCode="source_failed", message="registration log source failed")
 

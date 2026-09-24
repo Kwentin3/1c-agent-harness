@@ -17,7 +17,7 @@ _SYSTEM_RULES = (
     "for response paging and commentContinuation.nextOffsetBytes on the same retained record, and keep "
     "display, comment and source coverage states separate. Treat any maximum-count boundary as partial. "
     "Source unavailable is not an empty journal; use only its safe "
-    "reason, stage, exit code and opaque diagnostic ref, never raw stderr. "
+    "reason, stage, exit code, messageTruncated marker and opaque diagnostic ref, never raw stderr. "
     "Partial discovery is not complete history, and time adjacency is not causality. The "
     "selected Hermes terminal workspace is the only project-root authority. The plugin does "
     "not manage SSH, credentials, deployment, or 1C runtime installation."

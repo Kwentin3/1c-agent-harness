@@ -30,6 +30,7 @@ _MAX_JOURNAL_FILES = 128
 _TIMEOUT_SECONDS = 30
 _EVIDENCE_TTL_SECONDS = 3600
 _MAX_EVIDENCE_FILES = 8
+_MAX_FAILURE_BYTES = 1024
 _NAMESPACE = "http://v8.1c.ru/eventLog"
 _REQUIRED_SOURCE_FIELDS = ("Date", "Level", "Event")
 _XML_FIELDS = (
@@ -263,6 +264,34 @@ def _safe_diagnostic_message(payload: bytes) -> str | None:
     return line or None
 
 
+def _failure_line(reason: str, details: dict[str, object]) -> bytes:
+    value = {"reasonCode": reason, **details}
+
+    def serialize() -> bytes:
+        return (json.dumps(
+            value, ensure_ascii=False, sort_keys=True, separators=(",", ":"),
+        ) + "\n").encode("utf-8")
+
+    encoded = serialize()
+    message = value.get("message")
+    if len(encoded) <= _MAX_FAILURE_BYTES or not isinstance(message, str):
+        return encoded
+    value["messageTruncated"] = True
+    low, high = 0, len(message)
+    while low < high:
+        middle = (low + high + 1) // 2
+        value["message"] = message[:middle].rstrip() + "..."
+        if len(serialize()) <= _MAX_FAILURE_BYTES:
+            low = middle
+        else:
+            high = middle - 1
+    value["message"] = message[:low].rstrip() + "..."
+    encoded = serialize()
+    if len(encoded) > _MAX_FAILURE_BYTES:
+        raise ValueError("failure response exceeds byte limit")
+    return encoded
+
+
 def _retain_failure_evidence(
     settings: Settings, stderr: base._BoundedStderr, exit_code: int,
 ) -> dict[str, object]:
@@ -422,7 +451,7 @@ def main() -> int:
             details = error.diagnostic
     except (OSError, ValueError, ET.ParseError):
         failure = "source_failed"
-    sys.stderr.write(json.dumps({"reasonCode": failure, **details}, ensure_ascii=False, sort_keys=True, separators=(",", ":")) + "\n")
+    sys.stderr.buffer.write(_failure_line(failure, details))
     return 2
 
 

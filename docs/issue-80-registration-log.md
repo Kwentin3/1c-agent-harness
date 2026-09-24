@@ -837,6 +837,19 @@ explicit through `diagnostic.state=empty`. The prior bounded capture, redaction,
 mode 0600, one-hour TTL, eight-receipt cap, process-group cleanup and clean
 stdout protocol are unchanged.
 
+The final packaging check also covers JSON metacharacters. A safe 515-byte
+message made mostly of quotes or backslashes previously serialized to 1,215
+bytes, was cut by the receiver and degraded to generic `source_failed`. The
+exporter now measures the complete compact JSON plus newline against the same
+1,024-byte receiver limit. If needed, it binary-searches a UTF-8-safe prefix of
+only the public `message`, appends `...`, and sets `messageTruncated=true` before
+serializing again. `reasonCode`, `stage`, `exitCode`, diagnostic state, exact
+opaque `evidenceRef` and its TTL remain unchanged. Quote-heavy, backslash-heavy
+and mixed multibyte cases remain valid structured JSON. Short English stays
+verbatim, and the prior 515-byte Russian example keeps its safe explanatory
+prefix without an additional packaging truncation. The existing private evidence
+receipt is still present mode 0600 and retains the bounded original diagnostic.
+
 Example of the short model interpretation produced from the real tool chain on
 the offline synthetic fixture:
 
