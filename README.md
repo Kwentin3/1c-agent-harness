@@ -198,6 +198,7 @@ MVP считается полезным не потому, что агент н�
 - [Публичный SDMS review package](experiments/sdms-product-eval-20260825-review/README.md)
 - [Подтверждённая граница совместимости](docs/compatibility.md)
 - [Готовность агентных клиентов](docs/client-readiness.md)
+- [Историческая диагностика headless probe (issue #37)](docs/issue-37-headless-probe-observability.md)
 - [Headless request/response baseline (issue #38)](docs/issue-38-headless-request-response.md)
 - [Runtime Diagnostics KISS design and prototype (issue #71)](docs/issue-71-runtime-diagnostics.md)
 - [First live read-only Runtime Diagnostics slice (issue #73)](docs/issue-73-runtime-diagnostics-live.md)
