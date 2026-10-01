@@ -20,7 +20,8 @@ Git, rather than treating installed bytes as a permanent authority:
 - `1c-enterprise-linux`: installed 1.6.0 plus the additive routing-description
   correction, now 1.6.1; 36 resources;
 - `headless-1c-probing`: installed 1.0.1; 6 resources, previously absent here;
-- `semantic-contract-testing`: installed 0.3.0; 2 resources.
+- `semantic-contract-testing`: installed 0.3.0 plus the reviewed trigger and detailed
+  pre-native checklist alignment, now 0.3.1; 2 resources.
 
 The bytes are admitted by this PR and its exact-tree review. Their presence in
 an installed profile is not proof that every described native procedure was
