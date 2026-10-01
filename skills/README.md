@@ -52,6 +52,6 @@ A recovery verification must use the canonical Git tree, not the existing instal
 3. Copy each validated package into a fresh temporary install root using the manifest's `install_root` relative to that root.
 4. Compare the reconstructed temporary install byte-for-byte and file-set-for-file-set with the canonical source.
 5. Install/update the active profile through Hermes skill management, then compare `$HERMES_HOME/<install_root>` against the same canonical package.
-6. From a new isolated agent context, verify independent discovery and `skill_view` reads for both skill names.
+6. From a new isolated agent context, verify independent discovery and `skill_view` reads for all three standalone skill names.
 
 A fresh context reading the same `$HERMES_HOME` proves discovery only. Recovery PASS additionally requires reconstruction from the exact Git source and parity with both the temporary and active installed copies.
