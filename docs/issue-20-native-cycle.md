@@ -71,7 +71,7 @@ Closed failure states include `precheck_failed`, `copy_failed`, `create_failed`,
 
 ### Headless probe boundary
 
-A successful Designer load is not proof that a task-specific managed-client probe compiled or executed at `ENTERPRISE` runtime. In particular, a probe placed after `StandardSubsystemsClient.OnStart()` can remain unreachable in headless startup and emit no receipt. For the verified early-`OnStart`/server-call preparation pattern, case-isolated receipt observations, and the rule that a failed frozen attempt requires a fresh contract rather than a retry, see [Headless probe observability (issue #37)](issue-37-headless-probe-observability.md).
+A successful Designer load is not proof that a task-specific managed-client probe compiled or executed at `ENTERPRISE` runtime. In particular, a probe placed after `StandardSubsystemsClient.OnStart()` can remain unreachable in headless startup and emit no receipt. For case-isolated early-`OnStart` observations and the rule that a failed frozen attempt requires a fresh contract rather than a retry, see [Headless probe observability (issue #37)](issue-37-headless-probe-observability.md). The narrow server-call witness belongs to the historical [#38 baseline](issue-38-headless-request-response.md), not to the #37 client-local receipt. For current execution use the [shared task route](../scripts/shared_task_route.py), not the old commands in that baseline.
 
 ## Repeat and bounded current-invocation cleanup
 

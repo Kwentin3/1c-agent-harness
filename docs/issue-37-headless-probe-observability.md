@@ -8,8 +8,10 @@
 Первый вывод о client-local probe затем был сужен после server-crossing timeout;
 постоянный request/response contract вынесен в #38.
 
-Текущие инструкции: [#38 baseline и его ограничения](issue-38-headless-request-response.md),
-[shared task route](../README.md), [канонические скилы](../skills/README.md).
+Исторический [#38 baseline и его ограничения](issue-38-headless-request-response.md)
+показывает следующий этап доказательства, но его старые команды не являются
+текущим CLI. Актуальный вход: [shared task route](../scripts/shared_task_route.py),
+его [описание](../README.md) и [канонические скилы](../skills/README.md).
 Исторические marker/argv не являются готовой командой текущего runner.
 
 ## Что установила диагностика
