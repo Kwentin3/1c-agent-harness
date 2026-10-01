@@ -1,0 +1,194 @@
+{
+  "schemaVersion": 1,
+  "status": "runtime_contract_completed",
+  "durationSeconds": 69.216,
+  "specSha256": "6810630ada4ab1229967e64c6d2d4a2a68b0c9cf693bfc26bd65b8cfd3ac1a28",
+  "input": {
+    "files": 5099,
+    "directories": 4847,
+    "bytes": 61796891,
+    "sourceTreeSha256": "7e70fe01c09dfff747f3939188876f680f163bec5c59ef4f143c38bdc5b4650c",
+    "copiedTreeSha256": "7e70fe01c09dfff747f3939188876f680f163bec5c59ef4f143c38bdc5b4650c",
+    "loadTreeSha256": "79de18cb7a76f35d741dd7e83a79fcf29c1dbd92f8608df1ff052b817daf74ba"
+  },
+  "commands": {
+    "create": [
+      "/workspace/1c-agent-harness/.local/platform/libs/usr/bin/xvfb-run",
+      "-a",
+      "-s",
+      "-screen 0 1280x1024x8 -nolisten tcp",
+      "/workspace/1c-agent-harness/.local/platform/1cv8t/x86_64/8.5.1.1150/1cv8t",
+      "CREATEINFOBASE",
+      "File=/workspace/1c-agent-harness/.local/goal69-business/.local/runs/native-cycle/run-qtk9h2n9/run/ib",
+      "/DisableStartupDialogs",
+      "/DisableStartupMessages",
+      "/Out",
+      "/workspace/1c-agent-harness/.local/goal69-business/.local/runs/native-cycle/run-qtk9h2n9/run/logs/create.log",
+      "/DumpResult",
+      "/workspace/1c-agent-harness/.local/goal69-business/.local/runs/native-cycle/run-qtk9h2n9/run/logs/create.result"
+    ],
+    "load": [
+      "/workspace/1c-agent-harness/.local/platform/libs/usr/bin/xvfb-run",
+      "-a",
+      "-s",
+      "-screen 0 1280x1024x8 -nolisten tcp",
+      "/workspace/1c-agent-harness/.local/platform/1cv8t/x86_64/8.5.1.1150/1cv8t",
+      "DESIGNER",
+      "/F",
+      "/workspace/1c-agent-harness/.local/goal69-business/.local/runs/native-cycle/run-qtk9h2n9/run/ib",
+      "/LoadConfigFromFiles",
+      "/workspace/1c-agent-harness/.local/goal69-business/.local/runs/native-cycle/run-qtk9h2n9/run/work-copy",
+      "/UpdateDBCfg",
+      "/DisableStartupDialogs",
+      "/DisableStartupMessages",
+      "/Out",
+      "/workspace/1c-agent-harness/.local/goal69-business/.local/runs/native-cycle/run-qtk9h2n9/run/logs/load.log",
+      "/DumpResult",
+      "/workspace/1c-agent-harness/.local/goal69-business/.local/runs/native-cycle/run-qtk9h2n9/run/logs/load.result"
+    ],
+    "runtime": [
+      "/workspace/1c-agent-harness/.local/platform/libs/usr/bin/xvfb-run",
+      "-a",
+      "-s",
+      "-screen 0 1280x1024x8 -nolisten tcp",
+      "/workspace/1c-agent-harness/.local/platform/1cv8t/x86_64/8.5.1.1150/1cv8t",
+      "ENTERPRISE",
+      "/F",
+      "/workspace/1c-agent-harness/.local/goal69-business/.local/runs/native-cycle/run-qtk9h2n9/run/ib",
+      "/C",
+      "/workspace/1c-agent-harness/.local/goal69-business/.local/runs/native-cycle/run-qtk9h2n9/run/evidence/receipt.txt",
+      "/DisableStartupDialogs",
+      "/DisableStartupMessages",
+      "/Out",
+      "/workspace/1c-agent-harness/.local/goal69-business/.local/runs/native-cycle/run-qtk9h2n9/run/logs/run.log",
+      "/DumpResult",
+      "/workspace/1c-agent-harness/.local/goal69-business/.local/runs/native-cycle/run-qtk9h2n9/run/logs/run.result"
+    ]
+  },
+  "environment": {
+    "HOME": "/workspace/1c-agent-harness/.local/goal69-business/.local/runs/native-cycle/run-qtk9h2n9/run/home",
+    "TMPDIR": "/workspace/1c-agent-harness/.local/goal69-business/.local/runs/native-cycle/run-qtk9h2n9/run/tmp",
+    "XDG_CACHE_HOME": "/workspace/1c-agent-harness/.local/goal69-business/.local/runs/native-cycle/run-qtk9h2n9/run/home/xdg-cache",
+    "XDG_CONFIG_HOME": "/workspace/1c-agent-harness/.local/goal69-business/.local/runs/native-cycle/run-qtk9h2n9/run/home/xdg-config",
+    "XDG_DATA_HOME": "/workspace/1c-agent-harness/.local/goal69-business/.local/runs/native-cycle/run-qtk9h2n9/run/home/xdg-data",
+    "FONTCONFIG_FILE": "/workspace/1c-agent-harness/.local/platform/fonts.conf",
+    "LD_LIBRARY_PATH": "/workspace/1c-agent-harness/.local/platform/1cv8t/x86_64/8.5.1.1150:/workspace/1c-agent-harness/.local/platform/libs/usr/lib/x86_64-linux-gnu",
+    "PATH": "/workspace/1c-agent-harness/.local/platform/libs/usr/bin:/usr/local/sbin:/usr/local/bin:/usr/sbin:/usr/bin:/sbin:/bin:/usr/games"
+  },
+  "create": {
+    "processReturn": 0,
+    "dumpResult": "0",
+    "resultSha256": "e45825471ed10290785b62676dc5f453d228a1e1d933c45a733e9bb239c9e083",
+    "logSha256": "d6ca319a46b0e0acee4dd1efa4f457f921d06d5ccc51eca823aa17a0d5086541",
+    "successMarker": "completed successfully"
+  },
+  "load": {
+    "processReturn": 0,
+    "dumpResult": "0",
+    "resultSha256": "e45825471ed10290785b62676dc5f453d228a1e1d933c45a733e9bb239c9e083",
+    "logSha256": "4d841be04b71dd0ee7cfebcfa7af194d74902e2ec1c213987889d7d3940c0f86",
+    "successMarker": "Configuration successfully updated"
+  },
+  "runtime": {
+    "completed": true,
+    "completeMarker": "complete###true",
+    "stableReads": 2,
+    "processReturn": -15,
+    "receipt": {
+      "state": "regular",
+      "bytes": 173,
+      "sha256": "78499080934888b75e2862e7c30712250c3a8a01579ce434bd19ed9364974b1b",
+      "terminalMarker": true
+    },
+    "outputs": {
+      "log": {
+        "state": "regular",
+        "bytes": 81,
+        "sha256": "fdc9de6af3a101aedd7403b3dd884c1992d267d2ab2ef2917ca445e53b86f4cb"
+      },
+      "result": {
+        "state": "absent"
+      }
+    },
+    "receiptSha256": "78499080934888b75e2862e7c30712250c3a8a01579ce434bd19ed9364974b1b",
+    "receiptBytes": 173
+  },
+  "inputAfter": {
+    "files": 5099,
+    "directories": 4847,
+    "bytes": 61796891,
+    "sha256": "7e70fe01c09dfff747f3939188876f680f163bec5c59ef4f143c38bdc5b4650c"
+  },
+  "resultPath": ".local/runs/native-cycle/run-qtk9h2n9/run/result.json",
+  "preparedInvocation": {
+    "invocationRoot": ".local/runs/native-cycle/run-qtk9h2n9",
+    "sourcePath": ".local/prepared/shared-task-83851f87-37b8-478a-b3c2-928f0839475a",
+    "sourceBefore": {
+      "files": 5099,
+      "directories": 4847,
+      "bytes": 61796891,
+      "sha256": "7e70fe01c09dfff747f3939188876f680f163bec5c59ef4f143c38bdc5b4650c"
+    },
+    "sourceAfter": {
+      "files": 5099,
+      "directories": 4847,
+      "bytes": 61796891,
+      "sha256": "7e70fe01c09dfff747f3939188876f680f163bec5c59ef4f143c38bdc5b4650c"
+    },
+    "copiedBeforeFreeze": {
+      "files": 5099,
+      "directories": 4847,
+      "bytes": 61796891,
+      "sha256": "7e70fe01c09dfff747f3939188876f680f163bec5c59ef4f143c38bdc5b4650c"
+    },
+    "frozenInput": {
+      "path": ".local/runs/native-cycle/run-qtk9h2n9/frozen-input",
+      "identity": {
+        "files": 5099,
+        "directories": 4847,
+        "bytes": 61796891,
+        "sha256": "7e70fe01c09dfff747f3939188876f680f163bec5c59ef4f143c38bdc5b4650c"
+      }
+    },
+    "generatedSpec": {
+      "path": ".local/runs/native-cycle/run-qtk9h2n9/spec.json",
+      "sha256": "6810630ada4ab1229967e64c6d2d4a2a68b0c9cf693bfc26bd65b8cfd3ac1a28"
+    },
+    "generatedBinding": {
+      "kind": "1c-enterprise-launch-parameter",
+      "status": "generated",
+      "receipt": ".local/runs/native-cycle/run-qtk9h2n9/run/evidence/receipt.txt",
+      "runtimeArgvSha256": "62f1ff79d1e9747b6ca6d47a87b23e8082ca4390a19fb70924920fa8e17c7b4a"
+    }
+  },
+  "totalDurationSeconds": 81.334,
+  "storageCompaction": {
+    "policy": "compact-current-invocation-v1",
+    "status": "completed",
+    "manualCleanupActions": 0,
+    "configuredTargets": [
+      "frozen-input",
+      "run/work-copy",
+      "run/ib",
+      "run/home",
+      "run/tmp"
+    ],
+    "completedRemovedPaths": [
+      "frozen-input",
+      "run/work-copy",
+      "run/ib",
+      "run/home",
+      "run/tmp"
+    ],
+    "retainedPaths": [
+      "spec.json",
+      "run/evidence",
+      "run/logs",
+      "run/result.json"
+    ],
+    "preCompactionLogicalBytes": 224578065,
+    "removedLogicalBytes": 224552387,
+    "retainedLogicalBytesExcludingResult": 18167,
+    "durationSeconds": 3.115
+  }
+}

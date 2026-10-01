@@ -1,5 +1,7 @@
 # InventoryTransfer: основание перемещения — bounded continuation
 
+**Итог: bounded native PASS, 1/2 запусков.** Квитанции, ограничения и воспроизведение — [RESULTS.md](RESULTS.md). Ниже сохранён допуск, зафиксированный перед первым запуском; его «native0» — исторический checkpoint, не текущий статус.
+
 Необязательный unlimited String `TransferBasis`, `DontCheck`, `en=Transfer basis`, `tr=Transfer gerekçesi`; `Object.TransferBasis` после WarehouseReceiver в GroupHeader/GroupLeft. Два production XML-файла; BSL проведения неизменен. Новый язык не добавлен.
 
 ## Контекст и наблюдения
