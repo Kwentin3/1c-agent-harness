@@ -17,7 +17,12 @@ def rows(path: Path) -> dict[str, str]:
 
 
 def yes(value: str) -> bool:
-    return value.lower() in {"yes", "true", "да"}
+    normalized = value.lower()
+    if normalized in {"yes", "true", "да"}:
+        return True
+    if normalized in {"no", "false", "нет"}:
+        return False
+    raise ValueError("unknown Boolean receipt value")
 
 
 def main() -> int:
@@ -63,11 +68,12 @@ def main() -> int:
             movement_values = [server.get(f"concurrent.{name}.movement{index}") for index in range(1, 5)]
             if any(value is None or not value.isdigit() for value in movement_values):
                 raise ValueError(f"missing concurrent movements: {name}")
-            concurrent.append((succeeded, all(value == "0" for value in movement_values)))
-        if sum(1 for succeeded, _ in concurrent if succeeded) != 1:
+            required_count = "1" if succeeded else "0"
+            if movement_values != [required_count] * 4:
+                raise ValueError(f"concurrent movement witness does not match outcome: {name}")
+            concurrent.append(succeeded)
+        if sum(concurrent) != 1:
             raise ValueError("concurrent postings did not have exactly one winner")
-        if sum(1 for _, no_movements in concurrent if no_movements) != 1:
-            raise ValueError("concurrent rejected document lacks no-movement witness")
     except Exception as exc:
         print(f"FAIL: {exc}", file=__import__("sys").stderr)
         return 1
