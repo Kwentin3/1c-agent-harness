@@ -55,6 +55,22 @@ references. Проверка требует три non-plugin пакета; до
 результаты двух reviewers и adjudication публикуются на обычных рабочих PR;
 неинформативный reviewer означает INCONCLUSIVE, не разрешение на merge.
 
+## Проверки и гигиена при продолжении
+
+- #56 прошёл финальное двойное source review и exact-head CI Python 3.9/3.12;
+  пять retained-evidence tests повторно прошли перед merge. Оба reviewer reports
+  опубликованы в PR; неточные Gemini line offsets проверены lead по исходнику.
+- В локальном прогоне #82 дважды сработали разные timing-sensitive tests:
+  `test_batch_timeout_cleans_child_process_group` (PID-файл не появился до
+  таймаута) и `test_runtime_fifo_receipt_is_bounded_and_cleans_process`
+  (внешний deadline 4 s). Каждый адресный повтор прошёл. Эти тесты и runner
+  в данной работе не изменены; причина нестабильности не установлена.
+  Не повышаем таймауты и не ослабляем проверку ради зелёного результата.
+- Удалены 30 remote-веток: каждый tip проверен как ancestor main, соответствующий
+  PR — MERGED; push выполнен atomically с exact-tip leases, отсутствие refs
+  прочитано обратно. Ещё две merged ветки уже отсутствовали. Непринятые и
+  не-ancestor historical candidates сохранены; evidence/`.local/` не удалены.
+
 ## Остальные issue
 
 Не закрываются автоматически внешние prerequisites и не относящиеся к этой
