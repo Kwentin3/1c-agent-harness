@@ -1,0 +1,27 @@
+{
+  "artifactKind": "post-hoc-compact-native-evidence",
+  "limitations": [
+    "The request JSON was reconstructed after the run from retained receipt headers and generated-probe identity; its original request-file bytes were not retained.",
+    "This packet proves the retained linked success receipts and runner summary, not a pre-run freeze or a transport tournament."
+  ],
+  "native": {
+    "platform": "1cv8t Linux training 8.5.1.1150",
+    "run": "run-kmqsmjkt",
+    "runnerStatus": "runtime_contract_completed",
+    "runtimeSeconds": 55.82,
+    "totalLifecycleSeconds": 70.619,
+    "clientStableReads": 2,
+    "ownedProcessesAfterCleanup": 0,
+    "canonicalTargetAfterRun": "ready"
+  },
+  "result": "SalesInvoice",
+  "source": {
+    "preparedTree": ".local/prepared/issue38-a-winner-metadata-read-v1",
+    "preparedSourceBeforeAfterSha256": "1da70ae1dc372a06590c3e3413db1d4f29301529bfcbaef1330f7bcd23bb1f7c",
+    "generatedSpecSha256": "01b15c6fd0541320de4054e17fdc5c4cce4c3bcda299fe1d33e775cee8e0ef36"
+  },
+  "trackedPacket": {
+    "clientReceiptSha256": "598306b0bf6f06c1368f7d98e5f7f0f9ca55490912ae6ffa2333db2e823d95a6",
+    "serverReceiptSha256": "4302239e8f9bd59774363648317968d01a8f660e5ff0abe72d23a54b7df9e608"
+  }
+}

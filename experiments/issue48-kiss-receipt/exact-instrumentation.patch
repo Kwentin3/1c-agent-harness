@@ -1,0 +1,183 @@
+diff --git a/CommonModules/JetServerCall/Ext/Module.bsl b/CommonModules/JetServerCall/Ext/Module.bsl
+index 17aedb7..d22c084 100644
+--- a/CommonModules/JetServerCall/Ext/Module.bsl
++++ b/CommonModules/JetServerCall/Ext/Module.bsl
+@@ -14,4 +14,133 @@ Function GetVATRateValue(VATRate) Export
+ 	
+ EndFunction
+ 
++
++Function Issue46SupplierWarehouseProbe(ReceiptPath, RunId, DeletedCaseId, ActiveCaseId, Nonce) Export
++	Writer = New TextWriter(ReceiptPath, TextEncoding.UTF8);
++	ResponseToken = String(New UUID);
++	Issue46WriteObservation(Writer, "runId", RunId);
++	Issue46WriteObservation(Writer, "deletedCaseId", DeletedCaseId);
++	Issue46WriteObservation(Writer, "activeCaseId", ActiveCaseId);
++	Issue46WriteObservation(Writer, "nonce", Nonce);
++	Issue46WriteObservation(Writer, "responseToken", ResponseToken);
++
++	CurrencyObject = Catalogs.Currencies.CreateItem();
++	CurrencyObject.Description = "Issue 46 currency";
++	CurrencyObject.Write();
++
++	SupplierObject = Catalogs.Counterparties.CreateItem();
++	SupplierObject.Description = "Issue 46 supplier";
++	SupplierObject.Supplier = True;
++	SupplierObject.Write();
++
++	UnitObject = Catalogs.Units.CreateItem();
++	UnitObject.Description = "Issue 46 unit";
++	UnitObject.Write();
++
++	ProductObject = Catalogs.Products.CreateItem();
++	ProductObject.Description = "Issue 46 product";
++	ProductObject.ProductType = Enums.ProductTypes.Inventory;
++	ProductObject.Unit = UnitObject.Ref;
++	ProductObject.Write();
++
++	DeletedWarehouseObject = Catalogs.Warehouses.CreateItem();
++	DeletedWarehouseObject.Description = "Issue 46 deleted warehouse";
++	DeletedWarehouseObject.Write();
++	DeletedWarehouseObject.DeletionMark = True;
++	DeletedWarehouseObject.Write();
++	Issue46WriteObservation(Writer, "deletedWarehouseMarked", DeletedWarehouseObject.Ref.DeletionMark);
++
++	DeletedDocument = Issue46NewSupplierInvoice(
++		DeletedWarehouseObject.Ref, SupplierObject.Ref, CurrencyObject.Ref, ProductObject.Ref);
++	DeletedDraftResult = Issue46TryWrite(DeletedDocument, False);
++	Issue46WriteObservation(Writer, "deletedDraftSucceeded", DeletedDraftResult.Succeeded);
++	Issue46WriteObservation(Writer, "deletedDraftRefFilled", ValueIsFilled(DeletedDocument.Ref));
++	Issue46WriteMovements(Writer, "deletedBefore", DeletedDocument.Ref);
++	DeletedPostingResult = Issue46TryWrite(DeletedDocument, True);
++	Issue46WriteObservation(Writer, "deletedPostingSucceeded", DeletedPostingResult.Succeeded);
++	Issue46WriteObservation(Writer, "deletedPostingErrorPresent", DeletedPostingResult.Error <> "");
++	Issue46WriteObservation(Writer, "deletedPosted", DeletedDocument.Ref.Posted);
++	Issue46WriteMovements(Writer, "deletedAfter", DeletedDocument.Ref);
++
++	ActiveWarehouseObject = Catalogs.Warehouses.CreateItem();
++	ActiveWarehouseObject.Description = "Issue 46 active warehouse";
++	ActiveWarehouseObject.Write();
++	Issue46WriteObservation(Writer, "activeWarehouseMarked", ActiveWarehouseObject.Ref.DeletionMark);
++
++	ActiveDocument = Issue46NewSupplierInvoice(
++		ActiveWarehouseObject.Ref, SupplierObject.Ref, CurrencyObject.Ref, ProductObject.Ref);
++	Issue46WriteMovements(Writer, "activeBefore", ActiveDocument.Ref);
++	ActivePostingResult = Issue46TryWrite(ActiveDocument, True);
++	Issue46WriteObservation(Writer, "activePostingSucceeded", ActivePostingResult.Succeeded);
++	Issue46WriteObservation(Writer, "activePostingErrorPresent", ActivePostingResult.Error <> "");
++	Issue46WriteObservation(Writer, "activePosted", ActiveDocument.Ref.Posted);
++	Issue46WriteMovements(Writer, "activeAfter", ActiveDocument.Ref);
++
++	Issue46WriteObservation(Writer, "complete", "true");
++	Writer.Close();
++	Return ResponseToken;
++EndFunction
++
++Function Issue46NewSupplierInvoice(Warehouse, Supplier, Currency, Product)
++	DocumentObject = Documents.SupplierInvoice.CreateDocument();
++	DocumentObject.Date = CurrentDate();
++	DocumentObject.Warehouse = Warehouse;
++	DocumentObject.Supplier = Supplier;
++	DocumentObject.Currency = Currency;
++	DocumentObject.ExchangeRate = 1;
++	DocumentObject.Multiplier = 1;
++	Row = DocumentObject.Inventory.Add();
++	Row.Product = Product;
++	Row.Quantity = 2;
++	Row.Price = 10;
++	Row.Amount = 20;
++	Row.VATAmount = 0;
++	Row.Total = 20;
++	Return DocumentObject;
++EndFunction
++
++Function Issue46TryWrite(DocumentObject, Posting)
++	Result = New Structure("Succeeded,Error", True, "");
++	Try
++		If Posting Then
++			DocumentObject.Write(DocumentWriteMode.Posting);
++		Else
++			DocumentObject.Write();
++		EndIf;
++	Except
++		Result.Succeeded = False;
++		Result.Error = ErrorDescription();
++	EndTry;
++	Return Result;
++EndFunction
++
++Procedure Issue46WriteMovements(Writer, Prefix, Recorder)
++	Query = New Query;
++	Query.Text =
++	"SELECT ""Purchases"" AS RegisterName, COUNT(*) AS RowCount,
++	|	ISNULL(SUM(Records.Quantity), 0) AS Quantity, ISNULL(SUM(Records.Amount), 0) AS Amount
++	|FROM AccumulationRegister.Purchases AS Records WHERE Records.Recorder = &Recorder
++	|UNION ALL
++	|SELECT ""InventoryInWarehouses"", COUNT(*), ISNULL(SUM(Records.Quantity), 0), 0
++	|FROM AccumulationRegister.InventoryInWarehouses AS Records WHERE Records.Recorder = &Recorder
++	|UNION ALL
++	|SELECT ""SupplierBalance"", COUNT(*), 0, ISNULL(SUM(Records.Amount), 0)
++	|FROM AccumulationRegister.SupplierBalance AS Records WHERE Records.Recorder = &Recorder
++	|UNION ALL
++	|SELECT ""InventoryCost"", COUNT(*), 0, ISNULL(SUM(Records.Amount), 0)
++	|FROM AccumulationRegister.InventoryCost AS Records WHERE Records.Recorder = &Recorder";
++	Query.SetParameter("Recorder", Recorder);
++	Selection = Query.Execute().Select();
++	While Selection.Next() Do
++		Issue46WriteObservation(Writer, Prefix + Selection.RegisterName + "Count", Selection.RowCount);
++		Issue46WriteObservation(Writer, Prefix + Selection.RegisterName + "Quantity", Selection.Quantity);
++		Issue46WriteObservation(Writer, Prefix + Selection.RegisterName + "Amount", Selection.Amount);
++	EndDo;
++EndProcedure
++
++Procedure Issue46WriteObservation(Writer, Key, Value)
++	Writer.Write(Key + "###" + String(Value) + Chars.LF);
++EndProcedure
++
++
+ #EndRegion
+\ No newline at end of file
+diff --git a/Ext/ManagedApplicationModule.bsl b/Ext/ManagedApplicationModule.bsl
+index 03ca2b2..e813b78 100644
+--- a/Ext/ManagedApplicationModule.bsl
++++ b/Ext/ManagedApplicationModule.bsl
+@@ -55,6 +55,27 @@ EndProcedure
+ 
+ Procedure OnStart()
+ 	
++
++	ClientWriter = New TextWriter(LaunchParameter, TextEncoding.UTF8);
++	RunId = "f0fce595-da76-46b1-9773-4e6336c98f2e";
++	DeletedCaseId = "68fb10c7-c809-4f5f-afdc-489d427f6d4c";
++	ActiveCaseId = "be26b700-c902-47cf-b2fa-2a9e853377e9";
++	Nonce = "5598bbd9-2657-4865-9ca5-5a93f39981d6";
++	Issue46WriteClientObservation(ClientWriter, "runId", RunId);
++	Issue46WriteClientObservation(ClientWriter, "deletedCaseId", DeletedCaseId);
++	Issue46WriteClientObservation(ClientWriter, "activeCaseId", ActiveCaseId);
++	Issue46WriteClientObservation(ClientWriter, "nonce", Nonce);
++	Try
++		ResponseToken = JetServerCall.Issue46SupplierWarehouseProbe(
++			LaunchParameter + ".server", RunId, DeletedCaseId, ActiveCaseId, Nonce);
++		Issue46WriteClientObservation(ClientWriter, "responseToken", ResponseToken);
++	Except
++		Issue46WriteClientObservation(ClientWriter, "clientFailure", ErrorDescription());
++	EndTry;
++	Issue46WriteClientObservation(ClientWriter, "complete", "true");
++	ClientWriter.Close();
++	Return;
++	
+ 	// StandardSubsystems
+ #If MobileClient Then
+ 	Execute("StandardSubsystemsClient.OnStart()");
+@@ -92,4 +113,10 @@ Procedure CollaborationSystemUsersChoiceFormGetProcessing(ChoicePurpose,
+ 	
+ EndProcedure
+ 
++
++Procedure Issue46WriteClientObservation(Writer, Key, Value)
++	Writer.Write(Key + "###" + String(Value) + Chars.LF);
++EndProcedure
++
++
+ #EndRegion
+\ No newline at end of file

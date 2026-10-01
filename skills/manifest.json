@@ -6,12 +6,12 @@
     {
       "install_root": "skills/1c/1c-enterprise-linux",
       "name": "1c-enterprise-linux",
-      "resource_manifest_sha256": "bd4ec84fe124bdfddc4a44ba4ea59e5d9f5a4e0e7f5cfbde7ea475051ec87a4f",
+      "resource_manifest_sha256": "bc8b34786077a9dc076e00253b419f766590e6585bd59d808a075d814b7d0e2b",
       "resources": [
         {
-          "bytes": 22001,
+          "bytes": 22261,
           "path": "SKILL.md",
-          "sha256": "2ac7e9f30f8fc172a37f816973f34ff8d38718d090cd27091ca5690b5eee788e"
+          "sha256": "e93553590c83ca6f96d4878070d5966cebb4cf933fa5f15942d003543093767d"
         },
         {
           "bytes": 4329,

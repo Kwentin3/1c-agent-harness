@@ -1,0 +1,293 @@
+diff --git a/CommonModules/JetServerCall/Ext/Module.bsl b/CommonModules/JetServerCall/Ext/Module.bsl
+index 17aedb7..b006fe5 100644
+--- a/CommonModules/JetServerCall/Ext/Module.bsl
++++ b/CommonModules/JetServerCall/Ext/Module.bsl
+@@ -14,4 +14,254 @@ Function GetVATRateValue(VATRate) Export
+ 	
+ EndFunction
+ 
++
++// Issue #23 task-specific probe instrumentation. Not production logic.
++Function Issue23RuntimeProbe(ReceiptPath, RunId, CaseId, Nonce) Export
++	StagePath = ReceiptPath + ".stage";
++	Issue23WriteStage(StagePath, ReceiptPath, "server-entered");
++	Writer = New TextWriter(ReceiptPath, TextEncoding.UTF8);
++	ResponseToken = String(New UUID);
++	Issue23WriteLine(Writer, "runId", RunId);
++	Issue23WriteLine(Writer, "caseId", CaseId);
++	Issue23WriteLine(Writer, "nonce", Nonce);
++	Issue23WriteLine(Writer, "responseToken", ResponseToken);
++	Try
++		AttributeMetadata = Metadata.Documents.SalesInvoice.Attributes.Find("PaymentDueDate");
++		AttributeExists = AttributeMetadata <> Undefined;
++		Issue23WriteLine(Writer, "metadata.attributeExists", AttributeExists);
++		If AttributeExists Then
++			Issue23WriteLine(Writer, "metadata.name", AttributeMetadata.Name);
++			Issue23WriteLine(Writer, "metadata.containsDate", AttributeMetadata.Type.ContainsType(Type("Date")));
++			Issue23WriteLine(Writer, "metadata.dateOnly", AttributeMetadata.Type.DateQualifiers.DateFractions = DateFractions.Date);
++			R = BegOfDay(CurrentDate());
++			Issue23WriteLine(Writer, "run.R", R);
++			Issue23RunCase(Writer, "P1", R);
++			Issue23RunCase(Writer, "B1", R);
++			Issue23RunCase(Writer, "P2", R);
++			Issue23RunCase(Writer, "P3", R);
++			Issue23RunCase(Writer, "P4", R);
++			Issue23RunCase(Writer, "N1", R);
++			Issue23RunCase(Writer, "N2", R);
++			Issue23RunCase(Writer, "N3", R);
++			Issue23RunCase(Writer, "N4", R);
++			Issue23RunCase(Writer, "R1", R);
++			Issue23RunCase(Writer, "R2", R);
++		EndIf;
++		Issue23WriteStage(StagePath, ReceiptPath, "complete");
++		Writer.Write("complete###true" + Chars.LF);
++	Except
++		Issue23WriteLine(Writer, "probeException", ErrorDescription());
++		Issue23WriteStage(StagePath, ReceiptPath, "exception");
++		Writer.Write("complete###exception" + Chars.LF);
++	EndTry;
++	Writer.Close();
++	Return ResponseToken;
++EndFunction
++
++Procedure Issue23RunCase(Writer, CaseName, R)
++	Issue23WriteLine(Writer, CaseName + ".begin", True);
++	Dates = Issue23CaseDates(CaseName, R);
++	Issue23WriteLine(Writer, CaseName + ".documentDate", Dates.DocumentDate);
++	Issue23WriteLine(Writer, CaseName + ".dueDateInput", Dates.DueDate);
++	Unit = Catalogs.Units.CreateItem();
++	Unit.Description = "I23 " + CaseName + " unit";
++	Unit.Write();
++	Warehouse = Catalogs.Warehouses.CreateItem();
++	Warehouse.Description = "I23 " + CaseName + " warehouse";
++	Warehouse.Write();
++	Customer = Catalogs.Counterparties.CreateItem();
++	Customer.Description = "I23 " + CaseName + " customer";
++	Customer.Customer = True;
++	Customer.Write();
++	Currency = Catalogs.Currencies.CreateItem();
++	Currency.Description = "I23 " + CaseName + " currency";
++	Currency.Write();
++	VAT0 = Catalogs.VATRates.CreateItem();
++	VAT0.Description = "I23 " + CaseName + " VAT0";
++	VAT0.Rate = 0;
++	VAT0.Write();
++	Product = Catalogs.Products.CreateItem();
++	Product.Description = "I23 " + CaseName + " product";
++	Product.ProductType = Enums.ProductTypes.Inventory;
++	Product.Unit = Unit.Ref;
++	Product.Write();
++	Issue23SeedInventory(Warehouse.Ref, Product.Ref, Dates.DocumentDate - 3600, 10, 1);
++	Before = Issue23State(Product.Ref, Warehouse.Ref, Customer.Ref);
++	Issue23WriteState(Writer, CaseName, "before", Before);
++	DocumentObject = Documents.SalesInvoice.CreateDocument();
++	DocumentObject.Date = Dates.DocumentDate;
++	DocumentObject.Customer = Customer.Ref;
++	DocumentObject.Warehouse = Warehouse.Ref;
++	DocumentObject.Currency = Currency.Ref;
++	DocumentObject.ExchangeRate = 1;
++	DocumentObject.Multiplier = 1;
++	DocumentObject.VATWithholding = False;
++	DocumentObject.ExemptFromVAT = False;
++	If ValueIsFilled(Dates.DueDate) Then
++		Values = New Structure("PaymentDueDate", Dates.DueDate);
++		FillPropertyValues(DocumentObject, Values);
++	EndIf;
++	Row = DocumentObject.Inventory.Add();
++	Row.Product = Product.Ref;
++	Row.Quantity = ?(CaseName = "R2", 11, 1);
++	Row.Price = 4;
++	Row.VATRate = VAT0.Ref;
++	Row.Amount = Row.Quantity * Row.Price;
++	Row.VATAmount = 0;
++	Row.Total = Row.Amount;
++	DraftSucceeded = True;
++	DraftError = "";
++	Try
++		DocumentObject.Write();
++	Except
++		DraftSucceeded = False;
++		DraftError = ErrorDescription();
++	EndTry;
++	Issue23WriteLine(Writer, CaseName + ".draftSucceeded", DraftSucceeded);
++	Issue23WriteLine(Writer, CaseName + ".draftError", DraftError);
++	If DraftSucceeded Then
++		Issue23WriteLine(Writer, CaseName + ".documentRef", DocumentObject.Ref);
++		Issue23WriteLine(Writer, CaseName + ".draftDueDate", Issue23ReadDueDate(DocumentObject.Ref));
++	EndIf;
++	PostCallSucceeded = True;
++	PostError = "";
++	If DraftSucceeded Then
++		Try
++			DocumentObject.Write(DocumentWriteMode.Posting);
++		Except
++			PostCallSucceeded = False;
++			PostError = ErrorDescription();
++		EndTry;
++	Else
++		PostCallSucceeded = False;
++	EndIf;
++	Issue23WriteLine(Writer, CaseName + ".postCallSucceeded", PostCallSucceeded);
++	Issue23WriteLine(Writer, CaseName + ".postError", PostError);
++	PostedAfter = False;
++	If DraftSucceeded Then
++		ReloadedObject = DocumentObject.Ref.GetObject();
++		PostedAfter = ReloadedObject.Posted;
++		Issue23WriteLine(Writer, CaseName + ".postDueDate", Issue23ReadDueDate(DocumentObject.Ref));
++	EndIf;
++	Issue23WriteLine(Writer, CaseName + ".postedAfter", PostedAfter);
++	Issue23WriteLine(Writer, CaseName + ".movements.salesRows", Issue23RecorderRows("Sales", DocumentObject.Ref));
++	Issue23WriteLine(Writer, CaseName + ".movements.customerRows", Issue23RecorderRows("CustomerBalance", DocumentObject.Ref));
++	Issue23WriteLine(Writer, CaseName + ".movements.inventoryRows", Issue23RecorderRows("InventoryInWarehouses", DocumentObject.Ref));
++	Issue23WriteLine(Writer, CaseName + ".movements.costRows", Issue23RecorderRows("InventoryCost", DocumentObject.Ref));
++	After = Issue23State(Product.Ref, Warehouse.Ref, Customer.Ref);
++	Issue23WriteState(Writer, CaseName, "after", After);
++	Issue23WriteLine(Writer, CaseName + ".end", True);
++EndProcedure
++
++Function Issue23CaseDates(CaseName, R)
++	Result = New Structure("DocumentDate,DueDate", R - 10 * 86400 + 12 * 3600, Date(1, 1, 1));
++	If CaseName = "P1" Then
++		Result.DueDate = R - 9 * 86400;
++	ElsIf CaseName = "B1" Then
++		Result.DueDate = R - 10 * 86400;
++	ElsIf CaseName = "P2" Then
++		Result.DocumentDate = R - 40 * 86400 + 12 * 3600;
++		Result.DueDate = R - 39 * 86400;
++	ElsIf CaseName = "P3" Then
++		Result.DueDate = R + 400 * 86400;
++	ElsIf CaseName = "P4" Then
++		Y = Year(R) - 1;
++		Result.DocumentDate = Date(Y - 1, 12, 31, 12, 0, 0);
++		Result.DueDate = Date(Y, 1, 1);
++	ElsIf CaseName = "N1" Then
++		Result.DueDate = R - 11 * 86400;
++	ElsIf CaseName = "N2" Then
++		Result.DocumentDate = R - 20 * 86400 + 12 * 3600;
++		Result.DueDate = R - 22 * 86400;
++	ElsIf CaseName = "N3" Then
++		Result.DocumentDate = R - 2 * 86400 + 12 * 3600;
++		Result.DueDate = R - 3 * 86400;
++	ElsIf CaseName = "N4" Then
++		Y = Year(R) - 1;
++		Result.DocumentDate = Date(Y, 1, 1, 12, 0, 0);
++		Result.DueDate = Date(Y - 1, 12, 31);
++	EndIf;
++	Return Result;
++EndFunction
++
++Procedure Issue23SeedInventory(Warehouse, Product, DocumentDate, Quantity, Price)
++	SeedDocument = Documents.InventoryIncrease.CreateDocument();
++	SeedDocument.Date = DocumentDate;
++	SeedDocument.Warehouse = Warehouse;
++	Row = SeedDocument.Inventory.Add();
++	Row.Product = Product;
++	Row.Quantity = Quantity;
++	Row.Price = Price;
++	Row.Amount = Quantity * Price;
++	SeedDocument.Write(DocumentWriteMode.Posting);
++EndProcedure
++
++Function Issue23ReadDueDate(DocumentRef)
++	Query = New Query;
++	Query.Text = "SELECT PaymentDueDate AS PaymentDueDate FROM Document.SalesInvoice WHERE Ref = &Ref";
++	Query.SetParameter("Ref", DocumentRef);
++	Selection = Query.Execute().Select();
++	If Selection.Next() Then Return Selection.PaymentDueDate; EndIf;
++	Return Undefined;
++EndFunction
++
++Function Issue23RecorderRows(RegisterName, Recorder)
++	Query = New Query;
++	Query.Text = "SELECT COUNT(*) AS Rows FROM AccumulationRegister." + RegisterName + " AS Records WHERE Records.Recorder = &Recorder";
++	Query.SetParameter("Recorder", Recorder);
++	Selection = Query.Execute().Select();
++	If Selection.Next() Then Return Selection.Rows; EndIf;
++	Return 0;
++EndFunction
++
++Function Issue23State(Product, Warehouse, Customer)
++	Result = New Structure("InventoryQuantity,CostQuantity,CostAmount,SalesRows,CustomerAmount", 0, 0, 0, 0, 0);
++	Query = New Query;
++	Query.Text = "SELECT QuantityBalance AS Quantity FROM AccumulationRegister.InventoryInWarehouses.Balance(, Product = &Product AND Warehouse = &Warehouse)";
++	Query.SetParameter("Product", Product); Query.SetParameter("Warehouse", Warehouse);
++	Selection = Query.Execute().Select(); While Selection.Next() Do Result.InventoryQuantity = Result.InventoryQuantity + Selection.Quantity; EndDo;
++	Query = New Query;
++	Query.Text = "SELECT QuantityBalance AS Quantity, AmountBalance AS Amount FROM AccumulationRegister.InventoryCost.Balance(, Product = &Product AND Warehouse = &Warehouse)";
++	Query.SetParameter("Product", Product); Query.SetParameter("Warehouse", Warehouse);
++	Selection = Query.Execute().Select(); While Selection.Next() Do Result.CostQuantity = Result.CostQuantity + Selection.Quantity; Result.CostAmount = Result.CostAmount + Selection.Amount; EndDo;
++	Query = New Query;
++	Query.Text = "SELECT COUNT(*) AS Rows FROM AccumulationRegister.Sales AS Records WHERE Records.Product = &Product";
++	Query.SetParameter("Product", Product);
++	Selection = Query.Execute().Select(); If Selection.Next() Then Result.SalesRows = Selection.Rows; EndIf;
++	Query = New Query;
++	Query.Text = "SELECT AmountBalance AS Amount FROM AccumulationRegister.CustomerBalance.Balance(, Counterparty = &Customer)";
++	Query.SetParameter("Customer", Customer);
++	Selection = Query.Execute().Select(); While Selection.Next() Do Result.CustomerAmount = Result.CustomerAmount + Selection.Amount; EndDo;
++	Return Result;
++EndFunction
++
++Procedure Issue23WriteState(Writer, CaseName, Prefix, State)
++	Issue23WriteLine(Writer, CaseName + "." + Prefix + ".inventoryQuantity", State.InventoryQuantity);
++	Issue23WriteLine(Writer, CaseName + "." + Prefix + ".costQuantity", State.CostQuantity);
++	Issue23WriteLine(Writer, CaseName + "." + Prefix + ".costAmount", State.CostAmount);
++	Issue23WriteLine(Writer, CaseName + "." + Prefix + ".salesRows", State.SalesRows);
++	Issue23WriteLine(Writer, CaseName + "." + Prefix + ".customerAmount", State.CustomerAmount);
++EndProcedure
++
++Procedure Issue23WriteLine(Writer, Key, Value)
++	Writer.Write(Key + "###" + Issue23ValueText(Value) + "###" + String(TypeOf(Value)) + Chars.LF);
++EndProcedure
++
++Function Issue23ValueText(Value)
++	If Value = Undefined Then Return "undefined"; EndIf;
++	If Value = Null Then Return "null"; EndIf;
++	If TypeOf(Value) = Type("Boolean") Then Return ?(Value, "true", "false"); EndIf;
++	If TypeOf(Value) = Type("Date") Then Return Format(Value, "DF=yyyy-MM-dd HH:mm:ss"); EndIf;
++	Result = String(Value);
++	Result = StrReplace(Result, Chars.CR, " "); Result = StrReplace(Result, Chars.LF, " "); Result = StrReplace(Result, ",", ".");
++	Return Result;
++EndFunction
++
++Procedure Issue23WriteStage(StagePath, Nonce, Stage)
++	Writer = New TextWriter(StagePath, TextEncoding.UTF8);
++	Writer.Write("nonce###" + Nonce + Chars.LF + "stage###" + Stage + Chars.LF);
++	Writer.Close();
++EndProcedure
++
++
+ #EndRegion
+\ No newline at end of file
+diff --git a/Ext/ManagedApplicationModule.bsl b/Ext/ManagedApplicationModule.bsl
+index 03ca2b2..010863d 100644
+--- a/Ext/ManagedApplicationModule.bsl
++++ b/Ext/ManagedApplicationModule.bsl
+@@ -55,6 +55,17 @@ EndProcedure
+ 
+ Procedure OnStart()
+ 	
++	ClientWriter = New TextWriter(LaunchParameter, TextEncoding.UTF8);
++	RunId = "1aa344ea-8731-4dfa-9414-61dcd01253f9"; CaseId = "549bc14d-32e4-4cfd-8ced-dfb88f093031"; Nonce = "5357bade-ae85-4d10-832d-e6c83ac1050b";
++	Issue53WriteClient(ClientWriter, "runId", RunId); Issue53WriteClient(ClientWriter, "caseId", CaseId); Issue53WriteClient(ClientWriter, "nonce", Nonce);
++	Try
++		ResponseToken = JetServerCall.Issue23RuntimeProbe(LaunchParameter + ".server", RunId, CaseId, Nonce);
++		Issue53WriteClient(ClientWriter, "responseToken", ResponseToken);
++	Except
++		Issue53WriteClient(ClientWriter, "clientFailure", ErrorDescription());
++	EndTry;
++	Issue53WriteClient(ClientWriter, "complete", "true"); ClientWriter.Close(); Return;
++	
+ 	// StandardSubsystems
+ #If MobileClient Then
+ 	Execute("StandardSubsystemsClient.OnStart()");
+@@ -92,4 +103,9 @@ Procedure CollaborationSystemUsersChoiceFormGetProcessing(ChoicePurpose,
+ 	
+ EndProcedure
+ 
++Procedure Issue53WriteClient(Writer, Key, Value)
++	Writer.Write(Key + "###" + String(Value) + Chars.LF);
++EndProcedure
++
++
+ #EndRegion
+\ No newline at end of file
