@@ -160,6 +160,28 @@ Operator обязан pin-ить оба install sources к одному immutabl
 Remote executor и его selected workspace должны быть явно настроены terminal boundary до
 установочного canary.
 
+Для принятого fixed deployment route wrapper в `hermes-plugin/deployment/one-c-harness`
+использует operator-owned переменную `ONE_C_HARNESS_PROJECT_CWD` в окружении Hermes process:
+она обозначает **одну явно допущенную бизнес-папку на executor**, не локальную папку WebUI.
+Для `open/narrow/verify` отсутствие привязки блокирует SSH-вызов; допустим только абсолютный
+путь из ASCII букв/цифр, `_`, `.`, `/`, `-`, без `.`/`..` компонентов. Это deployment data,
+не tool argument и не значение, которое агент должен выбирать через shell. Установленный
+executor launcher сам меняет `cwd` на source, поэтому coding route вызывает тот же
+companion из фиксированного source существующей установки `issue80-companion/source`:
+`python3 -I` исключает импорт из бизнес-папки и пользовательского `PYTHONPATH`, после чего
+фиксированный bootstrap добавляет только установленный product source. Прежний executor
+runtime locator сохраняется. Core/plugin не меняются.
+Диагностика продолжает вызывать существующий launcher: его source environment, retained roots
+и opaque refs не переезжают в бизнес-папку.
+
+Привязка не выводится автоматически из выбранной локальной WebUI-папки и не обеспечивает
+несколько одновременных бизнес-workspaces одного процесса. Deployment owner допускает task
+и задаёт привязку до business run; агент не переключает её самостоятельно. До отдельного
+разрешения **не заменять** live `$HERMES_HOME/bin/one-c-harness`, не менять process environment
+и не перезапускать Hermes. Для приёмки после разрешения нужны обновление только wrapper,
+process-level привязка к проверенному task workspace и warm `one_c_open/one_c_narrow_context`
+через обычную регистрацию. Native-бюджет бизнес-Goal этим source-only исправлением не затронут.
+
 ## Цель MVP
 
 Кодовый агент в Linux-окружении получает снимок конфигурации 1С и может:

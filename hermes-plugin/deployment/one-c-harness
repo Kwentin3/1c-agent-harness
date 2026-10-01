@@ -31,9 +31,30 @@ if [ ! -r "$key" ] || [ ! -r "$known_hosts" ]; then
     exit 69
 fi
 
-remote_cwd=/workspace/1c-agent-harness/.local/issue75-companion/source
+remote_source=/workspace/1c-agent-harness/.local/issue80-companion/source
 remote_runtime_config=/workspace/1c-agent-harness/.local/one-c-runtime.json
-remote_command="cd $remote_cwd && ONE_C_HARNESS_RUNTIME_CONFIG=$remote_runtime_config exec ../bin/one-c-harness --request-base64 $token"
+# Routing only: the companion remains the owner of the closed request contract.
+operation=$(printf '%s' "$token" | base64 --decode | python3 -c 'import json, sys; print(json.load(sys.stdin).get("operation", ""))')
+case "$operation" in
+    open|narrow|verify)
+        # Set by deployment for the admitted business task, never a tool argument.
+        remote_cwd=${ONE_C_HARNESS_PROJECT_CWD:-}
+        case "$remote_cwd" in
+            /*) ;;
+            *) printf '%s\n' 'business workspace binding is required' >&2; exit 69 ;;
+        esac
+        case "$remote_cwd" in
+            *[!A-Za-z0-9_./-]*|*/../*|*/./*|*/..|*/.)
+                printf '%s\n' 'business workspace binding is invalid' >&2; exit 64 ;;
+        esac
+        # The legacy executor launcher cd's to its source; bypass it for coding.
+        remote_command="cd $remote_cwd && ONE_C_HARNESS_RUNTIME_CONFIG=$remote_runtime_config exec python3 -I -c 'import sys, runpy; sys.path.insert(0, \"$remote_source\"); runpy.run_module(\"one_c_harness.companion\", run_name=\"__main__\")' --request-base64 $token"
+        ;;
+    *)
+        # Keep diagnostic environment/source selection and retained refs unchanged.
+        remote_command="cd $remote_source && ONE_C_HARNESS_RUNTIME_CONFIG=$remote_runtime_config exec ../bin/one-c-harness --request-base64 $token"
+        ;;
+esac
 
 exec ssh \
     -F /dev/null \
