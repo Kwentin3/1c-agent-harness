@@ -25,6 +25,18 @@ executor installation, Hermes runtime configuration или deployment. Merge и
   текущее deployment состояние #80.
 - Git skills: восстановлены три существующих authored пакета; не выбран новый
   project license и не импортирован сторонний код.
+- По review #35 уточнены description/When to Use generic semantic skill и
+  подробный reference checklist; версия 0.3.1. Pre-native lessons остаются
+  доменно нейтральными.
+- Review #7 не требует salvage adapter: `one_c_harness/harness.py` уже имеет
+  strict JSON (26ff/159), строковые ключи (201ff), strict output (511ff).
+  Не-пустые admitted question IDs (371ff) и exact answer binding (488ff)
+  отвергают пустой questionId. Реальная подстановка отвергнута без output;
+  40 harness tests прошли.
+- [Пакет #55](../experiments/issue55-supplier-document-number/README.md)
+  закрывает реальные false-PASS oracle cases без изменения production/
+  instrumentation patches, request и native receipt. Это retained replay,
+  не новый native run; **ACCEPT / COST FAIL** не переписывается.
 
 ## Проверки восстановления
 

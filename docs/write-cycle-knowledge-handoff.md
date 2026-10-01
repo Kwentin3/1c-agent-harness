@@ -16,6 +16,18 @@
 | [`skills/1c/1c-enterprise-linux/`](../skills/1c/1c-enterprise-linux/SKILL.md) | Versioned canonical source platform-specific skill: native 1C/Linux lifecycle, isolated work copy/ИБ и 1C-specific observations. |
 | [`skills/software-development/semantic-contract-testing/`](../skills/software-development/semantic-contract-testing/SKILL.md) | Versioned canonical source generic skill: semantic contract, counterimplementations, distinguishing observations, anti-tautology и evidence-tier policy. |
 
+## Дополнение по восстановлению знаний (2026-10-01)
+
+Первоначальные выводы #10/#14 ниже — исторический baseline, не полный текущий
+capability ladder. Текущие source package identities и происхождение recovered
+references: [skills/README.md](../skills/README.md),
+[финализация](finalization-2026-10-01.md). Pre-native gates также фиксируют
+pre-state/normalization, API/bypass scope и обязательный no-write witness;
+узкий headless execution path — отдельный `headless-1c-probing` package.
+Позднейший shared task route и diagnosics описаны в [архитектуре](architecture.md).
+Наличие этих уроков не доказывает дешевую автономию: #35 FIRST-PASS AUTONOMY
+FAIL / KISS FAIL и #55 COST FAIL остаются историческими результатами.
+
 ## Классификация знаний
 
 Каждый существенный вывод из issue #10/#14 имеет один основной слой.
