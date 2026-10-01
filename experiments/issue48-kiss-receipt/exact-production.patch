@@ -1,0 +1,16 @@
+diff --git a/Documents/SupplierInvoice/Ext/ObjectModule.bsl b/Documents/SupplierInvoice/Ext/ObjectModule.bsl
+index dbf8986..8c36f1a 100644
+--- a/Documents/SupplierInvoice/Ext/ObjectModule.bsl
++++ b/Documents/SupplierInvoice/Ext/ObjectModule.bsl
+@@ -10,6 +10,11 @@ EndProcedure
+ 
+ Procedure Posting(Cancel, PostingMode)
+ 	
++	If Warehouse.DeletionMark Then
++		Cancel = True;
++		Return;
++	EndIf;
++	
+ 	// Initialization of additional properties for document posting.
+ 	PostingManagement.InitializeAdditionalPropertiesForPosting(Ref, AdditionalProperties);
+ 	

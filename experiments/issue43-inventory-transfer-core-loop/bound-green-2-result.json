@@ -1,0 +1,194 @@
+{
+  "schemaVersion": 1,
+  "status": "runtime_contract_completed",
+  "durationSeconds": 72.204,
+  "specSha256": "641e2885bb388abd6d8479061731a0a34f2d7b5cd47510a981424c980a8ff6e9",
+  "input": {
+    "files": 5099,
+    "directories": 4847,
+    "bytes": 61795042,
+    "sourceTreeSha256": "c1d43de12f06371611fba87dff9a778051c8b33cfa1306446e20f044807b5029",
+    "copiedTreeSha256": "c1d43de12f06371611fba87dff9a778051c8b33cfa1306446e20f044807b5029",
+    "loadTreeSha256": "af8ee97c0e6b209179db2207eb8c31a6cf9a4df1bd1f8270d9c8e16464ab3d62"
+  },
+  "commands": {
+    "create": [
+      "/workspace/1c-agent-harness/.local/platform/libs/usr/bin/xvfb-run",
+      "-a",
+      "-s",
+      "-screen 0 1280x1024x8 -nolisten tcp",
+      "/workspace/1c-agent-harness/.local/platform/1cv8t/x86_64/8.5.1.1150/1cv8t",
+      "CREATEINFOBASE",
+      "File=/workspace/1c-agent-harness/.local/runs/native-cycle/run-swvxtiga/run/ib",
+      "/DisableStartupDialogs",
+      "/DisableStartupMessages",
+      "/Out",
+      "/workspace/1c-agent-harness/.local/runs/native-cycle/run-swvxtiga/run/logs/create.log",
+      "/DumpResult",
+      "/workspace/1c-agent-harness/.local/runs/native-cycle/run-swvxtiga/run/logs/create.result"
+    ],
+    "load": [
+      "/workspace/1c-agent-harness/.local/platform/libs/usr/bin/xvfb-run",
+      "-a",
+      "-s",
+      "-screen 0 1280x1024x8 -nolisten tcp",
+      "/workspace/1c-agent-harness/.local/platform/1cv8t/x86_64/8.5.1.1150/1cv8t",
+      "DESIGNER",
+      "/F",
+      "/workspace/1c-agent-harness/.local/runs/native-cycle/run-swvxtiga/run/ib",
+      "/LoadConfigFromFiles",
+      "/workspace/1c-agent-harness/.local/runs/native-cycle/run-swvxtiga/run/work-copy",
+      "/UpdateDBCfg",
+      "/DisableStartupDialogs",
+      "/DisableStartupMessages",
+      "/Out",
+      "/workspace/1c-agent-harness/.local/runs/native-cycle/run-swvxtiga/run/logs/load.log",
+      "/DumpResult",
+      "/workspace/1c-agent-harness/.local/runs/native-cycle/run-swvxtiga/run/logs/load.result"
+    ],
+    "runtime": [
+      "/workspace/1c-agent-harness/.local/platform/libs/usr/bin/xvfb-run",
+      "-a",
+      "-s",
+      "-screen 0 1280x1024x8 -nolisten tcp",
+      "/workspace/1c-agent-harness/.local/platform/1cv8t/x86_64/8.5.1.1150/1cv8t",
+      "ENTERPRISE",
+      "/F",
+      "/workspace/1c-agent-harness/.local/runs/native-cycle/run-swvxtiga/run/ib",
+      "/C",
+      "/workspace/1c-agent-harness/.local/runs/native-cycle/run-swvxtiga/run/evidence/receipt.txt",
+      "/DisableStartupDialogs",
+      "/DisableStartupMessages",
+      "/Out",
+      "/workspace/1c-agent-harness/.local/runs/native-cycle/run-swvxtiga/run/logs/run.log",
+      "/DumpResult",
+      "/workspace/1c-agent-harness/.local/runs/native-cycle/run-swvxtiga/run/logs/run.result"
+    ]
+  },
+  "environment": {
+    "HOME": "/workspace/1c-agent-harness/.local/runs/native-cycle/run-swvxtiga/run/home",
+    "TMPDIR": "/workspace/1c-agent-harness/.local/runs/native-cycle/run-swvxtiga/run/tmp",
+    "XDG_CACHE_HOME": "/workspace/1c-agent-harness/.local/runs/native-cycle/run-swvxtiga/run/home/xdg-cache",
+    "XDG_CONFIG_HOME": "/workspace/1c-agent-harness/.local/runs/native-cycle/run-swvxtiga/run/home/xdg-config",
+    "XDG_DATA_HOME": "/workspace/1c-agent-harness/.local/runs/native-cycle/run-swvxtiga/run/home/xdg-data",
+    "FONTCONFIG_FILE": "/workspace/1c-agent-harness/.local/platform/fonts.conf",
+    "LD_LIBRARY_PATH": "/workspace/1c-agent-harness/.local/platform/1cv8t/x86_64/8.5.1.1150:/workspace/1c-agent-harness/.local/platform/libs/usr/lib/x86_64-linux-gnu",
+    "PATH": "/workspace/1c-agent-harness/.local/platform/libs/usr/bin:/usr/local/sbin:/usr/local/bin:/usr/sbin:/usr/bin:/sbin:/bin:/usr/games"
+  },
+  "create": {
+    "processReturn": 0,
+    "dumpResult": "0",
+    "resultSha256": "e45825471ed10290785b62676dc5f453d228a1e1d933c45a733e9bb239c9e083",
+    "logSha256": "9dab5245f201c382f20b9f68dd4a56c17ba25eedff8db38a83aec6e3e8ecde2e",
+    "successMarker": "completed successfully"
+  },
+  "load": {
+    "processReturn": 0,
+    "dumpResult": "0",
+    "resultSha256": "e45825471ed10290785b62676dc5f453d228a1e1d933c45a733e9bb239c9e083",
+    "logSha256": "4d841be04b71dd0ee7cfebcfa7af194d74902e2ec1c213987889d7d3940c0f86",
+    "successMarker": "Configuration successfully updated"
+  },
+  "runtime": {
+    "completed": true,
+    "completeMarker": "complete###true",
+    "stableReads": 2,
+    "processReturn": -15,
+    "receipt": {
+      "state": "regular",
+      "bytes": 618,
+      "sha256": "4c8c8784c8e1fa1f4c72dc10689f1aa3a6b472f42803f35c8fa75201111be897",
+      "terminalMarker": true
+    },
+    "outputs": {
+      "log": {
+        "state": "regular",
+        "bytes": 49,
+        "sha256": "4117172f389bdfc38123337e2a2fe1993c6a1275e719119f004e5a6d5a28a124"
+      },
+      "result": {
+        "state": "absent"
+      }
+    },
+    "receiptSha256": "4c8c8784c8e1fa1f4c72dc10689f1aa3a6b472f42803f35c8fa75201111be897",
+    "receiptBytes": 618
+  },
+  "inputAfter": {
+    "files": 5099,
+    "directories": 4847,
+    "bytes": 61795042,
+    "sha256": "c1d43de12f06371611fba87dff9a778051c8b33cfa1306446e20f044807b5029"
+  },
+  "resultPath": ".local/runs/native-cycle/run-swvxtiga/run/result.json",
+  "preparedInvocation": {
+    "invocationRoot": ".local/runs/native-cycle/run-swvxtiga",
+    "sourcePath": ".local/prepared/issue43-bound-green-2",
+    "sourceBefore": {
+      "files": 5099,
+      "directories": 4847,
+      "bytes": 61795042,
+      "sha256": "110e512ff67e5ba55e4e5504c229c472d50e147e5a9ab8e1f96dac45fe489758"
+    },
+    "sourceAfter": {
+      "files": 5099,
+      "directories": 4847,
+      "bytes": 61795042,
+      "sha256": "110e512ff67e5ba55e4e5504c229c472d50e147e5a9ab8e1f96dac45fe489758"
+    },
+    "copiedBeforeFreeze": {
+      "files": 5099,
+      "directories": 4847,
+      "bytes": 61795042,
+      "sha256": "110e512ff67e5ba55e4e5504c229c472d50e147e5a9ab8e1f96dac45fe489758"
+    },
+    "frozenInput": {
+      "path": ".local/runs/native-cycle/run-swvxtiga/frozen-input",
+      "identity": {
+        "files": 5099,
+        "directories": 4847,
+        "bytes": 61795042,
+        "sha256": "c1d43de12f06371611fba87dff9a778051c8b33cfa1306446e20f044807b5029"
+      }
+    },
+    "generatedSpec": {
+      "path": ".local/runs/native-cycle/run-swvxtiga/spec.json",
+      "sha256": "641e2885bb388abd6d8479061731a0a34f2d7b5cd47510a981424c980a8ff6e9"
+    },
+    "generatedBinding": {
+      "kind": "1c-enterprise-launch-parameter",
+      "status": "generated",
+      "receipt": ".local/runs/native-cycle/run-swvxtiga/run/evidence/receipt.txt",
+      "runtimeArgvSha256": "27b3a20c7be6b8dcb91c00fcbd196349af9d4c7b5d59f8468a0ea3564c000ace"
+    }
+  },
+  "totalDurationSeconds": 89.879,
+  "storageCompaction": {
+    "policy": "compact-current-invocation-v1",
+    "status": "completed",
+    "manualCleanupActions": 0,
+    "configuredTargets": [
+      "frozen-input",
+      "run/work-copy",
+      "run/ib",
+      "run/home",
+      "run/tmp"
+    ],
+    "completedRemovedPaths": [
+      "frozen-input",
+      "run/work-copy",
+      "run/ib",
+      "run/home",
+      "run/tmp"
+    ],
+    "retainedPaths": [
+      "spec.json",
+      "run/evidence",
+      "run/logs",
+      "run/result.json"
+    ],
+    "preCompactionLogicalBytes": 224605257,
+    "removedLogicalBytes": 224580023,
+    "retainedLogicalBytesExcludingResult": 18118,
+    "durationSeconds": 5.529
+  }
+}
