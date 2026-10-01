@@ -5,18 +5,19 @@ import copy
 import hashlib
 import importlib.util
 import json
+import os
 from pathlib import Path
 import subprocess
 import sys
 import tempfile
+from types import SimpleNamespace
 import unittest
+from unittest import mock
 
 ROOT = Path(__file__).resolve().parents[1]
-sys.path.insert(0, str(ROOT / "scripts"))
-import managed_probe_prepare as preparation
-import native_cycle
-import shared_task_route as route
-sys.path.pop(0)
+from one_c_harness import managed_probe_prepare as preparation
+from one_c_harness import native_cycle
+from one_c_harness import shared_task_route as route
 
 
 def _sha(payload: bytes) -> str:
@@ -62,6 +63,24 @@ class SharedTaskRouteTests(unittest.TestCase):
     def test_one_call_owns_prepare_identity_runner_oracle_receipt_and_cleanup(self) -> None:
         with tempfile.TemporaryDirectory() as temporary:
             repo = Path(temporary)
+            runtime = repo / "executor-runtime"
+            platform = runtime / "1cv8t"
+            xvfb = runtime / "xvfb-run"
+            fontconfig = runtime / "fonts.conf"
+            libs = runtime / "libs"
+            runtime.mkdir()
+            platform.write_text("platform", encoding="utf-8")
+            xvfb.write_text("xvfb", encoding="utf-8")
+            platform.chmod(0o755)
+            xvfb.chmod(0o755)
+            fontconfig.write_text("fonts", encoding="utf-8")
+            libs.mkdir()
+            runtime_contract = runtime / "one-c-runtime.json"
+            runtime_contract.write_text(json.dumps({
+                "schemaVersion": 1, "platform": str(platform), "xvfb": str(xvfb),
+                "fontconfig": str(fontconfig), "libs": str(libs),
+            }), encoding="utf-8")
+            os.environ["ONE_C_HARNESS_RUNTIME_CONFIG"] = str(runtime_contract)
             source = repo / "snapshot"
             source.mkdir()
             (source / "A.txt").write_text("base\n", encoding="utf-8")
@@ -83,25 +102,37 @@ class SharedTaskRouteTests(unittest.TestCase):
                 nonlocal prepared_seen
                 calls.append(command)
                 if "run-prepared" in command:
+                    self.assertNotIn("--complete-marker", command)
                     relative = Path(command[command.index("--input-tree") + 1])
                     prepared_seen = repo / relative
                     self.assertTrue(prepared_seen.is_dir())
                     self.assertEqual((prepared_seen / "A.txt").read_text(), "instrumented\n")
-                    identity = native_cycle.tree_identity(prepared_seen)
-                    evidence = repo / ".local/runs/native-cycle/run-test/run/evidence"
-                    evidence.mkdir(parents=True)
-                    (evidence / "receipt.txt").write_bytes(b"client\n")
-                    (evidence / "receipt.txt.server").write_bytes(b"server\n")
-                    runner = {
-                        "status": "runtime_contract_completed",
-                        "preparedInvocation": {
-                            "invocationRoot": ".local/runs/native-cycle/run-test",
-                            "sourceBefore": identity, "sourceAfter": identity,
-                            "copiedBeforeFreeze": identity, "frozenInput": {"identity": identity},
-                        },
-                        "inputAfter": identity,
-                        "storageCompaction": {"status": "completed", "manualCleanupActions": 0},
-                    }
+
+                    def fake_cycle(plan: SimpleNamespace, spec_path: Path) -> dict[str, object]:
+                        self.assertEqual(
+                            plan.complete_marker,
+                            native_cycle.CANONICAL_COMPLETE_MARKER,
+                        )
+                        self.assertEqual(
+                            json.loads(spec_path.read_text(encoding="utf-8"))["completeMarker"],
+                            native_cycle.CANONICAL_COMPLETE_MARKER,
+                        )
+                        plan.receipt.parent.mkdir(parents=True)
+                        plan.receipt.write_bytes(b"client\n")
+                        plan.receipt.with_name("receipt.txt.server").write_bytes(b"server\n")
+                        return {
+                            "schemaVersion": 1,
+                            "status": "runtime_contract_completed",
+                            "durationSeconds": 0.0,
+                            "inputAfter": native_cycle.tree_identity(plan.input_tree),
+                        }
+
+                    with mock.patch.object(native_cycle, "run_cycle", side_effect=fake_cycle):
+                        runner = native_cycle.run_prepared(
+                            repo,
+                            relative.as_posix(),
+                            int(command[command.index("--timeout-seconds") + 1]),
+                        )
                     return subprocess.CompletedProcess(command, 0, json.dumps(runner), "")
                 return subprocess.CompletedProcess(command, 0, json.dumps({
                     "status": "PASS", "task": "sample", "businessPayload": {"accepted": True},
@@ -111,8 +142,7 @@ class SharedTaskRouteTests(unittest.TestCase):
             receipt = route.run_task(
                 repo_root=repo, input_tree=source, request_path=request_path,
                 patch_paths=[("production", production), ("instrumentation", instrumentation)],
-                complete_marker="complete###true", oracle_path=oracle,
-                receipt_path=output, timeout_seconds=30, execute=fake,
+                oracle_path=oracle, receipt_path=output, timeout_seconds=30, execute=fake,
             )
 
             self.assertEqual(request, receipt["request"]["payload"])
@@ -131,7 +161,38 @@ class SharedTaskRouteTests(unittest.TestCase):
         )
         self.assertEqual(completed.returncode, 0)
         self.assertNotIn("--prepared-tree", completed.stdout)
+        self.assertNotIn("--complete-marker", completed.stdout)
         self.assertNotIn("prepare", completed.stdout)
+
+    def test_cli_rejects_retired_marker_before_preparation(self) -> None:
+        with tempfile.TemporaryDirectory() as temporary:
+            repo = Path(temporary)
+            source = repo / "snapshot"
+            source.mkdir()
+            (source / "A.txt").write_text("base\n", encoding="utf-8")
+            task = repo / "task"
+            task.mkdir()
+            for name in ("request.json", "production.patch", "instrumentation.patch", "oracle.py"):
+                (task / name).write_text("placeholder\n", encoding="utf-8")
+
+            completed = subprocess.run(
+                [
+                    sys.executable, str(ROOT / "scripts/shared_task_route.py"), "run",
+                    "--repo-root", str(repo),
+                    "--input-tree", "snapshot",
+                    "--request", "task/request.json",
+                    "--production-patch", "task/production.patch",
+                    "--instrumentation-patch", "task/instrumentation.patch",
+                    "--oracle", "task/oracle.py",
+                    "--receipt", ".local/task/receipt.json",
+                    "--complete-marker", "complete###true",
+                ],
+                text=True, capture_output=True, timeout=10,
+            )
+
+            self.assertEqual(completed.returncode, 2)
+            self.assertIn("unrecognized arguments: --complete-marker", completed.stderr)
+            self.assertFalse((repo / ".local").exists())
 
     def test_receipt_rejects_common_stale_partial_and_cleanup_mismatches(self) -> None:
         mutations = (

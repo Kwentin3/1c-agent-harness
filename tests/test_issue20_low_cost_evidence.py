@@ -23,6 +23,14 @@ class Issue20LowCostEvidenceTests(unittest.TestCase):
     def test_package_manifest_and_claims_validate(self) -> None:
         validate_package(PACKAGE)
 
+    def test_historical_package_validates_without_git_or_other_experiment(self) -> None:
+        with tempfile.TemporaryDirectory() as tmp:
+            isolated_root = Path(tmp)
+            package = isolated_root / "package"
+            shutil.copytree(PACKAGE, package)
+            with mock.patch.object(evidence_validator, "REPO_ROOT", isolated_root):
+                validate_package(package)
+
     def test_raw_sanitization_uses_native_root_not_checkout_root(self) -> None:
         result = json.loads(gzip.decompress((PACKAGE / "success-result.raw.json.gz").read_bytes()))
         envelope = json.loads((PACKAGE / "success-result.json").read_text(encoding="utf-8"))
