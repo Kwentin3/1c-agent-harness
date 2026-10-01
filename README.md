@@ -160,6 +160,39 @@ Operator обязан pin-ить оба install sources к одному immutabl
 Remote executor и его selected workspace должны быть явно настроены terminal boundary до
 установочного canary.
 
+Для принятого fixed deployment route wrapper в `hermes-plugin/deployment/one-c-harness`
+использует operator-owned переменную `ONE_C_HARNESS_PROJECT_CWD` в окружении Hermes process:
+она обозначает **одну явно допущенную бизнес-папку на executor**, не локальную папку WebUI.
+Для `open/narrow/verify` отсутствие привязки блокирует SSH-вызов; допустим только абсолютный
+путь из ASCII букв/цифр, `_`, `.`, `/`, `-`, без `.`/`..` компонентов. Это deployment data,
+не tool argument и не значение, которое агент должен выбирать через shell. Установленный
+executor launcher сам меняет `cwd` на source, поэтому coding route вызывает тот же
+companion из фиксированного source существующей установки `issue80-companion/source`:
+`python3 -I` исключает импорт из бизнес-папки и пользовательского `PYTHONPATH`, после чего
+фиксированный bootstrap добавляет только установленный product source. Прежний executor
+runtime locator сохраняется. Для этого fixed deployment требуется Python 3.11+: дочерний
+native runner получает фиксированный `PYTHONPATH`, `PYTHONSAFEPATH=1` и `PYTHONNOUSERSITE=1`;
+без этого parent bootstrap открывает проект, но child не находит companion либо импортирует
+файлы бизнес-проекта. Bootstrap блокирует более старый interpreter до работы. Это ограничение
+deployment, не изменение поддерживаемых версий core. Core/plugin не меняются.
+Диагностика продолжает вызывать существующий launcher: его source environment, retained roots
+и opaque refs не переезжают в бизнес-папку.
+
+Привязка не выводится автоматически из выбранной локальной WebUI-папки и не обеспечивает
+несколько одновременных бизнес-workspaces одного процесса. Deployment owner допускает task
+и задаёт привязку до business run; агент не переключает её самостоятельно. Новое изменение
+live `$HERMES_HOME/bin/one-c-harness`, process environment или restart требует отдельного допуска.
+
+Для текущего полигона владелец разрешил bounded deployment: установленный wrapper отличается
+от шаблона только фиксированным business cwd и имеющимся pinned known_hosts. Restart не выполнялся.
+Зарегистрированные `open/narrow` и один содержательный `verify` из отдельного бизнес-проекта
+подтверждены в [PR #84](https://github.com/Kwentin3/1c-agent-harness/pull/84).
+Сам business project не содержит Harness source/scripts или собственной установки платформы.
+Это приёмка одного допущенного проекта, не завершение полной многопроектной интеграции.
+На финализации повторный live `open` вернул `terminal_failed`: тот же wrapper сообщил
+`No route to host`. Историческая native-квитанция остаётся доказательством выполнения,
+но не текущей доступности executor; автоматический fallback или новая установка не добавлены.
+
 ## Цель MVP
 
 Кодовый агент в Linux-окружении получает снимок конфигурации 1С и может:
