@@ -180,11 +180,18 @@ deployment, не изменение поддерживаемых версий co
 
 Привязка не выводится автоматически из выбранной локальной WebUI-папки и не обеспечивает
 несколько одновременных бизнес-workspaces одного процесса. Deployment owner допускает task
-и задаёт привязку до business run; агент не переключает её самостоятельно. До отдельного
-разрешения **не заменять** live `$HERMES_HOME/bin/one-c-harness`, не менять process environment
-и не перезапускать Hermes. Для приёмки после разрешения нужны обновление только wrapper,
-process-level привязка к проверенному task workspace и warm `one_c_open/one_c_narrow_context`
-через обычную регистрацию. Native-бюджет бизнес-Goal этим source-only исправлением не затронут.
+и задаёт привязку до business run; агент не переключает её самостоятельно. Новое изменение
+live `$HERMES_HOME/bin/one-c-harness`, process environment или restart требует отдельного допуска.
+
+Для текущего полигона владелец разрешил bounded deployment: установленный wrapper отличается
+от шаблона только фиксированным business cwd и имеющимся pinned known_hosts. Restart не выполнялся.
+Зарегистрированные `open/narrow` и один содержательный `verify` из отдельного бизнес-проекта
+подтверждены в [PR #84](https://github.com/Kwentin3/1c-agent-harness/pull/84).
+Сам business project не содержит Harness source/scripts или собственной установки платформы.
+Это приёмка одного допущенного проекта, не завершение полной многопроектной интеграции.
+На финализации повторный live `open` вернул `terminal_failed`: тот же wrapper сообщил
+`No route to host`. Историческая native-квитанция остаётся доказательством выполнения,
+но не текущей доступности executor; автоматический fallback или новая установка не добавлены.
 
 ## Цель MVP
 
