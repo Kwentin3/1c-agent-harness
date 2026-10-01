@@ -30,4 +30,4 @@ READY FOR NATIVE
 
 ## Стоимость и автономность
 
-Это NON-FRESH continuation. Первоначальный600s executor timeout и1057.98s checkpoint сохранены; clock не сброшен. Время текущего ожидания пользователя не выдаётся за active compute. Fresh end-to-end autonomy и исходный600s ориентир не достигнуты. Один фиксированный remote business project; automatic WebUI workspace selection отложен владельцем. Issue69 не закрывается как полная исходная цель на основании этого узкого доказательства.
+Это NON-FRESH continuation. Первоначальный600s executor timeout и1057.98s checkpoint сохранены; clock не сброшен. Время текущего ожидания пользователя не выдаётся за active compute. Fresh end-to-end autonomy и исходный600s ориентир не достигнуты. Один фиксированный remote business project; automatic WebUI workspace selection отложен владельцем. На этом первоначальном checkpoint Issue69 оставалась открытой. Последующее разрешение владельца завершить ограниченный этап и его финиш описаны в [RESULTS.md](RESULTS.md#завершение-этапа-на-имеющемся-полигоне); оно не делает исходный fresh/cost тест успешным.

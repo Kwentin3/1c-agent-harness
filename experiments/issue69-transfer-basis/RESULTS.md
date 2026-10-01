@@ -50,4 +50,33 @@ python3 -m unittest tests.test_issue69_evidence -v
 - Interactive native form rendering and full ordinary application startup: only XML binding/position plus successful configuration load is proved; OnStart has task-local early Return. The visible HTML was a labeled structural proxy.
 - General write support or production rollout: no such inference is made.
 
-PR84 records this bounded proof; issue69 stays open as the original broader contract. No merge/release is implied by PASS or CI.
+## Завершение этапа на имеющемся полигоне
+
+Владелец изменил финиш текущего этапа: завершить и принять #83/#84 на единственной
+доступной тестовой конфигурации, затем остановиться. Другая конфигурация, fresh autonomy
+и автоматический выбор WebUI workspace не являются блокерами этого ограниченного финиша.
+Исходные результаты не переквалифицированы: **PRODUCT PASS в проверенной границе,
+ROUTE COST FAIL; fresh end-to-end autonomy не доказана**.
+
+- #83 принят в `main`: merge `68918fe73c3bea80684857322c3d36ac722075ad`;
+  tree совпал с проверенным head, post-merge CI Python 3.9/3.12 PASS.
+- Production-патч и исходные client/server квитанции сохранены побайтно, без повторного native.
+  Final static reconstruction на retained original files подтверждает: ровно два XML-файла,
+  необязательная строка с пустым default, существующие en/tr-представления,
+  `Object.TransferBasis` после `WarehouseReceiver`, уникальные ID элементов управления,
+  неизменность всех прежних элементов XML и ноль production BSL-изменений.
+  Это проверка сохранённых исходных байтов, не новая live-проверка или GUI-отрисовка.
+- Слияние #83 в ветку #84 не меняет конфигурацию, native request, instrumentation или oracle.
+  Replay доступен из чистого checkout командами выше; полный suite и exact-head CI
+  проверяются на финальной объединённой ревизии, затем отдельно на merge-коммите `main`.
+- Текущий домашний executor недоступен: registered `one_c_open` вернул `terminal_failed`,
+  прямой запуск того же установленного wrapper — SSH `No route to host`.
+  Установленный wrapper совпадает с принятой source-реализацией с двумя ранее разрешёнными
+  deployment-подстановками (business cwd и pinned known_hosts). Новая запись, restart,
+  fallback или попытка 1С не выполнялись. Исторический runtime PASS не означает текущую
+  доступность подключения.
+
+Пользователь получил сопровождаемый точный патч функции и установленный маршрут одного
+допущенного бизнес-проекта. Исходная конфигурация и живая ИБ не изменены; это не rollout.
+После принятия #84 ограниченный этап #69 закрывается с этой явно изменённой границей,
+а не как успешный первоначальный тест свежей автономности. Новое испытание не запускается.
