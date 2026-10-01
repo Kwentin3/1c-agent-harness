@@ -48,7 +48,7 @@ case "$operation" in
                 printf '%s\n' 'business workspace binding is invalid' >&2; exit 64 ;;
         esac
         # The legacy executor launcher cd's to its source; bypass it for coding.
-        remote_command="cd $remote_cwd && ONE_C_HARNESS_RUNTIME_CONFIG=$remote_runtime_config exec python3 -I -c 'import sys, runpy; sys.path.insert(0, \"$remote_source\"); runpy.run_module(\"one_c_harness.companion\", run_name=\"__main__\")' --request-base64 $token"
+        remote_command="cd $remote_cwd && ONE_C_HARNESS_RUNTIME_CONFIG=$remote_runtime_config exec python3 -I -c 'import os, sys, runpy; assert sys.version_info >= (3, 11), \"deployment requires Python 3.11+\"; sys.path.insert(0, \"$remote_source\"); os.environ.update(PYTHONPATH=\"$remote_source\", PYTHONSAFEPATH=\"1\", PYTHONNOUSERSITE=\"1\"); runpy.run_module(\"one_c_harness.companion\", run_name=\"__main__\")' --request-base64 $token"
         ;;
     *)
         # Keep diagnostic environment/source selection and retained refs unchanged.

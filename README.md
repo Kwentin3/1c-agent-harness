@@ -170,7 +170,11 @@ executor launcher сам меняет `cwd` на source, поэтому coding r
 companion из фиксированного source существующей установки `issue80-companion/source`:
 `python3 -I` исключает импорт из бизнес-папки и пользовательского `PYTHONPATH`, после чего
 фиксированный bootstrap добавляет только установленный product source. Прежний executor
-runtime locator сохраняется. Core/plugin не меняются.
+runtime locator сохраняется. Для этого fixed deployment требуется Python 3.11+: дочерний
+native runner получает фиксированный `PYTHONPATH`, `PYTHONSAFEPATH=1` и `PYTHONNOUSERSITE=1`;
+без этого parent bootstrap открывает проект, но child не находит companion либо импортирует
+файлы бизнес-проекта. Bootstrap блокирует более старый interpreter до работы. Это ограничение
+deployment, не изменение поддерживаемых версий core. Core/plugin не меняются.
 Диагностика продолжает вызывать существующий launcher: его source environment, retained roots
 и opaque refs не переезжают в бизнес-папку.
 

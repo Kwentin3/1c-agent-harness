@@ -111,6 +111,7 @@ class HermesDeploymentWrapperTests(unittest.TestCase):
                 self.assertNotEqual(result.returncode, 0)
                 self.assertFalse(capture.exists())
 
+    @unittest.skipUnless(sys.version_info >= (3, 11), "fixed deployment requires safe-path Python 3.11+")
     def test_source_route_open_narrow_verify_and_diagnostics_keep_distinct_roots(self) -> None:
         from tests.test_companion import _project
 
@@ -180,6 +181,31 @@ class HermesDeploymentWrapperTests(unittest.TestCase):
                 "oracle": "task/oracle.py", "receipt": ".local/receipt.json", "timeoutSeconds": 60,
             })
             self.assertEqual(rejected["reasonCode"], "snapshot_invalid")
+            # Exercise the actual runner subprocess import, without 1C. An
+            # incomplete fixture may block admission, but must reach the runner.
+            request = business / ".local/request.json"
+            request.write_text('{}')
+            oracle = business / ".local/oracle.py"
+            oracle.write_text('raise SystemExit(1)')
+            for name, value in (("prod", "product"), ("probe", "instrumentation")):
+                (business / (".local/" + name + ".patch")).write_text(
+                    "diff --git a/Documents/Order/Ext/ObjectModule.bsl b/Documents/Order/Ext/ObjectModule.bsl\n"
+                    "--- a/Documents/Order/Ext/ObjectModule.bsl\n"
+                    "+++ b/Documents/Order/Ext/ObjectModule.bsl\n"
+                    "@@ -1,2 +1,2 @@\n-" + ("Procedure Posting(Cancel)" if name == "prod" else "// product")
+                    + "\n+// " + value + "\n EndProcedure\n"
+                )
+            runner_admission = call("verify", {
+                "snapshotRef": reference, "request": ".local/request.json",
+                "productionPatch": ".local/prod.patch", "instrumentationPatch": ".local/probe.patch",
+                "oracle": ".local/oracle.py", "receipt": ".local/receipt.json", "timeoutSeconds": 1,
+            })
+            self.assertNotEqual(runner_admission["status"], "ok")
+            # Result persisted by the unchanged runner proves its module loaded;
+            # a native-cycle-failed envelope alone does not prove subprocess reach.
+            results = list((business / ".local/runs/native-cycle").glob("run-*/**/result.json"))
+            self.assertTrue(results, (runner_admission, [str(p.relative_to(business)) for p in business.rglob('*')]))
+            self.assertIn('precheck_failed', {json.loads(p.read_text()).get('status') for p in results})
             observed = call("observe", {
                 "start": "2026-09-18T12:00:00", "end": "2026-09-18T12:00:01", "events": ["EXCP"], "limit": 10,
             })
