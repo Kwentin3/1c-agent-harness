@@ -204,6 +204,7 @@ MVP считается полезным не потому, что агент н�
 - [Готовность агентных клиентов](docs/client-readiness.md)
 - [Исторический Antigravity research arm: направление прекращено](docs/antigravity-evaluation.md)
 - [Канонические скилы и восстановление](skills/README.md)
+- [Историческая диагностика headless probe (issue #37)](docs/issue-37-headless-probe-observability.md)
 - [Headless request/response baseline (issue #38)](docs/issue-38-headless-request-response.md)
 - [Runtime Diagnostics KISS design and prototype (issue #71)](docs/issue-71-runtime-diagnostics.md)
 - [First live read-only Runtime Diagnostics slice (issue #73)](docs/issue-73-runtime-diagnostics-live.md)
