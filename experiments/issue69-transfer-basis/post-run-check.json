@@ -1,0 +1,10 @@
+{
+  "status": "runtime_contract_completed",
+  "durationSeconds": 69.216,
+  "totalDurationSeconds": 81.334,
+  "ownedInvocation": ".local/runs/native-cycle/run-qtk9h2n9",
+  "processes": [],
+  "preparedChildren": [],
+  "receiptSha256": "f0e00ea86ce16b3dff292f1852774e69f1bb1054aec5b1156e99a9533950eac6",
+  "collectedEpoch": 1790863909.9322033
+}

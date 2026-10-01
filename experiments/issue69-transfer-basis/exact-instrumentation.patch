@@ -1,0 +1,141 @@
+diff --git a/CommonModules/PostingManagement/Ext/Module.bsl b/CommonModules/PostingManagement/Ext/Module.bsl
+index dd2ee89..d9d4372 100644
+--- a/CommonModules/PostingManagement/Ext/Module.bsl
++++ b/CommonModules/PostingManagement/Ext/Module.bsl
+@@ -258,4 +258,84 @@ Function GetUsedRegisterNames(Recorder, DocumentMetadata)
+ 	
+ EndFunction
+ 
+-#EndRegion
+\ No newline at end of file
++#EndRegion
++
++Function ITBasisProbe(Path) Export
++    W = New TextWriter(Path + ".server", TextEncoding.UTF8);
++    Token = String(New UUID);
++    W.Write("run###affc4e32-13c8-45c9-af1a-514f7bf4113c" + Chars.LF + "nonce###eb076390-a9a1-45fc-bd21-2eac28edb04f" + Chars.LF + "token###" + Token + Chars.LF);
++    Source = Catalogs.Warehouses.CreateItem(); Source.Description = "Basis source"; Source.Write();
++    Target = Catalogs.Warehouses.CreateItem(); Target.Description = "Basis target"; Target.Write();
++    Item = Catalogs.Products.CreateItem(); Item.Description = "Basis product"; Item.Write();
++    Seed = ITBasisDocument(Source.Ref, Target.Ref, Item.Ref, 0);
++    Seed.Date = Date(2026, 1, 1); Seed.Inventory.Clear(); Seed.Write();
++    Names = New Array; Names.Add("InventoryInWarehouses"); Names.Add("InventoryCost");
++    For Each RegisterName In Names Do
++        Set = AccumulationRegisters[RegisterName].CreateRecordSet();
++        Set.Filter.Recorder.Set(Seed.Ref);
++        R = Set.Add(); R.Period = Seed.Date; R.Active = True; R.RecordType = AccumulationRecordType.Receipt;
++        R.Warehouse = Source.Ref; R.Product = Item.Ref; R.Quantity = 100;
++        If RegisterName = "InventoryCost" Then R.Amount = 1000; EndIf;
++        Set.Write();
++    EndDo;
++    Doc = ITBasisDocument(Source.Ref, Target.Ref, Item.Ref, 4);
++    Doc.Comment = "Independent comment";
++    Doc.Write();
++    Fresh = Doc.Ref.GetObject();
++    ITBasisObserve(W, "emptyDraft", Fresh.TransferBasis = "" And Not Fresh.Posted);
++    Doc.Write(DocumentWriteMode.Posting);
++    Fresh = Doc.Ref.GetObject();
++    ITBasisObserve(W, "emptyPosted", Fresh.TransferBasis = "" And Fresh.Posted);
++    BeforeStock = ITBasisRecords("InventoryInWarehouses", Doc.Ref);
++    BeforeCost = ITBasisRecords("InventoryCost", Doc.Ref);
++    ITBasisObserve(W, "stockCount", BeforeStock.Count() = 2);
++    ITBasisObserve(W, "costCount", BeforeCost.Count() = 2);
++    GoodStock = True; GoodCost = True;
++    For Each R In BeforeStock Do GoodStock = GoodStock And R.Quantity = 4 And R.Product = Item.Ref And (R.Warehouse = Source.Ref Or R.Warehouse = Target.Ref); EndDo;
++    For Each R In BeforeCost Do GoodCost = GoodCost And R.Quantity = 4 And R.Amount = 40 And R.Product = Item.Ref And (R.Warehouse = Source.Ref Or R.Warehouse = Target.Ref); EndDo;
++    ITBasisObserve(W, "stockValues", GoodStock);
++    ITBasisObserve(W, "costValues", GoodCost);
++    Text = "Основание перемещения — İade gerekçesi" + Chars.LF;
++    For I = 1 To 20 Do Text = Text + "Long optional text; "; EndDo;
++    Draft = ITBasisDocument(Source.Ref, Target.Ref, Item.Ref, 1);
++    Draft.TransferBasis = Text; Draft.Comment = "Independent comment"; Draft.Write();
++    Fresh = Draft.Ref.GetObject();
++    ITBasisObserve(W, "filledDraft", Fresh.TransferBasis = Text And Not Fresh.Posted And Fresh.Comment = "Independent comment");
++    Doc.TransferBasis = Text; Doc.Write(DocumentWriteMode.Posting);
++    Fresh = Doc.Ref.GetObject();
++    ITBasisObserve(W, "filledPosted", Fresh.Posted And Fresh.TransferBasis = Text And Fresh.Comment = "Independent comment");
++    ITBasisObserve(W, "stockUnchanged", ITBasisSame(BeforeStock, ITBasisRecords("InventoryInWarehouses", Doc.Ref)));
++    ITBasisObserve(W, "costUnchanged", ITBasisSame(BeforeCost, ITBasisRecords("InventoryCost", Doc.Ref)));
++    Bad = ITBasisDocument(Source.Ref, Target.Ref, Item.Ref, 1000);
++    Bad.TransferBasis = Text; Bad.Write();
++    Rejected = False;
++    Try Bad.Write(DocumentWriteMode.Posting); Except Rejected = True; EndTry;
++    Fresh = Bad.Ref.GetObject();
++    ITBasisObserve(W, "shortageRejected", Rejected And Not Fresh.Posted And Fresh.TransferBasis = Text);
++    ITBasisObserve(W, "rejectedStockZero", ITBasisRecords("InventoryInWarehouses", Bad.Ref).Count() = 0);
++    ITBasisObserve(W, "rejectedCostZero", ITBasisRecords("InventoryCost", Bad.Ref).Count() = 0);
++    W.Write("serverComplete###true" + Chars.LF); W.Close();
++    Return Token;
++EndFunction
++Function ITBasisDocument(Source, Target, Item, Quantity)
++    D = Documents.InventoryTransfer.CreateDocument(); D.Date = Date(2026, 1, 2);
++    D.Warehouse = Source; D.WarehouseReceiver = Target;
++    R = D.Inventory.Add(); R.Product = Item; R.Quantity = Quantity;
++    Return D;
++EndFunction
++Procedure ITBasisObserve(W, Label, Value)
++    W.Write(Label + "###" + ?(Value, "true", "false") + Chars.LF);
++EndProcedure
++Function ITBasisRecords(Name, Ref)
++    Q = New Query("SELECT * FROM AccumulationRegister." + Name + " WHERE Recorder = &Ref ORDER BY LineNumber");
++    Q.SetParameter("Ref", Ref); Return Q.Execute().Unload();
++EndFunction
++Function ITBasisSame(A, B)
++    If A.Count() <> B.Count() Then Return False; EndIf;
++    For I = 0 To A.Count() - 1 Do
++        For Each Column In A.Columns Do
++            If A[I][Column.Name] <> B[I][Column.Name] Then Return False; EndIf;
++        EndDo;
++    EndDo;
++    Return True;
++EndFunction
+diff --git a/CommonModules/PostingManagement.xml b/CommonModules/PostingManagement.xml
+index d700d23..e5378a4 100644
+--- a/CommonModules/PostingManagement.xml
++++ b/CommonModules/PostingManagement.xml
+@@ -19,7 +19,7 @@
+ 			<Server>true</Server>
+ 			<ExternalConnection>true</ExternalConnection>
+ 			<ClientOrdinaryApplication>false</ClientOrdinaryApplication>
+-			<ServerCall>false</ServerCall>
++			<ServerCall>true</ServerCall>
+ 			<Privileged>false</Privileged>
+ 			<ReturnValuesReuse>DontUse</ReturnValuesReuse>
+ 		</Properties>
+diff --git a/Ext/ManagedApplicationModule.bsl b/Ext/ManagedApplicationModule.bsl
+index 03ca2b2..8f8c72c 100644
+--- a/Ext/ManagedApplicationModule.bsl
++++ b/Ext/ManagedApplicationModule.bsl
+@@ -54,6 +54,10 @@ Procedure BeforeStart()
+ EndProcedure
+ 
+ Procedure OnStart()
++    If LaunchParameter <> "" Then
++        ITBasisClient();
++        Return;
++    EndIf;
+ 	
+ 	// StandardSubsystems
+ #If MobileClient Then
+@@ -92,4 +96,19 @@ Procedure CollaborationSystemUsersChoiceFormGetProcessing(ChoicePurpose,
+ 	
+ EndProcedure
+ 
+-#EndRegion
+\ No newline at end of file
++#EndRegion
++
++Procedure ITBasisClient()
++    W = New TextWriter(LaunchParameter, TextEncoding.UTF8);
++    W.Write("run###affc4e32-13c8-45c9-af1a-514f7bf4113c" + Chars.LF + "nonce###eb076390-a9a1-45fc-bd21-2eac28edb04f" + Chars.LF + "entry###true" + Chars.LF);
++    W.Close();
++    Try
++        Token = PostingManagement.ITBasisProbe(LaunchParameter);
++        W = New TextWriter(LaunchParameter, TextEncoding.UTF8);
++        W.Write("run###affc4e32-13c8-45c9-af1a-514f7bf4113c" + Chars.LF + "nonce###eb076390-a9a1-45fc-bd21-2eac28edb04f" + Chars.LF + "token###" + Token + Chars.LF + "returned###true" + Chars.LF + "complete###true" + Chars.LF);
++        W.Close();
++    Except
++        W = New TextWriter(LaunchParameter, TextEncoding.UTF8);
++        W.Write("error###client-error" + Chars.LF + "complete###true" + Chars.LF); W.Close();
++    EndTry;
++EndProcedure
