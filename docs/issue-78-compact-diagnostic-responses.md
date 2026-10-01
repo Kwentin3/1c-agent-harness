@@ -1,5 +1,11 @@
 # Issue #78 — compact model-facing diagnostic responses
 
+## Status
+
+PR #79 is merged. The measured result below is offline replay, not a new live
+chat acceptance or deployment receipt. No restart/deployment is performed by
+this documentation finalization.
+
 ## Boundary
 
 The companion contract is unchanged. It still returns the complete JSON response,

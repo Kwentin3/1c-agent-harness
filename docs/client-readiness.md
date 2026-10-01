@@ -1,30 +1,34 @@
 # Готовность агентных клиентов
 
-Harness не запускает модель и не включает универсальный adapter SDK. Для каждого
-клиента отдельно фиксируются documented → installed → authenticated →
-canary-proven → arm-proven.
+Harness предоставляет инструменты, а не запускает модель и не требует второго
+исследовательского агента. Штатный маршрут: Hermes → инструменты harness →
+фиксированный SSH deployment route → companion и платформа 1С на executor.
 
-## Текущая проверка
+## Подтверждённые исследовательские результаты
 
-| Клиент/поверхность | Максимально доказанный уровень | Результат |
+| Клиент/поверхность | Доказательство | Ограничение |
 |---|---|---|
-| Hermes subagent, baseline | arm-proven | 7/7 ответов, machine-valid locators, exact oracle coverage 45/47 |
-| Hermes subagent, indexed candidate | arm-proven | тот же контракт, exact oracle coverage 44/47; индексы не приняты в MVP |
-| AgentBridge Antigravity | canary-proven | auth ready, `AGY_READY`; два frozen arm attempts завершились `cli_exit_nonzero` |
-| standalone Codex/Claude/OpenCode/Gemini CLI | not installed | executable не найден в текущем workspace runtime |
+| Hermes, direct source | SDMS frozen eval: 7/7 ответов, 45/47 oracle items, 0 dangerous false claims | Один снимок и набор вопросов, не универсальная гарантия |
+| Hermes, indexed candidate | Тот же контракт, 44/47 | Индекс не дал преимущества и не принят в MVP |
+| Antigravity, исторический исследовательский arm | В PR #7 сообщён завершённый технический прогон: 7/7 ответов, 27 locators, 31/47, 0 dangerous false claims | Порог качества 0.9 не пройден; исследовательское направление прекращено |
 
-Canary Antigravity доказывает bridge runner и credential context, но не доступ к
-локальному snapshot. Оба attempts одной и той же frozen задачи упали до создания
-answer artifact, поэтому считать Antigravity вторым работающим клиентом нельзя.
+Первые две неуспешные Antigravity-попытки предшествовали завершённому прогону;
+это не текущая блокировка штатного harness. Точный исторический статус и граница
+доказательств — [antigravity-evaluation.md](antigravity-evaluation.md).
 
-## Внешняя предпосылка второго arm
+## Текущее продуктовое решение
 
-Нужен один из вариантов:
+Владелец прекратил развитие Antigravity как альтернативного исследователя 1С.
+Его adapter/unit protocol из незамёрженного PR #7 не включается в продукт.
+Повторный arm, установка дополнительного агента и повышение метрик не требуются.
+Cross-client переносимость остаётся недоказанной; соответствующий этап отменён
+как текущая цель, а не признан пройденным.
 
-1. исправленный Antigravity runner с read-only доступом к выбранному workspace;
-2. установленный и однократно авторизованный второй coding-agent CLI, который
-   поддерживает headless запуск и явную read-only policy.
+Это решение **не относится к Dual Review**. Antigravity/Gemini как reviewer
+проверяет Git-кандидата, не является 1С executor и не входит в native lifecycle.
+Работающий reviewer transport не доказывает качество старого research arm,
+а неуспешный research arm не отменяет работоспособность reviewer.
 
-После этого клиент получает без изменений snapshot content ID, question hash,
-answer schema и locator rules из [`client-protocol.md`](client-protocol.md). Новый
-универсальный adapter или третий гипотетический клиент не требуется.
+Если в будущем понадобится другой исследовательский клиент, это будет новая
+отдельно разрешённая задача по общему [client protocol](client-protocol.md),
+не обязательная предпосылка текущей работы.

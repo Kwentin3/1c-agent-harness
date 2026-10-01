@@ -9,8 +9,9 @@
 
 > Это не экспертная приёмка владельцем SDMS, не runtime-проверка и не гарантия
 > переносимости. Обобщение требует повторов на других конфигурациях. Следующие
-> этапы также имеют внешние prerequisites: точная старая платформа и второй
-> arm-proven coding-agent client.
+> этапы также имеют внешнюю предпосылку: точная старая платформа. Развитие
+> второго исследовательского клиента прекращено владельцем после Antigravity
+> 31/47; это не затрагивает Dual Review и не доказывает cross-client переносимость.
 
 > Дополнительно (issue #10): выполнен и задокументирован **один узкий write/runtime vertical
 > slice** на учебной конфигурации Jet — минимальная BSL-правка одной функции,
@@ -147,8 +148,11 @@ Standalone Hermes plugin лежит в [`hermes-plugin/`](hermes-plugin/). Он 
 TechLog tools и три registration-log tools `one_c_select_registration_log`,
 `one_c_page_registration_log`, `one_c_read_registration_log_record`, а также короткую plugin skill.
 Plugin формирует тот же closed JSON, вызывает только public `ctx.dispatch_tool("terminal", ...)`
-и не реализует SSH, executor discovery или domain parser. Версия plugin и companion `0.3.0` — stacked source candidate #80 поверх #76/#78;
-принятой установленной версией остаётся #75 до отдельно разрешённого compatible update.
+и не реализует SSH, executor discovery или domain parser. Версия plugin и companion `0.3.0` принята в Git: PR #77, #79 и #81 смёржены.
+Для `0.2.0` опубликована ordinary-chat приёмка навигации по ТЖ в PR #77.
+Наличие tool schema/skill `0.3.0` в Hermes само по себе не доказывает текущее
+состояние удалённого companion или доступность deployment-selected источника.
+Этот документационный аудит не выполняет deployment/restart или новый live canary.
 Operator обязан pin-ить оба install sources к одному immutable Git revision.
 Любой несовпадающий `capabilityVersion` или `artifactId` блокируется fail-closed.
 
@@ -198,6 +202,8 @@ MVP считается полезным не потому, что агент н�
 - [Публичный SDMS review package](experiments/sdms-product-eval-20260825-review/README.md)
 - [Подтверждённая граница совместимости](docs/compatibility.md)
 - [Готовность агентных клиентов](docs/client-readiness.md)
+- [Исторический Antigravity research arm: направление прекращено](docs/antigravity-evaluation.md)
+- [Канонические скилы и восстановление](skills/README.md)
 - [Headless request/response baseline (issue #38)](docs/issue-38-headless-request-response.md)
 - [Runtime Diagnostics KISS design and prototype (issue #71)](docs/issue-71-runtime-diagnostics.md)
 - [First live read-only Runtime Diagnostics slice (issue #73)](docs/issue-73-runtime-diagnostics-live.md)

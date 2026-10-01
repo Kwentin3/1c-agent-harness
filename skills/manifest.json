@@ -6,12 +6,12 @@
     {
       "install_root": "skills/1c/1c-enterprise-linux",
       "name": "1c-enterprise-linux",
-      "resource_manifest_sha256": "bc8b34786077a9dc076e00253b419f766590e6585bd59d808a075d814b7d0e2b",
+      "resource_manifest_sha256": "2a642d0ef109fa0a811eb6d4774e22d3a196a596020f330f18553de975f9978e",
       "resources": [
         {
-          "bytes": 22261,
+          "bytes": 63409,
           "path": "SKILL.md",
-          "sha256": "e93553590c83ca6f96d4878070d5966cebb4cf933fa5f15942d003543093767d"
+          "sha256": "642936df6050c7b802bf020f75ee935808020c95cbe225760ff132e1152be24a"
         },
         {
           "bytes": 4329,
@@ -39,9 +39,24 @@
           "sha256": "5cdf0bdec3423b43f07f4840e62a12ddb678ba29aefec5aed2927f839d412757"
         },
         {
-          "bytes": 5865,
+          "bytes": 4043,
+          "path": "references/external-epf-execute-feasibility.md",
+          "sha256": "b56f18bfc03244138d57b0169206ed0cb68baca2670e6293c8309df7c2fc8bfc"
+        },
+        {
+          "bytes": 4783,
+          "path": "references/fast-product-vertical-slice.md",
+          "sha256": "78af844d8beb9581cadec09b51f60b91112cb0d26ae9599fd086be61d82a3a3f"
+        },
+        {
+          "bytes": 6609,
           "path": "references/final-bounded-evidence-review.md",
-          "sha256": "d7c32e62be7fa58fa749aa89cd17395ab4d25dae4a4d8530bbaa31ffbc21670d"
+          "sha256": "eebc8d876e831b23be0b8a1ae5028866da1c4cdfce738f7abed34f53c904014f"
+        },
+        {
+          "bytes": 4832,
+          "path": "references/frozen-context-frontdoor-comparison.md",
+          "sha256": "9119b3ed26ca86081d40d85f28606d3e45fa8bf2d2d16092c6ebe07d1e218320"
         },
         {
           "bytes": 6143,
@@ -59,9 +74,24 @@
           "sha256": "0dab84b5b63d764d5e006809a12001bcda6efa982974fcaafb073f336d7e516d"
         },
         {
+          "bytes": 3739,
+          "path": "references/headless-server-probe-observability.md",
+          "sha256": "c389ba908085644f2102ccb28c5cbe00cbeceb76265c72812fbf7cd96e44b3f8"
+        },
+        {
+          "bytes": 6827,
+          "path": "references/headless-transport-selection.md",
+          "sha256": "6b026c042530aaba169e1cea88e3a1091437377b56d3993e83fec9fa65738365"
+        },
+        {
           "bytes": 3870,
           "path": "references/independent-frozen-snapshot-acceptance.md",
           "sha256": "d47f9851576d633b875c7d901f36a456eccbf0d195fa893e74727e49699ddd97"
+        },
+        {
+          "bytes": 7350,
+          "path": "references/index-only-readonly-context-pass.md",
+          "sha256": "f7a90659a43c0907db66e64121e5566ee5ee892380ce1352aa6f1a45bb676c7d"
         },
         {
           "bytes": 10743,
@@ -69,14 +99,39 @@
           "sha256": "c0789bd4088fbcc593c2594b40c6f87d5af5e1375d0d1a5d4f7b568084717420"
         },
         {
+          "bytes": 3696,
+          "path": "references/managed-client-probe-compile-hardening.md",
+          "sha256": "f7a26dfad8d36918b1b744282a362f00502ef2c0f527c47ceeefc36df236423d"
+        },
+        {
           "bytes": 3728,
           "path": "references/minimal-synthetic-metadata-task-freeze.md",
           "sha256": "98fd6d79ce5bdfda9710030f45c6cf826cd9980e342da2743b921ef2b2cb2345"
         },
         {
+          "bytes": 1703,
+          "path": "references/native-cycle-prepared-input-bridge.md",
+          "sha256": "737eb3b2ee2970d99df7f928182d465f4a56be2de7cc706e77741dcd8718f674"
+        },
+        {
           "bytes": 13165,
           "path": "references/native-write-cycle-runtime.md",
           "sha256": "3b8780504b27a9c9f2da33b8d1df96e4a2d9ee28b57f34c0504e983332be71e3"
+        },
+        {
+          "bytes": 6345,
+          "path": "references/project-target-open-boundary.md",
+          "sha256": "12027a08c54d587404368fd0e6d21b4dd6ed16276a7eafca5d7ed186993736f6"
+        },
+        {
+          "bytes": 1545,
+          "path": "references/project-target-owned-cleanup.md",
+          "sha256": "06a81fd2227662a74ce000514c18cf73550cbba95ba4a58d4430974d5a61cb8d"
+        },
+        {
+          "bytes": 2219,
+          "path": "references/receipt-production-composite-provenance.md",
+          "sha256": "222758fbdadb1f5c28fae8de19f62daf3a8c1dffb534edb73384fa846b89aec5"
         },
         {
           "bytes": 5861,
@@ -89,9 +144,34 @@
           "sha256": "9ebd31f879a0cf8e3d237a4ff00e7192141fa6285e8e87e73dbac74d7d83326c"
         },
         {
+          "bytes": 2536,
+          "path": "references/reviewable-github-native-delivery.md",
+          "sha256": "d185ace376548da5bc0e2fb2c28cac8064ac4ac188835656b9e1cac72ead9cee"
+        },
+        {
+          "bytes": 3264,
+          "path": "references/shared-task-native-route.md",
+          "sha256": "f6da80b01eee3121489004fa220ad5b97f24eedd74e26e8f996e3163adf032fd"
+        },
+        {
+          "bytes": 2721,
+          "path": "references/snapshotref-inspector-canary.md",
+          "sha256": "8f8449338ec47924bdfee73439d806ade0beaa495e53023f76ea21ce06a21401"
+        },
+        {
+          "bytes": 2426,
+          "path": "references/standard-print-form-native-proof.md",
+          "sha256": "d12e90d85128d17bf346e66d7efe09c75949410ba65ec738bc3105f08e094209"
+        },
+        {
           "bytes": 4167,
           "path": "references/static-snapshot-index-audits.md",
           "sha256": "d341a9a8f0d9363f1fd09912010269105ff0ed0364910df0ad5ee5bb87d5920a"
+        },
+        {
+          "bytes": 2764,
+          "path": "references/time-boxed-owner-correction.md",
+          "sha256": "9b647664913e6015279f09ef4b07014c441b7bf0d627dcaaa1f6ce95beb4d695"
         },
         {
           "bytes": 8268,
@@ -110,7 +190,46 @@
         }
       ],
       "source_root": "skills/1c/1c-enterprise-linux",
-      "version": "1.5.0"
+      "version": "1.6.1"
+    },
+    {
+      "install_root": "skills/1c/headless-1c-probing",
+      "name": "headless-1c-probing",
+      "resource_manifest_sha256": "213b733ab77264c20908a1a66668ef96b5b0dd7f28a85d920b857956aa57eaa7",
+      "resources": [
+        {
+          "bytes": 11520,
+          "path": "SKILL.md",
+          "sha256": "87f9469964cb635fd07978cdc70ffbf78fbe3cda4e44f99368304a5388ac4dab"
+        },
+        {
+          "bytes": 2579,
+          "path": "references/interrupted-native-run-continuation.md",
+          "sha256": "3d55fff650c40dd6cca72bba8813b0d7369c123b4388026a7df1cf54f72306b8"
+        },
+        {
+          "bytes": 5629,
+          "path": "references/remote-executor-topology.md",
+          "sha256": "ddd3062d21e379d3a95e11c85cbd98854b7fd7aaa0bea88bef0e489196e088d0"
+        },
+        {
+          "bytes": 4113,
+          "path": "references/reproducible-multi-pass-executor-admission.md",
+          "sha256": "569798197b903d2e8450a5a8968807cf354105217e253d602ca280e6d8201f90"
+        },
+        {
+          "bytes": 2073,
+          "path": "references/server-witness-contract.md",
+          "sha256": "a785cf220a81e150d7f29bd582fef419aea737be9ded6a5b79d1e0cd3a00e28b"
+        },
+        {
+          "bytes": 3446,
+          "path": "references/terminal-bound-executor-companion.md",
+          "sha256": "19f550e500fb777f84f9fdc7c9a73b20b547cc034545a169a949698678f68723"
+        }
+      ],
+      "source_root": "skills/1c/headless-1c-probing",
+      "version": "1.0.1"
     },
     {
       "install_root": "skills/software-development/semantic-contract-testing",

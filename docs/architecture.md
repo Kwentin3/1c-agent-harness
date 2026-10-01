@@ -35,6 +35,36 @@ Hermes Project Workspace предоставляет проекту файлов�
 
 Это подтверждение окружения, а не новый тип доменной модели: контекстный слой по-прежнему получает файловый снимок и provenance, но не детали Hermes, Xvfb или installer.
 
+## Текущая карта исполнения и границ
+
+Первоначальная реализация этапа 0 ниже остаётся историческим фактом, не текущей
+инструкцией размещения тяжёлого runtime. Штатная топология:
+
+```text
+Пользователь → Hermes (исследует и выбирает инструмент)
+             → тонкий plugin → public terminal → фиксированная SSH deployment-команда
+             → companion на внешнем executor → harness / платформа 1С / журналы
+```
+
+Antigravity-исследователь не является частью этой цепочки. Отдельный Dual Review
+читает frozen Git-кандидат; reviewer не владеет 1С lifecycle и не авторизует merge.
+
+| Поверхность | Владелец и контракт | Где описано |
+|---|---|---|
+| Открытие источника | `project_target.open`: source admission → retained data-only `SnapshotRef`; source selection не дублируется потребителем | [README](../README.md#открытие-project-target) |
+| Поиск и контекст | Только admitted `SnapshotRef`, bounded locators; совпадение текста не доказывает связь | [README](../README.md#поиск-по-admitted-snapshot-v1) |
+| Разрешённая runtime-проверка | `shared_task_route`: точные task patches → disposable copy → `native_cycle` → oracle → receipt и cleanup | [README](../README.md), [representative task](../experiments/issue48-kiss-receipt/semantic-contract.md) |
+| Companion/plugin | Companion владеет domain operations; plugin передаёт closed JSON; matching capability/artifact fail-closed | [controlled enablement](issue-75-controlled-enable-plan.md) |
+| Технологический журнал | Deployment-selected источник, bounded read → retained selection → refs/paging; no live business writes | [#75](issue-75-techlog-observations.md), [#76](issue-76-techlog-navigation.md), [#78](issue-78-compact-diagnostic-responses.md) |
+| Журнал регистрации | Фиксированный официальный `ibcmd` читает стабильную копию; модель не выбирает path/credentials/argv | [#80](issue-80-registration-log.md) |
+| Навыки агента | Три канонических пакета с closed hash manifest; plugin-скил входит в отдельный plugin release closure | [skills](../skills/README.md) |
+
+Source acceptance, установленная пара и ordinary-chat acceptance — разные
+уровни доказательств. PR #77/#79/#81 смёржены; это не заменяет проверку текущего
+executor или deployment. Тяжёлые дистрибутивы и нативные операции размещаются
+только в task-owned `.local/` внешнего executor; исходная конфигурация и живая
+ИБ immutable. Политика размещения не добавляет fallback/discovery framework.
+
 ## Домены MVP
 
 | Домен | Ответственность | Не должен знать |
