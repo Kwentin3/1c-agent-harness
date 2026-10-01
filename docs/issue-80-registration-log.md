@@ -2,12 +2,16 @@
 
 ## Result and dependency boundary
 
-This candidate adds a source-neutral registration-log contract on top of the
-accepted diagnostic seams from draft PRs #77 (`#76`) and #79 (`#78`). The branch
-is based on exact #78 head `5ad9295faaf0240c3811aa20dd054eef81fe45f2` and must be
-reviewed as a stacked PR until those dependencies are admitted. It does not copy
-or reimplement their terminal, companion, retained-ref, or response-compaction
-mechanics.
+The registration-log contract is accepted in Git: PR #81 merged after PRs #77
+and #79 on 2026-09-24. Its former stacked base was exact #78 head
+`5ad9295faaf0240c3811aa20dd054eef81fe45f2`; that is historical review context,
+not a remaining dependency blocker. It reuses their terminal, companion,
+retained-ref and response-compaction mechanics.
+
+Source merge is not deployment acceptance. The retained native/source E2E below
+does not by itself prove the currently installed Hermes/remote companion pair
+or a live production journal. Historical candidate attempts are preserved below
+and must not be read as current product alternatives.
 
 The candidate adds three closed operations:
 

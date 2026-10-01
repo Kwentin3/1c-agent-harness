@@ -137,6 +137,10 @@ For 1C document posting, load `1c-enterprise-linux` and its data-backed document
 Before implementation:
 
 - business statement and source locators support the model;
+- each distinguishing case states pre-state → input/action → expected persisted/business post-state;
+- omitted/default input normalization is traced to its consuming predicate;
+- execution-layer/API scope and the nearest bypass/write surfaces are explicit;
+- a required no-write/no-side-effect no-op has a reproducible witness or a static acceptance constraint; unchanged scalar alone is insufficient, otherwise CONTEXT BLOCKED;
 - quantifier, boundary, operation scope, failure semantics, side effects, preservation, and unknowns are explicit;
 - every retained counterimplementation has a distinguishing observation;
 - target, control/boundary, and preservation cases close the stated claim;

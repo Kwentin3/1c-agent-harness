@@ -1,7 +1,7 @@
 ---
 name: semantic-contract-testing
-description: Design semantic business-rule contracts before coding.
-version: 0.3.0
+description: Model business rules and pre-native acceptance gates.
+version: 0.3.1
 author: Kwentin3, Hermes Agent
 license: UNLICENSED
 platforms: [linux, macos, windows]
@@ -17,7 +17,7 @@ Design a falsifiable behavior contract before implementing a business-rule chang
 
 ## When to Use
 
-Use when a change depends on business meaning, boundaries, quantifiers, persisted state, side effects, or preservation of existing behavior.
+Use when a change depends on business meaning, boundaries, quantifiers, persisted state, side effects, or preservation of existing behavior. Also use before a native/runtime budget to establish a preflight acceptance gate, including no-write/no-side-effect witnesses.
 
 Do not use it to choose a product rule for the user, invent missing requirements, or replace domain-specific execution guidance.
 

@@ -84,9 +84,10 @@ Static fixtures cover:
 - source mutation after observation, expiry, unavailable/empty/partial distinctions;
 - companion closed-request validation and Hermes manifest/schema/handler parity.
 
-No 1C process is needed or allowed for these tests. The installed #75 implementation
-remains the verified live version until an owner separately approves the compatible
-update below.
+No 1C process is needed or allowed for these tests. PR #77 is merged. The
+compatible `0.2.0` update and ordinary-chat acceptance were subsequently published
+in [PR #77 acceptance](https://github.com/Kwentin3/1c-agent-harness/pull/77#issuecomment-5765171710).
+This is historical installed evidence, not a fresh live check.
 
 ## Compatible update and rollback
 
@@ -111,9 +112,9 @@ infobase are not changed.
 
 ## Current evidence boundary
 
-This document describes the source candidate and fixture-backed behavior. It does
-not claim an installed ordinary-chat run, real-source response-volume measurement,
-deployment, restart or merge. Those require the separate owner-approved compatible
-update and acceptance. The acceptance run must report actual tool-call count,
-`bytesRead`, and serialized response bytes; model token count is reported only if the
-runtime exposes it.
+Source is merged and the linked ordinary-chat acceptance proves bounded discovery,
+refinement, paging and exact-record navigation for the then-installed `0.2.0` pair.
+That report distinguishes source reads from retained expansion and explicitly says
+serialized response sizes were not exposed. This audit does not repeat the live
+check or assert the current remote deployment identity. Response-size measurement
+for the subsequent compaction belongs to the offline replay in #78.
