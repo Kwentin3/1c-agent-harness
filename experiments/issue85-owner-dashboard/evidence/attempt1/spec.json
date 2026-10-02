@@ -1,0 +1,9 @@
+{
+  "schemaVersion": 1,
+  "inputTree": ".local/runs/native-cycle/run-5lqiucda/frozen-input",
+  "inputTreeSha256": "2ed0c95e50562ba108ec78f1e22efb963a51a23fde7ce35fb67f4cd1d7ea993b",
+  "runRoot": ".local/runs/native-cycle/run-5lqiucda/run",
+  "receipt": "evidence/receipt.txt",
+  "completeMarker": "complete###true",
+  "timeoutSeconds": 300
+}

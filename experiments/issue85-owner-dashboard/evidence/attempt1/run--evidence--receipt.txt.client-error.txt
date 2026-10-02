@@ -1,0 +1,2 @@
+﻿{Report.Dashboard.ObjectModule(77)}: Error calling context method (ExecuteBatch): {(8, 10)}: The ALLOWED keyword is available only in the first query.
+(SELECT <<?>>ALLOWED

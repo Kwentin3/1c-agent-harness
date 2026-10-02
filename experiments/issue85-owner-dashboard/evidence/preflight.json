@@ -1,0 +1,31 @@
+{
+  "audit": {
+    "canonicalBase": {
+      "files": 5099,
+      "sha256": "a7c4275cb37bef5bbad3d8e668328ad104389b6897b20f5c5d419a05958000db"
+    },
+    "preparedInput": {
+      "files": 5100,
+      "sha256": "76254bb4526ec4cf6a00e938c952708662382ecab3ad09d50335cd5f0547de91"
+    },
+    "patches": [
+      {
+        "role": "production",
+        "sha256": "5f7f3774b66fd4b61d3081d646202ef133f89afae72c3c9737081fe3cf1182d8"
+      },
+      {
+        "role": "instrumentation",
+        "sha256": "8203e4f90b460046eaf5b023d0f2ee863529f4b88f875426feeabd16409de666"
+      }
+    ],
+    "changedPaths": [
+      "CommonModules/PostingManagement.xml",
+      "CommonModules/PostingManagement/Ext/Module.bsl",
+      "Ext/ManagedApplicationModule.bsl",
+      "Reports/Dashboard/Ext/ObjectModule.bsl",
+      "Reports/Dashboard/Forms/ReportForm/Ext/Form.xml",
+      "Reports/Dashboard/Forms/ReportForm/Ext/Form/Module.bsl"
+    ]
+  },
+  "cleanup": true
+}

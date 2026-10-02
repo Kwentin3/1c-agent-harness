@@ -1,0 +1,59 @@
+{
+  "version": 1,
+  "fullOracleStatus": "FAIL",
+  "fullOracleReason": "incomplete server receipt",
+  "coreCalculationMatchesExpected": true,
+  "nativeFormCreationObserved": true,
+  "actualDay": "2026-10-01",
+  "actualMetrics": {
+    "revenue": "1010.00",
+    "vat": "202.00",
+    "grossSales": "1212.00",
+    "cost": "365.00",
+    "grossProfit": "645.00",
+    "invoiceCount": "3.00",
+    "averageTicket": "336.67",
+    "productCount": "6.00"
+  },
+  "actualProducts": [
+    "85-B|450.00|180.00|270.00",
+    "85-A|300.00|120.00|180.00",
+    "85-C|80.00|30.00|50.00",
+    "85-D|70.00|20.00|50.00",
+    "85-E|60.00|10.00|50.00",
+    "85-F|50.00|5.00|45.00"
+  ],
+  "nativeAttemptsUsed": 2,
+  "nativeAttemptsBudget": 2,
+  "blockingDiagnostic": "{CommonModule.PostingManagement.Module(388)}: Error calling context method (Write): Current license limitation. Print and save spreadsheet functions are not available in the training version.",
+  "notObserved": [
+    "topFive test",
+    "negative-profit test",
+    "empty-day test",
+    "date-rollover test",
+    "repeat test",
+    "source-state after report reads test"
+  ],
+  "scope": "actual native sales posting/query/SpreadsheetDocument creation and managed-form server creation, not interactive GUI or enterprise data",
+  "retainedRuns": [
+    {
+      "attempt": "attempt1",
+      "invocation": ".local/runs/native-cycle/run-5lqiucda",
+      "runtimeStatus": "runtime_contract_completed",
+      "sourceInputsUnchanged": true,
+      "cleanup": "completed",
+      "totalDurationSeconds": 79.934
+    },
+    {
+      "attempt": "attempt2",
+      "invocation": ".local/runs/native-cycle/run-q56ie6ur",
+      "runtimeStatus": "runtime_contract_completed",
+      "sourceInputsUnchanged": true,
+      "cleanup": "completed",
+      "totalDurationSeconds": 76.364
+    }
+  ],
+  "exact-production.patchSha256": "3a77f24043dfcb00f2d72ce24e761715bf2789a1c396a3ca2931ee01c59d26f1",
+  "exact-instrumentation.patchSha256": "8203e4f90b460046eaf5b023d0f2ee863529f4b88f875426feeabd16409de666",
+  "request.jsonSha256": "ca7c9c1d8b17b02d81968f0d83ed039720acc6ebcb8c38d2038fac239ce1c064"
+}

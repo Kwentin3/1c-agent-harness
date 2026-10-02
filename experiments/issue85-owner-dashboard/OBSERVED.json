@@ -1,0 +1,105 @@
+{
+  "version": 2,
+  "fullOracleStatus": "PASS",
+  "acceptedAttempt": 3,
+  "nativeAttemptsUsed": 3,
+  "nativeAttemptsBudget": 4,
+  "productionUnchangedSinceAttempt2": true,
+  "coreCalculationMatchesExpected": true,
+  "nativeFormCreationObserved": true,
+  "actualDay": "2026-10-01",
+  "actualMetrics": {
+    "revenue": "1010.00",
+    "vat": "202.00",
+    "grossSales": "1212.00",
+    "cost": "365.00",
+    "grossProfit": "645.00",
+    "invoiceCount": "3.00",
+    "averageTicket": "336.67",
+    "productCount": "6.00"
+  },
+  "actualProducts": [
+    "85-B|450.00|180.00|270.00",
+    "85-A|300.00|120.00|180.00",
+    "85-C|80.00|30.00|50.00",
+    "85-D|70.00|20.00|50.00",
+    "85-E|60.00|10.00|50.00",
+    "85-F|50.00|5.00|45.00"
+  ],
+  "nativeObservations": {
+    "fixturePosted": "true",
+    "calendarBounds": "true",
+    "rendered": "true",
+    "repeatSame": "true",
+    "emptyDay": "true",
+    "dateRollover": "true",
+    "defaultYesterday": "true",
+    "sourceStateUnchanged": "true",
+    "topFive": "true",
+    "negativeProfit": "true"
+  },
+  "notObserved": [
+    "interactive GUI/Refresh at midnight",
+    "restricted role/RLS",
+    "equal-revenue tie control",
+    "zero-value invoice",
+    "other configuration/platform"
+  ],
+  "scope": "real SalesInvoice posting; production report query/render and native form creation; not interactive GUI or live trade data",
+  "history": [
+    {
+      "attempt": 1,
+      "status": "FAIL",
+      "cause": "nested ALLOWED query syntax"
+    },
+    {
+      "attempt": 2,
+      "status": "FAIL",
+      "cause": "test-only HTML export prohibited by training edition; incomplete server receipt"
+    },
+    {
+      "attempt": 3,
+      "status": "PASS",
+      "cause": "same production; helper export removed, fresh request and full strict observations"
+    }
+  ],
+  "runtimeDurationSeconds": 64.936,
+  "runnerTotalDurationSeconds": 79.885,
+  "cleanup": {
+    "prepared": "discarded",
+    "runner": {
+      "completedRemovedPaths": [
+        "frozen-input",
+        "run/work-copy",
+        "run/ib",
+        "run/home",
+        "run/tmp"
+      ],
+      "configuredTargets": [
+        "frozen-input",
+        "run/work-copy",
+        "run/ib",
+        "run/home",
+        "run/tmp"
+      ],
+      "durationSeconds": 3.728,
+      "manualCleanupActions": 0,
+      "policy": "compact-current-invocation-v1",
+      "preCompactionLogicalBytes": 224725538,
+      "removedLogicalBytes": 224699595,
+      "retainedLogicalBytesExcludingResult": 18432,
+      "retainedPaths": [
+        "spec.json",
+        "run/evidence",
+        "run/logs",
+        "run/result.json"
+      ],
+      "status": "completed"
+    }
+  },
+  "exact-production.patchSha256": "3a77f24043dfcb00f2d72ce24e761715bf2789a1c396a3ca2931ee01c59d26f1",
+  "exact-instrumentation.patchSha256": "622415c5aa94fb3ee7eb8216e533f07a8509e7da248fa2e62fd38f395404008a",
+  "request.jsonSha256": "3bcb379c2a7c5bb5f63e73c36f82e19e67aa9535c4bfad63e34e507601d3ab63",
+  "oracle.pySha256": "9f2d9e83d1ac099997ebb2ef2d7344481404ea5f4502440b3329ba1b47a09aa5",
+  "receipt3.jsonSha256": "c3d34357a63ca944dba06ebaafb5416cf07d8d7d537a483a7fe5e69a249d63dd"
+}

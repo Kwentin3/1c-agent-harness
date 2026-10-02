@@ -1,0 +1,9 @@
+{
+  "schemaVersion": 1,
+  "inputTree": ".local/runs/native-cycle/run-q56ie6ur/frozen-input",
+  "inputTreeSha256": "56efd93d9d5635898e75ff051e849433fb38ebde8760e1a03b76f127f98c7729",
+  "runRoot": ".local/runs/native-cycle/run-q56ie6ur/run",
+  "receipt": "evidence/receipt.txt",
+  "completeMarker": "complete###true",
+  "timeoutSeconds": 300
+}

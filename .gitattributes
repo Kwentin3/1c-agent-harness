@@ -8,3 +8,6 @@ experiments/issue43-inventory-transfer-core-loop/*-receipt.txt binary
 
 # Exact task patches can contain CRLF bytes required by native replay.
 experiments/**/exact-*.patch binary
+
+# Native #85 receipts are literal UTF-8/BOM/CRLF evidence, not normalized text.
+experiments/issue85-owner-dashboard/evidence/**/run--evidence--* -text whitespace=cr-at-eol
