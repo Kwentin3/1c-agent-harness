@@ -1,16 +1,16 @@
 # Dashboard владельца за вчера — результат #85
 
-## Коротко
+## Итог
 
-Реализован минимальный native dashboard на **JetTr1.0.3.1 / учебной платформе8.5.1.1150**. Использован существующий `Report.Dashboard`; не добавлены web service/BI/framework/общие функции harness. При создании формы и Refresh считает предыдущий календарный день с часовым поясом session/ИБ.
+**Продуктовый срез прошёл полную заявленную native-приёмку: strict oracle PASS в попытке 3.** JetTr 1.0.3.1, учебная платформа 8.5.1.1150; отдельная одноразовая ИБ. Владелец удвоил бюджет до 4 запусков суммарно, использовано 3/4. Повтор успешного запуска не нужен.
 
-**Расчёт и создание формы фактически подтверждены. Полная приёмка не пройдена: strict oracle FAIL; issue остаётся открытой.** Не смешивать `runtime_contract_completed` с business PASS.
+Минимальный dashboard использует существующий `Report.Dashboard`. Ровно три production path: новый report ObjectModule, существующая XML-форма и её модуль. При OnCreateAtServer и Refresh вычисляет предыдущий календарный день по времени сеанса. Production не менялся после исправления nested ALLOWED во второй попытке. Нет нового сервиса/BI/общей функции harness, metadata объектов или изменений проведения.
 
-Патч только3 production path: новый report ObjectModule, существующая form XML, существующий form module. Два старых chart/saved-period интерфейса заменены простой read-only сводкой. Metadata report/его регистрация/права/типовая торговая логика не изменены. Native подписи en/tr; русский [preview](preview.html) — отдельно обозначенный HTML-proxy, не новая локализация конфигурации.
+[Русский HTML-предпросмотр](preview.html) теперь содержит **фактические тестовые цифры** третьей попытки. Это отдельный HTML-proxy, не скриншот/экспорт из 1С. Native подписи en/tr; русская локализация в конфигурацию не добавлена. Автоматический browser screenshot предпросмотра получить не удалось: CDP браузер недоступен. Структура HTML, семь показателей и пять строк сверены тестом; интерактивную визуальную отрисовку не заявляем.
 
-## Проверенный результат
+## Фактические показатели
 
-В disposable ИБ **реально проведены SalesInvoice**; источники и expected fixture описаны в [ADMISSION](ADMISSION.md). Production query получил:
+В disposable ИБ реально проведены пять SalesInvoice на трёх днях, из них три за вчера. Fixture и независимые ожидаемые суммы — [ADMISSION.md](ADMISSION.md).
 
 | Показатель | Native значение |
 |---|---:|
@@ -24,40 +24,63 @@
 | Средняя накладная без НДС | 336.67 |
 | Товары в полных итогах | 6 |
 
-Шесть строк в порядке B450,A300,C80,D70,E60,F50. Тестовое значение общей выручки учитывает F, которого нет в UI top5. Production формирует штатный SpreadsheetDocument; client `GetForm("Report.Dashboard.Form.ReportForm",,,True)` выполнил OnCreateAtServer, получил OwnerDashboard с TableHeight22 и строкой продаж1010. Это **создание managed form**, не ручная работа/скриншот GUI.
+Полный результат: B450, A300, C80, D70, E60, F50. Итоги включают шестой товар, UI ограничивает показ пятью.
 
-Все цифры — искусственные продажи тестовой базы, не реальные результаты предприятия. `fixturePosted###true`, `calendarBounds###true` и actual metrics сохранены в [server receipt](evidence/attempt2/run--evidence--receipt.txt.server); binding/token и `formCreated###true` — в [client receipt](evidence/attempt2/run--evidence--receipt.txt). [OBSERVED.json](OBSERVED.json) автоматически сверяет цифры и классифицирует неполный результат; полный oracle остаётся строгим и отвергает эти receipts.
+[Серверная квитанция](evidence/attempt3/run--evidence--receipt.txt.server) содержит десять `true` observations:
+- `fixturePosted`: документы действительно проведены, draft не проведён;
+- `calendarBounds`: вчера `[00:00:00, сегодня 00:00:00)`; соседние дни исключены;
+- `rendered`: создан штатный SpreadsheetDocument;
+- `topFive`: TableHeight 22, первая/пятая строки соответствуют ожидаемым B/E; полный массив данных проверен отдельно oracle;
+- `negativeProfit`: предыдущий контрольный день даёт продажи20, себестоимость40, прибыль−20;
+- `repeatSame`: повторный summary идентичен;
+- `emptyDay`: нулевые показатели, нет товаров, табличный документ создаётся;
+- `dateRollover`: явные даты 2024-03-01 и 2026-01-01 дают 29 февраля и 31 декабря;
+- `defaultYesterday`: вызов без даты даёт то же календарное вчера;
+- `sourceStateUnchanged`: до/после отчётных чтений одинаковое сериализованное состояние Sales, InventoryCost, InventoryInWarehouses, CustomerBalance и полей Ref/Date/Posted/Total SalesInvoice.
 
-## Два запуска и ограничение
+Последнее — сравнение наблюдаемого состояния, не физический аудит каждого возможного write. Production source дополнительно не содержит `.Write(`/привилегированного режима; scope ограничен этими report API, не всеми путями конфигурации.
 
-1. Run1: IB создана/конфигурация загружена, SalesInvoice проведены; nested `SELECT ALLOWED` отклонён query engine. Native diagnostic → regression RED → удалены2 nested keyword → GREEN. ALLOWED на верхнем query/отдельном invoice-count query и явный AccessRight сохранены. Старый patch SHA `5f7f3774b66fd4b61d3081d646202ef133f89afae72c3c9737081fe3cf1182d8`; canonical locators/hashes в evidence/preflight.json. Старый полный patch retained локально, не выдан за текущий.
-2. Run2 с текущим production patch: расчёт совпал с независимым Decimal ожиданием, production renderer и форма созданы. Вспомогательный `SpreadsheetDocument.Write(...,HTML)` **в test instrumentation**, не production, выбросил лицензионный запрет учебной версии. После этой строки серверный probe не выполнил оставшиеся assertions. Diagnostic буквально: `Current license limitation. Print and save spreadsheet functions are not available in the training version.`
+[Клиентская квитанция](evidence/attempt3/run--evidence--receipt.txt) подтверждает независимый server token, завершение и `formCreated`. `GetForm("Report.Dashboard.Form.ReportForm",,,True)` выполняет production OnCreateAtServer, проверяет TableHeight22 и revenue1010 в ячейке (5,2). Это создание managed-формы, не GUI/E2E или вызов Refresh человеком.
 
-Production ничего не экспортирует/печатает/сохраняет. Коммерческая лицензия **не требуется для выбранного dashboard**; препятствие — лишний export в test probe. Export можно убрать для следующего адресного proof; никаких попыток обойти лицензионный запрет не сделано. Native2/2 использованы. Владелец не ответил на запрос разрешить третий; timeout clarification не считается одобрением. Run3 не выполнялся.
+[receipt3.json](receipt3.json) — итог существующего shared route: точные request/patch hashes, client/server bytes и SHA, business payload, oracle PASS и cleanup. [OBSERVED.json](OBSERVED.json) — производная проверенная сводка, не замена сырой квитанции.
 
-## Что пока неизвестно
+## История без переоценки
 
-Не завершены native assertions empty day, negative profit, explicit leap/year rollover, repeated reads, top-five assertion и сравнение документов/регистров **после чтения отчёта**. Поддержка видна в production исходнике, но это не runtime доказательство. Не проверены restricted role/RLS, tied revenues, нулевая накладная, Refresh через реальную полночь и интерактивная отрисовка. Нет proof переносимости на другие конфигурации/версии.
+1. Попытка1: проведены fixture документы; query engine отверг nested `SELECT ALLOWED`. Диагностика → RED regression → удалены два вложенных keyword, верхние ALLOWED и AccessRight сохранены. FAIL сохранён.
+2. Попытка2: расчёт/создание формы подтверждены, но test-only `SpreadsheetDocument.Write(..., HTML)` отклонён учебной лицензией. Последующие assertions не выполнены; strict oracle FAIL. Её request/oracle/exact patches/OBSERVED теперь сохранены рядом с [историческими receipts](evidence/attempt2/). FAIL не стал PASS задним числом.
+3. Владелец разрешил продолжение и удвоил лимиты. [CONTINUATION.md](CONTINUATION.md) опубликован до нового запуска. Только лишний export удалён из test instrumentation, run/nonce обновлены. **Production и oracle байтово прежние**. Попытка3 — полный PASS, без обхода лицензии. Коммерческая лицензия не нужна для этого учебного read-only dashboard.
 
-Строгое ограничение данных: отражённые активные движения **проведённых SalesInvoice**, суммы ресурсов в учётной валюте. Это не отчёт по оплатам/кассе, не чистая прибыль, не общий net sales включая возможные отдельные механизмы возвратов/корректировок. Валовая прибыль = продажи без НДС − себестоимость этих продаж, без аренды/зарплат/прочих расходов. RLS сохраняется; разрешённый пользователь может видеть лишь доступные ему данные. Не заявляется privileged бизнес-итог для ограниченного пользователя.
+Measured attempt3 runtime64.936s, runner total79.885s. Это измерения runner, не полное время авторства/задачи. Fresh autonomy/COST для dashboard не оценивались; этот PASS не исправляет предыдущие результаты других задач.
 
-## Безопасность и статус поставки
+## Dual review: польза и границы
 
-Оба native result сохраняют одинаковый `preparedInvocation.sourceBefore/sourceAfter`; в обоих `storageCompaction.status=completed`. Исходный snapshot/manifest/live IB не менялись. Полный preflight применил exact production/instrumentation к канонической копии, подтвердил только6 changed paths, XML и discarded cleanup. Временные IB/work copies удалены существующим lifecycle; evidence retained. Нет deployment/restart/merge, dashboard **не установлен в живую/исходную базу**.
+Первый review (`eb817f82…`) не нашёл blocking defects арифметики/query scope. DeepSeek действительно выявил stale preview: строки замены в генераторе не совпали с фактическим HTML. Замечание исправлено новым генератором и тестом отображаемых значений. Cosmetic README spacing исправлен.
 
-Код/patch/доказательства в обычной task branch/PR; issue85 остаётся открытой. Все341 tests прошли после добавления retained replay и regression/mutation checks. Это рабочий вычислительный/формовый кандидат, **не финально принятый rollout**.
+Gemini переоценил доказательства: attempt2 server receipt **не** подтверждала topFive/form-generation observation после лицензионного отказа. Lead ограничил вывод в [adjudication](https://github.com/Kwentin3/1c-agent-harness/pull/86#issuecomment-5946967079). Теперь topFive действительно подтверждён попыткой3, но это новое runtime evidence, не заслуга reviewer opinion. RLS/GUI остаются unknown. Повтор predicates не повод добавлять framework. Review полезен как независимая проверка/поиск расхождений, но не как разрешение запуска, merge или замена теста.
 
-## Воспроизведение
+## Ограничения и безопасность
 
-Без 1С/записи:
+Отчёт отражает активные движения **проведённых SalesInvoice**, в учётной валюте. Не включает все возможные отдельные возвраты/корректировки, оплаты/кассу; валовая прибыль не равна чистой прибыли бизнеса. Все цифры — искусственная fixture.
+
+Не проверены restricted-role/RLS, equal-revenue ties, нулевая накладная, интерактивный GUI/Refresh через полночь, другие конфигурации/платформы. Production сохраняет штатный ALLOWED и явные AccessRight, не скрывает отказ прав нулями. Это не доказательство поведения RLS ограниченного пользователя.
+
+Canonical snapshot/manifest/source не менялись: до/после одинаковые 5099 файлов и tree hash в preflight-v3/post-v3. Runner sourceBefore/sourceAfter одинаковы, cleanup completed; shared route prepared discarded. Временные IB/work copies удалены, evidence retained. Exact production delta — 3 paths; с test-only instrumentation closure — 6.
+
+**Нет merge, rollout, restart или изменения живой базы.** PR остаётся открытым для владельца; бюджет continuation не является merge-разрешением. Это завершённый bounded product proof на одном полигоне, не универсальная BI/write-платформа.
+
+## Воспроизведение без 1С
 
 ```sh
 python3 -m unittest tests.test_owner_dashboard -v
+python3 experiments/issue85-owner-dashboard/oracle.py \
+  --request experiments/issue85-owner-dashboard/request.json \
+  --client-receipt experiments/issue85-owner-dashboard/evidence/attempt3/run--evidence--receipt.txt \
+  --server-receipt experiments/issue85-owner-dashboard/evidence/attempt3/run--evidence--receipt.txt.server
 python3 -m unittest discover -s tests
 ```
 
-`tests/test_owner_dashboard.py` сверяет retained actual values/request/token/patch SHA/cleanup и отдельно доказывает, что full oracle отвергает неполную native receipt. Positive/mutation oracle fixtures в unittest — тестовые модели, не synthesized external evidence.
+Replay даёт PASS текущим receipts, отдельно отвергает неполный attempt2; проверяет request/token/patch/SHA/cleanup, unchanged production/oracle и preview. Mutation fixtures в unit tests — модели тестов, не fabricated external evidence.
 
-Native replay требует отдельно разрешённого бюджета. На admitted route `one_c_open` → exact returned SnapshotRef → `one_c_native_verify(snapshotRef, request, productionPatch, instrumentationPatch, oracle, receipt, timeoutSeconds=300)`. Использовать отдельные task-relative файлы/новый receipt. **Перед replay убрать вспомогательный HTML Write из test instrumentation, сохранить numeric/renderer/form assertions, nonce и все строгие checks; повторно preflight полный patch closure.** Не менять production для обхода учебных ограничений. Текущий exact-instrumentation.patch честно соответствует run2 и воспроизводит лицензионный отказ, а не PASS.
+Если отдельно нужен новый native run: admitted `one_c_open` → точный SnapshotRef → `one_c_native_verify` с task-relative текущими request/production/instrumentation/oracle и новым receipt, timeout300. Fresh request identities и новый stage обязательны; успешную квитанцию не перезаписывать. Новый run не требуется для текущей приёмки и не запускается автоматически.
 
-[CONTRACT.md](CONTRACT.md) — первоначальная семантика/source evidence; [ADMISSION.md](ADMISSION.md) — pre-run audit; [evidence/help-locators.json](evidence/help-locators.json) — exact runtime help members/hashes. [ATTRIBUTION.md](ATTRIBUTION.md) — условия upstream входа, не выбор лицензии harness.
+[CONTRACT](CONTRACT.md) — первоначальные source locators; [ADMISSION](ADMISSION.md) — исходный pre-run audit; [CONTINUATION](CONTINUATION.md) — renewed gate; [ATTRIBUTION](ATTRIBUTION.md) — upstream notices. Readable `product/` UTF8/LF; exact patches сохраняют BOM/CRLF. Никаких heavy assets или копии harness в бизнес-проект.

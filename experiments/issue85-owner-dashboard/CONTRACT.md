@@ -1,6 +1,6 @@
 # Owner-yesterday dashboard: source-only semantic preflight
 
-> Это исходный pre-run contract. Два native-запуска уже выполнены; один синтаксический дефект исправлен. Расчёт и создание формы подтверждены, full oracle FAIL из-за учебного запрета вспомогательного экспорта. Актуальные boundaries/hashes/status — [RESULTS.md](RESULTS.md), [OBSERVED.json](OBSERVED.json), [ADMISSION.md](ADMISSION.md). Native2/2; никакой run3 без решения владельца.
+> Это исторический pre-run contract. Актуальный итог: третья native-попытка прошла полный strict oracle PASS при неизменном production/oracle, после удаления лишнего test-only HTML export. Бюджет продлён владельцем до 4 суммарно, использовано 3. Результат, hashes и limits — [RESULTS.md](RESULTS.md), [OBSERVED.json](OBSERVED.json), [CONTINUATION.md](CONTINUATION.md). Исходные попытки 1/2 остаются FAIL; merge/rollout не выполнялись.
 
 ## Change and API
 Replace the existing saved-period/two-chart form of `Report.Dashboard` with a read-only native spreadsheet, computed at server creation and each Refresh. No new metadata objects, shared dependencies or writes.
@@ -51,4 +51,4 @@ Native attempts=0. Static sources support this implementation candidate, not suc
 Patch SHA-256: `5f7f3774b66fd4b61d3081d646202ef133f89afae72c3c9737081fe3cf1182d8`.
 Raw static receipt: `.local/owner-dashboard/candidate/static-apply-proof.json`. It retains commands, exits, encoding flags, changed paths and post-apply hashes. Original source hashes were unchanged across build/application. BOM/CRLF retained for patch inputs; readable product sources are plain UTF-8/LF. Git's apply emits CRLF trailing-whitespace warnings but no application failure; no whitespace-fixing transformation was used.
 
-Исторический source-only admission ниже не является текущим verdict. Lead принял API audit (ADMISSION.md) и исправил nested ALLOWED по native diagnostic; последняя полная приёмка остаётся неподтверждённой (RESULTS.md).
+Исторический source-only admission не является текущим verdict. Lead принял API audit, исправил nested ALLOWED по native diagnostic; третья попытка прошла strict oracle (RESULTS.md). Статический hash выше относится к первоначальному кандидату, не текущему production patch.

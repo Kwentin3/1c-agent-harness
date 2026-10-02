@@ -1,0 +1,9 @@
+{
+  "schemaVersion": 1,
+  "inputTree": ".local/runs/native-cycle/run-tpx3stvx/frozen-input",
+  "inputTreeSha256": "f50235ae916e0f2c93753d7a3618fcc7d844e05b1dd45840d9045e58bb495a8e",
+  "runRoot": ".local/runs/native-cycle/run-tpx3stvx/run",
+  "receipt": "evidence/receipt.txt",
+  "completeMarker": "complete###true",
+  "timeoutSeconds": 300
+}
