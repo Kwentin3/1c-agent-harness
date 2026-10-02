@@ -25,12 +25,12 @@ class OwnerDashboardTests(unittest.TestCase):
             self.assertNotIn(forbidden, code)
 
     def test_retained_calculation_is_not_promoted_to_complete_pass(self):
-        observed = json.loads((ROOT / "OBSERVED.json").read_text())
+        evidence = ROOT / "evidence/attempt2"
+        observed = json.loads((evidence / "OBSERVED.json").read_text())
         self.assertEqual(observed["fullOracleStatus"], "FAIL")
         self.assertTrue(observed["coreCalculationMatchesExpected"])
         self.assertTrue(observed["nativeFormCreationObserved"])
-        request = json.loads((ROOT / "request.json").read_text())
-        evidence = ROOT / "evidence/attempt2"
+        request = json.loads((evidence / "request.json").read_text())
         client = ORACLE.rows(evidence / "run--evidence--receipt.txt")
         server = ORACLE.rows(evidence / "run--evidence--receipt.txt.server")
         with self.assertRaisesRegex(ValueError, "incomplete server receipt"):
@@ -43,7 +43,7 @@ class OwnerDashboardTests(unittest.TestCase):
         for key, expected in ORACLE.EXPECTED.items():
             self.assertEqual(ORACLE.number(server[key]), ORACLE.number(expected))
         for name in ("exact-production.patch", "exact-instrumentation.patch", "request.json"):
-            self.assertEqual(hashlib.sha256((ROOT / name).read_bytes()).hexdigest(), observed[name + "Sha256"])
+            self.assertEqual(hashlib.sha256((evidence / name).read_bytes()).hexdigest(), observed[name + "Sha256"])
         for attempt in ("attempt1", "attempt2"):
             result = json.loads((ROOT / "evidence" / attempt / "run--result.json").read_text())
             self.assertEqual(result["preparedInvocation"]["sourceBefore"], result["preparedInvocation"]["sourceAfter"])

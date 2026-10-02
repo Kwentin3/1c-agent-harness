@@ -1,8 +1,8 @@
 diff --git a/CommonModules/PostingManagement/Ext/Module.bsl b/CommonModules/PostingManagement/Ext/Module.bsl
-index dd2ee89..bdc0f31 100644
+index dd2ee89..d9acbc2 100644
 --- a/CommonModules/PostingManagement/Ext/Module.bsl
 +++ b/CommonModules/PostingManagement/Ext/Module.bsl
-@@ -258,4 +258,203 @@ Function GetUsedRegisterNames(Recorder, DocumentMetadata)
+@@ -258,4 +258,202 @@ Function GetUsedRegisterNames(Recorder, DocumentMetadata)
  	
  EndFunction
  
@@ -135,7 +135,6 @@ index dd2ee89..bdc0f31 100644
 +            Index = Index + 1;
 +        EndDo;
 +        View = ReportObject.RenderYesterdayDashboard(Summary);
-+        View.Write(ReceiptPath + ".html", SpreadsheetDocumentFileType.HTML);
 +        Goal85Bool(Writer, "rendered", View.TableHeight > 0 And View.TableWidth > 0);
 +        Goal85Bool(Writer, "topFive", View.TableHeight = 22
 +            And View.Area(18, 1).Text = String(Products[1])
@@ -222,7 +221,7 @@ index d700d23..e5378a4 100644
  			<ReturnValuesReuse>DontUse</ReturnValuesReuse>
  		</Properties>
 diff --git a/Ext/ManagedApplicationModule.bsl b/Ext/ManagedApplicationModule.bsl
-index 03ca2b2..5705575 100644
+index 03ca2b2..1d9503a 100644
 --- a/Ext/ManagedApplicationModule.bsl
 +++ b/Ext/ManagedApplicationModule.bsl
 @@ -54,6 +54,10 @@ Procedure BeforeStart()
@@ -245,15 +244,15 @@ index 03ca2b2..5705575 100644
 +#EndRegion
 +Procedure Goal85Client()
 +    W = New TextWriter(LaunchParameter, "UTF-8");
-+    W.Write("run###44aeeb14-1aa8-4f94-a563-ba0ba2a2b52c" + Chars.LF + "nonce###750c8529-9a8f-4d7c-bcd0-496766dd08ff" + Chars.LF + "entry###true" + Chars.LF);
++    W.Write("run###70b45136-d602-4756-9a73-3db628ded023" + Chars.LF + "nonce###f82b54ba-6db4-4d6b-80a6-4e6bf16efb24" + Chars.LF + "entry###true" + Chars.LF);
 +    W.Close();
 +    Try
-+        Token = PostingManagement.Goal85Run(LaunchParameter, "44aeeb14-1aa8-4f94-a563-ba0ba2a2b52c", "750c8529-9a8f-4d7c-bcd0-496766dd08ff");
++        Token = PostingManagement.Goal85Run(LaunchParameter, "70b45136-d602-4756-9a73-3db628ded023", "f82b54ba-6db4-4d6b-80a6-4e6bf16efb24");
 +        F = GetForm("Report.Dashboard.Form.ReportForm",,, True);
 +        FormCreated = F <> Undefined And F.OwnerDashboard.TableHeight = 22
 +            And F.OwnerDashboard.Area(5, 2).Text = Format(1010, "NFD=2;NZ=0");
 +        W = New TextWriter(LaunchParameter, "UTF-8");
-+        W.Write("run###44aeeb14-1aa8-4f94-a563-ba0ba2a2b52c" + Chars.LF + "nonce###750c8529-9a8f-4d7c-bcd0-496766dd08ff" + Chars.LF
++        W.Write("run###70b45136-d602-4756-9a73-3db628ded023" + Chars.LF + "nonce###f82b54ba-6db4-4d6b-80a6-4e6bf16efb24" + Chars.LF
 +            + "token###" + Token + Chars.LF + "returned###true" + Chars.LF);
 +        If FormCreated Then W.Write("formCreated###true" + Chars.LF);
 +        Else W.Write("formCreated###false" + Chars.LF); EndIf;

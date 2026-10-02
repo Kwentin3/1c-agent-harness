@@ -1,0 +1,269 @@
+diff --git a/CommonModules/PostingManagement/Ext/Module.bsl b/CommonModules/PostingManagement/Ext/Module.bsl
+index dd2ee89..bdc0f31 100644
+--- a/CommonModules/PostingManagement/Ext/Module.bsl
++++ b/CommonModules/PostingManagement/Ext/Module.bsl
+@@ -258,4 +258,203 @@ Function GetUsedRegisterNames(Recorder, DocumentMetadata)
+ 	
+ EndFunction
+ 
+-#EndRegion
+\ No newline at end of file
++#EndRegion
++
++// Test-only fixture and observations. Only a disposable infobase is admitted.
++Function Goal85Run(ReceiptPath, RunId, Nonce) Export
++    Token = String(New UUID);
++    Writer = New TextWriter(ReceiptPath + ".server", "UTF-8");
++    Goal85Row(Writer, "run", RunId);
++    Goal85Row(Writer, "nonce", Nonce);
++    Goal85Row(Writer, "token", Token);
++    Stage = "fixture";
++    Try
++        AsOfDate = CurrentSessionDate();
++        Today = BegOfDay(AsOfDate);
++        Yesterday = Today - 86400;
++        Warehouse = Catalogs.Warehouses.CreateItem();
++        Warehouse.Description = "85 fixture warehouse";
++        Warehouse.Write();
++        OtherWarehouse = Catalogs.Warehouses.CreateItem();
++        OtherWarehouse.Description = "85 control warehouse";
++        OtherWarehouse.Write();
++        Unit = Catalogs.Units.CreateItem();
++        Unit.Description = "85 pieces";
++        Unit.Write();
++        Currency = Catalogs.Currencies.CreateItem();
++        Currency.Code = "TST";
++        Currency.Description = "85 accounting unit";
++        Currency.Write();
++        Customer = Catalogs.Counterparties.CreateItem();
++        Customer.Description = "85 fixture customer";
++        Customer.Customer = True;
++        Customer.Write();
++        Products = New Array;
++        Costs = New Array;
++        Costs.Add(40); Costs.Add(60); Costs.Add(30);
++        Costs.Add(20); Costs.Add(10); Costs.Add(5);
++        Names = New Array;
++        Names.Add("A"); Names.Add("B"); Names.Add("C");
++        Names.Add("D"); Names.Add("E"); Names.Add("F");
++        For Index = 0 To 5 Do
++            Product = Catalogs.Products.CreateItem();
++            Product.Description = "85-" + Names[Index];
++            Product.ProductType = Enums.ProductTypes.Inventory;
++            Product.Unit = Unit.Ref;
++            Product.Write();
++            Products.Add(Product.Ref);
++        EndDo;
++        Seed = Documents.InventoryIncrease.CreateDocument();
++        Seed.Date = Today - 86400 * 10;
++        Seed.Write();
++        Stock = AccumulationRegisters.InventoryInWarehouses.CreateRecordSet();
++        Stock.Filter.Recorder.Set(Seed.Ref);
++        Cost = AccumulationRegisters.InventoryCost.CreateRecordSet();
++        Cost.Filter.Recorder.Set(Seed.Ref);
++        For Index = 0 To 5 Do
++            R = Stock.Add();
++            R.Period = Seed.Date; R.RecordType = AccumulationRecordType.Receipt;
++            R.Warehouse = Warehouse.Ref; R.Product = Products[Index]; R.Quantity = 100;
++            R = Cost.Add();
++            R.Period = Seed.Date; R.RecordType = AccumulationRecordType.Receipt;
++            R.Warehouse = Warehouse.Ref; R.Product = Products[Index];
++            R.Quantity = 100; R.Amount = Costs[Index] * 100;
++        EndDo;
++        Stock.Write(); Cost.Write();
++        Old = Goal85Invoice(Yesterday - 1, Warehouse.Ref, Customer.Ref, Currency.Ref);
++        Goal85Line(Old, Products[0], 1, 20);
++        Old.Write(DocumentWriteMode.Posting);
++        First = Goal85Invoice(Yesterday, Warehouse.Ref, Customer.Ref, Currency.Ref);
++        Goal85Line(First, Products[0], 1, 100);
++        Goal85Line(First, Products[0], 1, 100);
++        Goal85Line(First, Products[1], 2, 150);
++        First.Write(DocumentWriteMode.Posting);
++        Middle = Goal85Invoice(Yesterday + 43200, Warehouse.Ref, Customer.Ref, Currency.Ref);
++        Goal85Line(Middle, Products[1], 1, 150);
++        Goal85Line(Middle, Products[2], 1, 80);
++        Goal85Line(Middle, Products[3], 1, 70);
++        Goal85Line(Middle, Products[4], 1, 60);
++        Goal85Line(Middle, Products[5], 1, 50);
++        Middle.Write(DocumentWriteMode.Posting);
++        Last = Goal85Invoice(Today - 1, Warehouse.Ref, Customer.Ref, Currency.Ref);
++        Goal85Line(Last, Products[0], 1, 100);
++        Last.Write(DocumentWriteMode.Posting);
++        Current = Goal85Invoice(Today, Warehouse.Ref, Customer.Ref, Currency.Ref);
++        Goal85Line(Current, Products[0], 1, 2000);
++        Current.Write(DocumentWriteMode.Posting);
++        Draft = Goal85Invoice(Yesterday + 20000, Warehouse.Ref, Customer.Ref, Currency.Ref);
++        Goal85Line(Draft, Products[0], 1, 777);
++        Draft.Write();
++        // Out-of-path negative control: a draft with manually seeded movements must not count.
++        Fake = AccumulationRegisters.Sales.CreateRecordSet();
++        Fake.Filter.Recorder.Set(Draft.Ref);
++        R = Fake.Add(); R.Period = Draft.Date; R.Counterparty = Customer.Ref;
++        R.Product = Products[0]; R.SalesDocument = Draft.Ref;
++        R.Quantity = 1; R.Amount = 777; R.VATAmount = 0;
++        Fake.Write();
++        NonSale = Documents.InventoryWriteOff.CreateDocument();
++        NonSale.Date = Yesterday + 40000; NonSale.Write();
++        NonSaleCost = AccumulationRegisters.InventoryCost.CreateRecordSet();
++        NonSaleCost.Filter.Recorder.Set(NonSale.Ref);
++        R = NonSaleCost.Add(); R.Period = NonSale.Date;
++        R.RecordType = AccumulationRecordType.Expense;
++        R.Warehouse = OtherWarehouse.Ref; R.Product = Products[0];
++        R.Quantity = 1; R.Amount = 999; NonSaleCost.Write();
++        Goal85Bool(Writer, "fixturePosted", First.Ref.GetObject().Posted
++            And Middle.Ref.GetObject().Posted And Last.Ref.GetObject().Posted
++            And Old.Ref.GetObject().Posted And Current.Ref.GetObject().Posted
++            And Not Draft.Ref.GetObject().Posted);
++        Stage = "summary";
++        Before = Goal85State();
++        ReportObject = Reports.Dashboard.Create();
++        Summary = ReportObject.GetYesterdaySummary(AsOfDate);
++        Goal85Bool(Writer, "calendarBounds", Summary.StartDate = Yesterday And Summary.EndDateExclusive = Today);
++        Goal85Row(Writer, "day", Format(Summary.StartDate, "DF=yyyy-MM-dd"));
++        Goal85Row(Writer, "revenue", Goal85Number(Summary.Revenue));
++        Goal85Row(Writer, "vat", Goal85Number(Summary.VAT));
++        Goal85Row(Writer, "grossSales", Goal85Number(Summary.GrossSales));
++        Goal85Row(Writer, "cost", Goal85Number(Summary.Cost));
++        Goal85Row(Writer, "grossProfit", Goal85Number(Summary.GrossProfit));
++        Goal85Row(Writer, "invoiceCount", Goal85Number(Summary.InvoiceCount));
++        Goal85Row(Writer, "averageTicket", Goal85Number(Summary.AverageTicket));
++        Goal85Row(Writer, "productCount", Goal85Number(Summary.Products.Count()));
++        Index = 1;
++        For Each R In Summary.Products Do
++            Goal85Row(Writer, "product" + String(Index), R.Product.Description + "|"
++                + Goal85Number(R.Revenue) + "|" + Goal85Number(R.Cost) + "|" + Goal85Number(R.GrossProfit));
++            Index = Index + 1;
++        EndDo;
++        View = ReportObject.RenderYesterdayDashboard(Summary);
++        View.Write(ReceiptPath + ".html", SpreadsheetDocumentFileType.HTML);
++        Goal85Bool(Writer, "rendered", View.TableHeight > 0 And View.TableWidth > 0);
++        Goal85Bool(Writer, "topFive", View.TableHeight = 22
++            And View.Area(18, 1).Text = String(Products[1])
++            And View.Area(22, 1).Text = String(Products[4]));
++        Loss = ReportObject.GetYesterdaySummary(Yesterday);
++        Goal85Bool(Writer, "negativeProfit", Loss.Revenue = 20 And Loss.Cost = 40 And Loss.GrossProfit = -20);
++        Repeat = ReportObject.GetYesterdaySummary(AsOfDate);
++        RepeatView = ReportObject.RenderYesterdayDashboard(Repeat);
++        Goal85Bool(Writer, "repeatSame", ValueToStringInternal(Summary) = ValueToStringInternal(Repeat));
++        Empty = ReportObject.GetYesterdaySummary(Today - 86400 * 40);
++        EmptyView = ReportObject.RenderYesterdayDashboard(Empty);
++        Goal85Bool(Writer, "emptyDay", Empty.Revenue = 0 And Empty.VAT = 0
++            And Empty.Cost = 0 And Empty.GrossProfit = 0 And Empty.InvoiceCount = 0
++            And Empty.AverageTicket = 0 And Empty.Products.Count() = 0 And EmptyView.TableHeight > 0);
++        Leap = ReportObject.GetYesterdaySummary(Date(2024, 3, 1, 12, 0, 0));
++        NewYear = ReportObject.GetYesterdaySummary(Date(2026, 1, 1, 12, 0, 0));
++        Goal85Bool(Writer, "dateRollover", Leap.StartDate = Date(2024, 2, 29)
++            And NewYear.StartDate = Date(2025, 12, 31));
++        DefaultSummary = ReportObject.GetYesterdaySummary();
++        Goal85Bool(Writer, "defaultYesterday", DefaultSummary.StartDate = Yesterday And DefaultSummary.Revenue = Summary.Revenue);
++        Goal85Bool(Writer, "sourceStateUnchanged", Before = Goal85State());
++        Goal85Row(Writer, "serverComplete", "true");
++    Except
++        Goal85Row(Writer, "error", Stage);
++        Errors = New TextWriter(ReceiptPath + ".server-error.txt", "UTF-8");
++        Errors.Write(ErrorDescription()); Errors.Close();
++    EndTry;
++    Writer.Close();
++    Return Token;
++EndFunction
++
++Function Goal85Invoice(AtDate, Warehouse, Customer, Currency)
++    D = Documents.SalesInvoice.CreateDocument();
++    D.Date = AtDate; D.Warehouse = Warehouse; D.Customer = Customer;
++    D.Currency = Currency; D.ExchangeRate = 1; D.Multiplier = 1;
++    Return D;
++EndFunction
++
++Procedure Goal85Line(D, Product, Quantity, Price)
++    L = D.Inventory.Add(); L.Product = Product; L.Quantity = Quantity;
++    L.Price = Price; L.Amount = Quantity * Price;
++    L.VATAmount = L.Amount * 0.2; L.Total = L.Amount + L.VATAmount;
++EndProcedure
++
++Function Goal85State()
++    Tables = New Array;
++    Names = New Array;
++    Names.Add("Sales"); Names.Add("InventoryCost");
++    Names.Add("InventoryInWarehouses"); Names.Add("CustomerBalance");
++    For Each Name In Names Do
++        Q = New Query;
++        Q.Text = "SELECT * FROM AccumulationRegister." + Name + " ORDER BY Recorder, LineNumber";
++        Tables.Add(Q.Execute().Unload());
++    EndDo;
++    Q = New Query;
++    Q.Text = "SELECT Ref, Date, Posted, Total FROM Document.SalesInvoice ORDER BY Ref";
++    Tables.Add(Q.Execute().Unload());
++    Return ValueToStringInternal(Tables);
++EndFunction
++
++Function Goal85Number(Value)
++    Return Format(Value, "NFD=2;NDS=.;NG=0;NZ=0");
++EndFunction
++
++Procedure Goal85Bool(Writer, Name, Value)
++    If Value Then Text = "true"; Else Text = "false"; EndIf;
++    Goal85Row(Writer, Name, Text);
++EndProcedure
++
++Procedure Goal85Row(Writer, Name, Text)
++    Writer.Write(Name + "###" + Text + Chars.LF);
++EndProcedure
+diff --git a/CommonModules/PostingManagement.xml b/CommonModules/PostingManagement.xml
+index d700d23..e5378a4 100644
+--- a/CommonModules/PostingManagement.xml
++++ b/CommonModules/PostingManagement.xml
+@@ -19,7 +19,7 @@
+ 			<Server>true</Server>
+ 			<ExternalConnection>true</ExternalConnection>
+ 			<ClientOrdinaryApplication>false</ClientOrdinaryApplication>
+-			<ServerCall>false</ServerCall>
++			<ServerCall>true</ServerCall>
+ 			<Privileged>false</Privileged>
+ 			<ReturnValuesReuse>DontUse</ReturnValuesReuse>
+ 		</Properties>
+diff --git a/Ext/ManagedApplicationModule.bsl b/Ext/ManagedApplicationModule.bsl
+index 03ca2b2..5705575 100644
+--- a/Ext/ManagedApplicationModule.bsl
++++ b/Ext/ManagedApplicationModule.bsl
+@@ -54,6 +54,10 @@ Procedure BeforeStart()
+ EndProcedure
+ 
+ Procedure OnStart()
++    If LaunchParameter <> "" Then
++        Goal85Client();
++        Return;
++    EndIf;
+ 	
+ 	// StandardSubsystems
+ #If MobileClient Then
+@@ -92,4 +96,28 @@ Procedure CollaborationSystemUsersChoiceFormGetProcessing(ChoicePurpose,
+ 	
+ EndProcedure
+ 
+-#EndRegion
+\ No newline at end of file
++#EndRegion
++Procedure Goal85Client()
++    W = New TextWriter(LaunchParameter, "UTF-8");
++    W.Write("run###44aeeb14-1aa8-4f94-a563-ba0ba2a2b52c" + Chars.LF + "nonce###750c8529-9a8f-4d7c-bcd0-496766dd08ff" + Chars.LF + "entry###true" + Chars.LF);
++    W.Close();
++    Try
++        Token = PostingManagement.Goal85Run(LaunchParameter, "44aeeb14-1aa8-4f94-a563-ba0ba2a2b52c", "750c8529-9a8f-4d7c-bcd0-496766dd08ff");
++        F = GetForm("Report.Dashboard.Form.ReportForm",,, True);
++        FormCreated = F <> Undefined And F.OwnerDashboard.TableHeight = 22
++            And F.OwnerDashboard.Area(5, 2).Text = Format(1010, "NFD=2;NZ=0");
++        W = New TextWriter(LaunchParameter, "UTF-8");
++        W.Write("run###44aeeb14-1aa8-4f94-a563-ba0ba2a2b52c" + Chars.LF + "nonce###750c8529-9a8f-4d7c-bcd0-496766dd08ff" + Chars.LF
++            + "token###" + Token + Chars.LF + "returned###true" + Chars.LF);
++        If FormCreated Then W.Write("formCreated###true" + Chars.LF);
++        Else W.Write("formCreated###false" + Chars.LF); EndIf;
++        W.Write("complete###true" + Chars.LF);
++        W.Close();
++    Except
++        W = New TextWriter(LaunchParameter, "UTF-8");
++        W.Write("error###client-form-error" + Chars.LF + "complete###true" + Chars.LF);
++        W.Close();
++        E = New TextWriter(LaunchParameter + ".client-error.txt", "UTF-8");
++        E.Write(ErrorDescription()); E.Close();
++    EndTry;
++EndProcedure
