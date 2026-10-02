@@ -84,7 +84,7 @@ HTTP 200 bootstrap/mainform не означает запуск приложен�
 | Контроль | Сохранённый результат |
 |---|---|
 | Симметричный Alias без конечного slash, VRD `/jet` | locale root/script по-прежнему 404; исходная настройка восстановлена |
-| VRD `base="/jet/"` | locale root/script 200, но root остаётся `REDIRECT=true`; не рабочий bootstrap; откат |
+| VRD `base="/jet/"` | locale root/script 200; отдельный сохранённый контроль также дал `/jet/en/mainform.html` 200; HTML содержит `REDIRECT=true`, но этот флаг **сам по себе не доказывает цикл**; UI не подтверждён; откат |
 | Locale процесса RU | корень остаётся `LANG=en`; `/ru/` и locale script 404 |
 | Отдельный пользовательский `SystemLanguage=RU` | тот же результат; настройка удалена/исходная восстановлена |
 | Publisher из каталога бинарников | rc1, `Cannot read … / Apache web server not found`; VRD не создан |
@@ -136,6 +136,50 @@ artifact integrity PASS, delivery DEGRADED: точная применимост�
 [evidence-summary.json](../experiments/issue87-web-publication/evidence-summary.json).
 Она производна от retained local evidence, не замена полного research corpus;
 сырые бинарники, внутренние адреса и connection strings не опубликованы.
+
+## Разбор Dual Review (`dr-6f8d031dde3e4c98`)
+
+[DeepSeek](https://github.com/Kwentin3/1c-agent-harness/pull/88#issuecomment-5950129544) и
+[Gemini](https://github.com/Kwentin3/1c-agent-harness/pull/88#issuecomment-5950130757)
+проверили исходный handoff на `aefd8bd07d64ceabff99268da38676b1d9f2374b`.
+Эта последующая коррекция и [supplement](../experiments/issue87-web-publication/review-context-supplement.json)
+не входят в тот reviewed SHA. Новые runtime-пробы не запускались.
+
+- **Принято:** диагностика была неполно передана ревьюверам. Публикуем обезличенные
+  Apache/VRD и дополнительные сохранённые результаты. Это не доказательство исправления.
+- **Принято с сужением:** HTTP 200 locale script и `mainform.html` — положительный
+  факт доступности ресурсов, не доказательство открытия ИБ/веб-приложения. По флагу
+  `REDIRECT=true` нельзя в одиночку вывести browser loop; формулировка таблицы исправлена.
+- **Не подтверждено:** Gemini утверждает, что JS сравнивает текущий pathname и не
+  редиректит повторно. Цитируемый обрезанный JS не содержит такого условия; ни полный
+  JS, ни bound pure-base browser trace в reviewed evidence этого не показывают.
+  Сохранённый browser trace показывает повторные загрузки и пустой интерфейс, но
+  **не связывает** их с точным VRD/rewrite состоянием; использовать его как доказательство
+  pure `base="/jet/"` loop также нельзя. Следующий дешёвый шаг — восстановить привязку
+  полного bootstrap JS и существующего browser trace к контрольной конфигурации.
+- **Повтор не нужен:** предложенный `/jet/en/mainform.html` при `base="/jet/"` уже
+  дал 200; `AcceptPathInfo On` уже испытывался без устранения 404; абсолютный
+  `ServerRoot` есть в сохранённом конфиге и в прочитанном publisher trace.
+  Сохранённый vendor-config контроль также дал `Syntax OK`, но publisher rc1;
+  это сужает, а не полностью исключает гипотезу о parser/config.
+- **Нельзя усиливать:** официальное предупреждение root нефатально по generic guide,
+  но это не исключает влияния прав на последующую операцию exact binary. Root-причина
+  всё ещё неизвестна. Читаемость ИБ, её языки и mismatch base/Alias — гипотезы,
+  не доказанные объяснения; statics 200 не доказывают открытие ИБ.
+- **Отклонён способ проверки:** заглушка `apache2`, возвращающая выдуманную строку
+  версии, не доказывает работу реального Apache. Если после анализа сохранённой
+  трассировки нужен новый контроль, предпочтителен logger, делегирующий настоящему
+  бинарнику и сохраняющий его actual stdout/stderr/exit. Отсутствие вызова logger
+  не доказывает hardcoded paths. Новый запуск потребует отдельного admission.
+- **Принято замечание о следующем этапе:** «получить generated config» — целевой
+  milestone, не готовая диагностическая команда. Сначала использовать сохранённые
+  trace/argv/env/config для локализации discovery/parser failure. Эталон другой
+  версии может быть сравнением, но не exact-version acceptance.
+
+Некоторые line anchors в отзывах выходят за размер reviewed файлов; проверка здесь
+сделана по реальным JSON-полям и retained источникам, не по ошибочным номерам строк.
+Несанитизированные пути, сырые секреты/connection strings в Git не нужны.
+Advisory review не разрешает native-запуск, root, install, merge или deploy.
 
 ## Следующий ограниченный этап / вопрос для помощи
 
