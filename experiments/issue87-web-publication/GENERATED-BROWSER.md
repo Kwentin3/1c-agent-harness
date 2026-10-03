@@ -2,7 +2,8 @@
 
 Актуальный checkpoint: **2026-10-03, GOAL INCOMPLETE**.
 [Contract](https://github.com/Kwentin3/1c-agent-harness/issues/87),
-[санитизированные результаты и hash anchors](generated-browser-evidence.json).
+[санитизированные результаты и hash anchors](generated-browser-evidence.json),
+[реальные generated/derived config и VRD с объявленной санацией](generated-config-comparison.json).
 Это проверенная диагностическая точка, **не working web runbook**.
 
 ## Что теперь подтверждено
@@ -108,6 +109,22 @@ root/script GET получили platform JSON 404. То есть явный req
 logs, config/VRD, exact HTTP bodies, initial/network receipts и safety inventory.
 Подготовительные diagnostic scripts находятся в игнорируемой `.local/web-demo/`
 Hermes workspace; они не продуктовый runner и не обещание clean-bootstrap replay.
+
+## Exact-review adjudication
+
+[DeepSeek source review](https://github.com/Kwentin3/1c-agent-harness/pull/88#issuecomment-5966135246)
+относится к `e1f57c6`; [Gemini](https://github.com/Kwentin3/1c-agent-harness/pull/88#issuecomment-5966135597)
+— **INCONCLUSIVE**, runner `canonical_result_too_large`. Review автоматически
+не перезапускается; это технический провал, не PASS. Current HEAD содержит
+дополнительный HTTP probe и correction, поэтому старый review не покрывает его.
+
+Приняты transparency findings F2/F6: опубликованы sanitized **реальные** generated
+и derived config/VRD, raw/sanitized hashes разделены. Lead read retained originals:
+оба base буквально `/jetcontrol` без завершающего slash; это не rename base.
+Прочитать этот факт можно без ещё одного root/native run; он не является новой
+гипотезой исправления. Добавлены accounting scope и актуальная дата. Вопрос о
+дополнительных namespace declarations/formatting явно отмечен как serialization,
+а не скрытая semantic delta. Две проверки root/browser не стали release gate.
 
 ## Следующая граница
 

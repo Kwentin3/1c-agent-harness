@@ -290,7 +290,8 @@
     "isolated_Apache_launches": 3,
     "fresh_Chromium_sessions": 2,
     "HTTP_native_bootstrap_requests": "executed; not a native-free lane",
-    "explicit_language_HTTP_probe": 1
+    "explicit_language_HTTP_probe": 1,
+    "scope": "New execution in this Hermes continuation; excludes previous owner operator root publisher=1."
   },
   "limits": [
     "Host Compose/rollback externally attested, not directly verified by Hermes.",
