@@ -6,12 +6,12 @@
     {
       "install_root": "skills/1c/1c-enterprise-linux",
       "name": "1c-enterprise-linux",
-      "resource_manifest_sha256": "56c07cd0ea42742a88ae1314f9f1d1fb7ea0e15ea5cbdbf6bed1a41e97ffefa6",
+      "resource_manifest_sha256": "9aa631f99c820667d6cd70beb85bc69f6a579eb5faaa3fe43e212eb89ad040ca",
       "resources": [
         {
-          "bytes": 63899,
+          "bytes": 64864,
           "path": "SKILL.md",
-          "sha256": "c92cedd3e2785b33b8c057c43fbe71c4992ff3cb253ce0e9d90104e3c4dc46db"
+          "sha256": "22e8738d54a5bee17c2da8b593dda724c11a5dd907d59dfca536c8f1fdcb470b"
         },
         {
           "bytes": 4329,
@@ -114,6 +114,11 @@
           "sha256": "737eb3b2ee2970d99df7f928182d465f4a56be2de7cc706e77741dcd8718f674"
         },
         {
+          "bytes": 9428,
+          "path": "references/native-training-web-reference.md",
+          "sha256": "f86723c00568d4ab0de42628888f89b748dd3e115f696154a48ee69b8c1ecc98"
+        },
+        {
           "bytes": 13165,
           "path": "references/native-write-cycle-runtime.md",
           "sha256": "3b8780504b27a9c9f2da33b8d1df96e4a2d9ee28b57f34c0504e983332be71e3"
@@ -190,7 +195,7 @@
         }
       ],
       "source_root": "skills/1c/1c-enterprise-linux",
-      "version": "1.6.2"
+      "version": "1.6.3"
     },
     {
       "install_root": "skills/1c/headless-1c-probing",

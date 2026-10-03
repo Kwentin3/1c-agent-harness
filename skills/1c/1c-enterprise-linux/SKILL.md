@@ -1,7 +1,7 @@
 ---
 name: 1c-enterprise-linux
 description: "Use for 1C XML/BSL analysis and Linux platform automation."
-version: 1.6.2
+version: 1.6.3
 author: Hermes Agent
 license: MIT
 metadata:
@@ -137,7 +137,10 @@ built on `Version8_3_24`, so the platform must be **≥ 8.3.24** (8.3.27/8.3.28 
      docs, `ibcmd infobase create --load=<file.cf>` + `ibcmd infobase config export` work without
      a server license and can produce dumps byte-identical to `/DumpConfigToFiles`.
   Paid/HASP licenses gate commercial `1cv8` Designer operations and running commercial configs.
-- Training-edition relocation differs from commercial: after root install, move `/opt/1cv8t`
+- **Historical relocated CLI lab only:** training-edition relocation differs from commercial.
+  It is not the default for native web publication: keep vendor-installed software root-owned
+  in its admitted native target and use `references/native-training-web-reference.md`.
+  The old lab relocated `/opt/1cv8t`
   to `.local/platform/1cv8t` (moving avoids a 2.5 GiB duplicate), chown it to the workspace user,
   and invoke `.local/platform/1cv8t/x86_64/<version>/1cv8t`. The same GTK/Xvfb/fontconfig stack
   applies. Keep training and commercial trees separate; do not rename `1cv8t` to `1cv8`.
@@ -154,6 +157,18 @@ built on `Version8_3_24`, so the platform must be **≥ 8.3.24** (8.3.27/8.3.28 
   They conflict with the project's «законно доступная» requirement and aren't needed to dump.
 - Non-official acquisition (torrent/mirror) is a **user decision**. Provenance posture: record
   source + SHA-256, but there is **no vendor signature** — never present it as official provenance.
+
+## Native packaged web environment
+
+For Linux training file-mode web publication, read
+`references/native-training-web-reference.md` before installation or acceptance.
+It separates operator-owned native installation from daily agent work, covers
+exact-build resource-discovery diagnosis, the narrowly checked two-link adaptation,
+full service UID/GID, and native UI/Refresh/restart witnesses. Neither the historical
+relocated CLI lab nor a publisher success is a default working web recipe.
+Task data stay in `.local/`; software may remain root-owned in vendor/package paths
+inside an explicitly admitted separated executor. No administrative authority is
+conferred by the skill. The 8.5.1.1150 adaptation is not a general training-version fix.
 
 ## Rootless GUI dependency provisioning (no `apt install`)
 

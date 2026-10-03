@@ -71,10 +71,18 @@ source принимается без 1С; `.cf` материализуется �
 `materializer_unavailable` с locator на [`docs/lab-bootstrap.md`](docs/lab-bootstrap.md); она
 ничего не скачивает и не устанавливает.
 
-Единственный executor-level locator — игнорируемый Git файл `.local/one-c-runtime.json`. Он не
-является project contract и не попадает в `SnapshotRef`; schema v1 содержит абсолютные пути
-`platform`, `xvfb`, `fontconfig`, `libs`. Это позволяет executor выбрать заранее подготовленный
-runtime без зашивания конфигурации, её версии или provider route в harness.
+Единственный executor-level locator — переменная `ONE_C_HARNESS_RUNTIME_CONFIG`,
+заданная окружением запуска executor и указывающая на абсолютный путь к его
+локальному JSON-контракту. `.local/one-c-runtime.json` — историческое размещение,
+**не автоматически обнаруживаемый default**. Locator не является project contract
+и не попадает в `SnapshotRef`; schema v1 содержит `schemaVersion` и абсолютные пути
+`platform`, `xvfb`, `fontconfig`, `libs`. Это позволяет executor выбрать заранее
+подготовленный runtime без зашивания конфигурации, версии или provider route в harness.
+
+Для Linux web используется [native training reference/runbook](docs/issue-87-native-web-runbook.md),
+а [lab-bootstrap](docs/lab-bootstrap.md) сохраняет исторический relocated CLI-сценарий.
+CLI admission, native lifecycle и web UI — разные проверки; рабочий web-клиент
+не переключает автоматически runtime locator текущего harness.
 EDT, CFE, CFU, DT, EPF, живые ИБ и remote executors в v1 возвращают `unsupported_source`.
 
 Admission в `project_target.py` проверяет закрытый manifest/file set, hashes, read-only режим и

@@ -1,8 +1,9 @@
 # #87 refine: допуск отдельного штатного эталона
 
-**PREPARATION ONLY / ADMIN NOT ADMITTED / GOAL INCOMPLETE.** Это предложение
-ограниченного эксперимента, не проверенный рецепт установки и не разрешение
-оператору начинать административные действия.
+**Исторический preflight до операторского допуска.** Первоначальное предложение
+ниже не являлось разрешением. Последующий owner-admitted operator reference
+и его ограниченная приёмка описаны в [native web runbook](issue-87-native-web-runbook.md).
+**GOAL INCOMPLETE**: native empty-day web принят; сквозной refine/public delivery нет.
 
 Контракт: [owner refine](https://github.com/Kwentin3/1c-agent-harness/pull/88#issuecomment-5966401848).
 Baseline: `7fc13929c14e83fdc751d5bf2ff16f648a4bf936`.

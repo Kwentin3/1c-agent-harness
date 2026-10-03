@@ -2,9 +2,14 @@
 
 Статус сохранённых проверок на 2026-10-03: **GOAL INCOMPLETE**.
 
+**Новый принятый результат:** [native web reference/runbook](issue-87-native-web-runbook.md)
+— locale404 устранён двумя version-bound resource links, actual пустой Dashboard/
+Refresh/restart PASS. Ниже сохраняется прежняя диагностика FAIL; она не текущий
+web-blocker. Fresh-agent web воспроизведение и protected ingress ещё не приняты.
+
 Новое направление после owner refine: [отдельный штатный эталон и ограниченный
-административный допуск](issue-87-reference-admission.md). Preflight выполнен;
-подготовка нового контейнера пока HOLD, не разрешение переустанавливать текущий.
+административный допуск](issue-87-reference-admission.md) сохранены как история.
+Операторский экземпляр принят выше; текущий executor не переустанавливался.
 [Контракт задачи](https://github.com/Kwentin3/1c-agent-harness/issues/87).
 Это handoff исследования, **не рабочий runbook и не доказательство дефекта платформы**.
 

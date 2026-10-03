@@ -2,6 +2,14 @@
 
 Проверено 25 августа 2026 года для чистого Debian 13 (`trixie`, `x86_64`) контейнера. Рецепт восстанавливает именно стенд этапа 0; это не универсальный установщик 1С.
 
+**Исторический relocated CLI-сценарий, не default web bootstrap.** Для нового
+изолированного Linux web-экземпляра сохраняют штатное root-owned размещение и
+пакетные зависимости: [native web runbook](issue-87-native-web-runbook.md).
+Версии/пути/UID ниже относятся к прежней лаборатории, не к текущему домашнему
+executor. Полный CLI-рецепт сохранён как historical evidence, не переисполнялся
+в новом reference. Runtime locator задаётся `ONE_C_HARNESS_RUNTIME_CONFIG`;
+наличия JSON в `.local/` без этой переменной недостаточно.
+
 ## Предпосылки
 
 - Основная папка Hermes Project и Git-корень: `/workspace/1c-agent-harness`.
@@ -79,7 +87,11 @@ docker exec -u root <container-id> bash -c 'set -euo pipefail; ROOT=/workspace/1
 
 ## 3. Подготовить локальный GUI/Xvfb runtime без системной установки
 
-В 1С 8.5 используется GTK3 и WebKit2GTK 4.0. Последнего нет в trixie, поэтому проверенный runtime сочетает базовый GUI/Xvfb слой trixie с закреплённым ABI-набором WebKit/transitive из bookworm.
+В историческом runtime этапа 0 использован GTK3/WebKit2GTK 4.0 bundle из
+bookworm. Это описание сохранённого рецепта, не общее требование 1С 8.5:
+точная native training 8.5.1.1150 требует WebKit2GTK 4.1 через vendor wx library.
+Для нового web-сценария сначала проверяют exact SONAME и пакетную среду,
+не смешивают этот исторический набор с native installation.
 
 Создайте user-space APT root:
 

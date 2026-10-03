@@ -1,0 +1,228 @@
+{
+  "schemaVersion": 1,
+  "source_admission": "5a27e4743d093e593f2c4c1e622cc08385a8646e",
+  "operator_comments": [
+    "https://github.com/Kwentin3/1c-agent-harness/issues/87#issuecomment-5967171085",
+    "https://github.com/Kwentin3/1c-agent-harness/issues/87#issuecomment-5967779120"
+  ],
+  "verdict": "REFERENCE_NATIVE_UI_EMPTY_DAY_REFRESH_RESTART_ACCEPTED; PRODUCT_INCOMPLETE",
+  "provenance": "Raw evidence independently downloaded and hashed as UID10001. Retained operator actions examined, not re-executed. Container/installed-runtime/IB controls remain externally attested.",
+  "raw_artifact_anchors": {
+    "operator/runtime-manifest.json": {
+      "path": "operator/runtime-manifest.json",
+      "bytes": 117642,
+      "sha256": "5a8107116f5a4ce1ab3941750c6b1697fa76e2f8c8dad58abeffdd10e79a312d"
+    },
+    "operator/404-research/404-HANDOFF.md": {
+      "path": "operator/404-research/404-HANDOFF.md",
+      "bytes": 6143,
+      "sha256": "86e3148ac6149924b686059a6be7196c5c1e18ab8aa5688ef9d97e589bc2ae8a"
+    },
+    "operator/404-research/completion-404.json": {
+      "path": "operator/404-research/completion-404.json",
+      "bytes": 5597,
+      "sha256": "235df3b48d6920e2836783fe95269a34753dec5d006c5172d5dfae3b23ab282c"
+    },
+    "operator/404-research/404-authoring-source.zip": {
+      "path": "operator/404-research/404-authoring-source.zip",
+      "bytes": 112612,
+      "sha256": "18c38fa5bacf8de7854d09fbd08ebb4660bb33453a5d41380133db26da4c3fba"
+    },
+    "operator/404-research/causal-control.json": {
+      "path": "operator/404-research/causal-control.json",
+      "bytes": 508,
+      "sha256": "dc79a7298b90bb69ed5b3e8541e6cbe566f19039445e963fa9fd71163ac84fc0"
+    },
+    "operator/404-research/locale-enumeration.disassembly.txt": {
+      "path": "operator/404-research/locale-enumeration.disassembly.txt",
+      "bytes": 57052,
+      "sha256": "75309d765ecf50aac9c267ea5c8ab8dedff1fd9139d817b3140e5a02e30551e7"
+    },
+    "operator/404-research/browser-persisted/network.json": {
+      "path": "operator/404-research/browser-persisted/network.json",
+      "bytes": 106341,
+      "sha256": "608c982729fdd00b95a1749145534f0ede6226683a0444bf75ba91a8572ef8da"
+    },
+    "operator/404-research/browser-persisted/trace.zip": {
+      "path": "operator/404-research/browser-persisted/trace.zip",
+      "bytes": 3048969,
+      "sha256": "abf6690da3df671cdc8143afed20a015974f4e6c3eedf7921c60f0b73b470fe8"
+    },
+    "operator/404-research/browser-persisted/initial-frame-4.html": {
+      "path": "operator/404-research/browser-persisted/initial-frame-4.html",
+      "bytes": 95626,
+      "sha256": "18e5338ed53897505140614792f00f7198f0e4d6111a4e7b17a2cfe6f57cd66c"
+    },
+    "operator/404-research/browser-persisted/step1-frame-4.html": {
+      "path": "operator/404-research/browser-persisted/step1-frame-4.html",
+      "bytes": 95626,
+      "sha256": "18e5338ed53897505140614792f00f7198f0e4d6111a4e7b17a2cfe6f57cd66c"
+    },
+    "operator/404-research/browser-persisted/step1.png": {
+      "path": "operator/404-research/browser-persisted/step1.png",
+      "bytes": 88434,
+      "sha256": "949638d25a47d4d7afb88e133f602f60eab5f749e1fe2f26acd1940319e320a9"
+    },
+    "operator/generated.apache2.conf": {
+      "path": "operator/generated.apache2.conf",
+      "bytes": 7749,
+      "sha256": "0982c6bea8f11b62287e490d474811864f69e4c4b21df94a97ffeaecfcf4ef14"
+    },
+    "operator/generated.default.vrd": {
+      "path": "operator/generated.default.vrd",
+      "bytes": 525,
+      "sha256": "8a312cfbb73b53ddcbb0a403694a61cdc2c35cc8091bb655db612c4480cae835"
+    },
+    "operator/derived.apache2.conf": {
+      "path": "operator/derived.apache2.conf",
+      "bytes": 7514,
+      "sha256": "9bfd8335bd6f324869285c44c579ed975228b54047720d4f5f48aaa259fdc53c"
+    },
+    "operator/derived.default.vrd": {
+      "path": "operator/derived.default.vrd",
+      "bytes": 568,
+      "sha256": "e5406c8e7352b43c6499e2ff4fe189c9b239fe045eb0ac46de2960555850ac7d"
+    },
+    "operator/dpkg-inventory.txt": {
+      "path": "operator/dpkg-inventory.txt",
+      "bytes": 12989,
+      "sha256": "d95e7ac54121fe3ee3fb74bfdcbcd7cbe35ddf8e4099aa0fca45868634f94e1a"
+    },
+    "operator/installer-help-en.stdout": {
+      "path": "operator/installer-help-en.stdout",
+      "bytes": 2126,
+      "sha256": "a617ab0ffb90d05ecefcc0901ac5fa3c55043be9ad0a154a3a12b588cc352ac0"
+    }
+  },
+  "runtime_identity": {
+    "1cv8t": "0d11379cfd37c029a472fa500cbd8a64050cc5e53f7904036f8f6ce6a7fe0574",
+    "vrscoret.so": "29aee4993151419c206bc42dba288e5fdd7ac8b8a70a994023fc5a65131a9612",
+    "vrscoret_root.res": "2ecc4a5ab85fabd5d56d1c1cb8355d06323f22c954d970d28c528f8154f2525c",
+    "vrscoret_ru.res": "fd1cbe9d0fa6e9c2d0f319a580a98d5155302aa84f1535d6e6a507124a832b14",
+    "webinstt": "5944c126eedf6e072d3f138055ab6616feabc6f62da1ce6e07a1e5205b9c2a3f",
+    "wsap24t.so": "05cb1377e3190ad5b6015bd100c13bd12a1c0643bb6dea24e881e2844a2e0a6b"
+  },
+  "causal_control": {
+    "original_runtime_files_unchanged": 605,
+    "publication_unchanged": true,
+    "cases": [
+      {
+        "aliases": false,
+        "status": 404,
+        "sha256": "aec0ece4b9810aadb4c1b2687ee5b66958ec953c9d2ba6f0cc9b24aa8086a735",
+        "bytes": 646
+      },
+      {
+        "aliases": true,
+        "status": 200,
+        "sha256": "b845fe24689ac0fde3c87aa0d08c603a91bc6793256605ed5c175dc6766e1b84",
+        "bytes": 8121
+      }
+    ],
+    "ib_before_restart": "d4bf0f47d7f042500bc1146b8ea3c56f3cccc571464ae5d5646a20cf67e99fa0"
+  },
+  "dashboard": {
+    "date": "2026-10-02",
+    "scope": "empty day, seven zero metrics, not nonzero oracle",
+    "body": "Yesterday — owner dashboard Trading date 2026-10-02 All amounts in accounting currency Sales excluding VAT 0 VAT 0 Sales including VAT 0 Cost of goods sold 0 Gross profit (not net profit) 0 Posted sales invoices 0 Average invoice excluding VAT 0 Gross profit excludes business expenses and payments. No posted sales for yesterday. Top 5 products by sales excluding VAT Product Sales excluding VAT VAT Cost Gross profit",
+    "real_refresh_action": {
+      "step": 1,
+      "action": {
+        "op": "click_selector",
+        "selector": "#form0_FormRefresh"
+      },
+      "result": "DONE"
+    },
+    "tempstorage_path_changed": true,
+    "response_event_ledger_count": 157,
+    "response_event_statuses": [
+      200,
+      204
+    ],
+    "trace_resource_snapshot_count": 183,
+    "trace_statuses": [
+      200,
+      204
+    ],
+    "raw_report_responses": [
+      {
+        "status": 200,
+        "bytes": 94482,
+        "sha256": "af8cb965f89f62609bab7b64f62af660ab9b5fe57eacf96141c2fef3fbd9ccc7"
+      },
+      {
+        "status": 200,
+        "bytes": 94479,
+        "sha256": "360cb0d95da93bf8cda7b3ea2bf646e6c75eed2986984107e6b07981f76344b1"
+      }
+    ],
+    "copy_dialog_absent_operator_record": true
+  },
+  "preservation_independently_checked_now": {
+    "uid": 10001,
+    "protected_inputs_unchanged": true,
+    "snapshot_unchanged": true,
+    "snapshot_files": 5099,
+    "front_rc": 0,
+    "preserved_git_head_unchanged": true,
+    "postfix_ib": {
+      "access": "PermissionError",
+      "independently_hashed": false
+    },
+    "runtime_locator_available": false
+  },
+  "not_independently_live_checked": [
+    "stopped container state/host configuration/neighbor processes",
+    "605 installed original runtime bytes inside stopped container",
+    "exported postfix IB hash: PermissionError; no ownership weakening"
+  ],
+  "accounting": {
+    "operator_preparation": {
+      "installer_help": 2,
+      "installer_install": 1,
+      "root_publisher": 1,
+      "apache_start": 1,
+      "apache_stop": 1,
+      "apache_restart": 0,
+      "fresh_browser_sessions": 1,
+      "native_http_requests": 4,
+      "designer": 0,
+      "enterprise_cli": 0
+    },
+    "operator_causal_research": {
+      "browser_sessions": 3,
+      "browser_results": [
+        "PASS_EMPTY_DAY_REFRESH",
+        "FAIL_UID33_GID0_NOT_RESTART_ACCEPTANCE",
+        "PASS_AFTER_CONTAINER_RESTART"
+      ],
+      "publisher_reruns": 0,
+      "Designer_ENTERPRISE_CLI": 0
+    },
+    "Hermes_intake_native_runs": 0,
+    "paid_review_runs": 0
+  },
+  "sanitization": "Original absolute operator/storage paths and session URLs are not published. Stable generic /opt paths and build identities kept. Report text/aggregate statuses/declared counters retained. Config IB reference sanitized below; raw hashes remain separate. No HAR/trace/session tokens/credentials published.",
+  "configuration": {
+    "generated.apache2.conf": {
+      "raw_sha256": "0982c6bea8f11b62287e490d474811864f69e4c4b21df94a97ffeaecfcf4ef14",
+      "sanitized_text": "# This is the main Apache server configuration file.  It contains the\r\n# configuration directives that give the server its instructions.\r\n# See http://httpd.apache.org/docs/2.4/ for detailed information about\r\n# the directives and /usr/share/doc/apache2/README.Debian about Debian specific\r\n# hints.\r\n#\r\n#\r\n# Summary of how the Apache 2 configuration works in Debian:\r\n# The Apache 2 web server configuration in Debian is quite different to\r\n# upstream's suggested way to configure the web server. This is because Debian's\r\n# default Apache2 installation attempts to make adding and removing modules,\r\n# virtual hosts, and extra configuration directives as flexible as possible, in\r\n# order to make automating the changes and administering the server as easy as\r\n# possible.\r\n\r\n# It is split into several files forming the configuration hierarchy outlined\r\n# below, all located in the /etc/apache2/ directory:\r\n#\r\n#\t/etc/apache2/\r\n#\t|-- apache2.conf\r\n#\t|\t`--  ports.conf\r\n#\t|-- mods-enabled\r\n#\t|\t|-- *.load\r\n#\t|\t`-- *.conf\r\n#\t|-- conf-enabled\r\n#\t|\t`-- *.conf\r\n# \t`-- sites-enabled\r\n#\t \t`-- *.conf\r\n#\r\n#\r\n# * apache2.conf is the main configuration file (this file). It puts the pieces\r\n#   together by including all remaining configuration files when starting up the\r\n#   web server.\r\n#\r\n# * ports.conf is always included from the main configuration file. It is\r\n#   supposed to determine listening ports for incoming connections which can be\r\n#   customized anytime.\r\n#\r\n# * Configuration files in the mods-enabled/, conf-enabled/ and sites-enabled/\r\n#   directories contain particular configuration snippets which manage modules,\r\n#   global configuration fragments, or virtual host configurations,\r\n#   respectively.\r\n#\r\n#   They are activated by symlinking available configuration files from their\r\n#   respective *-available/ counterparts. These should be managed by using our\r\n#   helpers a2enmod/a2dismod, a2ensite/a2dissite and a2enconf/a2disconf. See\r\n#   their respective man pages for detailed information.\r\n#\r\n# * The binary is called apache2. Due to the use of environment variables, in\r\n#   the default configuration, apache2 needs to be started/stopped with\r\n#   /etc/init.d/apache2 or apache2ctl. Calling /usr/bin/apache2 directly will not\r\n#   work with the default configuration.\r\n\r\n\r\n# Global configuration\r\n#\r\n\r\n#\r\n# ServerRoot: The top of the directory tree under which the server's\r\n# configuration, error, and log files are kept.\r\n#\r\n# NOTE!  If you intend to place this on an NFS (or otherwise network)\r\n# mounted filesystem then please read the Mutex documentation (available\r\n# at <URL:http://httpd.apache.org/docs/2.4/mod/core.html#mutex>);\r\n# you will save yourself a lot of trouble.\r\n#\r\n# Do NOT add a slash at the end of the directory path.\r\n#\r\n#ServerRoot \"/etc/apache2\"\r\n\r\n#\r\n# The accept serialization lock file MUST BE STORED ON A LOCAL DISK.\r\n#\r\n#Mutex file:${APACHE_LOCK_DIR} default\r\n\r\n#\r\n# The directory where shm and other runtime files will be stored.\r\n#\r\n\r\nDefaultRuntimeDir ${APACHE_RUN_DIR}\r\n\r\n#\r\n# PidFile: The file in which the server should record its process\r\n# identification number when it starts.\r\n# This needs to be set in /etc/apache2/envvars\r\n#\r\nPidFile ${APACHE_PID_FILE}\r\n\r\n#\r\n# Timeout: The number of seconds before receives and sends time out.\r\n#\r\nTimeout 300\r\n\r\n#\r\n# KeepAlive: Whether or not to allow persistent connections (more than\r\n# one request per connection). Set to \"Off\" to deactivate.\r\n#\r\nKeepAlive On\r\n\r\n#\r\n# MaxKeepAliveRequests: The maximum number of requests to allow\r\n# during a persistent connection. Set to 0 to allow an unlimited amount.\r\n# We recommend you leave this number high, for maximum performance.\r\n#\r\nMaxKeepAliveRequests 100\r\n\r\n#\r\n# KeepAliveTimeout: Number of seconds to wait for the next request from the\r\n# same client on the same connection.\r\n#\r\nKeepAliveTimeout 5\r\n\r\n\r\n# These need to be set in /etc/apache2/envvars\r\nUser ${APACHE_RUN_USER}\r\nGroup ${APACHE_RUN_GROUP}\r\n\r\n#\r\n# HostnameLookups: Log the names of clients or just their IP addresses\r\n# e.g., www.apache.org (on) or 204.62.129.132 (off).\r\n# The default is off because it'd be overall better for the net if people\r\n# had to knowingly turn this feature on, since enabling it means that\r\n# each client request will result in AT LEAST one lookup request to the\r\n# nameserver.\r\n#\r\nHostnameLookups Off\r\n\r\n# ErrorLog: The location of the error log file.\r\n# If you do not specify an ErrorLog directive within a <VirtualHost>\r\n# container, error messages relating to that virtual host will be\r\n# logged here.  If you *do* define an error logfile for a <VirtualHost>\r\n# container, that host's errors will be logged there and not here.\r\n#\r\nErrorLog ${APACHE_LOG_DIR}/error.log\r\n\r\n#\r\n# LogLevel: Control the severity of messages logged to the error_log.\r\n# Available values: trace8, ..., trace1, debug, info, notice, warn,\r\n# error, crit, alert, emerg.\r\n# It is also possible to configure the log level for particular modules, e.g.\r\n# \"LogLevel info ssl:warn\"\r\n#\r\nLogLevel warn\r\n\r\n# Include module configuration:\r\nIncludeOptional mods-enabled/*.load\r\nIncludeOptional mods-enabled/*.conf\r\n\r\n# Include list of ports to listen on\r\nInclude ports.conf\r\n\r\n\r\n# Sets the default security model of the Apache2 HTTPD server. It does\r\n# not allow access to the root filesystem outside of /usr/share and /var/www.\r\n# The former is used by web applications packaged in Debian,\r\n# the latter may be used for local directories served by the web server. If\r\n# your system is serving content from a sub-directory in /srv you must allow\r\n# access here, or in any related virtual host.\r\n<Directory />\r\n\tOptions FollowSymLinks\r\n\tAllowOverride None\r\n\tRequire all denied\r\n</Directory>\r\n\r\n<Directory /usr/share>\r\n\tAllowOverride None\r\n\tRequire all granted\r\n</Directory>\r\n\r\n<Directory /var/www/>\r\n\tOptions Indexes FollowSymLinks\r\n\tAllowOverride None\r\n\tRequire all granted\r\n</Directory>\r\n\r\n# 1c publication\r\nAlias \"/jetcontrol\" \"/var/www/jetcontrol/\"\r\n<Directory \"/var/www/jetcontrol/\">\r\n    AllowOverride All\r\n    Options None\r\n    Require all granted\r\n    SetHandler 1c-application\r\n    ManagedApplicationDescriptor \"/var/www/jetcontrol/default.vrd\"\r\n</Directory>\r\n\r\n#<Directory /srv/>\r\n#\tOptions Indexes FollowSymLinks\r\n#\tAllowOverride None\r\n#\tRequire all granted\r\n#</Directory>\r\n\r\n\r\n\r\n\r\n# AccessFileName: The name of the file to look for in each directory\r\n# for additional configuration directives.  See also the AllowOverride\r\n# directive.\r\n#\r\nAccessFileName .htaccess\r\n\r\n#\r\n# The following lines prevent .htaccess and .htpasswd files from being\r\n# viewed by Web clients.\r\n#\r\n<FilesMatch \"^\\.ht\">\r\n\tRequire all denied\r\n</FilesMatch>\r\n\r\n\r\n#\r\n# The following directives define some format nicknames for use with\r\n# a CustomLog directive.\r\n#\r\n# These deviate from the Common Log Format definitions in that they use %O\r\n# (the actual bytes sent including headers) instead of %b (the size of the\r\n# requested file), because the latter makes it impossible to detect partial\r\n# requests.\r\n#\r\n# Note that the use of %{X-Forwarded-For}i instead of %h is not recommended.\r\n# Use mod_remoteip instead.\r\n#\r\nLogFormat \"%v:%p %h %l %u %t \\\"%r\\\" %>s %O \\\"%{Referer}i\\\" \\\"%{User-Agent}i\\\"\" vhost_combined\r\nLogFormat \"%h %l %u %t \\\"%r\\\" %>s %O \\\"%{Referer}i\\\" \\\"%{User-Agent}i\\\"\" combined\r\nLogFormat \"%h %l %u %t \\\"%r\\\" %>s %O\" common\r\nLogFormat \"%{Referer}i -> %U\" referer\r\nLogFormat \"%{User-agent}i\" agent\r\n\r\n# Include of directories ignores editors' and dpkg's backup files,\r\n# see README.Debian for details.\r\n\r\n# Include generic snippets of statements\r\nIncludeOptional conf-enabled/*.conf\r\n\r\n# Include the virtual host configurations:\r\nIncludeOptional sites-enabled/*.conf\r\nLoadModule _1cws_module \"/opt/1cv8t/x86_64/8.5.1.1150/wsap24t.so\"\r\n",
+      "sanitized_sha256": "0982c6bea8f11b62287e490d474811864f69e4c4b21df94a97ffeaecfcf4ef14"
+    },
+    "generated.default.vrd": {
+      "raw_sha256": "8a312cfbb73b53ddcbb0a403694a61cdc2c35cc8091bb655db612c4480cae835",
+      "sanitized_text": "<?xml version=\"1.0\" encoding=\"UTF-8\"?>\r\n<point xmlns=\"http://v8.1c.ru/8.2/virtual-resource-system\"\r\n\t\txmlns:xs=\"http://www.w3.org/2001/XMLSchema\"\r\n\t\txmlns:xsi=\"http://www.w3.org/2001/XMLSchema-instance\"\r\n\t\tbase=\"/jetcontrol\"\r\n\t\tib=\"[REDACTED_FILE_REFERENCE]\">\r\n\t<ws pointEnableCommon=\"true\"/>\r\n\t<standardOdata enable=\"false\"\r\n\t\t\treuseSessions=\"autouse\"\r\n\t\t\tsessionMaxAge=\"20\"\r\n\t\t\tpoolSize=\"10\"\r\n\t\t\tpoolTimeout=\"5\"/>\r\n\t<analytics enable=\"true\"\r\n\t\t\tsessionMaxAge=\"1200\"\r\n\t\t\tpoolSize=\"500\"\r\n\t\t\tpoolTimeout=\"5\"/>\r\n</point>",
+      "sanitized_sha256": "ffc7032a7c372b7c0cb778b55ceb71d80a5caa717e37517900847d1a0f4a2e62"
+    },
+    "derived.apache2.conf": {
+      "raw_sha256": "9bfd8335bd6f324869285c44c579ed975228b54047720d4f5f48aaa259fdc53c",
+      "sanitized_text": "# This is the main Apache server configuration file.  It contains the\n# configuration directives that give the server its instructions.\n# See http://httpd.apache.org/docs/2.4/ for detailed information about\n# the directives and /usr/share/doc/apache2/README.Debian about Debian specific\n# hints.\n#\n#\n# Summary of how the Apache 2 configuration works in Debian:\n# The Apache 2 web server configuration in Debian is quite different to\n# upstream's suggested way to configure the web server. This is because Debian's\n# default Apache2 installation attempts to make adding and removing modules,\n# virtual hosts, and extra configuration directives as flexible as possible, in\n# order to make automating the changes and administering the server as easy as\n# possible.\n\n# It is split into several files forming the configuration hierarchy outlined\n# below, all located in the /etc/apache2/ directory:\n#\n#\t/etc/apache2/\n#\t|-- apache2.conf\n#\t|\t`--  ports.conf\n#\t|-- mods-enabled\n#\t|\t|-- *.load\n#\t|\t`-- *.conf\n#\t|-- conf-enabled\n#\t|\t`-- *.conf\n# \t`-- sites-enabled\n#\t \t`-- *.conf\n#\n#\n# * apache2.conf is the main configuration file (this file). It puts the pieces\n#   together by including all remaining configuration files when starting up the\n#   web server.\n#\n# * ports.conf is always included from the main configuration file. It is\n#   supposed to determine listening ports for incoming connections which can be\n#   customized anytime.\n#\n# * Configuration files in the mods-enabled/, conf-enabled/ and sites-enabled/\n#   directories contain particular configuration snippets which manage modules,\n#   global configuration fragments, or virtual host configurations,\n#   respectively.\n#\n#   They are activated by symlinking available configuration files from their\n#   respective *-available/ counterparts. These should be managed by using our\n#   helpers a2enmod/a2dismod, a2ensite/a2dissite and a2enconf/a2disconf. See\n#   their respective man pages for detailed information.\n#\n# * The binary is called apache2. Due to the use of environment variables, in\n#   the default configuration, apache2 needs to be started/stopped with\n#   /etc/init.d/apache2 or apache2ctl. Calling /usr/bin/apache2 directly will not\n#   work with the default configuration.\n\n\n# Global configuration\n#\n\n#\n# ServerRoot: The top of the directory tree under which the server's\n# configuration, error, and log files are kept.\n#\n# NOTE!  If you intend to place this on an NFS (or otherwise network)\n# mounted filesystem then please read the Mutex documentation (available\n# at <URL:http://httpd.apache.org/docs/2.4/mod/core.html#mutex>);\n# you will save yourself a lot of trouble.\n#\n# Do NOT add a slash at the end of the directory path.\n#\n#ServerRoot \"/etc/apache2\"\n\n#\n# The accept serialization lock file MUST BE STORED ON A LOCAL DISK.\n#\n#Mutex file:${APACHE_LOCK_DIR} default\n\n#\n# The directory where shm and other runtime files will be stored.\n#\n\nDefaultRuntimeDir ${APACHE_RUN_DIR}\n\n#\n# PidFile: The file in which the server should record its process\n# identification number when it starts.\n# This needs to be set in /etc/apache2/envvars\n#\nPidFile ${APACHE_PID_FILE}\n\n#\n# Timeout: The number of seconds before receives and sends time out.\n#\nTimeout 300\n\n#\n# KeepAlive: Whether or not to allow persistent connections (more than\n# one request per connection). Set to \"Off\" to deactivate.\n#\nKeepAlive On\n\n#\n# MaxKeepAliveRequests: The maximum number of requests to allow\n# during a persistent connection. Set to 0 to allow an unlimited amount.\n# We recommend you leave this number high, for maximum performance.\n#\nMaxKeepAliveRequests 100\n\n#\n# KeepAliveTimeout: Number of seconds to wait for the next request from the\n# same client on the same connection.\n#\nKeepAliveTimeout 5\n\n\n# These need to be set in /etc/apache2/envvars\nUser ${APACHE_RUN_USER}\nGroup ${APACHE_RUN_GROUP}\n\n#\n# HostnameLookups: Log the names of clients or just their IP addresses\n# e.g., www.apache.org (on) or 204.62.129.132 (off).\n# The default is off because it'd be overall better for the net if people\n# had to knowingly turn this feature on, since enabling it means that\n# each client request will result in AT LEAST one lookup request to the\n# nameserver.\n#\nHostnameLookups Off\n\n# ErrorLog: The location of the error log file.\n# If you do not specify an ErrorLog directive within a <VirtualHost>\n# container, error messages relating to that virtual host will be\n# logged here.  If you *do* define an error logfile for a <VirtualHost>\n# container, that host's errors will be logged there and not here.\n#\nErrorLog ${APACHE_LOG_DIR}/error.log\n\n#\n# LogLevel: Control the severity of messages logged to the error_log.\n# Available values: trace8, ..., trace1, debug, info, notice, warn,\n# error, crit, alert, emerg.\n# It is also possible to configure the log level for particular modules, e.g.\n# \"LogLevel info ssl:warn\"\n#\nLogLevel warn\n\n# Include module configuration:\nIncludeOptional mods-enabled/*.load\nIncludeOptional mods-enabled/*.conf\n\n# Include list of ports to listen on\nInclude ports.conf\n\n\n# Sets the default security model of the Apache2 HTTPD server. It does\n# not allow access to the root filesystem outside of /usr/share and /var/www.\n# The former is used by web applications packaged in Debian,\n# the latter may be used for local directories served by the web server. If\n# your system is serving content from a sub-directory in /srv you must allow\n# access here, or in any related virtual host.\n<Directory />\n\tOptions FollowSymLinks\n\tAllowOverride None\n\tRequire all denied\n</Directory>\n\n<Directory /usr/share>\n\tAllowOverride None\n\tRequire all granted\n</Directory>\n\n<Directory /var/www/>\n\tOptions Indexes FollowSymLinks\n\tAllowOverride None\n\tRequire all granted\n</Directory>\n\n# 1c publication\nAlias \"/jetcontrol\" \"/var/www/jetcontrol/\"\n<Directory \"/var/www/jetcontrol/\">\n    AllowOverride None\n    Options None\n    Require all granted\n    SetHandler 1c-application\n    ManagedApplicationDescriptor \"/var/www/jetcontrol/default.vrd\"\n</Directory>\n\n#<Directory /srv/>\n#\tOptions Indexes FollowSymLinks\n#\tAllowOverride None\n#\tRequire all granted\n#</Directory>\n\n\n\n\n# AccessFileName: The name of the file to look for in each directory\n# for additional configuration directives.  See also the AllowOverride\n# directive.\n#\nAccessFileName .htaccess\n\n#\n# The following lines prevent .htaccess and .htpasswd files from being\n# viewed by Web clients.\n#\n<FilesMatch \"^\\.ht\">\n\tRequire all denied\n</FilesMatch>\n\n\n#\n# The following directives define some format nicknames for use with\n# a CustomLog directive.\n#\n# These deviate from the Common Log Format definitions in that they use %O\n# (the actual bytes sent including headers) instead of %b (the size of the\n# requested file), because the latter makes it impossible to detect partial\n# requests.\n#\n# Note that the use of %{X-Forwarded-For}i instead of %h is not recommended.\n# Use mod_remoteip instead.\n#\nLogFormat \"%v:%p %h %l %u %t \\\"%r\\\" %>s %O \\\"%{Referer}i\\\" \\\"%{User-Agent}i\\\"\" vhost_combined\nLogFormat \"%h %l %u %t \\\"%r\\\" %>s %O \\\"%{Referer}i\\\" \\\"%{User-Agent}i\\\"\" combined\nLogFormat \"%h %l %u %t \\\"%r\\\" %>s %O\" common\nLogFormat \"%{Referer}i -> %U\" referer\nLogFormat \"%{User-agent}i\" agent\n\n# Include of directories ignores editors' and dpkg's backup files,\n# see README.Debian for details.\n\n# Include generic snippets of statements\nIncludeOptional conf-enabled/*.conf\n\n# Include the virtual host configurations:\nIncludeOptional sites-enabled/*.conf\nLoadModule _1cws_module \"/opt/1cv8t/x86_64/8.5.1.1150/wsap24t.so\"\n",
+      "sanitized_sha256": "9bfd8335bd6f324869285c44c579ed975228b54047720d4f5f48aaa259fdc53c"
+    },
+    "derived.default.vrd": {
+      "raw_sha256": "e5406c8e7352b43c6499e2ff4fe189c9b239fe045eb0ac46de2960555850ac7d",
+      "sanitized_text": "<?xml version=\"1.0\" encoding=\"UTF-8\"?>\n<point xmlns=\"http://v8.1c.ru/8.2/virtual-resource-system\"\n\t\txmlns:xs=\"http://www.w3.org/2001/XMLSchema\"\n\t\txmlns:xsi=\"http://www.w3.org/2001/XMLSchema-instance\"\n\t\tbase=\"/jetcontrol\"\n\t\tib=\"[REDACTED_FILE_REFERENCE]\">\n\t<ws pointEnableCommon=\"false\" enable=\"false\"/>\n\t<standardOdata enable=\"false\"\n\t\t\treuseSessions=\"autouse\"\n\t\t\tsessionMaxAge=\"20\"\n\t\t\tpoolSize=\"10\"\n\t\t\tpoolTimeout=\"5\"/>\n\t<analytics enable=\"false\"\n\t\t\tsessionMaxAge=\"1200\"\n\t\t\tpoolSize=\"500\"\n\t\t\tpoolTimeout=\"5\"/>\n\t<httpServices publishByDefault=\"false\"/>\n</point>",
+      "sanitized_sha256": "db2260c51e00a8faf73919242e7202c50d8d4c6de8186f17f2e11686912fb7f1"
+    }
+  }
+}
