@@ -1,7 +1,7 @@
 ---
 name: 1c-enterprise-linux
 description: "Use for 1C XML/BSL analysis and Linux platform automation."
-version: 1.6.1
+version: 1.6.2
 author: Hermes Agent
 license: MIT
 metadata:
@@ -195,7 +195,12 @@ ABI-matched set (e.g. ICU 72) comes from one release instead of mixing trixie/bo
 
 - The Конфигуратор pulls GUI libraries even in batch mode and needs a display (GTK must
   initialize) → run under `xvfb-run` or a manual Xvfb. **8.3.x links GTK2** (`libgtk-x11-2.0.so.0`);
-  **8.5.x links GTK3** (`libgtk-3.so.0`) + WebKit2GTK 4.0 — do NOT chase `libgtk2.0` for 8.5.
+  **Check the exact build's dependencies**, not a blanket 8.5 rule. The historical lab used
+  GTK3 and a WebKit2GTK 4.0 bundle, but inspection of the retained 8.5.1.1150 training
+  `libwx_gtk3u-3.0.so.0` now shows a required `libwebkit2gtk-4.1.so.0` through `ldd`.
+  Do not prescribe a cross-release 4.0 bundle or change the OS from that old recipe
+  without checking the admitted binaries. Neither dependency inspection nor clean `ldd`
+  proves web-client readiness. Do not chase GTK2 merely because older releases used it.
 - **Xvfb needs `xkbcomp`**: it shells out to a hardcoded `/usr/bin/xkbcomp` (compiled-in
   `XKB_BIN_DIRECTORY`; `strings` shows only `xkbcomp`, not the full path). Missing it →
   `Fatal server error: Failed to activate virtual core keyboard`. `xkbcomp` is in `x11-xkb-utils`,
@@ -207,10 +212,11 @@ ABI-matched set (e.g. ICU 72) comes from one release instead of mixing trixie/bo
   supervisor), not a shell-script hardening exercise. `-xkbdir <dir>` overrides only the DATA dir,
   not the xkbcomp binary path. Child library dependencies resolve through inherited
   `LD_LIBRARY_PATH`.
-- **Debian 13 (trixie) is newer than what 1C ships against** — expect lib conflicts. Two real
-  traps: `libgtk-3-0` was renamed `libgtk-3-0t64` (t64 transition), and WebKit2GTK 4.0
-  (`libwebkit2gtk-4.0-37`, `libjavascriptcoregtk-4.0-18`) was dropped from trixie (only 4.1
-  remains). Pin those deps to **bookworm** with `apt-get download -t bookworm`.
+- **Historical Debian 13 lab caveat:** `libgtk-3-0` was renamed `libgtk-3-0t64`,
+  and the old WebKit2GTK 4.0 package bundle came from bookworm. That is a retained
+  laboratory recipe, not a requirement for every 8.5 binary or a default web bootstrap.
+  Check the actual required SONAME and prefer the prepared OS package environment;
+  use the old pinned bundle only in its explicitly admitted historical scenario.
 - **fontconfig**: 1cv8 segfaults (`Fontconfig error: Cannot load default config file` + core
   dump) without a font config. Rootless fix: extract `fonts-dejavu-core` + `fontconfig-config`
   debs, then set `FONTCONFIG_FILE` to a minimal config with a `<dir>` at the fonts + a writable

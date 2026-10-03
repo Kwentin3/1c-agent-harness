@@ -6,12 +6,12 @@
     {
       "install_root": "skills/1c/1c-enterprise-linux",
       "name": "1c-enterprise-linux",
-      "resource_manifest_sha256": "2a642d0ef109fa0a811eb6d4774e22d3a196a596020f330f18553de975f9978e",
+      "resource_manifest_sha256": "56c07cd0ea42742a88ae1314f9f1d1fb7ea0e15ea5cbdbf6bed1a41e97ffefa6",
       "resources": [
         {
-          "bytes": 63409,
+          "bytes": 63899,
           "path": "SKILL.md",
-          "sha256": "642936df6050c7b802bf020f75ee935808020c95cbe225760ff132e1152be24a"
+          "sha256": "c92cedd3e2785b33b8c057c43fbe71c4992ff3cb253ce0e9d90104e3c4dc46db"
         },
         {
           "bytes": 4329,
@@ -190,7 +190,7 @@
         }
       ],
       "source_root": "skills/1c/1c-enterprise-linux",
-      "version": "1.6.1"
+      "version": "1.6.2"
     },
     {
       "install_root": "skills/1c/headless-1c-probing",
