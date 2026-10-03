@@ -4,12 +4,14 @@
 [Контракт задачи](https://github.com/Kwentin3/1c-agent-harness/issues/87).
 Это handoff исследования, **не рабочий runbook и не доказательство дефекта платформы**.
 
-**Актуальное возобновление:** [результаты и минимальный root-gate](../experiments/issue87-web-publication/RESUMED.md),
-[evidence](../experiments/issue87-web-publication/resume-evidence.json). Владелец вернул Goal
-в работу; проведён один привязанный browser-контроль и два диагностических publisher
-запуска. Loop чистого `base="/jet/"` подтверждён; причина отказа publisher на
-ненулевом UID установлена по exact binary. Root ещё не запускался и требует
-отдельного решения. Остальные разделы ниже описывают предыдущий checkpoint.
+**Актуально 2026-10-03:** [штатный publisher PASS и новый bound browser FAIL](../experiments/issue87-web-publication/GENERATED-BROWSER.md),
+[evidence](../experiments/issue87-web-publication/generated-browser-evidence.json).
+Один разрешённый root publisher уже успешно создал публикацию; sealed runtime,
+receipt/generated hashes и Apache `-t`/`-M` проверены Hermes. Safe derivative
+штатной публикации на отдельной копии demo-ИБ всё ещё даёт locale `/en` resource
+404 и не запускает UI. Сохраняемые данные/публикация не изменены, task processes
+завершены. История root-gate — [RESUMED.md](../experiments/issue87-web-publication/RESUMED.md).
+Остальные разделы ниже — исторические checkpoints, не текущее отсутствие root approval.
 
 ## Цель и уже достигнутая часть
 

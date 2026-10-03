@@ -1,0 +1,302 @@
+{
+  "date": "2026-10-03",
+  "verdict": "PUBLISHER_PASS_BROWSER_FAIL_GOAL_INCOMPLETE",
+  "root_control": {
+    "manifest_sha256": "1797046567edf5ab6f43ddfe6e735daa6113ef9cb10dd7051a2438a1b0d69789",
+    "verified_counts": {
+      "file": 1011,
+      "symlink": 230
+    },
+    "internal_relative_symlinks": 230,
+    "symlink_entry_sample": [
+      {
+        "path": "apache/usr/lib/x86_64-linux-gnu/apr-util-1/apr_crypto_openssl.so",
+        "kind": "symlink",
+        "target": "apr_crypto_openssl-1.so"
+      }
+    ],
+    "root_parent_chain_verified": true,
+    "protected_result_matches_receipt": true,
+    "publisher_rc": 0,
+    "publisher_invocations": 1,
+    "stdout": "Publication successful",
+    "stderr_empty": true,
+    "new_root_or_service_invocations": 0
+  },
+  "generated_artifact_hashes": {
+    "httpd.conf": "0c1640f8489fbf11a0f82746bcc73cb0da3de38cfc047e9864792fac3c7a2b3a",
+    "default.vrd": "72ac8ebff96b5d2fad20e48d0fbbef08f1360035f7322cf955370ea9e4b1ad22"
+  },
+  "browser": {
+    "runtime": "8.5.1.1150",
+    "uid": 10001,
+    "source_demo_sha256": "b060127640773fda03a8c2bef5e9847d35f0b159bb116e043ce1e2ba84b9ac42",
+    "config_sha256": "cc4bd4fe6e84c00dddb6c2b084aefd49bd8a945e53a7a10dd91350b1126ef8e8",
+    "vrd_sha256": "11556b46d2df925984b1b63395bb2a61c9ac94b498f41b8ba93db729ffd0602a",
+    "browser_attempts": 1,
+    "html_flags": [
+      "var BASE = \"/jetcontrol/en\";",
+      "var LANG = \"en\";",
+      "var REDIRECT = true;"
+    ],
+    "responses": [
+      {
+        "path": "/jetcontrol/",
+        "status": 200
+      }
+    ],
+    "navigations": [
+      "/jetcontrol/"
+    ],
+    "errors": [
+      "Cannot read properties of null (reading 'indexOf')"
+    ],
+    "body": "",
+    "url": "http://127.0.0.1:18089/jetcontrol/",
+    "apache_exit": 0,
+    "copy_ib_after_sha256": "b060127640773fda03a8c2bef5e9847d35f0b159bb116e043ce1e2ba84b9ac42"
+  },
+  "network_probe": {
+    "http": [
+      {
+        "path": "/jetcontrol/scripts/mod_bootstrap_bootstrap.js?sysver=8.5.1.1150",
+        "status": 200,
+        "headers": {
+          "Date": "Sat, 03 Oct 2026 05:41:09 GMT",
+          "Server": "Apache",
+          "vrs-rc": "1",
+          "Content-Length": "8121",
+          "Content-Language": "en-US-POSIX",
+          "Cache-Control": "private, max-age=31536000",
+          "Connection": "close",
+          "Content-Type": "application/javascript; charset=UTF-8"
+        },
+        "bytes": 8121,
+        "excerpt": "'use strict';function A(g){var l=0;return function(){return l<g.length?{done:!1,value:g[l++]}:{done:!0}}}function J(g){var l=\"undefined\"!=typeof Symbol&&Symbol.iterator&&g[Symbol.iterator];return l?l.call(g):{next:A(g)}};(this||self).j={\"goog.editor.defines.USE_CONTENTEDITABLE_IN_FIREFOX_3\":!0};(function(){function g(a){a=window[a];return void 0!==a&&\"string\"===typeof a?a:\"\"}function l(){return Math.floor(65536*(1+Math.random())).toString(16).substring(1)}function d(a,c,e,b){a=u(a);c?(e&&1<c.length&&('\"'===c.charAt(0)&&'\"'===c.charAt(c.length-1)||\"'\"===c.charAt(0)&&\"'\"===c.charAt(c.length-1))&"
+      },
+      {
+        "path": "/jetcontrol/en/scripts/mod_bootstrap_bootstrap.js?sysver=8.5.1.1150",
+        "status": 404,
+        "headers": {
+          "Date": "Sat, 03 Oct 2026 05:41:11 GMT",
+          "Server": "Apache",
+          "vrs-rc": "1",
+          "Content-Length": "646",
+          "Connection": "close",
+          "Content-Type": "application/json; charset=utf-8"
+        },
+        "bytes": 646,
+        "excerpt": "﻿{\"#exception\":\"{http://v8.1c.ru/8.2/virtual-resource-system}Exception\",\"exception\":{\"clsid\":\"580392e6-ba49-4280-ac67-fcd6f2180121\",\"reason\":404,\"descr\":\"HTTP: Not found\\nError executing the query GET to resource /en/scripts/mod_bootstrap_bootstrap.js:\",\"category\":\"00000000000000000000000000\",\"creationStack\":\"mngsrvt:0x0000000000252DF5 mngsrvt:0x000000000024F8F4 vrsbaset:0x00000000006D7791 vrsbaset:0x00000000006540C5 vrsbaset:0x00000000006EBDE6 vrsbaset:0x00000000006D2A9C vrsbaset:0x00000000006EC4A9 vrsbaset:0x00000000006ED4A0 core85t:0x00000000008D4EBF core85t:0x00000000006B238C libc.so:0x0"
+      },
+      {
+        "path": "/jetcontrol/en/",
+        "status": 404,
+        "headers": {
+          "Date": "Sat, 03 Oct 2026 05:41:11 GMT",
+          "Server": "Apache",
+          "vrs-rc": "1",
+          "Content-Length": "584",
+          "Connection": "close",
+          "Content-Type": "application/json; charset=utf-8"
+        },
+        "bytes": 584,
+        "excerpt": "﻿{\"#exception\":\"{http://v8.1c.ru/8.2/virtual-resource-system}Exception\",\"exception\":{\"clsid\":\"580392e6-ba49-4280-ac67-fcd6f2180121\",\"reason\":404,\"descr\":\"HTTP: Not found\\nError executing the query GET to resource /en:\",\"category\":\"00000000000000000000000000\",\"creationStack\":\"mngsrvt:0x0000000000250B1A vrsbaset:0x00000000006D7791 vrsbaset:0x00000000006540C5 vrsbaset:0x00000000006EBDE6 vrsbaset:0x00000000006D2A9C vrsbaset:0x00000000006EC4A9 vrsbaset:0x00000000006ED4A0 core85t:0x00000000008D4EBF core85t:0x00000000006B238C libc.so:0x0000000000000000 libc.so:0x0000000000000000 \"}}"
+      }
+    ],
+    "responses": [
+      {
+        "url": "http://127.0.0.1:18089/jetcontrol/",
+        "status": 200,
+        "headers": {
+          "cache-control": "no-cache, no-store, max-age=0",
+          "connection": "close",
+          "content-language": "en",
+          "content-length": "7398",
+          "content-type": "text/html;charset=UTF-8",
+          "date": "Sat, 03 Oct 2026 05:41:11 GMT",
+          "origin-agent-cluster": "?1",
+          "server": "Apache"
+        }
+      },
+      {
+        "url": "http://127.0.0.1:18089/jetcontrol/en/e1csys/mngcore/splashTop.svg?sysver=8.5.1.1150",
+        "status": 404,
+        "headers": {
+          "vrs-rc": "1",
+          "content-length": "613",
+          "keep-alive": "timeout=5, max=100",
+          "date": "Sat, 03 Oct 2026 05:41:11 GMT",
+          "content-type": "application/json; charset=utf-8",
+          "server": "Apache",
+          "connection": "Keep-Alive"
+        }
+      },
+      {
+        "url": "http://127.0.0.1:18089/jetcontrol/en/e1csys/mngcore/splashBottom.svg?sysver=8.5.1.1150",
+        "status": 404,
+        "headers": {
+          "vrs-rc": "1",
+          "content-length": "616",
+          "keep-alive": "timeout=5, max=100",
+          "date": "Sat, 03 Oct 2026 05:41:11 GMT",
+          "content-type": "application/json; charset=utf-8",
+          "server": "Apache",
+          "connection": "Keep-Alive"
+        }
+      },
+      {
+        "url": "http://127.0.0.1:18089/jetcontrol/en/scripts/mod_bootstrap_bootstrap.js?sysver=8.5.1.1150",
+        "status": 404,
+        "headers": {
+          "vrs-rc": "1",
+          "content-length": "646",
+          "keep-alive": "timeout=5, max=99",
+          "date": "Sat, 03 Oct 2026 05:41:11 GMT",
+          "content-type": "application/json; charset=utf-8",
+          "server": "Apache",
+          "connection": "Keep-Alive"
+        }
+      }
+    ],
+    "failed": [],
+    "console": [
+      {
+        "type": "error",
+        "text": "Failed to load resource: the server responded with a status of 404 (Not found)"
+      },
+      {
+        "type": "error",
+        "text": "Failed to load resource: the server responded with a status of 404 (Not found)"
+      },
+      {
+        "type": "error",
+        "text": "Failed to load resource: the server responded with a status of 404 (Not found)"
+      }
+    ],
+    "errors": [],
+    "requests": [
+      "http://127.0.0.1:18089/jetcontrol/",
+      "http://127.0.0.1:18089/jetcontrol/en/e1csys/mngcore/splashTop.svg?sysver=8.5.1.1150",
+      "http://127.0.0.1:18089/jetcontrol/en/e1csys/mngcore/splashBottom.svg?sysver=8.5.1.1150",
+      "http://127.0.0.1:18089/jetcontrol/en/scripts/mod_bootstrap_bootstrap.js?sysver=8.5.1.1150"
+    ],
+    "apache_exit": 0
+  },
+  "safety": {
+    "files": {
+      "apache.stderr": {
+        "bytes": 0,
+        "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+      },
+      "apache.stdout": {
+        "bytes": 0,
+        "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+      },
+      "bootstrap.html": {
+        "bytes": 7398,
+        "sha256": "b5a2a0634dc612c50fbebb97c3b1029b25dd1666a879c0b305631cf6b91b3efc"
+      },
+      "browser.png": {
+        "bytes": 8824,
+        "sha256": "935902efef5714556df8661f7ecf7bbe0389f1450b8ceba0d9b75c77b1be8ae9"
+      },
+      "dom.html": {
+        "bytes": 7349,
+        "sha256": "67c131c62a19270705069277b92324b1e7a68f996bc0aeb855a53532c8031751"
+      },
+      "httpd.conf": {
+        "bytes": 1885,
+        "sha256": "cc4bd4fe6e84c00dddb6c2b084aefd49bd8a945e53a7a10dd91350b1126ef8e8"
+      },
+      "logs/error.log": {
+        "bytes": 1762,
+        "sha256": "e8f3da72c582b995d37f19cb40303a67186288c405a532aa3f04d4d2467c8902"
+      },
+      "network-probe/http-0.bin": {
+        "bytes": 8121,
+        "sha256": "b845fe24689ac0fde3c87aa0d08c603a91bc6793256605ed5c175dc6766e1b84"
+      },
+      "network-probe/http-1.bin": {
+        "bytes": 646,
+        "sha256": "aec0ece4b9810aadb4c1b2687ee5b66958ec953c9d2ba6f0cc9b24aa8086a735"
+      },
+      "network-probe/http-2.bin": {
+        "bytes": 584,
+        "sha256": "d2f0fb38b16cc0c3f364cb77e0a4a66058192db0fd6006b199fe238d4d3e78a9"
+      },
+      "network-probe/result.json": {
+        "bytes": 5715,
+        "sha256": "617ed1433ba17404d5a199d50e52cdc07532248117049a2c126cd4d4753cac06"
+      },
+      "network-probe/stderr": {
+        "bytes": 0,
+        "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+      },
+      "network-probe/stdout": {
+        "bytes": 0,
+        "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+      },
+      "publish/jetcontrol/default.vrd": {
+        "bytes": 501,
+        "sha256": "11556b46d2df925984b1b63395bb2a61c9ac94b498f41b8ba93db729ffd0602a"
+      },
+      "result.json": {
+        "bytes": 2189,
+        "sha256": "e96c63abcbe575677c9f7269ddac24b0a2a358816a7edbad07a80461b4e2a7ec"
+      }
+    },
+    "protected": {
+      "demo-ib/1Cv8.1CD": "b060127640773fda03a8c2bef5e9847d35f0b159bb116e043ce1e2ba84b9ac42",
+      "demo-before-web.dt": "44ff12ed0af0a77fc01ba630242614575e8041352614c65d1a7d720227f02ec5",
+      "httpd.conf": "c83bfb1855af23541e7e1860889b2c7516d8a9719c07bd75cdba74ba62afef66",
+      "publish/jet/default.vrd": "747e743d06306a221718d9b876f46936105f33e76df7d247b406c3dd44b79706"
+    },
+    "listeners": [
+      {
+        "port": 18087,
+        "address": "0100007F",
+        "inode": "32099500"
+      }
+    ],
+    "processes": [],
+    "disposable_copy_sha256": "b060127640773fda03a8c2bef5e9847d35f0b159bb116e043ce1e2ba84b9ac42",
+    "disposable_copy_removed": true
+  },
+  "target": {
+    "status": "ready",
+    "configuration": {
+      "name": "JetTr",
+      "version": "1.0.3.1"
+    },
+    "sourceCf": {
+      "path": ".local/dist/Jet-1.0.3.1-tr.cf",
+      "expectedSha256": "5694f9e4bdf9a0857185118ba816d562d8ee8de2b8da3f60792397a399ca128a",
+      "actualSha256": "5694f9e4bdf9a0857185118ba816d562d8ee8de2b8da3f60792397a399ca128a"
+    },
+    "snapshot": {
+      "path": ".local/runs/training-jet-review-final/snapshot",
+      "manifestPath": ".local/runs/training-jet-review-final/snapshot.manifest",
+      "expectedManifestSha256": "70972b5e11901ca31c7f7ec67dca03f78986206b024be01aeb34e0e1f3ff6691",
+      "actualManifestSha256": "70972b5e11901ca31c7f7ec67dca03f78986206b024be01aeb34e0e1f3ff6691",
+      "expectedFileCount": 5099,
+      "actualFileCount": 5099
+    },
+    "dailyNativeRoute": "scripts/shared_task_route.py run"
+  },
+  "accounting": {
+    "new_root_publisher": 0,
+    "new_Designer": 0,
+    "new_ENTERPRISE_CLI": 0,
+    "isolated_Apache_launches": 2,
+    "fresh_Chromium_sessions": 2,
+    "HTTP_native_bootstrap_requests": "executed; not a native-free lane"
+  },
+  "limits": [
+    "Host Compose/rollback externally attested, not directly verified by Hermes.",
+    "First session indexOf(null) was not reproduced in focused trace; do not claim it as stable root cause.",
+    "Temporary socket bind failure was TIME_WAIT; /proc proves no listener or owned Apache survived.",
+    "Safe descriptor is derived from generated VRD, not byte-identical: IB/base directories remapped, WS/analytics/HTTP disabled, AllowOverride None.",
+    "No platform defect/license incompatibility established.",
+    "No dashboard/Refresh/restart/ingress proof."
+  ]
+}
