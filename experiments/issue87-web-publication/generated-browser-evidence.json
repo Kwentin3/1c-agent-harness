@@ -287,9 +287,10 @@
     "new_root_publisher": 0,
     "new_Designer": 0,
     "new_ENTERPRISE_CLI": 0,
-    "isolated_Apache_launches": 2,
+    "isolated_Apache_launches": 3,
     "fresh_Chromium_sessions": 2,
-    "HTTP_native_bootstrap_requests": "executed; not a native-free lane"
+    "HTTP_native_bootstrap_requests": "executed; not a native-free lane",
+    "explicit_language_HTTP_probe": 1
   },
   "limits": [
     "Host Compose/rollback externally attested, not directly verified by Hermes.",
@@ -298,5 +299,123 @@
     "Safe descriptor is derived from generated VRD, not byte-identical: IB/base directories remapped, WS/analytics/HTTP disabled, AllowOverride None.",
     "No platform defect/license incompatibility established.",
     "No dashboard/Refresh/restart/ingress proof."
-  ]
+  ],
+  "explicit_language_probe": {
+    "hypothesis": "Explicit documented L and matching Accept-Language distinguish language-selection failure from dispatch that rejects both installed languages",
+    "http": [
+      {
+        "path": "/jetcontrol/?L=en",
+        "Accept-Language": "en",
+        "status": 200,
+        "headers": {
+          "Date": "Sat, 03 Oct 2026 05:53:48 GMT",
+          "Server": "Apache",
+          "Origin-Agent-Cluster": "?1",
+          "Connection": "close",
+          "Cache-Control": "no-cache, no-store, max-age=0",
+          "Content-Language": "en",
+          "Content-Length": "7396",
+          "Content-Type": "text/html;charset=UTF-8"
+        },
+        "bytes": 7396,
+        "flags": [
+          "var BASE = \"/jetcontrol/en\";",
+          "var LANG = \"\";",
+          "var REDIRECT = true;"
+        ],
+        "excerpt": null
+      },
+      {
+        "path": "/jetcontrol/en/?L=en",
+        "Accept-Language": "en",
+        "status": 404,
+        "headers": {
+          "Date": "Sat, 03 Oct 2026 05:53:48 GMT",
+          "Server": "Apache",
+          "vrs-rc": "1",
+          "Content-Length": "584",
+          "Connection": "close",
+          "Content-Type": "application/json; charset=utf-8"
+        },
+        "bytes": 584,
+        "flags": [],
+        "excerpt": "{\"#exception\":\"{http://v8.1c.ru/8.2/virtual-resource-system}Exception\",\"exception\":{\"clsid\":\"580392e6-ba49-4280-ac67-fcd6f2180121\",\"reason\":404,\"descr\":\"HTTP: Not found\\nError executing the query GET to resource /en:\",\"category\":\"00000000000000000000000000\",\"creationStack\":\"mngsrvt:0x0000000000250B1A vrsbaset:0x00000000006D7791 vrsbaset:0x00000000006540C5 vrsbaset:0x00000000006EBDE6 vrsbaset:0x00000000006D2A9C vrsbaset:0x00000000006EC4A9 vrsbaset:0x00000000006ED4A0 core85t:0x00000000008D4EBF core85t:0x00000000006B238C libc.so:0x0000000000000000 libc.so:0x0000000000000000 \"}}"
+      },
+      {
+        "path": "/jetcontrol/en/scripts/mod_bootstrap_bootstrap.js?sysver=8.5.1.1150&L=en",
+        "Accept-Language": "en",
+        "status": 404,
+        "headers": {
+          "Date": "Sat, 03 Oct 2026 05:53:48 GMT",
+          "Server": "Apache",
+          "vrs-rc": "1",
+          "Content-Length": "646",
+          "Connection": "close",
+          "Content-Type": "application/json; charset=utf-8"
+        },
+        "bytes": 646,
+        "flags": [],
+        "excerpt": "{\"#exception\":\"{http://v8.1c.ru/8.2/virtual-resource-system}Exception\",\"exception\":{\"clsid\":\"580392e6-ba49-4280-ac67-fcd6f2180121\",\"reason\":404,\"descr\":\"HTTP: Not found\\nError executing the query GET to resource /en/scripts/mod_bootstrap_bootstrap.js:\",\"category\":\"00000000000000000000000000\",\"creationStack\":\"mngsrvt:0x0000000000252DF5 mngsrvt:0x000000000024F8F4 vrsbaset:0x00000000006D7791 vrsbaset:0x00000000006540C5 vrsbaset:0x00000000006EBDE6 vrsbaset:0x00000000006D2A9C vrsbaset:0x00000000006EC4A9 vrsbaset:0x00000000006ED4A0 core85t:0x00000000008D4EBF core85t:0x00000000006B238C libc.so:0x0000000000000000 libc.so:0x0000000000000000 \"}}"
+      },
+      {
+        "path": "/jetcontrol/?L=ru",
+        "Accept-Language": "ru",
+        "status": 200,
+        "headers": {
+          "Date": "Sat, 03 Oct 2026 05:53:48 GMT",
+          "Server": "Apache",
+          "Origin-Agent-Cluster": "?1",
+          "Connection": "close",
+          "Cache-Control": "no-cache, no-store, max-age=0",
+          "Content-Language": "en",
+          "Content-Length": "7396",
+          "Content-Type": "text/html;charset=UTF-8"
+        },
+        "bytes": 7396,
+        "flags": [
+          "var BASE = \"/jetcontrol/en\";",
+          "var LANG = \"\";",
+          "var REDIRECT = true;"
+        ],
+        "excerpt": null
+      },
+      {
+        "path": "/jetcontrol/ru/?L=ru",
+        "Accept-Language": "ru",
+        "status": 404,
+        "headers": {
+          "Date": "Sat, 03 Oct 2026 05:53:48 GMT",
+          "Server": "Apache",
+          "vrs-rc": "1",
+          "Content-Length": "584",
+          "Connection": "close",
+          "Content-Type": "application/json; charset=utf-8"
+        },
+        "bytes": 584,
+        "flags": [],
+        "excerpt": "{\"#exception\":\"{http://v8.1c.ru/8.2/virtual-resource-system}Exception\",\"exception\":{\"clsid\":\"580392e6-ba49-4280-ac67-fcd6f2180121\",\"reason\":404,\"descr\":\"HTTP: Not found\\nError executing the query GET to resource /ru:\",\"category\":\"00000000000000000000000000\",\"creationStack\":\"mngsrvt:0x0000000000250B1A vrsbaset:0x00000000006D7791 vrsbaset:0x00000000006540C5 vrsbaset:0x00000000006EBDE6 vrsbaset:0x00000000006D2A9C vrsbaset:0x00000000006EC4A9 vrsbaset:0x00000000006ED4A0 core85t:0x00000000008D4EBF core85t:0x00000000006B238C libc.so:0x0000000000000000 libc.so:0x0000000000000000 \"}}"
+      },
+      {
+        "path": "/jetcontrol/ru/scripts/mod_bootstrap_bootstrap.js?sysver=8.5.1.1150&L=ru",
+        "Accept-Language": "ru",
+        "status": 404,
+        "headers": {
+          "Date": "Sat, 03 Oct 2026 05:53:48 GMT",
+          "Server": "Apache",
+          "vrs-rc": "1",
+          "Content-Length": "646",
+          "Connection": "close",
+          "Content-Type": "application/json; charset=utf-8"
+        },
+        "bytes": 646,
+        "flags": [],
+        "excerpt": "{\"#exception\":\"{http://v8.1c.ru/8.2/virtual-resource-system}Exception\",\"exception\":{\"clsid\":\"580392e6-ba49-4280-ac67-fcd6f2180121\",\"reason\":404,\"descr\":\"HTTP: Not found\\nError executing the query GET to resource /ru/scripts/mod_bootstrap_bootstrap.js:\",\"category\":\"00000000000000000000000000\",\"creationStack\":\"mngsrvt:0x0000000000252DF5 mngsrvt:0x000000000024F8F4 vrsbaset:0x00000000006D7791 vrsbaset:0x00000000006540C5 vrsbaset:0x00000000006EBDE6 vrsbaset:0x00000000006D2A9C vrsbaset:0x00000000006EC4A9 vrsbaset:0x00000000006ED4A0 core85t:0x00000000008D4EBF core85t:0x00000000006B238C libc.so:0x0000000000000000 libc.so:0x0000000000000000 \"}}"
+      }
+    ],
+    "browser_attempts": 0,
+    "apache_exit": 0,
+    "demo_sha256": "b060127640773fda03a8c2bef5e9847d35f0b159bb116e043ce1e2ba84b9ac42",
+    "owned_survivors": [],
+    "copy_removed": true
+  }
 }

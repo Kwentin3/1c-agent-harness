@@ -40,7 +40,8 @@ Generated имя `standardOdata` использовано с точным рег
 прежнего ручного `standardOData` само по себе не устранило сбой.
 
 Один initial browser control и один focused network probe (каждый со своим
-обычным Apache launch и fresh Chromium session); Designer/ENTERPRISE CLI/root=0.
+обычным Apache launch и fresh Chromium session), затем один HTTP-only documented
+`L`/Accept-Language контроль с третьим Apache launch; Designer/ENTERPRISE CLI/root=0.
 Это настоящие native web-extension HTTP обращения, не статическая lane.
 В bounded пробах не было rewrite, JavaScript replacement, UID/version подмены
 или изменения vendor binaries.
@@ -79,6 +80,16 @@ JSON content-type у 404, без этой JavaScript exception. Поэтому n
 Отсюда `/en` в HTML не является сам по себе ошибкой; наблюдаемая проблема —
 что **наш exact runtime/Apache route не принимает созданный им locale path**.
 Документация не устанавливает причину этого exact-build отказа.
+
+Дополнительный HTTP-only контроль по документированному `?L=en` / `?L=ru`
+и совпадающему `Accept-Language` **не изменял** Apache/VRD/env. Оба root GET дали
+`BASE="/jetcontrol/en"`, `LANG=""`, `REDIRECT=true`; соответствующие `/en` и `/ru`
+root/script GET получили platform JSON 404. То есть явный request-level выбор
+языка тоже не разблокировал dispatch; не переносим результат на все версии 1С
+и не заявляем, что русские localization resources отсутствуют (файлы обнаружены).
+Это отдельный HTTP контроль, не третий browser session. Новый process завершён,
+повторно созданная disposable IB copy удалена; demo hash прежний. Raw receipts:
+`generated-browser-control/explicit-language/`, supplemental section в evidence JSON.
 
 ## Сохранность и очистка
 
