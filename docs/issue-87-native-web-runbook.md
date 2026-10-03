@@ -70,11 +70,28 @@ Runtime locator прежнего executor не переключён. В обыч
 подготовленный executor launch env, а не скрытый файл или новая переменная в model args.
 Warm admitted snapshot не требует запуска 1С.
 
-## Что осталось
+## Source checks и remaining gates
 
-1. Source/installed canonical identity и fresh-agent discovery/readback.
-2. Regression current-source `open/narrow/verify` на сохранённом target, без его изменения;
-   full source tests отдельно от native canary нового runtime.
+`python3 -m unittest discover -s tests -v` — **344 tests, OK**; focused skill
+manifest — **3 tests, OK**. [Remote source regression](../experiments/issue87-web-publication/reference-source-regression.json)
+использовала bytes current source `585f182` (все 30 Python-файлов сверены), отдельную
+физическую копию настоящего snapshot5099 и неизменённый project contract.
+Warm `open → narrow → open` PASS; повтор тот же SnapshotRef. `verify` проверен
+только на invalid-envelope refusal до native launch. Native0, original unchanged,
+owned snapshot copy очищена. Source extract/evidence retained 558529 bytes, это task data,
+не новый workspace/deployment. Preliminary assertion typo и cleanup read-only dirs
+сохранены в regression limits; исправлялся только task diagnostic, не harness core.
+
+Новый reference recipe установлен byte-identical каноническому файлу;
+`skill_view` действительно дочитывает его. **Полная package parity ещё не PASS:**
+в installed остаются прежние отличия в `SKILL.md` и
+`references/standard-print-form-native-proof.md`; неизвестные/ценные дополнения
+не удалялись и не объявлялись автоматически принятыми. Version equality ≠ parity.
+No-paid граница #87 сохранена: новые reviewers/subagents не запускались.
+
+1. Полная source/installed reconciliation и независимая fresh-agent discovery.
+2. Cold CF и успешный native `verify` на новом runtime NOT_RUN; source/unit seam
+   coverage и warm real-snapshot check их не заменяют.
 3. Fresh-agent **web** воспроизведение на prepared reference, не чтение инструкций:
    нынешний reference остановлен, ordinary route не имеет Docker/start/access в него.
    Не запускать повтор скрытым административным допуском; оператор должен предоставить
