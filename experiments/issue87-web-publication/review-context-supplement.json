@@ -1,0 +1,285 @@
+{
+  "schema_version": 1,
+  "scope": "Sanitized derivatives of already-retained observations; no new native/HTTP/SSH experiment. Placeholder files are not deployable configs. Different controls are separate historical runs, not asserted identical environment.",
+  "settings": {
+    "source": {
+      "artifact_name": "current-settings.json",
+      "original_sha256": "f3d16b2a11070651552d516cc27e6b8eef0a124d9666c035f0c372a6419d40eb"
+    },
+    "apache_config_sanitized": "ServerRoot \"<TASK>\"\nServerName localhost\nListen 127.0.0.1:18087\nPidFile \"<TASK>/httpd.pid\"\nDefaultRuntimeDir \"<TASK>/tmp\"\nErrorLog \"<TASK>/logs/error.log\"\nLogLevel warn\nServerTokens Prod\nServerSignature Off\nLoadModule mpm_worker_module \"<TASK>/apache/usr/lib/apache2/modules/mod_mpm_worker.so\"\nLoadModule authz_core_module \"<TASK>/apache/usr/lib/apache2/modules/mod_authz_core.so\"\nLoadModule authz_host_module \"<TASK>/apache/usr/lib/apache2/modules/mod_authz_host.so\"\nLoadModule alias_module \"<TASK>/apache/usr/lib/apache2/modules/mod_alias.so\"\nLoadModule dir_module \"<TASK>/apache/usr/lib/apache2/modules/mod_dir.so\"\nStartServers 1\nServerLimit 1\nThreadLimit 25\nThreadsPerChild 25\nMinSpareThreads 25\nMaxSpareThreads 25\nMaxRequestWorkers 25\nMaxConnectionsPerChild 0\nDocumentRoot \"<TASK>/www\"\n<Directory \"/\">\n    AllowOverride None\n    Require all denied\n</Directory>\n<Directory \"<TASK>/www\">\n    Require all denied\n</Directory>\n\nLoadModule _1cws_module \"<PLATFORM>/wsap24t.so\"\nAlias /jet \"<TASK>/publish/jet/\"\n<Directory \"<TASK>/publish/jet/\">\n    AllowOverride None\n    Options None\n    Require all granted\n    SetHandler 1c-application\n    ManagedApplicationDescriptor \"<TASK>/publish/jet/default.vrd\"\n</Directory>\n\nUser <TASK_USER>\nGroup <TASK_GROUP>\n\n\nLogFormat \"%U|%f|%R|%>s\" routing\nCustomLog \"<TASK>/logs/routing.log\" routing\n",
+    "vrd_sanitized": "<?xml version='1.0' encoding='utf-8'?>\n<point xmlns=\"http://v8.1c.ru/8.2/virtual-resource-system\" base=\"/jet\" ib=\"File=&quot;<TASK>/demo-ib&quot;;\" enable=\"true\"><ws enable=\"false\" /><httpServices publishByDefault=\"false\" /><standardOData enable=\"false\" /></point>"
+  },
+  "locale_paths": {
+    "source": {
+      "artifact_name": "locale-paths.json",
+      "original_sha256": "805c21e3eff6bf78f73f2a5c10ac177f0aa419b6f7b4e28b303a122f6d618de3"
+    },
+    "control_script_source": {
+      "artifact_name": "locale_paths.py",
+      "original_sha256": "07936a8cb01d4708b03723b916fddbb15fce94bc655a6354f27ce5e58695b690"
+    },
+    "binding": "Retained control script sets VRD base=/jet/, restarts owned Apache, probes paths, then restores original. JSON response list is not a browser navigation trace.",
+    "observed": [
+      {
+        "path": "/jet/en",
+        "status": 200,
+        "bytes": 7384,
+        "bootstrap": [
+          "<base href=\"/jet/en/\" />",
+          "var BASE = \"/jet/en\";",
+          "var LANG = \"en\";",
+          "var REDIRECT = true;",
+          "var E1CIB = \"e1cib\";"
+        ],
+        "json": null
+      },
+      {
+        "path": "/jet/en/",
+        "status": 200,
+        "bytes": 7384,
+        "bootstrap": [
+          "<base href=\"/jet/en/\" />",
+          "var BASE = \"/jet/en\";",
+          "var LANG = \"en\";",
+          "var REDIRECT = true;",
+          "var E1CIB = \"e1cib\";"
+        ],
+        "json": null
+      },
+      {
+        "path": "/jet/en/en/",
+        "status": 404,
+        "bytes": 584,
+        "bootstrap": [],
+        "json": "﻿{\"#exception\":\"{http://v8.1c.ru/8.2/virtual-resource-system}Exception\",\"exception\":{\"clsid\":\"580392e6-ba49-4280-ac67-fcd6f2180121\",\"reason\":404,\"descr\":\"HTTP: Not found\\nError executing the query GET to resource /en:\",\"category\":\"00000000000000000000000000\",\"creationStack\":\"mngsrvt:0x0000000000250B1A vrsbaset:0x00000000006D7791 vrsbaset:0x00000000006540C5 vrsbaset:0x00000000006EBDE6 vrsbaset:0x00000000006D2A9C vrsbaset:0x00000000006EC4A9 vrsbaset:0x00000000006ED4A0 core85t:0x00000000008D4EBF core85t:0x00000000006B238C libc.so:0x0000000000000000 libc.so:0x0000000000000000 \"}}"
+      },
+      {
+        "path": "/jet/ru/",
+        "status": 200,
+        "bytes": 7384,
+        "bootstrap": [
+          "<base href=\"/jet/en/\" />",
+          "var BASE = \"/jet/en\";",
+          "var LANG = \"en\";",
+          "var REDIRECT = true;",
+          "var E1CIB = \"e1cib\";"
+        ],
+        "json": null
+      },
+      {
+        "path": "/jet/?L=en",
+        "status": 200,
+        "bytes": 7384,
+        "bootstrap": [
+          "<base href=\"/jet/en/\" />",
+          "var BASE = \"/jet/en\";",
+          "var LANG = \"en\";",
+          "var REDIRECT = true;",
+          "var E1CIB = \"e1cib\";"
+        ],
+        "json": null
+      },
+      {
+        "path": "/jet/en/?L=en",
+        "status": 200,
+        "bytes": 7384,
+        "bootstrap": [
+          "<base href=\"/jet/en/\" />",
+          "var BASE = \"/jet/en\";",
+          "var LANG = \"en\";",
+          "var REDIRECT = true;",
+          "var E1CIB = \"e1cib\";"
+        ],
+        "json": null
+      },
+      {
+        "path": "/jet/en/mainform.html",
+        "status": 200,
+        "bytes": 36285,
+        "bootstrap": [],
+        "json": null
+      }
+    ]
+  },
+  "accept_path_info": {
+    "source": {
+      "artifact_name": "pathinfo-control.json",
+      "original_sha256": "280109d9e40339c5eba4e59361e7f0a2f190474b8c760a9eae493bd68c6e4cd4"
+    },
+    "observed": [
+      {
+        "path": "/jet/",
+        "status": 200,
+        "bootstrap": [
+          "<base href=\"/jet/en/\" />",
+          "var REDIRECT = true;"
+        ]
+      },
+      {
+        "path": "/jet/en/",
+        "status": 404,
+        "bootstrap": []
+      },
+      {
+        "path": "/jet/en/scripts/mod_bootstrap_bootstrap.js",
+        "status": 404,
+        "bootstrap": []
+      }
+    ]
+  },
+  "vendor_config_control": {
+    "source": {
+      "artifact_name": "vendor-control.json",
+      "original_sha256": "981b9fd076bb99eb53ab3c71de2686c359b8994820e9f5d31ec7b393691f105e"
+    },
+    "rc": 1,
+    "config_test": {
+      "rc": 0,
+      "stderr": "Syntax OK\n"
+    },
+    "vrd_created": false,
+    "stdout_sanitized": "\nThis operation requires superuser (root) privileges.\nOtherwise the application might function incorrectly.\nTo run the command as superuser, execute is using sudo.\n\nException: Cannot read <TASK>/apache-default/root/etc/apache2/apache2.conf.\nApache web server not found\n"
+  },
+  "parser_trace": {
+    "source": {
+      "artifact_name": "parser-trace.json",
+      "original_sha256": "1db581acde0c4561216c5116aa88a857824993f3f6a725b1bd098b2c4aa4f661"
+    },
+    "stdout_sanitized": "\nThis operation requires superuser (root) privileges.\nOtherwise the application might function incorrectly.\nTo run the command as superuser, execute is using sudo.\n\nException: Cannot read <TASK>/native-discovery.conf.\nApache web server not found\n",
+    "selected_lines_sanitized": [
+      "2251749 openat(AT_FDCWD, \"<TASK>/native-discovery.conf/\", O_RDONLY|O_NONBLOCK|O_CLOEXEC|O_DIRECTORY) = -1 ENOTDIR (Not a directory)",
+      "2251749 openat(AT_FDCWD, \"<TASK>/native-discovery.conf\", O_RDONLY) = 5",
+      "2251749 read(5, \"ServerRoot \\\"<TASK>\\\"\\nListen 127.0.0.1:18087\\nUser <TASK_USER>\\nGroup <TASK_GROUP>\\nDocumentRoot \\\"<TASK>/www\\\"\\n\", 8192) = 172",
+      "2251749 openat(AT_FDCWD, \"<TASK>/native-discovery.conf/\", O_RDONLY|O_NONBLOCK|O_CLOEXEC|O_DIRECTORY) = -1 ENOTDIR (Not a directory)",
+      "2251749 openat(AT_FDCWD, \"<TASK>/native-discovery.conf\", O_RDONLY) = 5",
+      "2251749 read(5, \"ServerRoot \\\"<TASK>\\\"\\nListen 127.0.0.1:18087\\nUser <TASK_USER>\\nGroup <TASK_GROUP>\\nDocumentRoot \\\"<TASK>/www\\\"\\n\", 8192) = 172",
+      "2251749 read(5, \"ServerRoot \\\"<TASK>\\\"\\nListen 127.0.0.1:18087\\nUser <TASK_USER>\\nGroup <TASK_GROUP>\\nDocumentRoot \\\"<TASK>/www\\\"\\n\", 8192) = 172",
+      "2251749 openat(AT_FDCWD, \"<TASK>/native-discovery.conf/\", O_RDONLY|O_NONBLOCK|O_CLOEXEC|O_DIRECTORY) = -1 ENOTDIR (Not a directory)",
+      "2251749 openat(AT_FDCWD, \"<TASK>/native-discovery.conf\", O_RDONLY) = 5",
+      "2251749 openat(AT_FDCWD, \"<TASK>/native-discovery.conf/\", O_RDONLY|O_NONBLOCK|O_CLOEXEC|O_DIRECTORY) = -1 ENOTDIR (Not a directory)",
+      "2251749 openat(AT_FDCWD, \"<TASK>/native-discovery.conf\", O_RDONLY) = 5",
+      "2251749 read(5, \"ServerRoot \\\"<TASK>\\\"\\nListen 127.0.0.1:18087\\nUser <TASK_USER>\\nGroup <TASK_GROUP>\\nDocumentRoot \\\"<TASK>/www\\\"\\n\", 8192) = 172",
+      "2251749 openat(AT_FDCWD, \"<TASK>/native-discovery.conf/\", O_RDONLY|O_NONBLOCK|O_CLOEXEC|O_DIRECTORY) = -1 ENOTDIR (Not a directory)",
+      "2251749 openat(AT_FDCWD, \"<TASK>/native-discovery.conf\", O_RDONLY) = 5",
+      "2251749 read(5, \"ServerRoot \\\"<TASK>\\\"\\nListen 127.0.0.1:18087\\nUser <TASK_USER>\\nGroup <TASK_GROUP>\\nDocumentRoot \\\"<TASK>/www\\\"\\n\", 8192) = 172",
+      "2251749 read(5, \"ServerRoot \\\"<TASK>\\\"\\nListen 127.0.0.1:18087\\nUser <TASK_USER>\\nGroup <TASK_GROUP>\\nDocumentRoot \\\"<TASK>/www\\\"\\n\", 8192) = 172"
+    ],
+    "limitations": [
+      "Historical bounded excerpt, not full execve/loader trace; absence of command here does not establish absence of an exec or hardcoded paths."
+    ]
+  },
+  "browser_trace": {
+    "source": {
+      "artifact_name": "browser-smoke.json",
+      "original_sha256": "83a13e4446c1022a8b93ef0b2c89a452879365ddef72b7da6d0fea603ee46c68"
+    },
+    "title": "1C:Enterprise",
+    "text": "",
+    "responses": [
+      {
+        "path": "/jet/en/",
+        "status": 200
+      },
+      {
+        "path": "/jet/en/e1csys/mngcore/splashTop.svg",
+        "status": 200
+      },
+      {
+        "path": "/jet/en/e1csys/mngcore/splashBottom.svg",
+        "status": 200
+      },
+      {
+        "path": "/jet/en/scripts/mod_bootstrap_bootstrap.js",
+        "status": 200
+      },
+      {
+        "path": "/jet/en/",
+        "status": 200
+      },
+      {
+        "path": "/jet/en/e1csys/mngcore/splashTop.svg",
+        "status": 200
+      },
+      {
+        "path": "/jet/en/e1csys/mngcore/splashBottom.svg",
+        "status": 200
+      },
+      {
+        "path": "/jet/en/scripts/mod_bootstrap_bootstrap.js",
+        "status": 200
+      },
+      {
+        "path": "/jet/en/",
+        "status": 200
+      },
+      {
+        "path": "/jet/en/e1csys/mngcore/splashTop.svg",
+        "status": 200
+      },
+      {
+        "path": "/jet/en/e1csys/mngcore/splashBottom.svg",
+        "status": 200
+      },
+      {
+        "path": "/jet/en/scripts/mod_bootstrap_bootstrap.js",
+        "status": 200
+      },
+      {
+        "path": "/jet/en/",
+        "status": 200
+      },
+      {
+        "path": "/jet/en/e1csys/mngcore/splashTop.svg",
+        "status": 200
+      },
+      {
+        "path": "/jet/en/e1csys/mngcore/splashBottom.svg",
+        "status": 200
+      },
+      {
+        "path": "/jet/en/scripts/mod_bootstrap_bootstrap.js",
+        "status": 200
+      },
+      {
+        "path": "/jet/en/",
+        "status": 200
+      },
+      {
+        "path": "/jet/en/e1csys/mngcore/splashTop.svg",
+        "status": 200
+      },
+      {
+        "path": "/jet/en/e1csys/mngcore/splashBottom.svg",
+        "status": 200
+      },
+      {
+        "path": "/jet/en/scripts/mod_bootstrap_bootstrap.js",
+        "status": 200
+      },
+      {
+        "path": "/jet/en/",
+        "status": 200
+      },
+      {
+        "path": "/jet/en/e1csys/mngcore/splashTop.svg",
+        "status": 200
+      },
+      {
+        "path": "/jet/en/e1csys/mngcore/splashBottom.svg",
+        "status": 200
+      },
+      {
+        "path": "/jet/en/scripts/mod_bootstrap_bootstrap.js",
+        "status": 200
+      },
+      {
+        "path": "/jet/en/",
+        "status": 200
+      }
+    ],
+    "limitations": [
+      "Shows repeated locale-root/script responses and blank text; exact base/rewriting state is not bound by this JSON. Cannot attribute it to base=/jet/ without reconstructing run provenance.",
+      "Earlier locale_control.py changes RewriteRule; that separate control must not be relabelled a pure VRD-base browser experiment."
+    ]
+  }
+}

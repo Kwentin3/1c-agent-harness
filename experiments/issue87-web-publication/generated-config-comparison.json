@@ -1,0 +1,44 @@
+{
+  "sanitization": "Exact text except declared path replacements and redacted ib attribute. Raw hashes bind retained executor bytes, not sanitized text. Not executable configs.",
+  "files": {
+    "generated:httpd.conf": {
+      "raw_sha256": "0c1640f8489fbf11a0f82746bcc73cb0da3de38cfc047e9864792fac3c7a2b3a",
+      "sanitized_sha256": "ba98c19f59d6d192c6aaa53b4fa1c4931b6f6ad01f1d7df745fa8aa879bf0ac2",
+      "text": "ServerRoot \"<root-scratch>\"\nServerName localhost\nListen 127.0.0.1:18088\nPidFile \"<root-scratch>/control.pid\"\nDefaultRuntimeDir \"<root-scratch>/apache-runtime\"\nErrorLog \"<root-scratch>/logs/error.log\"\nLogLevel warn\nServerTokens Prod\nServerSignature Off\nLoadModule mpm_worker_module \"<protected-runtime>/apache/usr/lib/apache2/modules/mod_mpm_worker.so\"\nLoadModule authz_core_module \"<protected-runtime>/apache/usr/lib/apache2/modules/mod_authz_core.so\"\nLoadModule authz_host_module \"<protected-runtime>/apache/usr/lib/apache2/modules/mod_authz_host.so\"\nLoadModule alias_module \"<protected-runtime>/apache/usr/lib/apache2/modules/mod_alias.so\"\nLoadModule dir_module \"<protected-runtime>/apache/usr/lib/apache2/modules/mod_dir.so\"\nLoadModule _1cws_module \"<protected-runtime>/platform/wsap24t.so\"\nStartServers 1\nServerLimit 1\nThreadLimit 25\nThreadsPerChild 25\nMinSpareThreads 25\nMaxSpareThreads 25\nMaxRequestWorkers 25\nMaxConnectionsPerChild 0\nDocumentRoot \"<root-scratch>/www\"\n<Directory \"/\">\n    AllowOverride None\n    Require all denied\n</Directory>\n\n# 1c publication\nAlias \"/jetcontrol\" \"<root-scratch>/publish/jetcontrol/\"\n<Directory \"<root-scratch>/publish/jetcontrol/\">\n    AllowOverride All\n    Options None\n    Require all granted\n    SetHandler 1c-application\n    ManagedApplicationDescriptor \"<root-scratch>/publish/jetcontrol/default.vrd\"\n</Directory>\nUser executor\nGroup executor\n"
+    },
+    "generated:publish/jetcontrol/default.vrd": {
+      "raw_sha256": "72ac8ebff96b5d2fad20e48d0fbbef08f1360035f7322cf955370ea9e4b1ad22",
+      "sanitized_sha256": "ca0b9dc7872fed5f78a7bffd1b9f1627d41afff7a0061ebe3820c81e57e061ae",
+      "text": "<?xml version=\"1.0\" encoding=\"UTF-8\"?>\n<point xmlns=\"http://v8.1c.ru/8.2/virtual-resource-system\"\n\t\txmlns:xs=\"http://www.w3.org/2001/XMLSchema\"\n\t\txmlns:xsi=\"http://www.w3.org/2001/XMLSchema-instance\"\n\t\tbase=\"/jetcontrol\"\n\t\tib=\"<sandbox-reference>\">\n\t<ws pointEnableCommon=\"true\"/>\n\t<standardOdata enable=\"false\"\n\t\t\treuseSessions=\"autouse\"\n\t\t\tsessionMaxAge=\"20\"\n\t\t\tpoolSize=\"10\"\n\t\t\tpoolTimeout=\"5\"/>\n\t<analytics enable=\"true\"\n\t\t\tsessionMaxAge=\"1200\"\n\t\t\tpoolSize=\"500\"\n\t\t\tpoolTimeout=\"5\"/>\n</point>"
+    },
+    "derived:httpd.conf": {
+      "raw_sha256": "cc4bd4fe6e84c00dddb6c2b084aefd49bd8a945e53a7a10dd91350b1126ef8e8",
+      "sanitized_sha256": "588e63557894e8fe0b9a737774aac60f79c17b16c09872beb806308985212e94",
+      "text": "ServerRoot \"<browser-control>\"\nServerName localhost\nListen 127.0.0.1:18089\nPidFile \"<browser-control>/control.pid\"\nDefaultRuntimeDir \"<browser-control>/apache-runtime\"\nErrorLog \"<browser-control>/logs/error.log\"\nLogLevel warn\nServerTokens Prod\nServerSignature Off\nLoadModule mpm_worker_module \"<protected-runtime>/apache/usr/lib/apache2/modules/mod_mpm_worker.so\"\nLoadModule authz_core_module \"<protected-runtime>/apache/usr/lib/apache2/modules/mod_authz_core.so\"\nLoadModule authz_host_module \"<protected-runtime>/apache/usr/lib/apache2/modules/mod_authz_host.so\"\nLoadModule alias_module \"<protected-runtime>/apache/usr/lib/apache2/modules/mod_alias.so\"\nLoadModule dir_module \"<protected-runtime>/apache/usr/lib/apache2/modules/mod_dir.so\"\nLoadModule _1cws_module \"<protected-runtime>/platform/wsap24t.so\"\nStartServers 1\nServerLimit 1\nThreadLimit 25\nThreadsPerChild 25\nMinSpareThreads 25\nMaxSpareThreads 25\nMaxRequestWorkers 25\nMaxConnectionsPerChild 0\nDocumentRoot \"<browser-control>/www\"\n<Directory \"/\">\n    AllowOverride None\n    Require all denied\n</Directory>\n\n# 1c publication\nAlias \"/jetcontrol\" \"<browser-control>/publish/jetcontrol/\"\n<Directory \"<browser-control>/publish/jetcontrol/\">\n    AllowOverride None\n    Options None\n    Require all granted\n    SetHandler 1c-application\n    ManagedApplicationDescriptor \"<browser-control>/publish/jetcontrol/default.vrd\"\n</Directory>\nUser executor\nGroup executor\n"
+    },
+    "derived:publish/jetcontrol/default.vrd": {
+      "raw_sha256": "11556b46d2df925984b1b63395bb2a61c9ac94b498f41b8ba93db729ffd0602a",
+      "sanitized_sha256": "2ceca8d27dd7b534281b15460155c3d724bba10635761523f5147ca1aa8ecbf4",
+      "text": "<?xml version='1.0' encoding='utf-8'?>\n<point xmlns=\"http://v8.1c.ru/8.2/virtual-resource-system\" base=\"/jetcontrol\" ib=\"<disposable-IB-reference>\">\n\t<ws pointEnableCommon=\"false\" enable=\"false\" />\n\t<standardOdata enable=\"false\" reuseSessions=\"autouse\" sessionMaxAge=\"20\" poolSize=\"10\" poolTimeout=\"5\" />\n\t<analytics enable=\"false\" sessionMaxAge=\"1200\" poolSize=\"500\" poolTimeout=\"5\" />\n<httpServices publishByDefault=\"false\" /></point>"
+    }
+  },
+  "semantic_vrd_delta": {
+    "base": "/jetcontrol unchanged; no trailing slash in original or derivative",
+    "root_changed_attributes": [
+      "ib"
+    ],
+    "ws": {
+      "pointEnableCommon": "true -> false",
+      "enable": "absent -> false"
+    },
+    "analytics": {
+      "enable": "true -> false"
+    },
+    "added_httpServices": {
+      "publishByDefault": "false"
+    },
+    "standardOdata": "unchanged including case and session settings",
+    "formatting": "ElementTree reserialization dropped unused namespace declarations and changed formatting"
+  },
+  "accounting_scope": "root_control=previous owner operator one-shot; accounting=new launches in this Hermes continuation"
+}

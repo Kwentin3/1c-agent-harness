@@ -1,0 +1,200 @@
+{
+  "schema_version": 1,
+  "status": "GOAL INCOMPLETE / resumed, root gate reached",
+  "authorization": "Current owner message: Возвращай гоал в работу. Уточнение контекста у тебя есть. Root/shared changes/merge/ingress remain separately gated.",
+  "runtime": "8.5.1.1150",
+  "attempts_this_resume": {
+    "fresh_browser_control": 1,
+    "publisher_under_gdb": 2,
+    "static_gdb_file_inspection": 1,
+    "root": 0,
+    "designer_or_enterprise": 0
+  },
+  "browser": {
+    "conf_sha256": "c83bfb1855af23541e7e1860889b2c7516d8a9719c07bd75cdba74ba62afef66",
+    "original_vrd_sha256": "747e743d06306a221718d9b876f46936105f33e76df7d247b406c3dd44b79706",
+    "control_vrd_sha256": "220ea448d7af98d8495b3f28d3b0253f00442d55b043821ecb6da54bd0437907",
+    "rewrite_absent": true,
+    "html": [
+      {
+        "path": "/jet/",
+        "status": 200,
+        "sha256": "ed563f19b89d2d603ec4c061d156a32729f82180921886b62d1d6084a1bc80a0",
+        "flags": [
+          "var BASE = \"/jet/en\";",
+          "var LANG = \"en\";",
+          "var REDIRECT = true;"
+        ]
+      },
+      {
+        "path": "/jet/en/",
+        "status": 200,
+        "sha256": "ed563f19b89d2d603ec4c061d156a32729f82180921886b62d1d6084a1bc80a0",
+        "flags": [
+          "var BASE = \"/jet/en\";",
+          "var LANG = \"en\";",
+          "var REDIRECT = true;"
+        ]
+      }
+    ],
+    "bootstrap_sha256": "b845fe24689ac0fde3c87aa0d08c603a91bc6793256605ed5c175dc6766e1b84",
+    "mainform_requested": false,
+    "same_locale_navigations": 204,
+    "restored": true,
+    "recorded_response_count": 820,
+    "source": {
+      "artifact": "resume-base-browser.json",
+      "sha256": "2f9357f83932b02453cded6c6b1b2a06f3b04379873932cfd9c1aaa48d92698b"
+    },
+    "javascript_observation": "P = !!window.REDIRECT; condition e||a||P calls window.location.replace(z). No current-path comparison in this redirect branch.",
+    "result": "Bound pure base=/jet/ loop, not an inferred loop from flag alone."
+  },
+  "publisher": {
+    "old_trace_source": {
+      "artifact": "resume-publisher.json",
+      "sha256": "46ad1de1119d7b3156dcfa9708542b6fc658f890339b49020cbf4f06446f5417"
+    },
+    "old_trace_observation": "Actual Apache writes version 2.4.58; publisher reads that version and wsap24t.so, then conf contents. Discovery version command succeeds.",
+    "debugger_source": {
+      "artifact": "resume-gdb-branch.json",
+      "sha256": "121f1b630f1de70db832e0ba6d3802927f07275b49e0dae329dc946419ace18f"
+    },
+    "binary": {
+      "bytes": 4455800,
+      "sha256": "29aee4993151419c206bc42dba288e5fdd7ac8b8a70a994023fc5a65131a9612"
+    },
+    "dynamic_exception_types": [
+      "core::IOException",
+      "vrscore::VResourceDeploymentException"
+    ],
+    "first_publisher_exception_return_offset": "vrscoret.so + 0x3c4b40",
+    "static_control_flow": [
+      {
+        "offset": "0x3c2a40",
+        "operation": "call getuid@plt"
+      },
+      {
+        "offset": "0x3c2a45",
+        "operation": "test returned UID against zero"
+      },
+      {
+        "offset": "0x3c2a4f",
+        "operation": "nonzero UID jumps to 0x3c4b15"
+      },
+      {
+        "offset": "0x3c4b15",
+        "operation": "construct core::IOException and throw; return offset 0x3c4b40"
+      }
+    ],
+    "static_diagnostic": "Unmodified ELF inspected with GDB file/disassemble; no inferior process launched during static inspection. Raw listing retained on executor, not copied as product source.",
+    "conclusion": "For observed exact binary, nonzero UID itself triggers publisher exception later wrapped as Cannot read conf. UID zero is a required precondition for this path; not yet proven sufficient.",
+    "limitations": [
+      "No root trial authorized or run.",
+      "No claim that root fixes browser bootstrap.",
+      "No claim of general training-edition web-client prohibition or defect.",
+      "Two earlier startup exceptions are handled and are not the final publisher failure."
+    ],
+    "retained_static_listing": {
+      "artifact": "resume-gdb/parser-static.txt",
+      "sha256": "7a2b8a9a6a78f6751b92720ebd6a0921cf0914dddf792c990aa6b2d5f692a614",
+      "bytes": 88316
+    }
+  },
+  "safety": {
+    "source": {
+      "artifact": "resume-safety.json",
+      "sha256": "b571c110e9b2c20e72d5995c59f6be3d6797cb8b219c40bb492561de82b9818d"
+    },
+    "snapshot_identity": {
+      "files": 5099,
+      "sha256": "a7c4275cb37bef5bbad3d8e668328ad104389b6897b20f5c5d419a05958000db"
+    },
+    "snapshot_files": 5099,
+    "retained": {
+      "1Cv8.1CD": {
+        "bytes": 118210560,
+        "sha256": "b060127640773fda03a8c2bef5e9847d35f0b159bb116e043ce1e2ba84b9ac42"
+      },
+      "demo-before-web.dt": {
+        "bytes": 17802299,
+        "sha256": "44ff12ed0af0a77fc01ba630242614575e8041352614c65d1a7d720227f02ec5"
+      },
+      "webinstt": {
+        "bytes": 114504,
+        "sha256": "5944c126eedf6e072d3f138055ab6616feabc6f62da1ce6e07a1e5205b9c2a3f"
+      },
+      "vrscoret.so": {
+        "bytes": 4455800,
+        "sha256": "29aee4993151419c206bc42dba288e5fdd7ac8b8a70a994023fc5a65131a9612"
+      }
+    },
+    "rewrite_absent": true,
+    "active_config_sha256": "c83bfb1855af23541e7e1860889b2c7516d8a9719c07bd75cdba74ba62afef66",
+    "active_vrd_sha256": "747e743d06306a221718d9b876f46936105f33e76df7d247b406c3dd44b79706",
+    "loopback_only": true,
+    "owned_apache_processes": 2,
+    "diagnostic_children_remaining": 0,
+    "system_packages_changed": false,
+    "gdb_packages": [
+      {
+        "Package": "gdb",
+        "Version": "15.1-1ubuntu1~24.04.1",
+        "SHA256": "7069c23ce3bc350646498e6607749c568f5c403b0db2204310a94baff3d85745",
+        "Size": "4082912"
+      },
+      {
+        "Package": "libbabeltrace1",
+        "Version": "1.5.11-3build3",
+        "SHA256": "30f0b9fbe68115d7b50d478458e4d830695bce579529b52c7827720da9c0c2df",
+        "Size": "163626"
+      },
+      {
+        "Package": "libdebuginfod1t64",
+        "Version": "0.190-1.1ubuntu0.1",
+        "SHA256": "7ff18c57198200f4af7e50e0dce29366dc832c10d8c475ca7e0403083e042ea7",
+        "Size": "17082"
+      },
+      {
+        "Package": "libipt2",
+        "Version": "2.0.6-1build1",
+        "SHA256": "c14702719d594c1ca099e2cd9ff0e9bbd0215c9bb6bebb4a0d7651f984600995",
+        "Size": "45716"
+      },
+      {
+        "Package": "libpython3.12t64",
+        "Version": "3.12.3-1ubuntu0.17",
+        "SHA256": "0d29f4763eb95b8a4283a4aca3ef1d9658629c618be1778def41bdc31be12b46",
+        "Size": "2348034"
+      },
+      {
+        "Package": "libsource-highlight4t64",
+        "Version": "3.1.9-4.3build1",
+        "SHA256": "e0ef35d9b76669f22c2ad4ab3b9141ac46d3662823c5bbea248c21db53879470",
+        "Size": "257514"
+      },
+      {
+        "Package": "libboost-regex1.74.0",
+        "Version": "1.74.0+ds1-23.1ubuntu3",
+        "SHA256": "4d1e918ef224f989ed319a2f402bcc38089485ec8f6a4f055af7b244752f2429",
+        "Size": "518888"
+      },
+      {
+        "Package": "libmpfr6",
+        "Version": "4.2.1-1build1.1",
+        "SHA256": "aebc1c8b69a1f98bb43dfc268daecd181116dbf40b13ee4e822eb4bdd52b493a",
+        "Size": "353020"
+      }
+    ],
+    "gdb_license": "GPLv3+; external temporary diagnostic, no product dependency/source copied",
+    "gdb_archive_total_bytes": 7786792,
+    "diagnostic_cleanup": {
+      "root": true,
+      "downloads": true
+    },
+    "cleanup_source": {
+      "artifact": "resume-cleanup.json",
+      "sha256": "a722a660b5073eb1afe5adf9bc8d5e8caef96d13ada3bf9bcfef3febac0001c7"
+    }
+  },
+  "next_gate": "One owner-approved UID-zero publisher run inside a root-owned staged sandbox using exact unchanged platform and real Apache, scratch config and scratch publication; no restart, IB migration, permanent sudo, shared installation, merge, DNS or ingress. Must inspect generated config before any promotion."
+}
