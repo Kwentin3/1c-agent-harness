@@ -4,7 +4,53 @@
 Контракт: [#91](https://github.com/Kwentin3/1c-agent-harness/issues/91).
 Следующие направления: [#92](https://github.com/Kwentin3/1c-agent-harness/issues/92).
 
-## Дополнение: разрешённая web-попытка 2026-10-06
+## Текущий результат: ordinary Hermes web PASS, экземпляр остановлен
+
+В новом [двухчасовом окне](https://github.com/Kwentin3/1c-agent-harness/issues/89#issuecomment-6014916362)
+после [operator READY](https://github.com/Kwentin3/1c-agent-harness/issues/89#issuecomment-6014982614)
+Hermes выполнил **один** fresh browser smoke своим strict pinned SSH, UID10001,
+с существующим `FONTCONFIG_FILE`. Длительность24.808s. Настоящий iframe до/после
+штатного `#form0_FormRefresh`: trading date2026-10-05, семь нулей, empty-day message.
+Два native report responses200 по разным URL hashes; оба86688 bytes,
+SHA256 `9e88a983955449cd00daf8b95ba180552bccd50bb848590dee034dc21a4cac5e`.
+Network response ledger:148 HTTP200 +2 HTTP204. Screenshot просмотрен отдельно
+и согласуется с iframe; это native UI, не HTML proxy. Горизонтальная прокрутка
+табличного документа видна; полноценная UI usability/nonzero приёмка не заявляется.
+
+[Результат Hermes](https://github.com/Kwentin3/1c-agent-harness/issues/89#issuecomment-6015044709)
+записан атомарно после закрытия browser/context. Последующий live `ps` не показывает
+Chromium/Playwright descendants; прежний executor Apache57/58 сохранён.
+
+Protected root: executor `.local/refine87-reference/access-admission/web-phase-20261006-1107/`.
+Прочитаны и сверены следующие anchors (SHA256):
+
+| Artifact | SHA256 |
+|---|---|
+| admission.json | `258755ea0f071d7634b65f88296fad6b34d6f6e047ad631a11c6664145c16cb0` |
+| ready.json | `e83546d5a5eff669880670591adc05de93485417d34673bea7788ec5531d5d5d` |
+| hermes/result.json | `46c30c8c4ec0f1348b133e3d755a1cb0b5f4fcfe8a90de5891e0164588f1587a` |
+| hermes/trace.zip | `b584ff9f834324b34cae138c09f0f30d821afc5649118ade7cca2b333b9bb0f3` |
+| hermes/browser.stderr | `12f5fe04fe29559c5249889458c0cec3059a42a0480e14db0044c93029249d0d` |
+| completion.json | `c666689d8ac73d04c0662511bba586124bf5ee3e7f326773e3d49c3815fbb6a3` |
+
+Hermes evidence:40 files/3201571 bytes после browser cleanup. Operator supervisor
+обнаружил result и выполнил early rollback. В completion: `finished_utc=2026-10-06T11:15:00.832991+00:00`,
+exact прежние target/image, `exited`, PID0, только bridge, ports{},
+`config_vrd_aliases_unchanged=true`. Stop/disconnect commands rc0.
+Top-level `status` остался устаревшим READY; итог берётся из `final_state`,
+`finished_utc` и реально записанных command receipts, не из этой старой строки.
+Docker-side факт подтверждён прочитанной операторской квитанцией, не прямым Docker
+доступом Hermes. Test IB сохранена: текущий SHA256
+`d2c52af3dd6c6bca406bd9ca4493ee710424f4a249bf9362259365c8a7334f64`.
+Её изменение допустимо в test web-сессии; оно не относится к исходным CF/snapshot.
+
+**Граница:** ordinary Hermes empty-day/Refresh PASS + operator host denial403 +
+rollback receipt. Не nonzero oracle, не постоянный защищённый owner access,
+не fresh-agent reproduction, не cold/native CLI на новом runtime.
+Нового start/restart в остатке окна нет. Следующий runtime/web этап требует
+отдельного конкретного плана/допуска. Goal91 остаётся открытой.
+
+## История: первая разрешённая web-попытка 2026-10-06
 
 После [operator admission](https://github.com/Kwentin3/1c-agent-harness/issues/89#issuecomment-6013416849)
 владелец в текущей сессии разрешил только ограниченный web-план; approval зафиксирован
