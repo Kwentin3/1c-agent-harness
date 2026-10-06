@@ -6,7 +6,7 @@
     {
       "install_root": "skills/1c/1c-enterprise-linux",
       "name": "1c-enterprise-linux",
-      "resource_manifest_sha256": "9aa631f99c820667d6cd70beb85bc69f6a579eb5faaa3fe43e212eb89ad040ca",
+      "resource_manifest_sha256": "acaaa7f05a23b0810cb400404ae4b0219f32cb5e4b1cc25ecda293810b1a87fd",
       "resources": [
         {
           "bytes": 64864,
@@ -114,9 +114,9 @@
           "sha256": "737eb3b2ee2970d99df7f928182d465f4a56be2de7cc706e77741dcd8718f674"
         },
         {
-          "bytes": 9428,
+          "bytes": 10778,
           "path": "references/native-training-web-reference.md",
-          "sha256": "f86723c00568d4ab0de42628888f89b748dd3e115f696154a48ee69b8c1ecc98"
+          "sha256": "c01bf88ba66a29d7c97cf7af4d35632096c040f22bd0a683c2edc6836bc1e71f"
         },
         {
           "bytes": 13165,
