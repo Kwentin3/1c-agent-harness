@@ -129,6 +129,32 @@ and ownership, remove only those links, then perform the agreed restart. Origina
 files are never renamed, deleted or edited. A negative control is expected to
 restore this build's 404; it is not ordinary operational rollback acceptance.
 
+### Browser font environment on an existing executor
+
+Check the browser process environment separately from the 1C server environment.
+On a minimal executor without system Fontconfig configuration, reuse its existing,
+readable font configuration and installed fonts through Fontconfig's native
+`FONTCONFIG_FILE` variable in the browser launch environment. Do not install a
+second browser/runtime or change the harness runtime locator for this.
+
+In the #89 executor, the verified launch addition is:
+
+```sh
+export FONTCONFIG_FILE=/workspace/1c-agent-harness/.local/platform/fonts.conf
+```
+
+Apply it alongside the existing Playwright Python/browser/library environment,
+before launching Python. The exact path belongs to that admitted executor, not
+to a portable discovery rule or a model-facing argument. Packaged environments
+with working system Fontconfig do not need this override.
+
+Without it, the retained Chromium 145/Playwright 1.58 browser reproduced
+`Target crashed` with a fatal error in `SkFontMgr_FontConfigInterface.cpp`.
+With the existing configuration, the same browser under UID10001 rendered the
+native report and completed GUI Refresh. This operator check does not replace
+independent Hermes acceptance. Preserve browser stderr (`DEBUG=pw:browser`)
+when diagnosing a crash; HTTP200 and successful `ldd` do not prove text rendering.
+
 ## 4. Daily agent acceptance, not publisher acceptance
 
 1. Use the existing prepared access route; no guessed remote/loopback replacement.
