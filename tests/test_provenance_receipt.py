@@ -102,6 +102,8 @@ class SharedTaskRouteTests(unittest.TestCase):
                 nonlocal prepared_seen
                 calls.append(command)
                 if "run-prepared" in command:
+                    self.assertEqual(_["timeout"], 1320 + 30)
+                    self.assertEqual(command[command.index("--timeout-seconds") + 1], "30")
                     self.assertNotIn("--complete-marker", command)
                     relative = Path(command[command.index("--input-tree") + 1])
                     prepared_seen = repo / relative

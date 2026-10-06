@@ -62,6 +62,29 @@ class _Context:
 
 
 class HermesPluginTests(unittest.TestCase):
+    def test_coding_terminal_budget_covers_full_lifecycle_not_only_runtime(self) -> None:
+        plugin = _plugin_module()
+        context = _Context({"output": "{}", "exit_code": 0})
+        plugin.register(context)
+        context.tools["one_c_open"]({})
+        self.assertEqual(context.calls[-1][1]["timeout"], 2160)
+        for seconds in (1, 300, 480):
+            with self.subTest(seconds=seconds):
+                context.tools["one_c_native_verify"]({"timeoutSeconds": seconds})
+                self.assertEqual(context.calls[-1][1]["timeout"], 2160)
+                request = json.loads(base64.b64decode(context.calls[-1][1]["command"].rsplit(" ", 1)[1]))
+                self.assertEqual(request["arguments"]["timeoutSeconds"], seconds)
+        for seconds in (0, -1, 481, True, "300"):
+            with self.subTest(invalid=seconds):
+                before = len(context.calls)
+                result = json.loads(context.tools["one_c_native_verify"]({"timeoutSeconds": seconds}))
+                self.assertEqual(result["reasonCode"], "invalid_request")
+                self.assertEqual(len(context.calls), before)
+        context.tools["one_c_observation_info"]({})
+        self.assertEqual(context.calls[-1][1]["timeout"], 60)
+        context.tools["one_c_narrow_context"]({})
+        self.assertEqual(context.calls[-1][1]["timeout"], 90)
+
     def test_release_artifact_binds_companion_plugin_and_skill_closure(self) -> None:
         paths = []
         for pattern in ("one_c_harness/*.py", "hermes-plugin/*.py"):

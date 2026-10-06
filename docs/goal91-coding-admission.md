@@ -1,6 +1,53 @@
 # Goal91: coding admission после проверки транспорта
 
 Статус: **source preparation; NOT DEPLOYED / NATIVE NOT RUN**.
+
+## Актуальное уточнение: ожидания согласованы в source
+
+Эта секция заменяет прежний блокер foreground600 и прежние значения adapter/shared
+ниже; исторические проверки сохранены для трассировки.
+
+- Реальный public terminal этой WebUI исполнил мгновенную команду с timeout2160;
+  timeout2161 отказал до исполнения. Operator delivery6023131117 независимо принято.
+- CI cold-diagnostics candidate c62bd59: Python3.9/3.12 PASS (run37512555200).
+- Новый source-кандидат: plugin open/verify ждёт2160; narrow90 и diagnostics прежние.
+  `timeoutSeconds` по-прежнему ENTERPRISE1..480, не общий бюджет.
+  Shared route ждёт runner1320+T: два batch600 и120 резерва завершения.
+  Inner platform limits не изменены. Реальные RED→GREEN тесты подтверждают dispatch
+  и сохранение T; full352 PASS (148.618s), focused25 PASS, diff-check PASS.
+- Release identity пересчитана. Installed plugin/companion/launcher не менялись.
+  Длительность ожидания не гарантирует cleanup: watchdog остаётся операторской
+  предпосылкой. При timeout никакого retry или success по частичным данным.
+
+### Один следующий допуск, пока НЕ выдан
+
+Владелец должен разрешить до120мин обслуживания, включая кратковременную
+недоступность demo и необходимый перезапуск Hermes для обновлённого Python plugin.
+T0 назначается только после готовности обоих операторов и отсутствия активных задач.
+
+1. Установить git с зафиксированной версией в exact reference; сохранить контейнер,
+   исходную CF, snapshot/manifest, demo, runtime и evidence. Не rm/recreate reference.
+2. Установить exact reviewed Git candidate companion в новый root-owned versioned
+   каталог; синхронно plugin/release/launcher, preserving diagnostic route и pinned
+   known_hosts. Source launcher содержит старый fixed product path: оператор делает
+   только documented substitution на новый exact candidate path, фиксирует diff/hash.
+   Требуются backup/rollback пары и живой plugin registration после перезапуска.
+3. После stop штатной web-службы: non-native timeout/disconnect rehearsal с setsid
+   child, частичным evidence и exact-container cleanup; negative binding/config,
+   forwarding/PTY и invalid envelope. Никакого 1C до успешной репетиции.
+4. До каждого open/verify вооружить независимый host watchdog2100s, shell2040s
+   (+kill-after5), terminal2160. Если весь watchdog не помещается до T0+105мин,
+   новую операцию не начинать. Deadline окна абсолютный, без продления.
+5. Только после этих gates один fresh-agent replay принятого #69: cold3 platform
+   launches, warm/narrow0, verify3; всего максимум6, без retry. Это reproduction,
+   не blind benchmark. Fresh run/nonce, frozen patches/oracle, реальные receipts.
+6. Success/failure: revoke key/channels, exact-container stop/Pid0, сохранить evidence,
+   адресно убрать disposable ИБ, восстановить прежнюю web-службу и login/Refresh/Exit.
+   При неподтверждённой остановке — HOLD, web не поднимать поверх survivors.
+
+Задания операторам и ответы: кратко — результат, доказательство, блокер,
+следующий исполнитель. Полные hashes/PID/logs/rollback отдельно по ссылке.
+
 Этот документ не является новым разрешением на запуск или обслуживание.
 
 ## Принятые результаты и границы

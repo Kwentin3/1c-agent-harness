@@ -228,7 +228,9 @@ def run_task(
         prepared_identity = native_cycle.tree_identity(prepared)
         completed = execute(
             _runner_command(repo, prepared, timeout_seconds),
-            text=True, capture_output=True, timeout=timeout_seconds + 90,
+            # Two batch stages (600s each), runtime T, then 120s cleanup reserve.
+            # This bounds runner waiting, not preparation/oracle or remote survivors.
+            text=True, capture_output=True, timeout=1320 + timeout_seconds,
         )
         try:
             runner = json.loads(completed.stdout)
