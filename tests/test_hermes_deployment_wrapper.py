@@ -114,6 +114,11 @@ class HermesDeploymentWrapperTests(unittest.TestCase):
                     ).replace("/srv/goal91-jet", str(business))
                     executed = subprocess.run(local_command, shell=True, env={**env, **inherited},
                                               capture_output=True, text=True, timeout=10)
+                    if sys.version_info < (3, 11):
+                        self.assertNotEqual(executed.returncode, 0)
+                        self.assertIn("deployment requires Python 3.11+", executed.stderr)
+                        self.assertEqual(executed.stdout, "")
+                        continue
                     self.assertEqual(executed.returncode, 0, executed.stderr)
                     self.assertEqual(json.loads(executed.stdout), {
                         "cwd": str(business), "isolated": 1, "no_bytecode": True,
