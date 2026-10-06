@@ -1,5 +1,10 @@
 # 1C Agent Harness
 
+> Текущий ограниченный этап — [Goal #91](https://github.com/Kwentin3/1c-agent-harness/issues/91).
+> [Checkpoint и порядок приёмки](docs/goal91-checkpoint.md): source-регрессия отдельно
+> от нового native/runtime допуска и защищённой доставки. Backlog —
+> [#92](https://github.com/Kwentin3/1c-agent-harness/issues/92).
+
 > Прикладной кандидат #85: [dashboard владельца за вчера](experiments/issue85-owner-dashboard/RESULTS.md).
 > Native-приёмка пройдена: **strict oracle PASS** в третьей попытке, 3/4 запуска.
 > Проверены расчёт, табличный документ/создание формы, пустой день, убыток,
@@ -50,9 +55,10 @@ native-запуск из двух; исходный снимок не измен
 
 Это завершённый ограниченный этап на одном полигоне, не универсальная write-среда:
 первоначальный тест свежей автономности и стоимости не прошёл, автоматический выбор
-WebUI workspace и другой проект не проверены. Текущая доступность домашнего executor
-не подтверждена (SSH `No route to host`). Production rollout не выполнялся.
-Следующее направление выбирается владельцем отдельно; оставшийся native-слот не расходуется.
+WebUI workspace и другой проект не проверены. Доступность домашнего executor
+на завершении #69 не была подтверждена (исторический SSH `No route to host`).
+Это не текущий диагноз сети: актуальный scope проверки указан в checkpoint #91.
+Production rollout не выполнялся; оставшийся native-слот не расходуется.
 
 ## Открытие project target
 
@@ -218,7 +224,7 @@ live `$HERMES_HOME/bin/one-c-harness`, process environment или restart тре
 подтверждены в [PR #84](https://github.com/Kwentin3/1c-agent-harness/pull/84).
 Сам business project не содержит Harness source/scripts или собственной установки платформы.
 Это приёмка одного допущенного проекта, не завершение полной многопроектной интеграции.
-На финализации повторный live `open` вернул `terminal_failed`: тот же wrapper сообщил
+На финализации #69 повторный live `open` вернул `terminal_failed`: тот же wrapper сообщил
 `No route to host`. Историческая native-квитанция остаётся доказательством выполнения,
 но не текущей доступности executor; автоматический fallback или новая установка не добавлены.
 

@@ -3,6 +3,12 @@
 **Локальный reference принят: native UI / пустой день / Refresh / restart PASS.
 Сквозной refine и публичная доставка ещё не завершены.**
 
+Действующий объединённый этап: [Goal #91 checkpoint](goal91-checkpoint.md).
+Операторский read-only admission/план доступа ведётся в
+[#89](https://github.com/Kwentin3/1c-agent-harness/issues/89). Его handoff и новый
+допуск на точные side effects обязательны до продолжения; прежние receipts ниже
+не означают, что остановленный reference сейчас доступен обычному агенту.
+
 ## Один источник процедуры
 
 [Канонический recipe в 1c-enterprise-linux](../skills/1c/1c-enterprise-linux/references/native-training-web-reference.md)

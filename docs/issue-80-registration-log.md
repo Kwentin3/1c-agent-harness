@@ -78,9 +78,11 @@ misreported as proof of absence outside a partial selection.
 
 If the fixed command or timezone is absent, invalid, times out or exits nonzero,
 the source is `unavailable`; it is never reported as an empty selection. A known
-exporter failure may expose only the closed tuple `reasonCode`,
-`stage=enterprise_process` and a bounded, path-redacted message. Arbitrary stderr
-is not exposed. Malformed, unsafe or oversized XML is blocked. A valid empty
+exporter failure exposes a closed, bounded diagnostic: `reasonCode`,
+`stage=ibcmd_process`, the observed exit code, a safe message when present, and
+an opaque evidence ref for retained bounded stderr. `enterprise_process` below
+belongs to historical failed candidate routes, not the accepted file exporter.
+Arbitrary stderr is not exposed. Malformed, unsafe or oversized XML is blocked. A valid empty
 `EventLog` is an `ok` selection with zero records.
 
 ## Selection, page and record semantics
@@ -112,8 +114,10 @@ Therefore:
   `partial / maximum_count_exceeded`.
 
 The raw XML is never returned through the plugin. Record fields are individually
-bounded; comments, data payloads, connection strings and arbitrary XML fields are
-not projected.
+bounded. Allowlisted comments have a bounded preview plus `commentContinuation`;
+record calls can retrieve successive chunks from the same retained selection
+without a new export. Data payloads, connection strings and arbitrary XML fields
+are not projected. The final serialized response is bounded, not only each field.
 
 ## Native route decision and bounded evidence
 
