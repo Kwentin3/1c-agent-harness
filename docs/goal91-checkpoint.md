@@ -4,7 +4,43 @@
 Контракт: [#91](https://github.com/Kwentin3/1c-agent-harness/issues/91).
 Следующие направления: [#92](https://github.com/Kwentin3/1c-agent-harness/issues/92).
 
-## Что проверено сейчас
+## Дополнение: разрешённая web-попытка 2026-10-06
+
+После [operator admission](https://github.com/Kwentin3/1c-agent-harness/issues/89#issuecomment-6013416849)
+владелец в текущей сессии разрешил только ограниченный web-план; approval зафиксирован
+[отдельно](https://github.com/Kwentin3/1c-agent-harness/issues/89#issuecomment-6013568204),
+окно до 10:10 UTC, operator rollback не позже 10:09 UTC.
+Прежний блокер «нет handoff #89» ниже — состояние на первом checkpoint, теперь снят.
+CLI/cold/native и постоянный защищённый owner access этим не разрешены и не доказаны.
+
+[Операторский READY](https://github.com/Kwentin3/1c-agent-harness/issues/89#issuecomment-6013630496):
+exact target/image/network admitted, один start/endpoint/Apache start; Syntax OK,
+UID33/GID33/groups33, host request получил403. Это операторские свидетельства,
+не собственная Docker-проверка Hermes.
+
+Hermes своим strict pinned SSH подтвердил UID10001/GID10001/groups10001,
+хеш admission `5b88a63241e24aedd82e4a682c387023bde4aa1655debf8e1230346d78955892`
+и размер69781 bytes. Прямой HTTP prerequisite вернул200.
+**Одна browser-попытка: FAIL**, 16.763s: `Page.content: Target crashed`.
+До crash получены20 HTTP responses200 и три HTML body; report content/Refresh
+не проверены. Browser/context закрыты; последующий `ps` не показывает browser
+процессов, прежний executor Apache57/58 остался. HTTP200 не является UI PASS.
+Причина crash неизвестна: OOM/нехватка памяти не доказаны. Дополнительное чтение
+счётчиков памяти было заблокировано terminal safety hook до исполнения; обхода нет.
+
+Protected evidence: executor `.local/refine87-reference/access-admission/web-phase-20261006/hermes/`:
+`result.json` SHA256 `eead9f3c7519c93f5dacd49eb0049138f7678043ae60199d2625124cdc5b45a4`,
+`trace.zip`391955 bytes, `private-error.txt`, `started.json`, `network.json`
+(только hashes URL), `html-ledger.json`, три native HTML body.
+Сессионные URLs/trace/raw HTML не публикуются.
+
+[Результат и запрос раннего rollback](https://github.com/Kwentin3/1c-agent-harness/issues/89#issuecomment-6013908077)
+опубликованы до deadline. Final target stopped/network removal пока требуют
+operator completion; запрос остановки не считается доказательством остановки.
+Второй browser/start, расширение памяти или изменения среды не выполнялись.
+Повтор требует отдельного решения после анализа сохранённых данных.
+
+## Что проверено на первом checkpoint
 
 Исходная ревизия `98905832388aa4b25fda61b6db8c6df860e9afdd`, tree
 `f92122dbd0b7ecc808fe115e568f2f7e16482e4b`; чистая ветка `devops/jet-web-demo`
