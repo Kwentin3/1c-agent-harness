@@ -6,12 +6,12 @@
     {
       "install_root": "skills/1c/1c-enterprise-linux",
       "name": "1c-enterprise-linux",
-      "resource_manifest_sha256": "acaaa7f05a23b0810cb400404ae4b0219f32cb5e4b1cc25ecda293810b1a87fd",
+      "resource_manifest_sha256": "82078be09144244b365e28590ad3ef1bee2be0d22fffb11127a01ca215305bf2",
       "resources": [
         {
-          "bytes": 64864,
+          "bytes": 68538,
           "path": "SKILL.md",
-          "sha256": "22e8738d54a5bee17c2da8b593dda724c11a5dd907d59dfca536c8f1fdcb470b"
+          "sha256": "609f375062fa02a60a22c72c8692be8d8b15c71681f19b684f3c23eb5a558b37"
         },
         {
           "bytes": 4329,
@@ -164,9 +164,9 @@
           "sha256": "8f8449338ec47924bdfee73439d806ade0beaa495e53023f76ea21ce06a21401"
         },
         {
-          "bytes": 2426,
+          "bytes": 3989,
           "path": "references/standard-print-form-native-proof.md",
-          "sha256": "d12e90d85128d17bf346e66d7efe09c75949410ba65ec738bc3105f08e094209"
+          "sha256": "df7894b444e2d0f8c47a773d50d8232692e3956e4a461d4a32696327339b6a86"
         },
         {
           "bytes": 4167,

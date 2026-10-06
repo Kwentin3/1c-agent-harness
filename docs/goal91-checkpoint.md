@@ -4,7 +4,18 @@
 Контракт: [#91](https://github.com/Kwentin3/1c-agent-harness/issues/91).
 Следующие направления: [#92](https://github.com/Kwentin3/1c-agent-harness/issues/92).
 
-## Текущий результат: ordinary Hermes web PASS, экземпляр остановлен
+## Текущий результат: owner web доставлен; coding access проверен и отозван
+
+[Следующий coding admission и точные оставшиеся gates](goal91-coding-admission.md).
+Постоянная web-доставка завершена оператором в #89; Hermes отдельно проверил401
+без credentials. Новый runtime transport/permissions/package/import подтверждены
+Hermes; временный ключ отозван по завершении окна. Installed launcher ещё не
+переключён, cold/native и fresh-agent приёмка не выполнены. Nonzero web-сценарий
+перенесён владельцем в #92 и больше не блокирует Goal91. Canonical/installed
+три skill-пакета сверены побайтно, ценные installed дополнения сохранены в Git.
+Старые статусы ниже — история соответствующих проверок, не текущее состояние demo.
+
+## История: ordinary Hermes web PASS, экземпляр остановлен после smoke
 
 В новом [двухчасовом окне](https://github.com/Kwentin3/1c-agent-harness/issues/89#issuecomment-6014916362)
 после [operator READY](https://github.com/Kwentin3/1c-agent-harness/issues/89#issuecomment-6014982614)
