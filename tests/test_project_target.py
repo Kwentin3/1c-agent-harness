@@ -21,6 +21,7 @@ import cf_materializer
 import managed_probe_prepare
 import native_cycle
 import target_admission
+from one_c_harness import project_target
 
 
 def digest(payload: bytes) -> str:
@@ -256,6 +257,209 @@ class ProjectTargetTests(unittest.TestCase):
             actions = {json.loads(first_output)["action"], json.loads(second_output)["action"]}
             self.assertEqual(actions, {"materialized", "reused"})
             self.assertEqual((root / ".local/runtime-count").read_text(), "1\n1\n1\n")
+
+    def test_failed_open_retains_only_existing_diagnostics_before_cleanup(self) -> None:
+        for failure in (cf_materializer.MaterializationFailed("failed"), KeyboardInterrupt()):
+            with self.subTest(failure=type(failure).__name__), tempfile.TemporaryDirectory() as temporary:
+                root = Path(temporary)
+                source = root / ".local/dist/sample.cf"
+                source.parent.mkdir(parents=True)
+                source.write_bytes(b"cf")
+                source.chmod(0o440)
+                write_contract(root, {"kind": "cf", "path": ".local/dist/sample.cf",
+                                      "sha256": digest(b"cf")}, "0" * 64)
+                before = (source.read_bytes(), source.stat().st_mode)
+                diagnostics = {"create.log": b"created\r\n", "create.result": b"0",
+                               "load.log": b"\xffnative error", "load.result": b"1"}
+
+                def fail(**kwargs):
+                    work = kwargs["work_root"]
+                    (work / "logs").mkdir(parents=True)
+                    for name, payload in diagnostics.items():
+                        (work / "logs" / name).write_bytes(payload)
+                    (work / "ib").mkdir()
+                    (work / "ib/1Cv8.1CD").write_bytes(b"database")
+                    (work / "logs/unrelated.bin").write_bytes(b"not a diagnostic")
+                    kwargs["output"].mkdir()
+                    (kwargs["output"] / "partial.xml").write_bytes(b"partial")
+                    raise failure
+
+                with mock.patch.object(project_target, "materialize_cf", side_effect=fail):
+                    with self.assertRaises((project_target.TargetBlocked, KeyboardInterrupt)) as caught:
+                        project_target.open_target(root)
+                retained = list((root / ".local/runs").glob("project-target-failed-*"))
+                self.assertEqual(len(retained), 1)
+                self.assertEqual({p.name: p.read_bytes() for p in retained[0].iterdir()}, diagnostics)
+                self.assertEqual(list((root / ".local/targets").iterdir()), [])
+                self.assertEqual((source.read_bytes(), source.stat().st_mode), before)
+                if isinstance(failure, KeyboardInterrupt):
+                    self.assertIs(caught.exception, failure)
+                else:
+                    self.assertEqual(caught.exception.reason_code, "materialization_failed")
+                    self.assertIs(caught.exception.__cause__, failure)
+                    self.assertEqual(caught.exception.locator, retained[0].relative_to(root).as_posix())
+
+    def test_retention_failure_preserves_primary_error_and_cleans_staging(self) -> None:
+        for obstacle in ("runs-symlink", "logs-symlink", "file-symlink", "work-symlink", "copy-error"):
+            with self.subTest(obstacle=obstacle), tempfile.TemporaryDirectory() as temporary:
+                root = Path(temporary)
+                source = root / ".local/dist/sample.cf"
+                source.parent.mkdir(parents=True)
+                source.write_bytes(b"cf")
+                write_contract(root, {"kind": "cf", "path": ".local/dist/sample.cf",
+                                      "sha256": digest(b"cf")}, "0" * 64)
+                external = root / "external"
+                external.mkdir()
+                sentinel = external / "create.log"
+                sentinel.write_bytes(b"untouched")
+                sentinel.chmod(0o440)
+                before = (sentinel.read_bytes(), sentinel.stat().st_mode)
+                failure = project_target.TargetBlocked("materialization_failed", "primary failure")
+
+                def fail(**kwargs):
+                    work = kwargs["work_root"]
+                    if obstacle == "work-symlink":
+                        work.symlink_to(external, target_is_directory=True)
+                    else:
+                        work.mkdir()
+                        logs = work / "logs"
+                        if obstacle == "logs-symlink":
+                            logs.symlink_to(external, target_is_directory=True)
+                        else:
+                            logs.mkdir()
+                            if obstacle == "file-symlink":
+                                (logs / "create.log").symlink_to(sentinel)
+                            else:
+                                (logs / "create.log").write_bytes(b"diagnostic")
+                    if obstacle == "runs-symlink":
+                        (root / ".local/runs").symlink_to(external, target_is_directory=True)
+                    raise failure
+
+                original_copy = project_target.shutil.copyfile
+                def copy(*args, **kwargs):
+                    if obstacle == "copy-error":
+                        raise OSError("disk failure")
+                    return original_copy(*args, **kwargs)
+
+                with mock.patch.object(project_target, "materialize_cf", side_effect=fail), \
+                     mock.patch.object(project_target.shutil, "copyfile", side_effect=copy):
+                    with self.assertRaises(project_target.TargetBlocked) as caught:
+                        project_target.open_target(root)
+                self.assertIs(caught.exception, failure)
+                self.assertEqual(failure.reason_code, "materialization_failed")
+                self.assertIn("diagnostic retention failed", failure.message)
+                self.assertTrue(any("diagnostic retention failed" in note for note in failure.__notes__))
+                self.assertEqual(list((root / ".local/targets").iterdir()), [])
+                self.assertEqual((sentinel.read_bytes(), sentinel.stat().st_mode), before)
+                self.assertEqual(list(external.iterdir()), [sentinel])
+
+    def test_snapshot_mismatch_retains_successful_native_step_logs(self) -> None:
+        with tempfile.TemporaryDirectory() as temporary:
+            root = Path(temporary)
+            source = root / ".local/dist/sample.cf"
+            source.parent.mkdir(parents=True)
+            source.write_bytes(b"cf")
+            write_contract(root, {"kind": "cf", "path": ".local/dist/sample.cf",
+                                  "sha256": digest(b"cf")}, "0" * 64)
+
+            def materialize(**kwargs):
+                logs = kwargs["work_root"] / "logs"
+                logs.mkdir(parents=True)
+                (logs / "dump.log").write_bytes(b"export finished")
+                (logs / "dump.result").write_bytes(b"0")
+                kwargs["output"].mkdir()
+                (kwargs["output"] / "unexpected.xml").write_bytes(b"unexpected")
+
+            with mock.patch.object(project_target, "materialize_cf", side_effect=materialize):
+                with self.assertRaises(project_target.TargetBlocked) as caught:
+                    project_target.open_target(root)
+            self.assertEqual(caught.exception.reason_code, "materialization_failed")
+            retained = list((root / ".local/runs").glob("project-target-failed-*"))
+            self.assertEqual(len(retained), 1)
+            self.assertEqual((retained[0] / "dump.log").read_bytes(), b"export finished")
+            self.assertEqual(list((root / ".local/targets").iterdir()), [])
+
+    def test_diagnostics_preserve_failure_without_callable_add_note(self) -> None:
+        class MissingAddNote:
+            def __getattribute__(self, name):
+                if name == "add_note":
+                    raise AttributeError(name)
+                return super().__getattribute__(name)
+
+        class LegacyBlocked(MissingAddNote, project_target.TargetBlocked):
+            pass
+
+        class LegacyInterrupt(MissingAddNote, KeyboardInterrupt):
+            pass
+
+        for api in ("missing", "noncallable"):
+            for interrupted in (False, True):
+                for outcome in ("retained", "retention-error", "cleanup-error"):
+                    with self.subTest(api=api, interrupted=interrupted, outcome=outcome), \
+                         tempfile.TemporaryDirectory() as temporary:
+                        root = Path(temporary)
+                        source = root / ".local/dist/sample.cf"
+                        source.parent.mkdir(parents=True)
+                        source.write_bytes(b"cf")
+                        write_contract(root, {"kind": "cf", "path": ".local/dist/sample.cf",
+                                              "sha256": digest(b"cf")}, "0" * 64)
+                        if api == "missing":
+                            failure = (LegacyInterrupt() if interrupted else
+                                       LegacyBlocked("materialization_failed", "primary failure"))
+                        else:
+                            failure = (KeyboardInterrupt() if interrupted else
+                                       project_target.TargetBlocked("materialization_failed", "primary failure"))
+                            failure.add_note = None
+
+                        def fail(**kwargs):
+                            logs = kwargs["work_root"] / "logs"
+                            logs.mkdir(parents=True)
+                            (logs / "create.log").write_bytes(b"diagnostic")
+                            if outcome == "retention-error":
+                                (root / ".local/runs").write_bytes(b"not a directory")
+                            raise failure
+
+                        original_remove = project_target.remove_owned
+
+                        def remove(path):
+                            if outcome == "cleanup-error":
+                                raise OSError("cleanup failed")
+                            original_remove(path)
+
+                        with mock.patch.object(project_target, "materialize_cf", side_effect=fail), \
+                             mock.patch.object(project_target, "remove_owned", side_effect=remove):
+                            with self.assertRaises(type(failure)) as caught:
+                                project_target.open_target(root)
+                        self.assertIs(caught.exception, failure)
+                        expected = {"retained": "Failure diagnostics retained at",
+                                    "retention-error": "diagnostic retention failed",
+                                    "cleanup-error": "staging cleanup failed"}[outcome]
+                        self.assertTrue(any(expected in note for note in failure.__notes__))
+                        if not interrupted:
+                            self.assertEqual(failure.reason_code, "materialization_failed")
+                            if outcome == "retention-error" or outcome == "cleanup-error":
+                                self.assertIn(expected, failure.message)
+                            else:
+                                self.assertEqual((root / failure.locator / "create.log").read_bytes(), b"diagnostic")
+                        if outcome != "cleanup-error":
+                            self.assertEqual(list((root / ".local/targets").iterdir()), [])
+
+    def test_cleanup_failure_does_not_replace_primary_failure(self) -> None:
+        with tempfile.TemporaryDirectory() as temporary:
+            root = Path(temporary)
+            source = root / ".local/dist/sample.cf"
+            source.parent.mkdir(parents=True)
+            source.write_bytes(b"cf")
+            write_contract(root, {"kind": "cf", "path": ".local/dist/sample.cf",
+                                  "sha256": digest(b"cf")}, "0" * 64)
+            failure = project_target.TargetBlocked("materialization_failed", "primary failure")
+            with mock.patch.object(project_target, "materialize_cf", side_effect=failure), \
+                 mock.patch.object(project_target, "remove_owned", side_effect=OSError("cleanup failed")):
+                with self.assertRaises(project_target.TargetBlocked) as caught:
+                    project_target.open_target(root)
+            self.assertIs(caught.exception, failure)
+            self.assertIn("staging cleanup failed", failure.message)
+            self.assertTrue(any("staging cleanup failed" in note for note in failure.__notes__))
 
     def test_cf_materializer_rejects_bad_dump_result_and_cleans_output(self) -> None:
         with tempfile.TemporaryDirectory() as temporary:

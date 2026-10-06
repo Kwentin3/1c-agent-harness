@@ -105,6 +105,23 @@ CI-коррекция `b5b8150`: тест transport остаётся актив�
 [CI обеих версий PASS](https://github.com/Kwentin3/1c-agent-harness/actions/runs/37509890127).
 Производственное требование Python3.11+ не ослаблено.
 
+## Cold failure diagnostics: source-коррекция
+
+Перед удалением staging сохраняются только существующие `create/load/dump.log`
+и `.result` в приватный `.local/runs/project-target-failed-<uuid>`; IB/snapshot
+не копируются. Проверяются symlink/nonregular/multiple-link entries. Это не защита
+от враждебной конкурентной подмены путей. Исходная ошибка сохраняется; ошибки
+retention/cleanup отражаются в notes и в structured TargetBlocked.message.
+Fallback notes совместимы с Python3.9, но его traceback их автоматически не печатает.
+Логи, уже удалённые до обработки ошибки, и незаписанные данные hard kill не восстанавливаются.
+
+Ведущий независимо выполнил focused36 PASS и full351 PASS (157.706s).
+Оба release.json пересчитаны и artifact closure проверена тестами. Установленный
+комплект НЕ обновлён: новая source identity требует согласованной установки
+companion/plugin, иначе существующий fail-closed version check должен отказать.
+Python3.9 missing-API regression симулирована; реальный CI проверяется отдельно.
+Native/SSH/deployment в этой коррекции не выполнялись.
+
 ## Оставшиеся предзапусковые проверки
 
 1. Старый forced command завершал shell через30s. Его нельзя использовать для native:
