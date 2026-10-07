@@ -1,0 +1,118 @@
+{
+  "status": "PREPARATION_ONLY_ADMIN_NOT_ADMITTED",
+  "baseline": "7fc13929c14e83fdc751d5bf2ff16f648a4bf936",
+  "executor": {
+    "route": "existing strict pinned SSH route",
+    "uid": 10001,
+    "os": "PRETTY_NAME=\"Ubuntu 24.04.4 LTS\"\nNAME=\"Ubuntu\"\nVERSION_ID=\"24.04\"\nVERSION=\"24.04.4 LTS (Noble Numbat)\"\nVERSION_CODENAME=noble\nID=ubuntu\nID_LIKE=debian\nHOME_URL=\"https://www.ubuntu.com/\"\nSUPPORT_URL=\"https://help.ubuntu.com/\"\nBUG_REPORT_URL=\"https://bugs.launchpad.net/ubuntu/\"\nPRIVACY_POLICY_URL=\"https://www.ubuntu.com/legal/terms-and-policies/privacy-policy\"\nUBUNTU_CODENAME=noble\nLOGO=ubuntu-logo\n",
+    "architecture": "x86_64",
+    "git_head_observed": "bf7190b48371271fa1c8dd1bef925b3d7b113f2b",
+    "git_status_observed": "?? experiments/issue53-sales-payment-due-date/",
+    "old_checkout_was_not_modified": true
+  },
+  "installer": {
+    "size": 1726133319,
+    "sha256": "396b7065b9efb6272093f1bda5eab647081a13d9ccbb4c5cfb0e711346d5af28"
+  },
+  "base_image_candidate": {
+    "repository": "docker.io/library/ubuntu",
+    "tag_observed": "24.04",
+    "index_digest": "sha256:a853f94d226358a79c740cfc7bce0c289748f3fe3488d921d038ccd752c61b60",
+    "linux_amd64_manifest_digest": "sha256:f610ab94648195aa356059f5b41d6085c9d4d903c072430cdd1af7bdb646106b",
+    "source": "https://registry-1.docker.io/v2/library/ubuntu/manifests/24.04",
+    "image_downloaded": false
+  },
+  "exact_binary_checks": {
+    "1cv8t": {
+      "sealed_sha256": "0d11379cfd37c029a472fa500cbd8a64050cc5e53f7904036f8f6ce6a7fe0574",
+      "original_sha256": "0d11379cfd37c029a472fa500cbd8a64050cc5e53f7904036f8f6ce6a7fe0574",
+      "webkit_strings": []
+    },
+    "libwx_gtk3u-3.0.so.0": {
+      "sealed_sha256": "9801424483092eb1bcf638a06b67bc4627ff2ed8884d038b6335d4516bdcf910",
+      "original_sha256": "9801424483092eb1bcf638a06b67bc4627ff2ed8884d038b6335d4516bdcf910",
+      "webkit_strings": [
+        "libwebkit2gtk-4.0.so",
+        "libwebkit2gtk-4.1.so.0"
+      ]
+    }
+  },
+  "dependency_inspection": {
+    "command": "LD_LIBRARY_PATH=<verified-platform> ldd <verified-platform>/<binary>",
+    "ldd_exit_zero_is_not_dependency_readiness": true,
+    "wsap24t_missing": [],
+    "client_missing": [
+      "libGL.so.1",
+      "libGLU.so.1",
+      "libSM.so.6",
+      "libX11.so.6",
+      "libXxf86vm.so.1",
+      "libatk-1.0.so.0",
+      "libcairo-gobject.so.2",
+      "libcairo.so.2",
+      "libcups.so.2",
+      "libgdk-3.so.0",
+      "libgdk_pixbuf-2.0.so.0",
+      "libgio-2.0.so.0",
+      "libglib-2.0.so.0",
+      "libgobject-2.0.so.0",
+      "libgthread-2.0.so.0",
+      "libgtk-3.so.0",
+      "libpango-1.0.so.0",
+      "libpangocairo-1.0.so.0",
+      "libwebkit2gtk-4.1.so.0"
+    ],
+    "webkit_required_line": "libwebkit2gtk-4.1.so.0 => not found",
+    "no_application_launched": true
+  },
+  "installer_help": {
+    "argv": [
+      "setup-training-8.5.1.1150-x86_64.run",
+      "--help"
+    ],
+    "uid": 10001,
+    "rc": 1,
+    "stdout": "Unable to initialize installer.\nIs /tmp writable ?\nIs SELinux enabled? You may need to disable it temporarily\nPlease see below for details\nhttp://docs.fedoraproject.org/en-US/Fedora/13/html/SELinux_FAQ/index.html#id3037154\n",
+    "stderr": "",
+    "result": "HELP_UNAVAILABLE_NOT_INSTALLATION_FAIL",
+    "mount_observations": {
+      "root_read_only": true,
+      "tmp_noexec": true,
+      "run_noexec": true
+    },
+    "root_cause_not_proven": true,
+    "retention": "task-owned .local/refine87-installer-help/help.json on existing executor"
+  },
+  "exact_readme": {
+    "readme/readme_en.htm": {
+      "sha256": "d2d3dcbc8394d5a0f707d18ffbdf24219951dfe2e69ae236a30f5cb75e35d69b",
+      "locator": "verified-platform/readme/readme_en.htm"
+    },
+    "readme/readme_ru.htm": {
+      "sha256": "e3fba312a64026c1c340ce7b9e7d6423a7537e13136d6d651448b341641aad5f",
+      "locator": "verified-platform/readme/readme_ru.htm"
+    }
+  },
+  "limitations_observed": [
+    "training only; not real enterprise automation",
+    "file mode only",
+    "one simultaneous session",
+    "no password or OS authentication for IB users"
+  ],
+  "documentation_limits": [
+    "8.3.27 general administration guide is not exact training installer help",
+    "exact readme provides limitations, not certified OS matrix",
+    "8.5.1.1150 installer component IDs/options remain unverified until help succeeds",
+    "image digest is registry identity, not proof of platform compatibility"
+  ],
+  "invocations_this_phase": {
+    "installer_help_nonroot": 1,
+    "installer_install": 0,
+    "root_publisher": 0,
+    "apache": 0,
+    "designer": 0,
+    "enterprise_cli": 0,
+    "browser": 0
+  },
+  "source_cf_snapshot_demo_backup": "not opened by platform, not modified by this phase"
+}

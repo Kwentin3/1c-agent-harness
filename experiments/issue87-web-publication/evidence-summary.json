@@ -1,0 +1,386 @@
+{
+  "schema_version": 1,
+  "status": "GOAL_INCOMPLETE",
+  "scope": "Sanitized selected derivatives of retained 2026-10-02 observations; no current runtime recheck and not a complete replay package.",
+  "routing": {
+    "source": {
+      "artifact_name": "routing-observe.json",
+      "original_sha256": "4b38565fd469a4ed4db843e2683ba3701f8e9f1886e4ebef0021c269277fc047"
+    },
+    "responses": [
+      {
+        "path": "/jet/en/",
+        "status": 404,
+        "content_type": "application/json; charset=utf-8"
+      },
+      {
+        "path": "/jet/ru/",
+        "status": 404,
+        "content_type": "application/json; charset=utf-8"
+      },
+      {
+        "path": "/jet/en/scripts/mod_bootstrap_bootstrap.js",
+        "status": 404,
+        "content_type": "application/json; charset=utf-8"
+      },
+      {
+        "path": "/jet/scripts/mod_bootstrap_bootstrap.js",
+        "status": 200,
+        "content_type": "application/javascript; charset=UTF-8"
+      },
+      {
+        "path": "/jet/mainform.html",
+        "status": 200,
+        "content_type": "text/html; charset=UTF-8"
+      },
+      {
+        "path": "/jet/en/mainform.html",
+        "status": 404,
+        "content_type": "application/json; charset=utf-8"
+      }
+    ],
+    "error_excerpt": "HTTP: Not found\nError executing the query GET to resource /en:"
+  },
+  "publisher_cwd_control": {
+    "source": {
+      "artifact_name": "help-cwd-control.json",
+      "original_sha256": "bb7ffe353671ae18d3c2c0b6ff1e9e7657dc51b8aeb99d3d2623830534ef7664"
+    },
+    "rc": 1,
+    "stdout_sanitized": "\nThis operation requires superuser (root) privileges.\nOtherwise the application might function incorrectly.\nTo run the command as superuser, execute is using sudo.\n\nException: Cannot read <task-owned scratch config>.\nApache web server not found\n",
+    "vrd_created": false,
+    "active_publication_unchanged": true,
+    "apache_restarted": false,
+    "root_used": false
+  },
+  "controls": {
+    "alias-symmetric.json": {
+      "source": {
+        "artifact_name": "alias-symmetric.json",
+        "original_sha256": "0b1862099758cbb6b8bcb7e5632c75937b1ae37c1ee036f5b64dd5a7d7cf7ca2"
+      },
+      "observed": {
+        "hypothesis": "symmetric alias without trailing slash",
+        "requests": [
+          {
+            "path": "/jet/",
+            "status": 200,
+            "bootstrap": [
+              "<base href=\"/jet/en/\" />",
+              "var LANG = \"en\";",
+              "var REDIRECT = true;"
+            ]
+          },
+          {
+            "path": "/jet/en/",
+            "status": 404,
+            "bootstrap": []
+          },
+          {
+            "path": "/jet/en/scripts/mod_bootstrap_bootstrap.js",
+            "status": 404,
+            "bootstrap": []
+          }
+        ],
+        "restored": true
+      }
+    },
+    "base-control.json": {
+      "source": {
+        "artifact_name": "base-control.json",
+        "original_sha256": "91c8cabc07bba1ee2c5fa31004c4f55f99c427eaea4370df2e5badd7bbbd7e6d"
+      },
+      "observed": [
+        {
+          "base": "/jet/",
+          "requests": [
+            {
+              "path": "/jet/",
+              "status": 200,
+              "bootstrap": [
+                "<base href=\"/jet/en/\" />",
+                "var REDIRECT = true;"
+              ],
+              "type": "text/html;charset=UTF-8"
+            },
+            {
+              "path": "/jet/en/",
+              "status": 200,
+              "bootstrap": [
+                "<base href=\"/jet/en/\" />",
+                "var REDIRECT = true;"
+              ],
+              "type": "text/html;charset=UTF-8"
+            },
+            {
+              "path": "/jet/en/scripts/mod_bootstrap_bootstrap.js",
+              "status": 200,
+              "bootstrap": [
+                "50)})}window.onerror=function(a){alert(a);return!0};var t=g(\"BASE\"),O=g(\"LANG\"),P=!!window.REDIRECT,Q=!!window.OPENIDRELYINGPARTY,R=!!window.SPLASHTOPBRANDINGIMAGE,S=!!window.SPLASHBOTTOMBRANDINGIMAGE,T=!!window.HASBRANDING,G=g(\"EXITURL\"),U=g(\"OIDCALLOWSTANDARDAUTHENTICATION\"),y=g(\"VERSION\"),N=g(\"VENDORPREFIX\"),L=g(\"INTERFACETHEME\"),M=[g(\"BRAND1\"),g(\"BRAND2\")],H=window.ANSQUERY,I=g(\"E1CIB\"),V=g(\"ZONES\"),m=t,z=window.location.protocol+\"//\"+window.location.host;\"/\"!==m.slice(-1)&&(m+=\"/\");0!==t.length&&"
+              ],
+              "type": "application/javascript; charset=UTF-8"
+            }
+          ]
+        },
+        {
+          "base": "jet",
+          "requests": [
+            {
+              "path": "/jet/",
+              "status": 404,
+              "bootstrap": [],
+              "type": "application/json; charset=utf-8"
+            },
+            {
+              "path": "/jet/en/",
+              "status": 404,
+              "bootstrap": [],
+              "type": "application/json; charset=utf-8"
+            },
+            {
+              "path": "/jet/en/scripts/mod_bootstrap_bootstrap.js",
+              "status": 404,
+              "bootstrap": [],
+              "type": "application/json; charset=utf-8"
+            }
+          ]
+        }
+      ]
+    },
+    "user-locale.json": {
+      "source": {
+        "artifact_name": "user-locale.json",
+        "original_sha256": "d94dc121af46a3a6ec99b2a66426c271f082b1d302442d21a7bf613eca551d4c"
+      },
+      "observed": {
+        "control": "task-local SystemLanguage RU",
+        "result": {
+          "requests": [
+            {
+              "path": "/jet/",
+              "status": 200,
+              "bootstrap": [
+                "<base href=\"/jet/en/\" />",
+                "var LANG = \"en\";",
+                "var REDIRECT = true;"
+              ]
+            },
+            {
+              "path": "/jet/ru/",
+              "status": 404,
+              "bootstrap": []
+            },
+            {
+              "path": "/jet/ru/scripts/mod_bootstrap_bootstrap.js",
+              "status": 404,
+              "bootstrap": []
+            }
+          ]
+        },
+        "restored": true
+      }
+    },
+    "locale-env.json": {
+      "source": {
+        "artifact_name": "locale-env.json",
+        "original_sha256": "0c94cb8d1826f5673ecfffd7390bbb30839a5010bf96523c81248e06128d7902"
+      },
+      "requests": [
+        {
+          "path": "/jet/",
+          "status": 200,
+          "bootstrap": [
+            "<base href=\"/jet/en/\" />",
+            "var LANG = \"en\";",
+            "var REDIRECT = true;"
+          ]
+        },
+        {
+          "path": "/jet/ru/",
+          "status": 404,
+          "bootstrap": []
+        },
+        {
+          "path": "/jet/ru/scripts/mod_bootstrap_bootstrap.js",
+          "status": 404,
+          "bootstrap": []
+        }
+      ],
+      "limitation": "An earlier publisher arm also had apache2 not found; do not generalize this arm to all publisher failures."
+    }
+  },
+  "checkpoint": {
+    "source": {
+      "artifact_name": "checkpoint-20261002.json",
+      "original_sha256": "dee892f99dd8e3c3fba3a3b82b1a44a09af521b830a9a853b227fc40a6980d73"
+    },
+    "observed": {
+      "sourceUnchanged": {
+        "files": 5099,
+        "sha256": "a7c4275cb37bef5bbad3d8e668328ad104389b6897b20f5c5d419a05958000db"
+      },
+      "retainedDemo": true,
+      "demoBytes": 118210560,
+      "backupRetained": true,
+      "backupBytes": 17802299,
+      "nativeResult": "demo-ready",
+      "configSHA256": "c83bfb1855af23541e7e1860889b2c7516d8a9719c07bd75cdba74ba62afef66",
+      "vrdSHA256": "747e743d06306a221718d9b876f46936105f33e76df7d247b406c3dd44b79706",
+      "rootStatus": 200,
+      "localeStatus": 404,
+      "ownedListener": [
+        "127.0.0.1:18087"
+      ],
+      "failedControlsRestored": true,
+      "rewriteAbsent": true
+    }
+  },
+  "research": {
+    "source": {
+      "artifact_name": "research-web-20261002/validation.json",
+      "original_sha256": "b3cec7a365a4f839427e8235b5751f66e8a23741e7acb8bbbc607becf2068804"
+    },
+    "integrity_status": "PASS",
+    "delivery_status": "DEGRADED",
+    "counts": {
+      "packets": 6,
+      "claims": 10,
+      "quotes_checked": 10,
+      "defects": 0
+    },
+    "source_claims": [
+      {
+        "source_id": "S1",
+        "citation_url": "https://1c-dn.com/library/publishing_1c_configuration_to_web_on_windows/",
+        "limitations": [
+          "Windows tutorial, not an exact Linux 8.5 recipe; not used as configuration authority."
+        ],
+        "claims": []
+      },
+      {
+        "source_id": "S2",
+        "citation_url": "https://online.1c.ru/catalog/programs/program/36179915/",
+        "limitations": [
+          "Explicit legacy cp1251 normalization; main text includes unrelated products after the target product."
+        ],
+        "claims": [
+          {
+            "claim_id": "S2-1",
+            "atomic_claim": "Учебная версия не поддерживает клиент-серверный режим.",
+            "exact_quote": "не поддерживается работа в варианте клиент-сервер;",
+            "decision_fields": [
+              "training_limits"
+            ]
+          },
+          {
+            "claim_id": "S2-2",
+            "atomic_claim": "В учебной версии отсутствуют пользовательские пароли и ОС-аутентификация.",
+            "exact_quote": "отсутствует возможность использования паролей и аутентификации операционной системы для пользователей;",
+            "decision_fields": [
+              "training_limits"
+            ]
+          },
+          {
+            "claim_id": "S2-3",
+            "atomic_claim": "Учебная версия ограничена одним одновременным сеансом.",
+            "exact_quote": "количество одновременных сеансов работы с информационной базой ограничено одним сеансом;",
+            "decision_fields": [
+              "training_limits"
+            ]
+          }
+        ]
+      },
+      {
+        "source_id": "S3",
+        "citation_url": "https://online.1c.ru/admin/documents/agreement.php?ID=16463663",
+        "limitations": [
+          "Legal text describes use boundaries, not proof of web runtime support."
+        ],
+        "claims": [
+          {
+            "claim_id": "S3-1",
+            "atomic_claim": "Учебную версию разрешено использовать для обучения, разработки и отладки, не для реального учёта.",
+            "exact_quote": "3. ПРОГРАММНЫЙ ПРОДУКТ допускается использовать только в учебных целях, а также для разработки и отладки реальных (коммерческих) прикладных решений в соответствии с документацией, включенной в комплект поставки программного продукта. Настоящий ПРОГРАММНЫЙ ПРОДУКТ не предназначен для эксплуатации прикладных решений по их прямому назначению, т. е. для решения реальных учетных и управленческих задач; такая эксплуатация может осуществляться только на коммерческих версиях «1С:Предприятия 8».",
+            "decision_fields": [
+              "training_limits"
+            ]
+          }
+        ]
+      },
+      {
+        "source_id": "S4",
+        "citation_url": "https://v8.1c.ru/podderzhka-i-obuchenie/uchebnye-versii/",
+        "limitations": [
+          "Community license differs from installed training edition; not a fix or authorization to acquire license."
+        ],
+        "claims": [
+          {
+            "claim_id": "S4-1",
+            "atomic_claim": "Официальная страница указывает, что комьюнити-лицензия не ограничивает функциональность разработки, но не разрешает реальную эксплуатацию.",
+            "exact_quote": "Комьюнити-лицензия не имеет каких-либо функциональных ограничений с точки зрения задач разработки, но при этом не предназначена для реальной эксплуатации, для решения управленческих, учетных или иных коммерческих задач.",
+            "decision_fields": [
+              "training_limits"
+            ]
+          }
+        ]
+      },
+      {
+        "source_id": "S5",
+        "citation_url": "https://1c-dn.com/anticrisis/tools-and-technologies/embedded-web-client/setting-up/",
+        "limitations": [
+          "Generic older vendor guidance, not verified exact 8.5.1.1150 generated Apache template."
+        ],
+        "claims": [
+          {
+            "claim_id": "S5-1",
+            "atomic_claim": "Документация Linux-публикации указывает требование прав root.",
+            "exact_quote": "For Linux, to perform the publication, you need the superuser rights (root) using the su command or start the application that performs the publication using the sudo command.",
+            "decision_fields": [
+              "native_publication"
+            ]
+          },
+          {
+            "claim_id": "S5-2",
+            "atomic_claim": "При недостаточных правах webinst выводит сообщение, но продолжает публикацию.",
+            "exact_quote": "When publishing using the webinst utility, the user gets a diagnostic message but the publication continues.",
+            "decision_fields": [
+              "native_publication"
+            ]
+          },
+          {
+            "claim_id": "S5-3",
+            "atomic_claim": "Документация Linux рекомендует Apache worker MPM, не другие MPM.",
+            "exact_quote": "When working under Linux OS, it is recommended to use the worker multiprocessing module. Other available modules are not recommended.",
+            "decision_fields": [
+              "native_publication"
+            ]
+          },
+          {
+            "claim_id": "S5-4",
+            "atomic_claim": "Для файловой ИБ рекомендуется не более одного рабочего процесса веб-сервера на публикацию.",
+            "exact_quote": "Due to the features of getting the results of the background jobs in the file version of work, it is recommended to configure the web server so that each publication of the 1C:Enterprise infobase serves no more than one web server working process.",
+            "decision_fields": [
+              "native_publication"
+            ]
+          },
+          {
+            "claim_id": "S5-5",
+            "atomic_claim": "confpath обозначает полный путь к конфигурационному файлу Apache.",
+            "exact_quote": "The full path to the configuration file (httpd.conf) of the Apache web server. This parameter is applicable only when using Apache web servers.",
+            "decision_fields": [
+              "native_publication"
+            ]
+          }
+        ]
+      },
+      {
+        "source_id": "S6",
+        "citation_url": "https://1c-dn.com/library/translation_guidelines/",
+        "limitations": [
+          "Translation overview does not explain native web locale routing. Linked downloads not retrieved."
+        ],
+        "claims": []
+      }
+    ]
+  }
+}

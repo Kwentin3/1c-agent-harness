@@ -107,3 +107,15 @@ issue #12; строгая внешне доказуемая freeze впервы�
 оставить direct source и не добавлять компонент. См.
 [`docs/issue-12-narrow-context.md`](docs/issue-12-narrow-context.md) и
 [`experiments/issue12-narrow-context-20260826/`](experiments/issue12-narrow-context-20260826/README.md).
+
+## Ограниченное завершение текущего полигона — Goal91
+
+7 октября 2026 свежая обычная сессия Hermes прошла installed registered
+cold CF → warm reuse → narrow → substantive native verify: strict oracle PASS,
+6/6 platform launches без retry. Protected native dashboard/empty-day/Refresh
+работают после восстановления; purpose key отозван, disposable resources очищены.
+[Точные identities, квитанцы, стоимость и пределы](docs/goal91-final.md).
+PR #86/#88 подготовлены к owner decision; merge/release отдельным решением.
+Positive ЖР evidence остаётся историческим #80; новый acquisition — #90,
+ненулевой web/пользовательские workflow и другие расширения — backlog #92.
+Это не отменяет прежние terminal FAIL или недоказанные этапы 2/3.

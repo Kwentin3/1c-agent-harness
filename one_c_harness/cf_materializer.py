@@ -8,9 +8,7 @@ from __future__ import annotations
 import os
 import json
 from pathlib import Path
-import signal
 import subprocess
-import time
 from typing import Callable
 
 try:  # Installed companion package.
@@ -28,28 +26,6 @@ class MaterializerUnavailable(RuntimeError):
 
 class MaterializationFailed(RuntimeError):
     pass
-
-
-def _process_group_exists(process_group_id: int) -> bool:
-    try:
-        os.killpg(process_group_id, 0)
-    except ProcessLookupError:
-        return False
-    return True
-
-
-def _stop_process_group(process_group_id: int) -> None:
-    """Reap the Xvfb wrapper's residual group before accepting a step."""
-    if not _process_group_exists(process_group_id):
-        return
-    os.killpg(process_group_id, signal.SIGTERM)
-    deadline = time.monotonic() + 2
-    while _process_group_exists(process_group_id) and time.monotonic() < deadline:
-        time.sleep(0.025)
-    if _process_group_exists(process_group_id):
-        os.killpg(process_group_id, signal.SIGKILL)
-    if _process_group_exists(process_group_id):
-        raise MaterializationFailed("native materialization left a running process")
 
 
 def _unique_object(pairs: list[tuple[str, object]]) -> dict[str, object]:
@@ -106,15 +82,25 @@ def _run_step(
             completed = runner(argv, env=environment, stdin=subprocess.DEVNULL, stdout=subprocess.DEVNULL,
                                stderr=subprocess.DEVNULL, timeout=TIMEOUT_SECONDS, start_new_session=True, check=False)
         else:
+            # Import after this module has initialized: native_cycle also uses
+            # require_runtime, and already owns Linux descendant collection.
+            try:
+                from .native_cycle import _prepare_process_ownership, _stop_process_group
+            except ImportError:
+                from native_cycle import _prepare_process_ownership, _stop_process_group
+            try:
+                baseline_children = _prepare_process_ownership()
+            except RuntimeError as exc:
+                raise MaterializerUnavailable("native process ownership is unavailable") from exc
             process = subprocess.Popen(argv, env=environment, stdin=subprocess.DEVNULL,
                                        stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL, start_new_session=True)
             try:
                 process.communicate(timeout=TIMEOUT_SECONDS)
             except subprocess.TimeoutExpired:
-                _stop_process_group(process.pid)
+                _stop_process_group(process, baseline_children)
                 process.communicate()
                 raise MaterializationFailed("native materialization timed out")
-            _stop_process_group(process.pid)
+            _stop_process_group(process, baseline_children)
             completed = subprocess.CompletedProcess(argv, process.returncode)
     except subprocess.TimeoutExpired as exc:
         raise MaterializationFailed("native materialization timed out") from exc

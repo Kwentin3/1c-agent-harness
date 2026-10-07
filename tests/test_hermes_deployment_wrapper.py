@@ -33,6 +33,8 @@ class HermesDeploymentWrapperTests(unittest.TestCase):
         (ssh_dir / "known_hosts").write_text("fixture\n", encoding="utf-8")
         key = root / "executor-key"
         key.write_text("fixture\n", encoding="utf-8")
+        config = root / "coding-config"
+        config.write_text("# fixture\n", encoding="utf-8")
 
         env = {
             **os.environ,
@@ -43,31 +45,109 @@ class HermesDeploymentWrapperTests(unittest.TestCase):
             "TERMINAL_SSH_USER": "executor",
             "TERMINAL_SSH_PORT": "2222",
             "TERMINAL_SSH_KEY": str(key),
+            "ONE_C_HARNESS_CODING_SSH_CONFIG": str(config),
         }
         return env, capture
 
-    def test_coding_uses_deployment_project_binding_not_companion_source(self) -> None:
+    def test_coding_forced_command_receives_request_on_stdin_not_argv(self) -> None:
         with tempfile.TemporaryDirectory() as temporary:
-            env, capture = self._fixture(Path(temporary))
-            env["ONE_C_HARNESS_PROJECT_CWD"] = "/workspace/business-task"
-            token = base64.b64encode(json.dumps({
-                "schemaVersion": 1, "operation": "open", "arguments": {},
-            }).encode()).decode()
+            root = Path(temporary)
+            env, capture = self._fixture(root)
+            config = root / "coding ssh config"
+            config.write_text("# fixture\n")
+            env["ONE_C_HARNESS_CODING_SSH_CONFIG"] = str(config)
+            env["ONE_C_HARNESS_PROJECT_CWD"] = "/srv/goal91-jet"
+            stdin_capture = root / "stdin"
+            env["SSH_STDIN_CAPTURE"] = str(stdin_capture)
+            (root / "bin/ssh").write_text(
+                "#!" + sys.executable + "\n"
+                "import os, pathlib, sys\n"
+                "pathlib.Path(os.environ['SSH_ARGV_CAPTURE']).write_text('\\n'.join(sys.argv[1:]))\n"
+                "pathlib.Path(os.environ['SSH_STDIN_CAPTURE']).write_text(sys.stdin.read())\n"
+            )
+            for operation in ("open", "narrow", "verify"):
+                with self.subTest(operation=operation):
+                    token = base64.b64encode(json.dumps({"operation": operation}).encode()).decode()
+                    result = subprocess.run(
+                        [str(WRAPPER), "--request-base64", token], input="",
+                        capture_output=True, text=True, timeout=10, env=env,
+                    )
+                    self.assertEqual(result.returncode, 0, result.stderr)
+                    argv = capture.read_text().splitlines()
+                    self.assertEqual(argv[-2:], ["-T", "goal91-reference"])
+                    self.assertEqual(argv[:2], ["-F", str(config)])
+                    for option in ("BatchMode=yes", "IdentitiesOnly=yes", "StrictHostKeyChecking=yes",
+                                   "ForwardAgent=no", "IdentityAgent=none", "RequestTTY=no"):
+                        self.assertIn(option, argv)
+                    command = stdin_capture.read_text()
+                    self.assertTrue(command.startswith("cd /srv/goal91-jet && "), command)
+                    self.assertIn("/etc/one-c-harness/goal91-runtime.json", command)
+                    self.assertIn("/opt/one-c-harness/60fa41bc6dcb6a6a4de38b22d2830501b9abfeba", command)
+                    self.assertIn("exec python3 -I -B -c ", command)
+                    self.assertTrue(command.endswith("--request-base64 " + token + "\n"))
+                    self.assertNotIn("SSH_ORIGINAL_COMMAND", command)
+                    self.assertIn("os.environ.update", command)
+                    self.assertNotIn(token, argv)
+                    # Exercise the transported bootstrap with a fixture product:
+                    # hostile cwd/PYTHONPATH cannot supply the product or runpy.
+                    source = root / "product"
+                    package = source / "one_c_harness"
+                    package.mkdir(parents=True, exist_ok=True)
+                    (package / "__init__.py").write_text("")
+                    (package / "companion.py").write_text(
+                        "import json, os, subprocess, sys\n"
+                        "keys = ['PYTHONPATH', 'PYTHONSAFEPATH', 'PYTHONNOUSERSITE']\n"
+                        "child = subprocess.check_output([sys.executable, '-I', '-c', "
+                        "'import json, os; print(json.dumps(dict(os.environ)))'], text=True)\n"
+                        "print(json.dumps({'cwd': os.getcwd(), 'isolated': sys.flags.isolated, "
+                        "'no_bytecode': sys.dont_write_bytecode, "
+                        "'child': {k: json.loads(child).get(k) for k in keys}}))\n"
+                    )
+                    business = root / "business"
+                    business.mkdir(exist_ok=True)
+                    (business / "runpy.py").write_text("raise RuntimeError('shadow runpy')\n")
+                    (business / "one_c_harness.py").write_text("raise RuntimeError('shadow product')\n")
+                    inherited = {"PYTHONPATH": str(business), "PYTHONSAFEPATH": "preserve-safe",
+                                 "PYTHONNOUSERSITE": "preserve-user"}
+                    local_command = command.replace(
+                        "/opt/one-c-harness/60fa41bc6dcb6a6a4de38b22d2830501b9abfeba", str(source)
+                    ).replace("/srv/goal91-jet", str(business))
+                    executed = subprocess.run(local_command, shell=True, env={**env, **inherited},
+                                              capture_output=True, text=True, timeout=10)
+                    if sys.version_info < (3, 11):
+                        self.assertNotEqual(executed.returncode, 0)
+                        self.assertIn("deployment requires Python 3.11+", executed.stderr)
+                        self.assertEqual(executed.stdout, "")
+                        continue
+                    self.assertEqual(executed.returncode, 0, executed.stderr)
+                    self.assertEqual(json.loads(executed.stdout), {
+                        "cwd": str(business), "isolated": 1, "no_bytecode": True,
+                        "child": {"PYTHONPATH": str(source), "PYTHONSAFEPATH": "1", "PYTHONNOUSERSITE": "1"},
+                    })
+
+    def test_coding_ssh_failure_has_no_fallback(self) -> None:
+        with tempfile.TemporaryDirectory() as temporary:
+            root = Path(temporary)
+            env, capture = self._fixture(root)
+            env["ONE_C_HARNESS_PROJECT_CWD"] = "/srv/goal91-jet"
+            (root / "bin/ssh").write_text(
+                "#!/bin/sh\nprintf 'attempt\\n' >> \"$SSH_ARGV_CAPTURE\"\nexit 73\n"
+            )
+            token = base64.b64encode(b'{"operation":"open"}').decode()
             result = subprocess.run(
                 [str(WRAPPER), "--request-base64", token],
                 capture_output=True, text=True, timeout=10, env=env,
             )
-            self.assertEqual(result.returncode, 0, result.stderr)
-            command = capture.read_text().splitlines()[-1]
-            self.assertTrue(command.startswith("cd /workspace/business-task && "), command)
-            self.assertIn('sys.path.insert(0, "/workspace/1c-agent-harness/.local/issue80-companion/source")', command)
-            self.assertIn("exec python3 -I -c ", command)
-            self.assertTrue(command.endswith("--request-base64 " + token), command)
+            self.assertEqual(result.returncode, 73, result.stderr)
+            self.assertEqual(capture.read_text(), "attempt\n")
+            self.assertEqual(result.stdout, "")
 
     def test_wrapper_uses_fixed_strict_openssh_route(self) -> None:
         with tempfile.TemporaryDirectory() as temporary:
             env, capture = self._fixture(Path(temporary))
-            token = "eyJvcGVyYXRpb24iOiJvYnNlcnZlIn0="
+            env.pop("ONE_C_HARNESS_CODING_SSH_CONFIG", None)
+            env.pop("ONE_C_HARNESS_PROJECT_CWD", None)
+            token = base64.b64encode(b'{"operation":"observe"}').decode()
 
             result = subprocess.run(
                 [str(WRAPPER), "--request-base64", token],
@@ -80,13 +160,13 @@ class HermesDeploymentWrapperTests(unittest.TestCase):
             self.assertEqual(result.returncode, 0, result.stderr)
             self.assertEqual(result.stdout, '{"status":"ok"}\n')
             argv = capture.read_text(encoding="utf-8").splitlines()
-            self.assertIn("BatchMode=yes", argv)
-            self.assertIn("IdentitiesOnly=yes", argv)
-            self.assertIn("StrictHostKeyChecking=yes", argv)
-            self.assertIn(f"UserKnownHostsFile={Path(env['HOME']) / '.ssh' / 'known_hosts'}", argv)
-            self.assertIn(env["TERMINAL_SSH_KEY"], argv)
-            self.assertIn("2222", argv)
-            self.assertIn("executor@executor.example.invalid", argv)
+            self.assertEqual(argv[:-1], [
+                "-F", "/dev/null", "-o", "BatchMode=yes", "-o", "IdentitiesOnly=yes",
+                "-o", "StrictHostKeyChecking=yes", "-o",
+                f"UserKnownHostsFile={Path(env['HOME']) / '.ssh' / 'known_hosts'}",
+                "-o", "ConnectTimeout=10", "-p", "2222", "-i", env["TERMINAL_SSH_KEY"],
+                "executor@executor.example.invalid",
+            ])
             self.assertEqual(
                 argv[-1],
                 "cd /workspace/1c-agent-harness/.local/issue80-companion/source "
@@ -94,8 +174,24 @@ class HermesDeploymentWrapperTests(unittest.TestCase):
                 "exec ../bin/one-c-harness --request-base64 " + token,
             )
 
+    def test_coding_config_is_required_absolute_readable_file_before_ssh(self) -> None:
+        for config in (None, "", "relative", "/missing-coding-config", "/"):
+            with self.subTest(config=config), tempfile.TemporaryDirectory() as temporary:
+                env, capture = self._fixture(Path(temporary))
+                env["ONE_C_HARNESS_PROJECT_CWD"] = "/srv/goal91-jet"
+                env.pop("ONE_C_HARNESS_CODING_SSH_CONFIG", None)
+                if config is not None:
+                    env["ONE_C_HARNESS_CODING_SSH_CONFIG"] = config
+                token = base64.b64encode(b'{"operation":"open"}').decode()
+                result = subprocess.run(
+                    [str(WRAPPER), "--request-base64", token],
+                    capture_output=True, text=True, timeout=10, env=env,
+                )
+                self.assertNotEqual(result.returncode, 0)
+                self.assertFalse(capture.exists())
+
     def test_business_binding_is_required_and_shell_safe_before_ssh(self) -> None:
-        for binding in (None, "", "relative", "/workspace/../other", "/workspace/task;touch-pwned", "/workspace/task\nother", "/workspace/$(id)"):
+        for binding in (None, "", "relative", "/workspace/business-task", "/srv/goal91-jet/", "/workspace/../other", "/workspace/task;touch-pwned", "/workspace/task\nother", "/workspace/$(id)"):
             with self.subTest(binding=binding), tempfile.TemporaryDirectory() as temporary:
                 env, capture = self._fixture(Path(temporary))
                 env.pop("ONE_C_HARNESS_PROJECT_CWD", None)
@@ -148,11 +244,25 @@ class HermesDeploymentWrapperTests(unittest.TestCase):
             (root / "bin/ssh").write_text(
                 "#!" + sys.executable + "\n"
                 "import os, subprocess, sys\n"
-                "command = sys.argv[-1].replace('/workspace/1c-agent-harness/.local/issue80-companion/source', os.environ['TEST_REMOTE_SOURCE'])\n"
+                "command = sys.stdin.read() if sys.argv[-1] == 'goal91-reference' else sys.argv[-1]\n"
+                "command = command.replace('/opt/one-c-harness/60fa41bc6dcb6a6a4de38b22d2830501b9abfeba', os.environ['TEST_REMOTE_SOURCE'])\n"
+                "command = command.replace('/workspace/1c-agent-harness/.local/issue80-companion/source', os.environ['TEST_REMOTE_SOURCE'])\n"
+                "command = command.replace('/srv/goal91-jet', os.environ['TEST_REMOTE_BUSINESS'])\n"
+                "command = command.replace('/etc/one-c-harness/goal91-runtime.json', os.environ['TEST_REMOTE_RUNTIME'])\n"
                 "raise SystemExit(subprocess.call(command, shell=True))\n"
             )
             env["TEST_REMOTE_SOURCE"] = str(source)
-            env["ONE_C_HARNESS_PROJECT_CWD"] = str(business)
+            env["TEST_REMOTE_BUSINESS"] = str(business)
+            # This route test must never discover a real executor's runtime.
+            # Its intended boundary is runner import plus unavailable-runtime
+            # precheck, independent of the machine running the test suite.
+            env["TEST_REMOTE_RUNTIME"] = str(root / "unavailable-runtime.json")
+            env["ONE_C_HARNESS_PROJECT_CWD"] = "/srv/goal91-jet"
+            # The reference supplies the child's import environment. The isolated
+            # bootstrap must not rewrite it when loading the companion itself.
+            env["PYTHONPATH"] = str(source)
+            env["PYTHONSAFEPATH"] = "1"
+            env["PYTHONNOUSERSITE"] = "1"
 
             def call(operation: str, arguments: dict) -> dict:
                 token = base64.b64encode(json.dumps({
@@ -181,8 +291,8 @@ class HermesDeploymentWrapperTests(unittest.TestCase):
                 "oracle": "task/oracle.py", "receipt": ".local/receipt.json", "timeoutSeconds": 60,
             })
             self.assertEqual(rejected["reasonCode"], "snapshot_invalid")
-            # Exercise the actual runner subprocess import, without 1C. An
-            # incomplete fixture may block admission, but must reach the runner.
+            # Exercise the actual runner subprocess import, without 1C. The
+            # explicit unavailable runtime must block before platform launch.
             request = business / ".local/request.json"
             request.write_text('{}')
             oracle = business / ".local/oracle.py"

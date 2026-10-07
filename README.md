@@ -1,5 +1,11 @@
 # 1C Agent Harness
 
+> Текущий ограниченный этап — [Goal #91](https://github.com/Kwentin3/1c-agent-harness/issues/91).
+> [Итог 7 октября](docs/goal91-final.md): fresh registered cold → warm → narrow →
+> native verify PASS, 6/6 запусков без retry; защищённая demo восстановлена и проверена.
+> PR #86/#88 готовы к owner review; merge требует отдельного решения. Backlog —
+> [#92](https://github.com/Kwentin3/1c-agent-harness/issues/92).
+
 > Прикладной кандидат #85: [dashboard владельца за вчера](experiments/issue85-owner-dashboard/RESULTS.md).
 > Native-приёмка пройдена: **strict oracle PASS** в третьей попытке, 3/4 запуска.
 > Проверены расчёт, табличный документ/создание формы, пустой день, убыток,
@@ -50,9 +56,10 @@ native-запуск из двух; исходный снимок не измен
 
 Это завершённый ограниченный этап на одном полигоне, не универсальная write-среда:
 первоначальный тест свежей автономности и стоимости не прошёл, автоматический выбор
-WebUI workspace и другой проект не проверены. Текущая доступность домашнего executor
-не подтверждена (SSH `No route to host`). Production rollout не выполнялся.
-Следующее направление выбирается владельцем отдельно; оставшийся native-слот не расходуется.
+WebUI workspace и другой проект не проверены. Доступность домашнего executor
+на завершении #69 не была подтверждена (исторический SSH `No route to host`).
+Это не текущий диагноз сети: актуальный scope проверки указан в checkpoint #91.
+Production rollout не выполнялся; оставшийся native-слот не расходуется.
 
 ## Открытие project target
 
@@ -71,10 +78,18 @@ source принимается без 1С; `.cf` материализуется �
 `materializer_unavailable` с locator на [`docs/lab-bootstrap.md`](docs/lab-bootstrap.md); она
 ничего не скачивает и не устанавливает.
 
-Единственный executor-level locator — игнорируемый Git файл `.local/one-c-runtime.json`. Он не
-является project contract и не попадает в `SnapshotRef`; schema v1 содержит абсолютные пути
-`platform`, `xvfb`, `fontconfig`, `libs`. Это позволяет executor выбрать заранее подготовленный
-runtime без зашивания конфигурации, её версии или provider route в harness.
+Единственный executor-level locator — переменная `ONE_C_HARNESS_RUNTIME_CONFIG`,
+заданная окружением запуска executor и указывающая на абсолютный путь к его
+локальному JSON-контракту. `.local/one-c-runtime.json` — историческое размещение,
+**не автоматически обнаруживаемый default**. Locator не является project contract
+и не попадает в `SnapshotRef`; schema v1 содержит `schemaVersion` и абсолютные пути
+`platform`, `xvfb`, `fontconfig`, `libs`. Это позволяет executor выбрать заранее
+подготовленный runtime без зашивания конфигурации, версии или provider route в harness.
+
+Для Linux web используется [native training reference/runbook](docs/issue-87-native-web-runbook.md),
+а [lab-bootstrap](docs/lab-bootstrap.md) сохраняет исторический relocated CLI-сценарий.
+CLI admission, native lifecycle и web UI — разные проверки; рабочий web-клиент
+не переключает автоматически runtime locator текущего harness.
 EDT, CFE, CFU, DT, EPF, живые ИБ и remote executors в v1 возвращают `unsupported_source`.
 
 Admission в `project_target.py` проверяет закрытый manifest/file set, hashes, read-only режим и
@@ -210,7 +225,7 @@ live `$HERMES_HOME/bin/one-c-harness`, process environment или restart тре
 подтверждены в [PR #84](https://github.com/Kwentin3/1c-agent-harness/pull/84).
 Сам business project не содержит Harness source/scripts или собственной установки платформы.
 Это приёмка одного допущенного проекта, не завершение полной многопроектной интеграции.
-На финализации повторный live `open` вернул `terminal_failed`: тот же wrapper сообщил
+На финализации #69 повторный live `open` вернул `terminal_failed`: тот же wrapper сообщил
 `No route to host`. Историческая native-квитанция остаётся доказательством выполнения,
 но не текущей доступности executor; автоматический fallback или новая установка не добавлены.
 

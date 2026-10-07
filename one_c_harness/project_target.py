@@ -60,6 +60,38 @@ def _source_unchanged(source: Path, contract: dict[str, object]) -> None:
         raise TargetBlocked("source_mismatch", "declared source changed during open")
 
 
+def _add_failure_note(failure: BaseException, note: str) -> None:
+    """Keep diagnostics on the original exception on Python 3.9/3.10 too."""
+    add_note = getattr(failure, "add_note", None)
+    if callable(add_note):
+        add_note(note)
+    else:
+        failure.__notes__ = [*getattr(failure, "__notes__", []), note]
+
+
+def _retain_failure_logs(repo_root: Path, work: Path) -> Path | None:
+    """Copy only existing native step diagnostics, never the IB or snapshot."""
+    logs = repo_path(repo_root, (work / "logs").relative_to(repo_root).as_posix(), field="failure logs")
+    if not logs.exists():
+        return None
+    retained = None
+    for step in ("create", "load", "dump"):
+        for suffix in ("log", "result"):
+            source = logs / f"{step}.{suffix}"
+            if not os.path.lexists(source):
+                continue
+            if source.is_symlink() or not source.is_file():
+                raise ValueError("failure diagnostic is not a regular file")
+            require_one_link(source)
+            if retained is None:
+                runs = repo_path(repo_root, ".local/runs", field="failure diagnostics")
+                runs.mkdir(parents=True, exist_ok=True)
+                retained = runs / f"project-target-failed-{uuid.uuid4().hex}"
+                retained.mkdir(mode=0o700)
+            shutil.copyfile(source, retained / source.name, follow_symlinks=False)
+    return retained
+
+
 def open_target(repo_root: Path) -> dict[str, object]:
     try:
         contract, contract_bytes = load_contract(repo_root)
@@ -95,7 +127,6 @@ def open_target(repo_root: Path) -> dict[str, object]:
                         raise TargetBlocked("materializer_unavailable", "1C runtime is unavailable", locator="docs/lab-bootstrap.md") from exc
                     except MaterializationFailed as exc:
                         raise TargetBlocked("materialization_failed", "CF materialization failed") from exc
-                remove_owned(work)
                 generated = tree_manifest(staged_snapshot)
                 expected = contract["snapshot"]
                 assert isinstance(expected, dict)
@@ -105,14 +136,33 @@ def open_target(repo_root: Path) -> dict[str, object]:
                 staged_manifest.write_bytes(generated)
                 staged_binding.write_bytes(binding_bytes(contract))
                 freeze(staged_snapshot, staged_manifest, staged_binding)
+                remove_owned(work)
                 admit_target(staging, staged_snapshot, staged_manifest, staged_binding, contract)
                 if (repo_root / "project-target.json").read_bytes() != contract_bytes:
                     raise TargetBlocked("snapshot_invalid", "project target contract changed during open")
                 staging.rename(target)
                 admit_target(target, snapshot, manifest, binding, contract)
                 return snapshot_ref(contract, "materialized")
-            except BaseException:
-                remove_owned(staging)
+            except BaseException as failure:
+                try:
+                    retained = _retain_failure_logs(repo_root, work)
+                    if retained is not None:
+                        locator = retained.relative_to(repo_root).as_posix()
+                        _add_failure_note(failure, f"Failure diagnostics retained at {locator}")
+                        if isinstance(failure, TargetBlocked):
+                            failure.locator = locator
+                except BaseException as retention_error:
+                    note = f"Failure diagnostic retention failed ({type(retention_error).__name__}); staging cleanup will still be attempted"
+                    _add_failure_note(failure, note)
+                    if isinstance(failure, TargetBlocked):
+                        failure.message += f"; {note}"
+                try:
+                    remove_owned(staging)
+                except BaseException as cleanup_error:
+                    note = f"Failure staging cleanup failed ({type(cleanup_error).__name__})"
+                    _add_failure_note(failure, note)
+                    if isinstance(failure, TargetBlocked):
+                        failure.message += f"; {note}"
                 raise
         finally:
             os.close(fd)

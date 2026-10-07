@@ -40,15 +40,32 @@ case "$operation" in
         # Set by deployment for the admitted business task, never a tool argument.
         remote_cwd=${ONE_C_HARNESS_PROJECT_CWD:-}
         case "$remote_cwd" in
+            /srv/goal91-jet) ;;
+            *) printf '%s\n' 'business workspace binding must be /srv/goal91-jet' >&2; exit 69 ;;
+        esac
+        coding_ssh_config=${ONE_C_HARNESS_CODING_SSH_CONFIG:-}
+        case "$coding_ssh_config" in
             /*) ;;
-            *) printf '%s\n' 'business workspace binding is required' >&2; exit 69 ;;
+            *) printf '%s\n' 'absolute coding SSH config is required' >&2; exit 69 ;;
         esac
-        case "$remote_cwd" in
-            *[!A-Za-z0-9_./-]*|*/../*|*/./*|*/..|*/.)
-                printf '%s\n' 'business workspace binding is invalid' >&2; exit 64 ;;
-        esac
-        # The legacy executor launcher cd's to its source; bypass it for coding.
-        remote_command="cd $remote_cwd && ONE_C_HARNESS_RUNTIME_CONFIG=$remote_runtime_config exec python3 -I -c 'import os, sys, runpy; assert sys.version_info >= (3, 11), \"deployment requires Python 3.11+\"; sys.path.insert(0, \"$remote_source\"); os.environ.update(PYTHONPATH=\"$remote_source\", PYTHONSAFEPATH=\"1\", PYTHONNOUSERSITE=\"1\"); runpy.run_module(\"one_c_harness.companion\", run_name=\"__main__\")' --request-base64 $token"
+        if [ ! -f "$coding_ssh_config" ] || [ ! -r "$coding_ssh_config" ]; then
+            printf '%s\n' 'coding SSH config is not a readable file' >&2
+            exit 69
+        fi
+        # The forced-command reference reads its command from stdin, not argv.
+        remote_source=/opt/one-c-harness/60fa41bc6dcb6a6a4de38b22d2830501b9abfeba
+        remote_runtime_config=/etc/one-c-harness/goal91-runtime.json
+        remote_command="cd $remote_cwd && ONE_C_HARNESS_RUNTIME_CONFIG=$remote_runtime_config exec python3 -I -B -c 'import os, sys, runpy; assert sys.version_info >= (3, 11), \"deployment requires Python 3.11+\"; sys.path.insert(0, \"$remote_source\"); os.environ.update(PYTHONPATH=\"$remote_source\", PYTHONSAFEPATH=\"1\", PYTHONNOUSERSITE=\"1\"); runpy.run_module(\"one_c_harness.companion\", run_name=\"__main__\")' --request-base64 $token"
+        printf '%s\n' "$remote_command" | ssh \
+            -F "$ONE_C_HARNESS_CODING_SSH_CONFIG" \
+            -o BatchMode=yes \
+            -o IdentitiesOnly=yes \
+            -o StrictHostKeyChecking=yes \
+            -o ForwardAgent=no \
+            -o IdentityAgent=none \
+            -o RequestTTY=no \
+            -T goal91-reference
+        exit $?
         ;;
     *)
         # Keep diagnostic environment/source selection and retained refs unchanged.

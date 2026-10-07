@@ -280,7 +280,8 @@ def open_target(ctx: Any) -> Callable[[object], str]:
     def handler(arguments: object, **_kwargs: object) -> str:
         if arguments != {}:
             return _blocked("invalid_request", "open does not accept arguments")
-        return _call(ctx, "open", arguments, 60)
+        # Full cold lifecycle; the deployment watchdog owns remote abort.
+        return _call(ctx, "open", arguments, 2160)
     return handler
 
 
@@ -332,8 +333,8 @@ def native_verify(ctx: Any) -> Callable[[object], str]:
     def handler(arguments: object, **_kwargs: object) -> str:
         if not isinstance(arguments, dict) or type(arguments.get("timeoutSeconds")) is not int:
             return _blocked("invalid_request", "verify timeoutSeconds is invalid")
-        timeout = arguments["timeoutSeconds"] + 90
-        if timeout > 600:
+        if not 1 <= arguments["timeoutSeconds"] <= 480:
             return _blocked("invalid_request", "verify timeoutSeconds is invalid")
-        return _call(ctx, "verify", arguments, timeout)
+        # timeoutSeconds still limits ENTERPRISE only, not create/load/cleanup.
+        return _call(ctx, "verify", arguments, 2160)
     return handler

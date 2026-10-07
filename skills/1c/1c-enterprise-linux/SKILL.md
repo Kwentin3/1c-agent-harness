@@ -1,7 +1,7 @@
 ---
 name: 1c-enterprise-linux
 description: "Use for 1C XML/BSL analysis and Linux platform automation."
-version: 1.6.1
+version: 1.6.3
 author: Hermes Agent
 license: MIT
 metadata:
@@ -137,7 +137,10 @@ built on `Version8_3_24`, so the platform must be **≥ 8.3.24** (8.3.27/8.3.28 
      docs, `ibcmd infobase create --load=<file.cf>` + `ibcmd infobase config export` work without
      a server license and can produce dumps byte-identical to `/DumpConfigToFiles`.
   Paid/HASP licenses gate commercial `1cv8` Designer operations and running commercial configs.
-- Training-edition relocation differs from commercial: after root install, move `/opt/1cv8t`
+- **Historical relocated CLI lab only:** training-edition relocation differs from commercial.
+  It is not the default for native web publication: keep vendor-installed software root-owned
+  in its admitted native target and use `references/native-training-web-reference.md`.
+  The old lab relocated `/opt/1cv8t`
   to `.local/platform/1cv8t` (moving avoids a 2.5 GiB duplicate), chown it to the workspace user,
   and invoke `.local/platform/1cv8t/x86_64/<version>/1cv8t`. The same GTK/Xvfb/fontconfig stack
   applies. Keep training and commercial trees separate; do not rename `1cv8t` to `1cv8`.
@@ -154,6 +157,18 @@ built on `Version8_3_24`, so the platform must be **≥ 8.3.24** (8.3.27/8.3.28 
   They conflict with the project's «законно доступная» requirement and aren't needed to dump.
 - Non-official acquisition (torrent/mirror) is a **user decision**. Provenance posture: record
   source + SHA-256, but there is **no vendor signature** — never present it as official provenance.
+
+## Native packaged web environment
+
+For Linux training file-mode web publication, read
+`references/native-training-web-reference.md` before installation or acceptance.
+It separates operator-owned native installation from daily agent work, covers
+exact-build resource-discovery diagnosis, the narrowly checked two-link adaptation,
+full service UID/GID, and native UI/Refresh/restart witnesses. Neither the historical
+relocated CLI lab nor a publisher success is a default working web recipe.
+Task data stay in `.local/`; software may remain root-owned in vendor/package paths
+inside an explicitly admitted separated executor. No administrative authority is
+conferred by the skill. The 8.5.1.1150 adaptation is not a general training-version fix.
 
 ## Rootless GUI dependency provisioning (no `apt install`)
 
@@ -191,11 +206,24 @@ Loop: `ldd "$V/1cv8" | grep -i 'not found'` → map each missing `.so` to its De
 does NOT resolve dependencies, so the loop is mandatory. Pin `-t bookworm` so the whole
 ABI-matched set (e.g. ICU 72) comes from one release instead of mixing trixie/bookworm.
 
+## Exact-version help retrieval
+
+The installed `.hbk` help is a primary source, but embedded member names do not always end in `.html`: designer help such as `frntendt_root.hbk:form_WebDeployDlg` contains HTML under an extensionless name. When reusing the repository's bounded embedded-ZIP reader, identify HTML from the decoded payload as well as member names, verify decompression length/CRC and retain archive/member hashes. Empty matches from an extension-only filter are not evidence that help is absent. This reader is a diagnostic derivative, not a complete HBK parser; retain decompression failures as partial coverage. For the verified training `webinstt` binary, invoking it **without arguments** prints usage (exit 1); `-help` and `--help` are rejected. Usage output, publication-help text, and successful publication remain separate evidence tiers.
+
+## Training web-publisher privilege boundary
+
+For the observed Linux training build **8.5.1.1150**, do not infer rootlessness from the generic publication guide saying that `webinst` continues after the root warning. The CLI warning and the internal publisher are separate stages: retained exact-binary debugger/control-flow evidence shows `vrscoret.so` calling `getuid`, with a nonzero result taking an `IOException` branch subsequently wrapped as `Cannot read conf / Apache web server not found`. A successful config `open/read` and a real Apache version response do not exclude that internal privilege gate. UID zero is a necessary precondition of this observed path, **not proof of a working web-client**. A subsequent one-shot control on an unchanged, hash-verified 8.5.1.1150 runtime beneath a root-owned read-only bind mount did produce `Publication successful`, generated Apache config and VRD; actual Apache `-t` and `-M` then succeeded as an unprivileged user. That proves this bounded publisher route, not browser/dashboard/Refresh or general web-license support. Preserve generated defaults as evidence rather than automatically enabling WS/analytics/AllowOverride in a demo publication. Compare VRD XML element names case-sensitively (for example generated `standardOdata` vs a manually authored different casing); an observed difference is a hypothesis, not a proven bootstrap cause. Stop for an explicit one-shot owner decision. Use root-owned verified staging rather than executing privileged code from a user-writable Workspace; never fake UID/version responses, patch vendor binaries, or use preload hooks to bypass the guard. Keep the root control to scratch publication/configuration; source, retained demo and shared services stay unchanged. Publication acceptance still requires actual generated output and subsequent unprivileged browser/dashboard/Refresh proof. A `REDIRECT=true` flag alone is not loop evidence: bind the full bootstrap JS and fresh browser navigation trace to exact config/VRD hashes with no rewriting and retain restoration witnesses. A safe derivative of the successful generated publication can still return native bootstrap HTML with `BASE=<publication>/en` while the corresponding locale script returns platform JSON 404 and the same script without the locale prefix returns 200. Record this as an exact-runtime routing failure, not a licensing conclusion or proof that root publication fixed bootstrap. Distinguish a transient browser `contentType.indexOf` on null from the reproduced HTTP 404; preserve request failures, response headers and native bodies. After owned Apache shutdown, a failed immediate socket bind may be TCP TIME_WAIT rather than a surviving listener: verify `/proc/net/tcp*` LISTEN state and owned processes before claiming cleanup failure.
+
 ## Headless / batch pitfalls
 
 - The Конфигуратор pulls GUI libraries even in batch mode and needs a display (GTK must
   initialize) → run under `xvfb-run` or a manual Xvfb. **8.3.x links GTK2** (`libgtk-x11-2.0.so.0`);
-  **8.5.x links GTK3** (`libgtk-3.so.0`) + WebKit2GTK 4.0 — do NOT chase `libgtk2.0` for 8.5.
+  **Check the exact build's dependencies**, not a blanket 8.5 rule. The historical lab used
+  GTK3 and a WebKit2GTK 4.0 bundle, but inspection of the retained 8.5.1.1150 training
+  `libwx_gtk3u-3.0.so.0` now shows a required `libwebkit2gtk-4.1.so.0` through `ldd`.
+  Do not prescribe a cross-release 4.0 bundle or change the OS from that old recipe
+  without checking the admitted binaries. Neither dependency inspection nor clean `ldd`
+  proves web-client readiness. Do not chase GTK2 merely because older releases used it.
 - **Xvfb needs `xkbcomp`**: it shells out to a hardcoded `/usr/bin/xkbcomp` (compiled-in
   `XKB_BIN_DIRECTORY`; `strings` shows only `xkbcomp`, not the full path). Missing it →
   `Fatal server error: Failed to activate virtual core keyboard`. `xkbcomp` is in `x11-xkb-utils`,
@@ -207,10 +235,11 @@ ABI-matched set (e.g. ICU 72) comes from one release instead of mixing trixie/bo
   supervisor), not a shell-script hardening exercise. `-xkbdir <dir>` overrides only the DATA dir,
   not the xkbcomp binary path. Child library dependencies resolve through inherited
   `LD_LIBRARY_PATH`.
-- **Debian 13 (trixie) is newer than what 1C ships against** — expect lib conflicts. Two real
-  traps: `libgtk-3-0` was renamed `libgtk-3-0t64` (t64 transition), and WebKit2GTK 4.0
-  (`libwebkit2gtk-4.0-37`, `libjavascriptcoregtk-4.0-18`) was dropped from trixie (only 4.1
-  remains). Pin those deps to **bookworm** with `apt-get download -t bookworm`.
+- **Historical Debian 13 lab caveat:** `libgtk-3-0` was renamed `libgtk-3-0t64`,
+  and the old WebKit2GTK 4.0 package bundle came from bookworm. That is a retained
+  laboratory recipe, not a requirement for every 8.5 binary or a default web bootstrap.
+  Check the actual required SONAME and prefer the prepared OS package environment;
+  use the old pinned bundle only in its explicitly admitted historical scenario.
 - **fontconfig**: 1cv8 segfaults (`Fontconfig error: Cannot load default config file` + core
   dump) without a font config. Rootless fix: extract `fonts-dejavu-core` + `fontconfig-config`
   debs, then set `FONTCONFIG_FILE` to a minimal config with a `<dir>` at the fonts + a writable
