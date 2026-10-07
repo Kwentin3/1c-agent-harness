@@ -104,8 +104,8 @@ else:
 print(json.dumps(result,sort_keys=True))
 '''
 
-def docker_args(pid, name):
-    source = f'/proc/{pid}/root/var/lib/1c/ib/1Cv8Log'
+def docker_args(merged, name):
+    source = f'{merged}/var/lib/1c/ib/1Cv8Log'
     return ['/usr/bin/docker', 'run', '-i', '--rm', '--pull', 'never', '--name', name,
             '--label', 'one-c-access=issue94', '--network', 'none', '--read-only',
             '--user', '10001:33', '--cap-drop', 'ALL', '--security-opt', 'no-new-privileges',
@@ -139,6 +139,10 @@ def main():
     if inspected['Id'] != REFERENCE or inspected['Image'] != REFERENCE_IMAGE or not inspected['State']['Running']:
         raise ValueError('binding_unavailable')
     pid = inspected['State']['Pid']
+    driver = inspected['GraphDriver']
+    merged = driver.get('Data', {}).get('MergedDir', '')
+    if driver['Name'] != 'overlay2' or not isinstance(merged, str) or not Path(merged).is_absolute() or ',' in merged:
+        raise ValueError('binding_unavailable')
     # The service and VRD own the source; no model-supplied source path exists.
     service = subprocess.run(['/usr/bin/systemctl', 'is-active', '1c-jet-demo.service'], capture_output=True, timeout=5)
     if service.returncode:
@@ -164,7 +168,7 @@ print(json.dumps({'vrdSha256':hashlib.sha256(raw).hexdigest(),'ibBindings':ibs,'
     for signum in [signal.SIGTERM, signal.SIGHUP, signal.SIGINT]:
         signal.signal(signum, interrupted)
     try:
-        process = subprocess.Popen(docker_args(pid, name), stdin=subprocess.PIPE, stdout=subprocess.PIPE, stderr=subprocess.PIPE)
+        process = subprocess.Popen(docker_args(merged, name), stdin=subprocess.PIPE, stdout=subprocess.PIPE, stderr=subprocess.PIPE)
         stdout, stderr = process.communicate(json.dumps(value).encode(), timeout=40)
         if process.returncode:
             raise ValueError('capability_failed')
@@ -173,6 +177,7 @@ print(json.dumps({'vrdSha256':hashlib.sha256(raw).hexdigest(),'ibBindings':ibs,'
             raise ValueError('binding_unavailable')
         result['sourceBinding'] = {'referenceId':REFERENCE,'referenceImage':REFERENCE_IMAGE,
             'referenceHostPid':pid,'referenceStartedAt':inspected['State']['StartedAt'],
+            'referenceStorageDriver':driver['Name'],'referenceMergedRoot':merged,
             'vrdSha256':VRD_SHA256,'currentIbPath':'/var/lib/1c/ib','journalPath':'/var/lib/1c/ib/1Cv8Log','sourceProbe':source}
         print(json.dumps(result,sort_keys=True))
     finally:
