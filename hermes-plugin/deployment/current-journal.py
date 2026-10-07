@@ -147,7 +147,7 @@ def main():
 p=pathlib.Path('/var/www/jetcontrol/default.vrd');raw=p.read_bytes()
 ibs=[]
 for el in ET.fromstring(raw).iter():
- match=re.search(r"File\\s*=\\s*'([^']+)'",el.attrib.get('ib',''),re.I)
+ match=re.search(r'''File\\s*=\\s*["']([^"']+)["']''',el.attrib.get('ib',''),re.I)
  if match:ibs.append(match.group(1))
 journal=pathlib.Path('/var/lib/1c/ib/1Cv8Log');s=journal.stat()
 assert not journal.is_symlink()
