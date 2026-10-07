@@ -45,8 +45,16 @@ class CaptureTests(unittest.TestCase):
                 value = receipt()
                 value['sourceAfter'] = value['sourceBefore']
                 value['argv'][6] = '--to=' + end
+                try:
+                    parsed_end = datetime.fromisoformat(end)
+                except ValueError:
+                    # Older Python ISO parsers reject single-digit fractions;
+                    # do not widen the product timestamp contract for CI.
+                    with self.assertRaisesRegex(base.ExportFailure, '^invalid_request$'):
+                        exporter.capture_to_xml(value, BINDING, request, now=NOW)
+                    continue
                 xml = exporter.capture_to_xml(value, BINDING, request, now=NOW)
-                count, records, metadata = eventlog_observation._parse(xml, datetime.fromisoformat(request['start']), datetime.fromisoformat(end), {})
+                count, records, metadata = eventlog_observation._parse(xml, datetime.fromisoformat(request['start']), parsed_end, {})
                 self.assertEqual(count, 1)
                 self.assertIsNotNone(metadata)
                 with self.assertRaises(ValueError):

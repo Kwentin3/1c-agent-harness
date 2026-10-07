@@ -8,12 +8,19 @@
     "F4 malformed binding mismatch"
   ],
   "testCount": 373,
-  "seconds": 162.094,
+  "seconds": 157.626,
   "passed": true,
   "artifactId": "sha256:d22e95c3317acae51cb0a059333f2ea3917f3ce1bd291f7757556097ea2e52c7",
-  "fullTestLogSha256": "0d8fadf81eadab7d2d94ec98c9d2d151133ba50bc14ecc495a0cb1217928ce13",
+  "fullTestLogSha256": "2f53182a6b59724552c6a1c22b514d9368a9e44a49fda0c740d3b983aab24fe6",
   "nativeInvocations": 0,
   "sshInvocations": 0,
   "deployments": 0,
-  "scope": "source/fixtures only; Goal90 PARTIAL; no installed/fresh-session acceptance"
+  "scope": "source/fixtures only; Goal90 PARTIAL; no installed/fresh-session acceptance",
+  "priorCorrectionHead": "1e1ae0d0ab37fcadf9d49457ba2beb32f3adbeeb",
+  "priorCorrectionCi": {
+    "runId": 37615717579,
+    "python3.9": "FAIL unsupported .5 test assumption",
+    "python3.12": "PASS"
+  },
+  "ciRegression": "unsupported ISO fraction stays invalid_request; accepted aliases compare as datetime"
 }
