@@ -1,9 +1,29 @@
 # #90 — disposition долгов после #91
 
-Документационная сверка 7 октября 2026, без native/deploy и без GitHub writes.
-#91 CLOSED; #86/#88 MERGED. #90 остаётся отдельной продуктовой Goal свежего ЖР,
-а #92 — backlog расширений. Предложения ниже **не означают**, что старые issues
-уже закрыты: при сверке все семь OPEN. Исторические checkpoints не переписаны.
+Документационная сверка 7 октября 2026, без native/deploy. #91 CLOSED;
+#86/#88 MERGED. #90 остаётся отдельной продуктовой Goal свежего ЖР, а #92 —
+backlog расширений. Таблица ниже сохраняет основания первоначальных предложений;
+фактически применённые решения указаны отдельно. Исторические checkpoints не переписаны.
+
+## Применённый terminal учёт
+
+Parent перечитал live issues, перед body-правками сверил `updatedAt` и SHA256
+исходного body; после записи проверил полный readback. #91/#92 bodies согласованы
+с post-merge состоянием, исторические checkpoints и source identities сохранены.
+
+| Issue | Фактическое состояние | Проверенный terminal comment |
+|---|---|---|
+| #85 | CLOSED / completed, только принятый native dashboard slice | [6033781781](https://github.com/Kwentin3/1c-agent-harness/issues/85#issuecomment-6033781781) |
+| #87 | CLOSED / completed, защищённая demo/empty-day в принятой #91 границе | [6033783248](https://github.com/Kwentin3/1c-agent-harness/issues/87#issuecomment-6033783248) |
+| #71 | OPEN; один остаток — owner acceptance design/prototype scope | [6033784841](https://github.com/Kwentin3/1c-agent-harness/issues/71#issuecomment-6033784841) |
+| #73 | OPEN; один остаток — owner acceptance retained-receipt slice | [6033785885](https://github.com/Kwentin3/1c-agent-harness/issues/73#issuecomment-6033785885) |
+| #36 | OPEN; owner disposition terminal PRODUCT FAIL или отдельный преемник | [6033786893](https://github.com/Kwentin3/1c-agent-harness/issues/36#issuecomment-6033786893) |
+| #37 | OPEN; owner decision об isolation-enforcement successor/архиве | [6033787987](https://github.com/Kwentin3/1c-agent-harness/issues/37#issuecomment-6033787987) |
+| #41 | OPEN; owner decision о самостоятельном compile gate/явной отмене | [6033789005](https://github.com/Kwentin3/1c-agent-harness/issues/41#issuecomment-6033789005) |
+
+Не подтверждённые cancellations не применены. Ни один новый эксперимент не
+запущен ради закрытия старой задачи. Ограниченный пакет долгов опубликован
+независимо от заблокированной live-source приёмки #90.
 
 ## Post-merge source и CI
 
@@ -41,14 +61,12 @@ source/receipt citations закреплены полным SHA, historical nativ
 принятое развитие перекрывает конкретные route/reader потребности, не автоматически
 все критерии старых контрактов. Новые tests/native здесь не выполнялись.
 
-## Передача владельцу / parent
+## Основания первоначальной передачи
 
-Точные предложения body patches #91/#92 и семь terminal comments/closure decisions
-подготовлены локально в `.local/issue90-debt-proposals.json`, **не применены**.
-Перед записью parent обязан перечитать body/comments/state, проверить unchanged
-`updatedAt` и SHA256 body (не атомарная GitHub CAS), adjudicate scope и получить
-недостающие owner decisions. #36/#37/#41 не закрывать автоматически; #71/#73
-не закрывать как весь первоначальный production контракт. Только после публикации
-проверить readback и актуализировать статус. Source docs commit не является
-GitHub issue closure. Parent выполняет обычный PR/review workflow; этот пакет
-не push/PR и не авторизует merge/release.
+Subagent подготовил точные proposals body patches #91/#92 и семь terminal
+comments в ignored task-owned `.local/`. Parent проверил и применил решения,
+перечисленные в «Применённом terminal учёте» выше. Preflight не является атомарной
+GitHub CAS: при будущих правках обязательна повторная live-сверка. Остатки
+#71/#73/#36/#37/#41 не закрываются автоматически; связь с #92 опубликована.
+Source acceptance, installed revision, current access и runtime receipts остаются
+разными утверждениями. Этот docs пакет не разрешает merge/release.

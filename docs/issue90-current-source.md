@@ -2,8 +2,8 @@
 
 Статус: **PARTIAL / LIVE_SOURCE_BLOCKED**, не PRODUCT PASS. Issue #90 открыта.
 Новый live-source, installed positive selection/page/record и пользовательская
-приёмка пока не исполнены. Документальные долги выполняются независимо:
-[disposition](issue90-debt-disposition.md).
+приёмка пока не исполнены. Документальные долги выполнены независимо:
+[применённый disposition и конкретные owner остатки](issue90-debt-disposition.md).
 
 ## Что установлено чтением, а не native-запуском
 
