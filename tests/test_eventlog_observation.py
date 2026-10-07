@@ -60,6 +60,92 @@ class EventLogObservationTests(unittest.TestCase):
         arguments.update(overrides)
         return eventlog_observation.select(self.project, **arguments)
 
+    def test_current_capture_provenance_survives_page_record_and_partial_empty(self) -> None:
+        metadata = {
+            "schemaVersion": 1,
+            "sourceIdentity": {"name": "Admitted demo", "referenceId": "a"*64,
+                               "referenceImage": "sha256:"+"b"*64, "vrdSha256": "c"*64, "binarySha256": "d"*64},
+            "capture": {"startedAtUnix": 100.0, "receivedAtUnix": 101.0, "durationSeconds": 1.0,
+                        "outputBytes": 200, "outputSha256": "e"*64, "receiptSha256": "f"*64,
+                        "inventoryChanged": False},
+            "freshness": {"requestedEnd": "2026-09-22T06:45:00", "completeThrough": None,
+                          "captureAgeSeconds": 1.0},
+            "temporalCoverage": {"complete": False, "reasonCode": "capture_consistency_unproven"},
+        }
+        import xml.etree.ElementTree as ET
+        root = ET.fromstring(XML)
+        ET.SubElement(root, "{urn:one-c-harness:eventlog-capture:1}Capture").text = json.dumps(metadata)
+        self.xml.write_bytes(ET.tostring(root))
+        selected = self._select()
+        self.assertEqual(selected["status"], "partial")
+        self.assertEqual(selected["summary"]["sourceCapture"], metadata)
+        self.assertFalse(selected["summary"]["coverage"]["complete"])
+        self.assertTrue(selected["summary"]["coverage"]["retainedCountComplete"])
+        self.xml.write_text("broken")
+        paged = eventlog_observation.page(self.project, selected["selectionRef"], 0, 1)
+        record = eventlog_observation.record(self.project, paged["records"][0]["recordRef"])
+        self.assertEqual(paged["summary"]["sourceCapture"], metadata)
+        self.assertEqual(record["sourceCapture"], metadata)
+        self.assertTrue(record["snapshot"]["stable"])
+        for child in list(root):
+            if child.tag.endswith("}Event"): root.remove(child)
+        self.xml.write_bytes(ET.tostring(root))
+        empty = self._select()
+        self.assertEqual(empty["status"], "partial")
+        self.assertEqual(empty["summary"]["recordCount"], 0)
+        self.assertFalse(empty["summary"]["coverage"]["temporalComplete"])
+
+    def test_count_boundary_keeps_temporal_reason_through_retained_reads(self) -> None:
+        from test_eventlog_capture import exporter, receipt, BINDING, REQUEST, NOW
+        for changed in (False, True):
+            with self.subTest(changed=changed):
+                value = receipt()
+                value['sourceAfter'] = [dict(item) for item in value['sourceBefore']]
+                if changed:
+                    value['sourceAfter'][1]['mtimeNs'] += 1
+                self.xml.write_bytes(exporter.capture_to_xml(value, BINDING, REQUEST, now=NOW))
+                selected = self._select(start=REQUEST['start'], end=REQUEST['end'], maximumCount=1)
+                coverage = selected['summary']['coverage']
+                self.assertEqual(coverage.get('temporalReasonCode'), 'source_changed' if changed else 'capture_consistency_unproven')
+                self.assertEqual(coverage.get('countReasonCode'), 'maximum_count_boundary')
+                paged = eventlog_observation.page(self.project, selected['selectionRef'], 0, 1)
+                record = eventlog_observation.record(self.project, paged['records'][0]['recordRef'])
+                self.assertEqual(paged['summary']['coverage'], {**coverage, 'limitedToRetainedSelection': True})
+                self.assertEqual(record['coverage'], coverage)
+
+    def test_current_deployment_requires_capture_instead_of_accepting_legacy_archive_xml(self) -> None:
+        with mock.patch.dict(os.environ, {"ONE_C_HARNESS_EVENTLOG_REQUIRE_CAPTURE": "1"}):
+            selected = self._select()
+        self.assertEqual(selected["status"], "blocked")
+        self.assertEqual(selected["reasonCode"], "source_invalid")
+
+    def test_closed_capture_failures_remain_distinct_without_exposing_extra_fields(self) -> None:
+        for reason, status in (("source_binding_mismatch", "blocked"), ("source_stale", "unavailable"), ("source_unavailable", "unavailable"), ("configuration_invalid", "blocked")):
+            with self.subTest(reason=reason):
+                result = eventlog_observation._source_error(json.dumps({"reasonCode": reason}).encode())
+                self.assertEqual(result["reasonCode"], reason)
+                self.assertEqual(result["status"], status)
+                refused = eventlog_observation._source_error(json.dumps({"reasonCode": reason, "privatePath": "/secret"}).encode())
+                self.assertEqual(refused["reasonCode"], "source_failed")
+                self.assertNotIn("/secret", json.dumps(refused))
+
+    def test_invalid_capture_metadata_does_not_leak_extra_fields(self) -> None:
+        import xml.etree.ElementTree as ET
+        cases = [
+            {"schemaVersion": 1, "privatePath": "/secret"},
+            [],
+            {"schemaVersion": True},
+        ]
+        for value in cases:
+            with self.subTest(value=value):
+                root = ET.fromstring(XML)
+                ET.SubElement(root, "{urn:one-c-harness:eventlog-capture:1}Capture").text = json.dumps(value)
+                self.xml.write_bytes(ET.tostring(root))
+                selected = self._select()
+                self.assertEqual(selected["status"], "blocked")
+                self.assertEqual(selected["reasonCode"], "source_invalid")
+                self.assertNotIn("/secret", json.dumps(selected))
+
     def test_select_invokes_fixed_command_and_returns_bounded_facets(self) -> None:
         selected = self._select(filters={"event": "_$Data$_.Update", "level": "Error", "user": "alice", "metadata": "Document.Invoice"})
         captured = json.loads(self.request_capture.read_text())

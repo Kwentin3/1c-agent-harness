@@ -9,6 +9,20 @@ replay подтвердил 13 прикладных наблюдений. Demo �
 benchmark или универсальная write-поддержка. Исторический COST FAIL #69 сохранён.
 Новая acquisition ЖР — #90; ненулевой web/workflow — #92.
 
+## Post-merge pointer (документационная сверка)
+
+Это исторический отчёт **исполненного exact source**, не отчёт нового main-run.
+После его завершения #91 CLOSED, #86/#88 MERGED:
+[#86 merge `9fcb7ad2493b6fa8e53c5922cf139fe19339bfc0`](https://github.com/Kwentin3/1c-agent-harness/commit/9fcb7ad2493b6fa8e53c5922cf139fe19339bfc0),
+[#88/main `646273a44e47223d920911bdaec4bd35ae2b9ed6`](https://github.com/Kwentin3/1c-agent-harness/commit/646273a44e47223d920911bdaec4bd35ae2b9ed6).
+Post-merge CI: [#86 Python 3.9/3.12 SUCCESS](https://github.com/Kwentin3/1c-agent-harness/actions/runs/37587456237),
+[#88 Python 3.9/3.12 SUCCESS](https://github.com/Kwentin3/1c-agent-harness/actions/runs/37588975039).
+[Owner merge completion](https://github.com/Kwentin3/1c-agent-harness/issues/91#issuecomment-6033389802);
+[актуальный disposition и дальнейшие границы](issue90-debt-disposition.md).
+Installed/executed source `eaab4cf3b6c563e11388f02676acb54f0302d004` и все
+receipts ниже оставлены неизменными. Merge/test-only correction не означают
+deployment, новый native PASS, новый бюджет или текущую live доступность.
+
 ## Точные source и installed identities
 
 Исполнен [source `eaab4cf3b6c563e11388f02676acb54f0302d004`](https://github.com/Kwentin3/1c-agent-harness/tree/eaab4cf3b6c563e11388f02676acb54f0302d004),

@@ -8,9 +8,12 @@
 короткие findings с evidence refs, а раскрытие конкретных записей оставляет тому же
 provider; ни storage, ни scheduler, ни новый transport Harness не строит.
 
-Статус: **design + bounded deterministic prototype**. Это не live-production
-интеграция: в данном executor нет 1C cluster, исторических логов, DB access или
-преднастроенного monitoring provider.
+Статус: **design + bounded deterministic prototype, source #72 MERGED**.
+Описанные ниже environment observations и canary plan относятся к исходному R&D,
+не к текущему executor. Последующее bounded развитие — #73, ТЖ/ЖР #75–#80;
+сверка принятого scope и owner decision о закрытии #71 —
+[disposition #90](issue90-debt-disposition.md). Это не live-production/root-cause
+приёмка широкого исходного сценария; свежий ЖР текущей ИБ остаётся Goal #90.
 
 ## 1. Product slice
 

@@ -6,6 +6,8 @@ from datetime import datetime
 import hashlib
 import hmac
 import json
+import math
+import re
 import os
 from pathlib import Path
 import secrets
@@ -63,6 +65,14 @@ def _source_error(stderr: bytes) -> dict[str, object]:
         value = json.loads(stderr.decode("utf-8"))
     except (UnicodeDecodeError, json.JSONDecodeError):
         value = None
+    if isinstance(value, dict) and set(value) == {"reasonCode"}:
+        closed_capture_status = {
+            "source_binding_mismatch": "blocked", "configuration_invalid": "blocked",
+            "source_stale": "unavailable", "source_stale_capture": "unavailable", "source_unavailable": "unavailable",
+        }
+        reason = value.get("reasonCode")
+        if isinstance(reason, str) and reason in closed_capture_status:
+            return _result(closed_capture_status[reason], reasonCode=reason, message="registration log capture refused")
     diagnostic = value.get("diagnostic") if isinstance(value, dict) else None
     diagnostic_valid = (
         diagnostic is None
@@ -261,7 +271,42 @@ def _text(element: ET.Element, name: str) -> str | None:
     return None
 
 
-def _parse(payload: bytes, start: datetime, end: datetime, filters: dict[str, str]) -> tuple[int, list[dict[str, object]]]:
+def _capture_metadata(root: ET.Element, end: datetime) -> dict[str, object] | None:
+    entries = root.findall("{urn:one-c-harness:eventlog-capture:1}Capture")
+    if not entries:
+        return None
+    if len(entries) != 1 or entries[0].text is None or len(entries[0].text.encode()) > 4096:
+        raise ValueError("invalid capture metadata")
+    value = json.loads(entries[0].text)
+    if not isinstance(value, dict) or set(value) != {"schemaVersion", "sourceIdentity", "capture", "freshness", "temporalCoverage"} or type(value["schemaVersion"]) is not int or value["schemaVersion"] != 1:
+        raise ValueError("invalid capture metadata")
+    identity, capture, freshness, coverage = (value[k] for k in ("sourceIdentity", "capture", "freshness", "temporalCoverage"))
+    if (not isinstance(identity, dict) or set(identity) != {"name", "referenceId", "referenceImage", "vrdSha256", "binarySha256"}
+        or not isinstance(identity["name"], str) or not 1 <= len(identity["name"]) <= 80
+        or any(ord(ch) < 32 for ch in identity["name"])
+        or any(not isinstance(identity[k], str) or not re.fullmatch(r"[a-f0-9]{64}", identity[k]) for k in ("referenceId", "vrdSha256", "binarySha256"))
+        or not isinstance(identity["referenceImage"], str) or not re.fullmatch(r"sha256:[a-f0-9]{64}", identity["referenceImage"])):
+        raise ValueError("invalid capture identity")
+    if (not isinstance(capture, dict) or set(capture) != {"startedAtUnix", "receivedAtUnix", "durationSeconds", "outputBytes", "outputSha256", "receiptSha256", "inventoryChanged"}
+        or any(type(capture[k]) not in (int, float) or not math.isfinite(capture[k]) for k in ("startedAtUnix", "receivedAtUnix", "durationSeconds"))
+        or not 0 <= capture["durationSeconds"] <= 30 or type(capture["inventoryChanged"]) is not bool
+        or type(capture["outputBytes"]) is not int or not 0 <= capture["outputBytes"] <= _MAX_XML_BYTES
+        or any(not isinstance(capture[k], str) or not re.fullmatch(r"[a-f0-9]{64}", capture[k]) for k in ("outputSha256", "receiptSha256"))):
+        raise ValueError("invalid capture evidence")
+    age = capture["receivedAtUnix"] - capture["startedAtUnix"]
+    reason = "source_changed" if capture["inventoryChanged"] else "capture_consistency_unproven"
+    if (not isinstance(freshness, dict) or set(freshness) != {"requestedEnd", "completeThrough", "captureAgeSeconds"}
+        or _timestamp(freshness["requestedEnd"], "capture requestedEnd") != end or freshness["completeThrough"] is not None
+        or type(freshness["captureAgeSeconds"]) not in (int, float)
+        or not math.isfinite(freshness["captureAgeSeconds"]) or freshness["captureAgeSeconds"] != age
+        or not -5 <= age <= 60 or capture["startedAtUnix"] + capture["durationSeconds"] > capture["receivedAtUnix"] + 5
+        or not isinstance(coverage, dict) or set(coverage) != {"complete", "reasonCode"}
+        or coverage["complete"] is not False or coverage["reasonCode"] != reason):
+        raise ValueError("invalid capture coverage")
+    return value
+
+
+def _parse(payload: bytes, start: datetime, end: datetime, filters: dict[str, str]) -> tuple[int, list[dict[str, object]], dict[str, object] | None]:
     upper = payload.upper()
     if b"<!DOCTYPE" in upper or b"<!ENTITY" in upper:
         raise ValueError("unsafe XML declaration")
@@ -299,7 +344,7 @@ def _parse(payload: bytes, start: datetime, end: datetime, filters: dict[str, st
             "transactionStatus": values["TransactionStatus"],
             "comment": values["Comment"],
         })
-    return source_count, records
+    return source_count, records, _capture_metadata(root, end)
 
 
 def _digest(value: dict[str, object]) -> str:
@@ -435,8 +480,11 @@ def select(
         return failure
     assert payload is not None
     try:
-        source_count, matched_records = _parse(payload, start_value, end_value, clean_filters)
-    except ValueError:
+        source_count, matched_records, capture_metadata = _parse(payload, start_value, end_value, clean_filters)
+        require_capture = os.environ.get("ONE_C_HARNESS_EVENTLOG_REQUIRE_CAPTURE")
+        if require_capture is not None and (require_capture != "1" or capture_metadata is None):
+            raise ValueError("current source capture metadata required")
+    except (ValueError, TypeError, KeyError):
         return _blocked("source_invalid", "registration log source returned invalid XML")
     matched_count = len(matched_records)
     retained = matched_records[:maximum_count]
@@ -451,13 +499,19 @@ def select(
         reason = "maximum_count_exceeded"
     elif source_count == maximum_count:
         reason = "maximum_count_boundary"
+    coverage = {"complete": reason is None, "partial": reason is not None, **({"reasonCode": reason} if reason else {})}
+    if capture_metadata is not None:
+        coverage.update(retainedCountComplete=reason is None, temporalComplete=False, complete=False, partial=True,
+                        countReasonCode=reason, temporalReasonCode=capture_metadata["temporalCoverage"]["reasonCode"])
+        coverage["reasonCode"] = reason or coverage["temporalReasonCode"]
     created = time.time()
     selection = {
         "schemaVersion": 1, "id": selection_id, "createdAt": created, "expiresAt": created + _TTL_SECONDS,
         "window": {"start": start_text, "end": end_text, "sourceTimeZone": zone_name},
         "filters": clean_filters, "maximumCount": maximum_count, "sourceRecordCount": source_count,
         "matchedRecordCount": matched_count,
-        "coverage": {"complete": reason is None, "partial": reason is not None, **({"reasonCode": reason} if reason else {})},
+        "coverage": coverage,
+        **({"sourceCapture": capture_metadata} if capture_metadata is not None else {}),
         "records": retained,
     }
     try:
@@ -465,7 +519,7 @@ def select(
     except (OSError, ValueError):
         return _blocked("source_invalid", "registration log selection storage is unavailable")
     selection_ref = f"eventlog:{selection_id}"
-    status = "partial" if reason else "ok"
+    status = "partial" if coverage["partial"] else "ok"
     first_page = [_public_record(value) for value in retained[:page_limit]]
     return _result(
         status,
@@ -477,6 +531,7 @@ def select(
             "recordCount": len(retained), "sourceRecordCount": source_count, "matchedRecordCount": matched_count,
             "countScope": "retainedFilteredSelection", "facets": _facets(retained),
             "coverage": selection["coverage"],
+            **({"sourceCapture": selection["sourceCapture"]} if "sourceCapture" in selection else {}),
         },
         snapshot={"stable": True, "expiresInSeconds": _TTL_SECONDS},
     )
@@ -512,6 +567,7 @@ def page(
             "baseSelectionRef": selection_ref, "recordCount": len(records),
             "countScope": "refinedRetainedSelection" if refinement else "retainedFilteredSelection",
             "coverage": coverage,
+            **({"sourceCapture": selection["sourceCapture"]} if "sourceCapture" in selection else {}),
         },
         coverage=coverage, snapshot={"stable": True},
     )
@@ -544,5 +600,6 @@ def record(
                 source="1c_registration_log", selectionRef=f"eventlog:{selection['id']}",
                 window=selection["window"], filters=selection["filters"],
                 record=public, coverage=selection["coverage"], snapshot={"stable": True},
+                **({"sourceCapture": selection["sourceCapture"]} if "sourceCapture" in selection else {}),
             )
     return _blocked("evidence_not_found", "registration log record is unavailable")

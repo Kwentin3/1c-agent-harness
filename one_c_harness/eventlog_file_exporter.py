@@ -5,10 +5,12 @@ from __future__ import annotations
 import hashlib
 import base64
 import json
+import math
 import os
 from pathlib import Path
 import re
 import secrets
+import selectors
 import signal
 import stat
 import subprocess
@@ -28,6 +30,7 @@ METRICS_ENV = "ONE_C_HARNESS_EVENTLOG_METRICS"
 _MAX_JOURNAL_BYTES = 64 * 1024 * 1024
 _MAX_JOURNAL_FILES = 128
 _TIMEOUT_SECONDS = 30
+_CAPTURE_TIMEOUT_SECONDS = 75
 _EVIDENCE_TTL_SECONDS = 3600
 _MAX_EVIDENCE_FILES = 8
 _MAX_FAILURE_BYTES = 1024
@@ -233,6 +236,129 @@ def _json_sequence_to_xml(
     return result
 
 
+def _validate_capture_binding(binding: object) -> dict[str, Any]:
+    keys = {"schemaVersion", "name", "referenceId", "referenceImage", "vrdSha256", "binarySha256"}
+    if (
+        not isinstance(binding, dict) or set(binding) != keys
+        or type(binding["schemaVersion"]) is not int or binding["schemaVersion"] != 1
+        or not isinstance(binding["name"], str) or not 1 <= len(binding["name"]) <= 80
+        or any(ord(ch) < 32 for ch in binding["name"])
+        or any(not isinstance(binding[key], str) or not re.fullmatch(r"[a-f0-9]{64}", binding[key])
+               for key in ("referenceId", "vrdSha256", "binarySha256"))
+        or not isinstance(binding["referenceImage"], str)
+        or not re.fullmatch(r"sha256:[a-f0-9]{64}", binding["referenceImage"])
+    ):
+        raise base.ExportFailure("configuration_invalid")
+    return binding
+
+
+def capture_to_xml(
+    receipt: dict[str, Any], binding: dict[str, Any], request: dict[str, Any],
+    *, now: float,
+) -> bytes:
+    """Convert official output while preserving safe current-source evidence.
+
+    Unchanged inventory is not a consistency fence or a completeness claim.
+    The expected binding is deployment-owned, never a model argument.
+    """
+    base._validate_request(request)
+    try:
+        _validate_capture_binding(binding)
+        actual = receipt["sourceBinding"]
+        if not isinstance(actual, dict) or any(actual.get(key) != binding[key] for key in ("referenceId", "referenceImage", "vrdSha256")):
+            raise base.ExportFailure("source_binding_mismatch")
+        if (
+            receipt["binarySha256"] != binding["binarySha256"]
+            or actual["sourceProbe"]["ibBindings"] != [actual["currentIbPath"]]
+            or actual["journalPath"] != actual["currentIbPath"].rstrip("/") + "/1Cv8Log"
+            or receipt["sourceDirectory"] != actual["sourceProbe"]["journalDirectory"]
+        ):
+            raise base.ExportFailure("source_binding_mismatch")
+        numeric = (receipt["startedAtUnix"], receipt["durationSeconds"], now)
+        if any(type(x) not in (int, float) or not math.isfinite(x) for x in numeric):
+            raise base.ExportFailure("source_incomplete_receipt")
+        if not -5 <= now - receipt["startedAtUnix"] <= 60:
+            raise base.ExportFailure("source_stale_capture")
+        if (
+            type(receipt["schemaVersion"]) is not int or receipt["schemaVersion"] != 1
+            or receipt["status"] != "EXPORTED" or type(receipt["nativeInvocations"]) is not int
+            or receipt["nativeInvocations"] != 1 or type(receipt["exitCode"]) is not int
+            or receipt["exitCode"] != 0 or receipt["timeZone"] != "UTC"
+            or type(receipt["uid"]) is not int or receipt["uid"] <= 0
+            or type(receipt["gid"]) is not int or receipt["gid"] <= 0
+            or not isinstance(receipt["groups"], list) or not receipt["groups"]
+            or any(type(x) is not int or x <= 0 for x in receipt["groups"])
+            or receipt["sourceMountedReadOnly"] is not True or receipt["rootFilesystemReadOnly"] is not True
+            or not 0 <= receipt["durationSeconds"] <= 30
+            or receipt["startedAtUnix"] + receipt["durationSeconds"] > now + 5
+            or receipt["acquisitionConsistency"] != "NOT_PROVEN_BY_ACCESS_CAPABILITY"
+        ):
+            raise base.ExportFailure("source_incomplete_receipt")
+        argv = receipt["argv"]
+        if (not isinstance(argv, list) or len(argv) != 9
+            or not all(isinstance(x, str) for x in argv)
+            or argv[1:7] != ["eventlog", "export", "--format=json", "--skip-root",
+                                  "--from=" + request["start"], "--to=" + request["end"]]
+            or not argv[7].startswith("--out=/") or not argv[8].startswith("/")):
+            raise base.ExportFailure("source_incomplete_receipt")
+        for inventory in (receipt["sourceBefore"], receipt["sourceAfter"]):
+            if not isinstance(inventory, list) or not 2 <= len(inventory) <= _MAX_JOURNAL_FILES:
+                raise base.ExportFailure("source_incomplete_receipt")
+            names = []
+            total = 0
+            for item in inventory:
+                name = item["name"]
+                if (not isinstance(name, str) or "/" in name or "\\" in name
+                    or not (name == "1Cv8.lgf" or name.endswith(".lgp"))
+                    or any(type(item[key]) is not int or item[key] < 0
+                           for key in ("device", "inode", "bytes", "mtimeNs", "readProbeBytes"))):
+                    raise base.ExportFailure("source_incomplete_receipt")
+                names.append(name)
+                total += item["bytes"]
+            if "1Cv8.lgf" not in names or len(set(names)) != len(names) or total > _MAX_JOURNAL_BYTES:
+                raise base.ExportFailure("source_incomplete_receipt")
+        encoded = receipt["outputBase64"]
+        if not isinstance(encoded, str) or len(encoded) > 4 * ((request["maximumBytes"] + 2) // 3):
+            raise base.ExportFailure("source_byte_limit")
+        payload = base64.b64decode(encoded, validate=True)
+        if (type(receipt["outputBytes"]) is not int or len(payload) != receipt["outputBytes"]
+            or hashlib.sha256(payload).hexdigest() != receipt["outputSha256"]):
+            raise base.ExportFailure("source_incomplete_receipt")
+    except (KeyError, TypeError, ValueError, AttributeError):
+        raise base.ExportFailure("source_incomplete_receipt") from None
+    xml = _json_sequence_to_xml(payload, request["maximumBytes"])
+    root = ET.fromstring(xml)
+    changed = receipt["sourceBefore"] != receipt["sourceAfter"]
+    reason = "source_changed" if changed else "capture_consistency_unproven"
+    metadata = {
+        "schemaVersion": 1,
+        "sourceIdentity": {key: binding[key] for key in (
+            "name", "referenceId", "referenceImage", "vrdSha256", "binarySha256",
+        )},
+        "capture": {
+            "startedAtUnix": receipt["startedAtUnix"], "receivedAtUnix": now,
+            "durationSeconds": receipt["durationSeconds"],
+            "outputBytes": len(payload), "outputSha256": receipt["outputSha256"],
+            "receiptSha256": hashlib.sha256(json.dumps(
+                receipt, sort_keys=True, separators=(",", ":"),
+            ).encode()).hexdigest(),
+            "inventoryChanged": changed,
+        },
+        "freshness": {
+            "requestedEnd": request["end"], "completeThrough": None,
+            "captureAgeSeconds": now - receipt["startedAtUnix"],
+        },
+        "temporalCoverage": {"complete": False, "reasonCode": reason},
+    }
+    ET.SubElement(root, "{urn:one-c-harness:eventlog-capture:1}Capture").text = json.dumps(
+        metadata, sort_keys=True, separators=(",", ":"),
+    )
+    result = ET.tostring(root, encoding="utf-8", xml_declaration=True)
+    if len(result) > request["maximumBytes"]:
+        raise base.ExportFailure("source_byte_limit")
+    return result
+
+
 def _write_metrics(path: Path | None, value: dict[str, object]) -> None:
     if path is not None:
         path.write_text(json.dumps(value, sort_keys=True), encoding="utf-8")
@@ -398,8 +524,95 @@ def _run_ibcmd(settings: Settings, request: dict[str, Any], root: Path, deadline
     return payload, round((time.monotonic() - started) * 1000)
 
 
+def _run_capture(request: dict[str, Any]) -> tuple[bytes, dict[str, object]]:
+    command = Path(os.environ.get("ONE_C_HARNESS_EVENTLOG_CAPTURE_COMMAND", ""))
+    binding_path = Path(os.environ.get("ONE_C_HARNESS_EVENTLOG_CAPTURE_BINDING", ""))
+    work = Path(os.environ.get(WORK_ROOT_ENV, ""))
+    if (not _plain_file(command, executable=True) or not _plain_file(binding_path)
+        or not work.is_absolute() or _has_symlink_component(work)
+        or (work.exists() and not work.is_dir())
+        or _overlaps(work, command) or _overlaps(work, binding_path)
+        or binding_path.stat().st_size > 4096):
+        raise base.ExportFailure("configuration_invalid")
+    evidence = work / ".evidence"
+    if evidence.is_symlink() or (evidence.exists() and not evidence.is_dir()):
+        raise base.ExportFailure("configuration_invalid")
+    try:
+        binding = _validate_capture_binding(json.loads(binding_path.read_text()))
+    except (ValueError, OSError):
+        raise base.ExportFailure("configuration_invalid") from None
+    capture_request = {
+        "schemaVersion": 1, "operation": "export", "start": request["start"], "end": request["end"],
+        "format": "json", "followMilliseconds": 0,
+    }
+    started = time.monotonic()
+    global _active
+    process = None
+    streams = selectors.DefaultSelector()
+    stdout, stderr = bytearray(), bytearray()
+    try:
+        process = subprocess.Popen([str(command)], stdin=subprocess.PIPE, stdout=subprocess.PIPE,
+                                   stderr=subprocess.PIPE, start_new_session=True)
+        _active = process
+        assert process.stdin is not None and process.stdout is not None and process.stderr is not None
+        process.stdin.write(json.dumps(capture_request).encode())
+        process.stdin.close()
+        streams.register(process.stdout, selectors.EVENT_READ, stdout)
+        streams.register(process.stderr, selectors.EVENT_READ, stderr)
+        while streams.get_map():
+            if time.monotonic() - started >= _CAPTURE_TIMEOUT_SECONDS:
+                raise base.ExportFailure("source_timeout")
+            for key, _ in streams.select(timeout=.1):
+                chunk = os.read(key.fd, 65536)
+                if not chunk:
+                    streams.unregister(key.fileobj)
+                    continue
+                key.data.extend(chunk)
+                if len(stdout) > 2 * 1024 * 1024 or len(stderr) > _MAX_FAILURE_BYTES:
+                    raise base.ExportFailure("source_byte_limit")
+        process.wait(timeout=max(.001, _CAPTURE_TIMEOUT_SECONDS - (time.monotonic() - started)))
+        if process.returncode:
+            # Raw SSH/provider errors cannot be exposed as native diagnostics.
+            raise base.ExportFailure("source_unavailable")
+        received = time.time()
+        receipt = json.loads(stdout)
+        xml = capture_to_xml(receipt, binding, request, now=received)
+    except (OSError, ValueError, TypeError, subprocess.SubprocessError):
+        raise base.ExportFailure("source_incomplete_receipt") from None
+    finally:
+        streams.close()
+        if process is not None:
+            base._stop_group(process)
+            for stream in (process.stdin, process.stdout, process.stderr):
+                if stream is not None:
+                    stream.close()
+        _active = None
+    evidence = work / ".evidence"
+    if evidence.is_symlink() or (evidence.exists() and not evidence.is_dir()):
+        raise base.ExportFailure("configuration_invalid")
+    evidence.mkdir(mode=0o700, parents=True, exist_ok=True)
+    files = sorted(evidence.glob("capture-*.json"), key=lambda x: x.stat().st_mtime)
+    for path in files:
+        if not _plain_file(path):
+            raise base.ExportFailure("configuration_invalid")
+        if path.stat().st_mtime + _EVIDENCE_TTL_SECONDS < received:
+            path.unlink()
+    remaining = sorted(evidence.glob("capture-*.json"), key=lambda x: x.stat().st_mtime)
+    while len(remaining) >= _MAX_EVIDENCE_FILES:
+        remaining.pop(0).unlink()
+    path = evidence / ("capture-" + secrets.token_hex(12) + ".json")
+    with os.fdopen(os.open(path, os.O_WRONLY | os.O_CREAT | os.O_EXCL, 0o600), "w") as out:
+        out.write(json.dumps(receipt, sort_keys=True, separators=(",", ":")))
+    return xml, {"status": "partial", "backend": "current_journal_capture",
+                 "lifecycleMilliseconds": round((time.monotonic() - started) * 1000),
+                 "recordCount": len(ET.fromstring(xml)) - 1, "xmlBytes": len(xml)}
+
+
 def run_once(request: object) -> tuple[bytes, dict[str, object]]:
     admitted = base._validate_request(request)
+    if ("ONE_C_HARNESS_EVENTLOG_CAPTURE_COMMAND" in os.environ
+        or "ONE_C_HARNESS_EVENTLOG_CAPTURE_BINDING" in os.environ):
+        return _run_capture(admitted)
     settings = _settings()
     started = time.monotonic()
     deadline = started + _TIMEOUT_SECONDS
