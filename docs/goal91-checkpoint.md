@@ -1,10 +1,28 @@
-# Goal #91 — source checkpoint, delivery HOLD
+# Goal #91 — bounded native/web PASS, owner review
 
-Проверка 2026-10-07. **Работа начата; Goal не завершена.**
+Проверка 2026-10-07. **Согласованный fresh цикл выполнен; demo восстановлена.**
 Контракт: [#91](https://github.com/Kwentin3/1c-agent-harness/issues/91).
 Следующие направления: [#92](https://github.com/Kwentin3/1c-agent-harness/issues/92).
 
-## Текущий результат: cold failed; web восстановлен; source repair подготовлен
+## Текущий результат
+
+[Финальный Git-tracked отчёт](goal91-final.md): installed source
+`eaab4cf3b6c563e11388f02676acb54f0302d004`, artifact
+`sha256:415782d4419b82987e51f8539f0030cbcd3b3c5f3ae483541a1481bf25aa0ef9`.
+Свежая ordinary Hermes session: cold materialized → warm reused → три registered
+narrow searches → один substantive native verify, strict oracle/replay PASS,
+13 observations true, 6/6 platform launches, no retry. Snapshot/CF/manifest/runtime
+и demo IB после native неизменны. Cleanup/revoke/exact stop/PID0/oldPID absent,
+прежние service/route восстановлены; owner login/dashboard/Refresh/confirmed Exit PASS.
+Окно закрыто досрочно, purpose key отозван, все timers inactive.
+
+Skills raw parity и local terminal/GitHub PASS. ТЖ registered retained discovery/
+selection/expansion PASS, не fresh telemetry. ЖР current fail-closed validation и
+expired-ref checks PASS без exporter; positive #80 evidence историческое, current
+valid selection/page/record NOT_RUN. Acquisition #90 и nonzero web #92 не добавлены.
+PR #86/#88 готовы к owner review в этих явно описанных пределах; merge не разрешён.
+
+## История: первый cold failed и подготовка source repair
 
 [Следующий coding admission и точные оставшиеся gates](goal91-coding-admission.md).
 Постоянная web-доставка завершена оператором в #89; Hermes отдельно проверил401
@@ -20,7 +38,8 @@ Source repair устраняет воспроизведённый без 1С д�
 потомков через существующий owner `native_cycle`; локально356 tests PASS.
 Plugin/companion artifact кандидата:
 `sha256:415782d4419b82987e51f8539f0030cbcd3b3c5f3ae483541a1481bf25aa0ef9`.
-Исправление пока не установлено, native acceptance Goal91 остаётся недоказанной.
+На этом checkpoint исправление ещё не было установлено; последующая установка
+и native acceptance описаны в текущем итоге выше.
 При прежнем полном unit-прогоне внутри reference оператор допустил ошибку
 изоляции: fixture обнаружил реальный runtime и дошёл до CREATE/load_failed.
 [Инцидент, отсутствие survivors и исправление fixture](https://github.com/Kwentin3/1c-agent-harness/issues/91#issuecomment-6031716774).
@@ -204,8 +223,8 @@ handoff по #89; постоянные sudo/Docker socket, новый transport 
 
 | Работа | Сохраняемая граница и следующий шаг |
 |---|---|
-| #85 / PR #86 | Exact head `264ad94183509f15cfccfc96c7cdaa65d9957fce`, OPEN, base main; ограниченный native dashboard PASS из [RESULTS](../experiments/issue85-owner-dashboard/RESULTS.md), не web delivery/rollout |
-| #87 / PR #88 | OPEN, base `product/owner-yesterday-dashboard`; [reference runbook](issue-87-native-web-runbook.md) подтверждает исторический local native reference, не protected delivery. Этот checkpoint продолжает существующий PR |
+| #85 / PR #86 | Exact head `264ad94183509f15cfccfc96c7cdaa65d9957fce`, OPEN, base main; bounded native calculations/form PASS и protected empty-day/Refresh delivery; READY_FOR_OWNER_REVIEW, не nonzero/широкий rollout |
+| #87 / PR #88 | OPEN, base `product/owner-yesterday-dashboard`; installed `eaab4cf` cold/warm/narrow/native PASS + protected web restore; [финальные identities/evidence/пределы](goal91-final.md), READY_FOR_OWNER_REVIEW |
 | #71 / PR #72 | #71 OPEN; PR #72 MERGED, merge `8a9b31ac805923ba08f31017b9efd7b167fe4669`. R&D/prototype ≠ production root cause; статус issue не закрыт автоматически |
 | #73 / PR #74 | #73 OPEN; PR #74 MERGED, merge `05f7876b87201df5cd631ead8fb2881dcce88d9c`. [28 retained receipts, investigate/expand](issue-73-runtime-diagnostics-live.md), не live sessions или свежий источник |
 | #36 | OPEN; terminal PRODUCT FAIL сохранён в #92; новый эксперимент не начат |
@@ -215,6 +234,8 @@ handoff по #89; постоянные sudo/Docker socket, новый transport 
 
 Merge не разрешён. Если владелец отдельно разрешит, зависимость остаётся
 **main ← #86 ← #88**; после каждого merge нужны exact tree и post-merge CI.
-Текущий checkpoint не даёт финальной merge-рекомендации: delivery gates открыты.
+Текущий итог подготовлен к owner decision; source/runtime/web доказательства и
+неповторённая positive ЖР проверка разделены в финальном отчёте. Это не разрешение
+на merge, новый native budget или переквалификацию исторических FAIL.
 No-paid/no-reviewer граница продолжаемой #87 сохранена; новый внешний review
 не запускался, исторические INCONCLUSIVE отзывы не названы одобрением.

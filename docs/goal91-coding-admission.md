@@ -1,6 +1,13 @@
 # Goal91: coding admission после проверки транспорта
 
-Статус на 7 октября 2026: **COLD_FAILED / WINDOW_CLOSED / WEB_RESTORED**.
+Статус на 7 октября 2026: **NATIVE_CYCLE_PASS / WINDOW_CLOSED / WEB_RESTORED**.
+[Окончательный отчёт с identities, raw-receipt hashes и пределами](goal91-final.md).
+Новое окно 05:50–06:33UTC выполнено после отдельного разрешения владельца:
+installed `eaab4cf3b6c563e11388f02676acb54f0302d004`, fresh registered cold3 →
+warm/narrow0 → verify3, strict oracle PASS, без native retry. Purpose key отозван,
+exact stop/PID0/oldPID absent доказаны; прежние service/route восстановлены.
+Native owner login/Refresh/confirmed Exit завершены 06:37UTC. Timers inactive.
+Для нового native потребуется новый допуск; текущее окно закрыто и бюджет исчерпан.
 
 ## Текущее исправление CF materializer
 
@@ -34,8 +41,9 @@ PID61 не восстанавливается предположением. Linu
 
 Кандидат plugin/companion:
 `sha256:415782d4419b82987e51f8539f0030cbcd3b3c5f3ae483541a1481bf25aa0ef9`.
-Это **source candidate**, не установленная identity и не native PASS. Установленный
-artifact первого cold остаётся
+Этот artifact установлен и прошёл новый bounded native цикл; raw file parity
+plugin/companion и native loader проверены отдельно от CI. Artifact первого cold
+сохранён в историческом evidence:
 `sha256:3d1bb0ac848bb49f15e0325d8f62eaa2ed05e2516db63ee96ceb6d051d616acc`.
 
 Воспроизводимая локальная проверка на Linux:
@@ -71,22 +79,23 @@ Fixture исправлен: тест явно подставляет отсут�
 byte-bound patches/receipts нельзя нормализовать вручную. При подготовке архив
 проверяется по Git blob hash каждого файла и executable bit.
 
-Следующая live-приёмка — **новое** ограниченное окно для точного исправленного
-кандидата после source/CI и отдельного решения владельца. Закрытое окно с
-NO_RETRY не переиспользуется. План: согласованное обслуживание до120мин,
-backup/rollback пары, versioned companion + согласованные plugin/release/launcher,
-проверка registration и безопасных negative routes; затем свежий Hermes agent
-через registered tools выполняет cold≤3 → warm/narrow0 → verify≤3, всего≤6
-platform launches, без retry/продления. До каждого cold/verify — прежний независимый
-watchdog2100s и survivor check. После результата — revoke/exact stop, сохранить
-evidence, убрать только task-owned disposable ИБ, restore и вход/Refresh/Exit.
-CF/project-target/runtime/demo и retained diagnostics остаются прежними.
+Новая live-приёмка исполнена по этому плану: backup/rollback пары, versioned
+companion/plugin/release/launcher, registration/negative gates, обе репетиции
+cleanup, fresh registered cold/warm/narrow/verify и независимый oracle replay.
+Два watchdog2100s и absolute cutoff действовали; restore выполнен досрочно.
+CF/project-target/runtime/demo и retained diagnostics сохранены. Non-native
+staging сначала отказал на protected `.local`; рабочий рецепт использует уже
+writable `.local/runs/<task>/`, не новые права. Копия readonly source должна получить
+write permissions только на своих directories для patch application и снова быть
+запечатана перед fingerprint/verify. Три retained ЖР tools проверены в fail-closed
+границе без exporter; current valid positive selection остаётся NOT_RUN (#90).
 
 ## История подготовки до первого cold
 
-Разделы ниже сохраняют прежние evidence и допуски для трассировки. Их installed
-paths/status относятся к соответствующим старым проверкам и не являются новым
-разрешением на запуск или текущей deployed identity.
+Все разделы ниже сохраняют прежние evidence, допуски и тогдашние remaining gates
+для трассировки. Их installed paths/status относятся к соответствующим старым
+проверкам, не являются текущими блокерами/identity или новым разрешением.
+Текущий результат и применённый рецепт — в [финальном отчёте](goal91-final.md).
 
 ### Ожидания согласованы в source
 

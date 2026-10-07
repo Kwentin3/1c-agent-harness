@@ -1,8 +1,9 @@
 # 1C Agent Harness
 
 > Текущий ограниченный этап — [Goal #91](https://github.com/Kwentin3/1c-agent-harness/issues/91).
-> [Checkpoint и порядок приёмки](docs/goal91-checkpoint.md): source-регрессия отдельно
-> от нового native/runtime допуска и защищённой доставки. Backlog —
+> [Итог 7 октября](docs/goal91-final.md): fresh registered cold → warm → narrow →
+> native verify PASS, 6/6 запусков без retry; защищённая demo восстановлена и проверена.
+> PR #86/#88 готовы к owner review; merge требует отдельного решения. Backlog —
 > [#92](https://github.com/Kwentin3/1c-agent-harness/issues/92).
 
 > Прикладной кандидат #85: [dashboard владельца за вчера](experiments/issue85-owner-dashboard/RESULTS.md).

@@ -1,13 +1,14 @@
 # #87: native web — проверенный reference и короткий runbook
 
-**Локальный reference принят: native UI / пустой день / Refresh / restart PASS.
-Сквозной refine и публичная доставка ещё не завершены.**
+**Локальный reference и защищённая доставка приняты в проверенной границе:
+native UI / пустой день / Refresh / восстановление PASS.**
 
-Действующий объединённый этап: [Goal #91 checkpoint](goal91-checkpoint.md).
-Операторский read-only admission/план доступа ведётся в
-[#89](https://github.com/Kwentin3/1c-agent-harness/issues/89). Его handoff и новый
-допуск на точные side effects обязательны до продолжения; прежние receipts ниже
-не означают, что остановленный reference сейчас доступен обычному агенту.
+Действующий итог: [Goal #91 native/web evidence](goal91-final.md). Постоянная demo
+доступна по <https://1c-demo.speechbattle.com/jetcontrol/ru/> с прежней защитой;
+после окна 7 октября login/Refresh/confirmed Exit проверены. Native task key отозван,
+новый coding цикл требует нового допуска. Handoff/lifecycle/credentials owner —
+[#89](https://github.com/Kwentin3/1c-agent-harness/issues/89#issuecomment-6019437901).
+Receipts ниже сохраняют историю local reference и не являются новыми полномочиями.
 
 ## Один источник процедуры
 
