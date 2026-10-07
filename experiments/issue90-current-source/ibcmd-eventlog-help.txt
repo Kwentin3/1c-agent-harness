@@ -1,0 +1,64 @@
+1C:Enterprise 8.5 Stand-alone Server and Infobase Management Utilities © 1C-Soft LLC 1996-2025
+1C:Enterprise infobase and standalone server management tools
+
+Use:
+
+	ibcmd eventlog [command] [options] [arguments]
+
+Shared options:
+
+    --version | -v
+        get the utility version
+
+    --help | -h | -?
+        display brief utility description
+
+    --pid=<pid> | -p <pid>
+        Standalone server process ID
+
+    --remote=<url> | -r <url>
+        Standalone server (administration gateway) network address
+
+Mode:
+
+    eventlog
+        Event log mode
+
+Commands:
+
+    export
+        Export the event log to the console or to the specified file using one of the supported formats (JSON or XML)
+
+        --format=<kind> | -f <kind>
+            Export format: XML (default) or JSON
+
+        --skip-root
+            Indicates that the root XML item or the enclosing JSON object is skipped. In other words, each event is written as an independent entity of the selected format
+
+        --from=<date>
+            Export start date in the YYYY-MM-DDThh:mm:ss[.mmmmmm] format. Events are exported starting from this date. If missing, events are exported starting from the first available log event
+
+        --to=<date>
+            Export end date in the YYYY-MM-DDThh:mm:ss[.mmmmmm] format. Events are exported till this date. If missing, events are exported till the last available log event
+
+        --follow=<ms> | -F <ms>
+            The value that represents how often new events for export are expected to appear, in milliseconds. If the parameter is specified, the default value is 1000 (1 sec.). Otherwise, new events are not expected.
+            For operating systems that support file change notifications,
+            new events are expected if the parameter is specified.
+            The parameter value is ignored
+
+        --out=<path> | -o <path>
+            Path to the export file. If not specified, the standard output stream (stdout) is used
+
+        <path>
+            Path to event log directory
+
+    model
+        Commands to use the log event model
+
+        Additional commands:
+            export
+                Export a log event model as an XSD schema
+
+                <path>
+                    Path to the model export file

@@ -1,11 +1,107 @@
 # Goal90 — current-source admission checkpoint
 
-Статус: **PARTIAL / LIVE_SOURCE_BLOCKED**, не PRODUCT PASS. Issue #90 открыта.
+Статус после возобновления: **PARTIAL / CURRENT_JOURNAL_ACCESS_BLOCKED**, не PRODUCT PASS.
+Issue #90 открыта. Повторный approval на read-only binding/help/bounded export/session
+контроли снят [уточнением владельца](https://github.com/Kwentin3/1c-agent-harness/issues/90#issuecomment-6034051631).
 Новый live-source, installed positive selection/page/record и пользовательская
 приёмка пока не исполнены. Документальные долги выполнены независимо:
 [применённый disposition и конкретные owner остатки](issue90-debt-disposition.md).
 
-## Что установлено чтением, а не native-запуском
+## Возобновлённое исследование: действующий допуск и фактический результат
+
+Проверен актуальный body #90, source HEAD перед работой `1a596cf04ad96e4d258726dfd6a0468770c7c733`,
+Git root выбранного workspace, clean tree. Runtime исследован только через уже
+provisioned strict/pinned diagnostic SSH; отозванный coding key #91 не использован.
+До запуска сохранён контракт и ledger в task-owned `.local/` домашнего executor:
+3 version/help, 12 экспортов, два цикла вход/выход, ≤30 s на вызов, ≤15 min native.
+Пороги selection≤10 s / visibility≤30 s / export≤30 s / output≤1 MiB /
+journal≤128 files/64 MiB сохранены; для текущего источника **не проверены**.
+
+### Исполненная точная справка, а не предположение
+
+- [Реальный `ibcmd --version`](../experiments/issue90-current-source/ibcmd-version.txt):
+  **8.5.1.1150**, rc0, 0.469282983 s.
+- [Реальный `ibcmd help eventlog`](../experiments/issue90-current-source/ibcmd-eventlog-help.txt):
+  rc0, 0.065071466 s; `export`, JSON/XML, `--skip-root`, inclusive `--from/--to`,
+  `--out`, positional journal directory, `--follow=<ms>` подтверждены исполнением.
+  Для поддерживающей notifications ОС значение интервала игнорируется. Без follow
+  новые события не ожидаются. Справка не обещает snapshot/fence/flush/rotation-consistency.
+- Binary SHA256 до/после: `62e72e15bb4550c4ffcf421f962c27fd1e1ddde1ba31e5bc0d7c9e0c2352dde7`.
+  [Receipt со stdout hashes и бюджетом](../experiments/issue90-current-source/native-research-receipt.json).
+  Это закрывает прежний независимый evidence gap об атрибуции `--follow`, не live приёмку.
+
+### Что действительно мешает экспортировать текущую demo
+
+1. Admitted diagnostic SSH — UID10001 в существующем executor namespace. Его launcher
+   всё ещё связывает ЖР с retained September archive #80. Inventory: два файла,
+   5454/62581 bytes, September mtime. Это не текущая demo.
+2. В этом namespace отсутствуют current reference IB/journal и business root;
+   mount inventory не содержит их. Docker socket/sudo/doas отсутствуют. Это
+   проверка доступной среды, **не** новая host-side проверка состояния reference.
+3. Старая demo-копия существует, её основной файл имеет mtime 2 октября; это не
+   основание для current binding. Operator retained postfix copy возвращает
+   `PermissionError`. Права не ослаблены. Первый inventory остановился на этом
+   исключении; после адресной обработки ошибки закончились остальные read-only
+   проверки. Это не native/export попытка и не скрытый успешный доступ.
+4. Публичный текущий URL без auth отвечает **401**; это проверка отказа и доступности
+   защищённого ingress, не native login/E2E или HTTP interface чтения ЖР.
+   Web credentials не заменяют filesystem/ibcmd-доступ; plaintext/секреты не искались.
+5. Registered `one_c_observation_info({})` вернул ok: UTC, EXCP/EXCPCNTX,
+   3 files/47170 bytes, retained interval 18 сентября. ТЖ route работает,
+   но это не свежая October telemetry. Revoked coding route не пробовался.
+
+Прямой export не запускается до current IB→journal binding. Экспорт архива, новый
+login без возможности прочесть его ЖР, прямой произвольный host/IP-route, revival
+старого key или собственный parser не являются различающим экспериментом.
+`--remote` из help относится к standalone server administration gateway; наличие
+текущего web-клиента не доказывает такой разрешённый endpoint. Он не угадывается.
+
+**Одна внешняя предпосылка:** владелец deployment/домашний оператор предоставляет
+непривилегированному diagnostics route read-only доступ именно к действующему ЖР
+сохранённой demo с подтверждённой IB identity/timezone и exact ibcmd invocation.
+Конкретный механизм (existing route, ограниченный mount или execution admission)
+нужно определить на home host. Новые права/mount/ключи/deployment нельзя внедрить
+из текущего read-only допуска. Не требуется ещё раз разрешать уже допущенные
+экспорты; требуется отсутствующая техническая capability. Demo не останавливать,
+root/Docker socket агенту не выдавать, runtime/ИБ не копировать на Hermes VPS.
+Если доступ нельзя дать без новой топологии/stop, вернуть неприменимость этого
+полигона, не выдавать несогласованную копию за current source.
+
+### Расход, границы и воспроизведение
+
+- **Help/version 2/3, exports 0/12, session cycles 0/2**, суммарно 0.534354449 s native.
+  Лимиты не сброшены; сохранённые remote ledger/contract — основание продолжения.
+- Source/tests/installed launcher не изменены; deployment/restart/new rights/merge=0.
+  Спекулятивный metadata/capture seam не реализован до фактической feasibility.
+- Current demo bytes недоступны: новой полной hash continuity demo/source/runtime
+  не заявляем. Архив #80 и runtime locator прочитаны и запечатаны, не изменялись.
+- Повторить справку можно на admitted executor командами `ibcmd --version` и
+  `ibcmd help eventlog` **только с учётом оставшегося одного help слота**. Не выполнять
+  обе повторно под видом reproducing evidence. Опубликованные stdout/receipt можно
+  проверять локально без расхода native бюджета.
+- Source-only suite первоначальной базы: 356 PASS / 155.194 s — отдельный #90 run,
+  не исторический #91 run 57.864 s и не live-source performance. Exact-head CI нового
+  supplement проверяется отдельно. В этом продолжении:
+  `python3 -m unittest discover -s tests -p 'test_eventlog*.py' -v` —
+  **35 PASS / 17.162 s**, existing simulated process/reader
+  fixtures, не текущая ИБ и не actual ibcmd export. Stdout hashes/JSON ledger arithmetic
+  проверены локально; `git diff --check` PASS. Local terminal/GitHub работают; coding native=0.
+- Предыдущий Dual Review относится только к `1a596cf…`: DeepSeek без материальных
+  blockers; Gemini INCONCLUSIVE/cli_timeout. Эти отзывы не покрывают новый supplement;
+  неисправный arm автоматически не перезапускается и никакого merge approval нет.
+
+Ни одна product acceptance checkbox не повышается до PASS. After-access следующий
+шаг — один bounded direct export, затем только по его фактическому результату
+минимальный source candidate и два session witnesses через existing reader route.
+Не делать second store/parser/service/transport. Current feasibility остаётся UNKNOWN.
+
+## Исторический checkpoint до уточнения автономии и новых help вызовов
+
+Следующие разделы фиксируют прежние чтения и **предложенный тогда**, но уже
+разрешённый владельцем бюджет. Фразы «нет нового help»/«нужен новый допуск» ниже
+относятся только к этой прошлой точке; актуальный расход и technical blocker — выше.
+
+## Что было установлено чтением, а не native-запуском
 
 Исходная принятая база — [main `646273a44e47223d920911bdaec4bd35ae2b9ed6`](https://github.com/Kwentin3/1c-agent-harness/tree/646273a44e47223d920911bdaec4bd35ae2b9ed6),
 tree `4bb37d169b631cb2c71501c862e6f89f24742de4`.
