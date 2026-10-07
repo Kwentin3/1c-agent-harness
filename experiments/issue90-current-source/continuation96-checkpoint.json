@@ -1,0 +1,101 @@
+{
+  "schemaVersion": 1,
+  "classification": "PARTIAL_BLOCKED_NO_DEMO_SECRET_NO_BROWSER_NOT_ACTIVE_REGISTRY",
+  "runtimeSourceCommit": "64420b4efc960d8b0554548a0c4d85328b3bfdd4",
+  "continuedFrom": "2dbfdb494f706c0748ee3091c5c47d6fd4347820",
+  "stagedExactFiles": true,
+  "stagedGitBytes": true,
+  "activeArtifactId": "sha256:415782d4419b82987e51f8539f0030cbcd3b3c5f3ae483541a1481bf25aa0ef9",
+  "activeWrapperSha256": "e67bea4eb6f998097811639ff0701687b3b2ab0f7f3c44a631dc559b1a468326",
+  "rollbackWrapperMatchesActive": true,
+  "rollbackPluginMatchesActive": true,
+  "probe": {
+    "exit": 0,
+    "seconds": 6.3950343993492424,
+    "stdoutSha256": "7836984342ccab7565efb12057709daf65bf23236bab28331dff5e353cb4a0bc",
+    "status": "ACCESS_PROBE_PASS",
+    "nativeInvocations": 0,
+    "matchesOriginalProbeWireHash": true
+  },
+  "canonicalLedger": {
+    "ledgerSha256": "86d8fc3551e2c81ca841fa455633ca42f013221a0dc73b81547893d9943fc24d",
+    "contractSha256": "325fbdc242d96de33774474408ce1482cb83806ab543ad398a1a7e751461fd8f",
+    "helpUsed": 2,
+    "kinds": {
+      "export": 4,
+      "help": 2
+    },
+    "nativeSeconds": 8.480200893012807,
+    "pendingStarted": 0
+  },
+  "ledgerRead": {
+    "exit": 0,
+    "seconds": 3.232954300008714
+  },
+  "historicalAccountingAndLocalOverheadSeconds": [
+    9.128730882890522,
+    9.164487259928137
+  ],
+  "parityCheck": {
+    "classification": "SOURCE_ONLY_PARITY_CHECK_REAL_WIRE_NOT_ACTIVE_REGISTRY",
+    "remoteArtifactId": "sha256:415782d4419b82987e51f8539f0030cbcd3b3c5f3ae483541a1481bf25aa0ef9",
+    "candidateArtifactId": "sha256:d22e95c3317acae51cb0a059333f2ea3917f3ce1bd291f7757556097ea2e52c7",
+    "remoteStatus": "ok",
+    "candidateResult": "blocked",
+    "candidateReasonCode": "companion_artifact_mismatch",
+    "wireSha256": "9c67e6d52bf39d383a359596abfb264ceee02d593a112c022de99d8ca3aa490d",
+    "nativeInvocations": 0,
+    "activationPerformed": false
+  },
+  "isolatedDiagnosticCandidate": {
+    "classification": "ISOLATED_MATCHED_DIAGNOSTIC_COMPANION_NOT_ACTIVE_REGISTRY",
+    "sourceCommit": "64420b4efc960d8b0554548a0c4d85328b3bfdd4",
+    "artifactId": "sha256:d22e95c3317acae51cb0a059333f2ea3917f3ce1bd291f7757556097ea2e52c7",
+    "verifiedSourceFiles": 23,
+    "originalLauncherUnchanged": true,
+    "candidateLauncherSha256": "f3c763058788ebfca5e4808471ee62085e8ef1ce9de7560fd11ce1825dbfa8ae",
+    "unchangedDiagnosticFacts": true,
+    "candidateWireSha256": "a104f70b2da1eda67d3624bfb0f091ebfb14252b2a5f41ff394fd97a30713ba6",
+    "stageReceiptSha256": "fb7fd98d60b5e2c292694a01e0eef3a7160f4f14e39f8856f1a3a7b140f43d4d",
+    "nativeInvocations": 0,
+    "activationPerformed": false,
+    "offlineCandidateAdapterStatus": "ok"
+  },
+  "preparedDispatcher": {
+    "dispatcherSha256": "ef5e49a1ac992efff8c7066f9fb78c45bceded763fe297a72fd9d807f3432c80",
+    "baseWrapperSha256": "e67bea4eb6f998097811639ff0701687b3b2ab0f7f3c44a631dc559b1a468326",
+    "codingBranchBytePreserved": true,
+    "knownHostsBindingBytePreserved": true,
+    "sourceStageUnchanged": true,
+    "installed": false
+  },
+  "sourceTests": {
+    "count": 373,
+    "seconds": 178.109,
+    "status": "PASS"
+  },
+  "pluginDoctor": {
+    "status": "PASS",
+    "tools": 9
+  },
+  "sourceStagePrecheckFailures": 1,
+  "demoAuth": {
+    "httpsStatus": 401,
+    "matchingNativeSecretKeys": 0,
+    "configuredBitwardenEnabled": false,
+    "secretLocatorReceived": false
+  },
+  "browser": {
+    "status": "CONFIGURED_CDP_CONNECTION_REFUSED",
+    "installedBrowserFoundOnPATH": false
+  },
+  "registeredNewEventAcceptance": "NOT_RUN",
+  "selection10SecondCriterion": "NOT_MET_HISTORICAL_NO_NEW_MEASUREMENT",
+  "visibility30SecondCriterion": "NOT_RUN",
+  "newNativeExports": 0,
+  "newSessionCycles": 0,
+  "newNativeCoding": 0,
+  "activationPerformed": false,
+  "newReviews": 0,
+  "mergeRelease": false
+}
