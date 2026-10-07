@@ -36,7 +36,9 @@ inner="""import json,os,pathlib,subprocess,sys
 sys.path.insert(0,sys.argv[1])
 from one_c_harness import cf_materializer
 result=pathlib.Path(sys.argv[3]);pidfile=pathlib.Path(sys.argv[4]);mode=sys.argv[5]
-if mode=='timeout':cf_materializer.TIMEOUT_SECONDS=0.2
+# Allow interpreter/fork startup under full-suite load before testing timeout.
+# The wrapper and its child still sleep 60s; no production timeout is changed.
+if mode=='timeout':cf_materializer.TIMEOUT_SECONDS=2
 try:
  cf_materializer._run_step([sys.executable,sys.argv[2],str(pidfile),str(result),mode],dict(os.environ),result,runner=subprocess.run)
  outcome={'status':'PASS'}
