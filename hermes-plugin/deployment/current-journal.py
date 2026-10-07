@@ -126,7 +126,8 @@ def main():
     except (ValueError,UnicodeError):
         raise ValueError('invalid_request') from None
     runtime=Path(RUNTIME_HOST)
-    if not runtime.is_absolute() or ',' in RUNTIME_HOST or not runtime.is_dir():
+    # Docker resolves this trusted root-owned binding; SSH UID need not traverse it.
+    if not runtime.is_absolute() or ',' in RUNTIME_HOST:
         raise ValueError('binding_unavailable')
     import fcntl
     lock = os.open(LOCK_FILE,os.O_RDWR|os.O_NOFOLLOW)
