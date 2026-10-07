@@ -61,7 +61,7 @@ Failed intermediate control UID33/GID0 сохранён; он не являет�
 На этом ходе нет новых native runs Hermes, publisher repeats или CLI runs #85.
 Подробные counts разных operator phases находятся в intake; исходный бюджет не сброшен.
 
-## Harness/tool contract
+## Исторический Harness/tool contract (до Goal91)
 
 Код companion/transport/runtime contract менять не требуется по текущим фактам:
 `cf_materializer.runtime_paths` читает только абсолютный executor-injected
@@ -77,7 +77,13 @@ Runtime locator прежнего executor не переключён. В обыч
 подготовленный executor launch env, а не скрытый файл или новая переменная в model args.
 Warm admitted snapshot не требует запуска 1С.
 
-## Source checks и remaining gates
+## Исторические source checks и remaining gates (до Goal91)
+
+Перечень ниже — прежний checkpoint, не текущий список блокеров. #91 завершила
+cold/native, fresh registered route, closed skill parity и protected delivery;
+#86/#88 теперь MERGED. [Текущий disposition](issue90-debt-disposition.md) отделяет
+принятый empty-day scope от nonzero/workflow #92 и новой acquisition ЖР #90.
+Исторические checks/FAIL сохранены; live runtime в этой сверке не перечитывался.
 
 `python3 -m unittest discover -s tests -v` — **344 tests, OK**; focused skill
 manifest — **3 tests, OK**. [Remote source regression](../experiments/issue87-web-publication/reference-source-regression.json)

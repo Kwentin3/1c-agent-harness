@@ -1,15 +1,19 @@
 # 1C Agent Harness
 
-> Текущий ограниченный этап — [Goal #91](https://github.com/Kwentin3/1c-agent-harness/issues/91).
+> [Goal #91](https://github.com/Kwentin3/1c-agent-harness/issues/91) завершена (CLOSED).
+> Текущая продуктовая Goal — [#90](https://github.com/Kwentin3/1c-agent-harness/issues/90):
+> свежий ЖР текущей ИБ; это ещё не достигнутый live-source результат.
 > [Итог 7 октября](docs/goal91-final.md): fresh registered cold → warm → narrow →
 > native verify PASS, 6/6 запусков без retry; защищённая demo восстановлена и проверена.
-> PR #86/#88 готовы к owner review; merge требует отдельного решения. Backlog —
+> PR #86/#88 MERGED; [merge SHA и post-merge CI](docs/issue90-debt-disposition.md#post-merge-source-и-ci).
+> Merge не заменяет executed source/installed identities или native receipts. Backlog —
 > [#92](https://github.com/Kwentin3/1c-agent-harness/issues/92).
 
 > Прикладной кандидат #85: [dashboard владельца за вчера](experiments/issue85-owner-dashboard/RESULTS.md).
 > Native-приёмка пройдена: **strict oracle PASS** в третьей попытке, 3/4 запуска.
 > Проверены расчёт, табличный документ/создание формы, пустой день, убыток,
-> повтор и границы дат. Нет rollout/merge; это task artifact, не новая функция harness.
+> повтор и границы дат. Source принят через merge #86; production rollout не выполнен.
+> Это task artifact, не новая функция harness.
 
 Экспериментальный harness, который помогает кодовому агенту безопасно исследовать незнакомые конфигурации 1С:Предприятия и давать проверяемые ответы о коде, метаданных и бизнес-процессах.
 
@@ -264,6 +268,7 @@ MVP считается полезным не потому, что агент н�
 - [Методика оценки](docs/evaluation.md)
 - [Обзор существующих решений](docs/research.md)
 - [Дорожная карта](ROADMAP.md)
+- [Текущий post-merge статус и disposition долгов #90](docs/issue90-debt-disposition.md)
 - [Нативная лаборатория 1С под Linux](docs/lab.md)
 - [Runbook read-only эксперимента](docs/experiment-runbook.md)
 - [Client-neutral протокол](docs/client-protocol.md)

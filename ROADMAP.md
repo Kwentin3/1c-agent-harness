@@ -115,7 +115,8 @@ cold CF → warm reuse → narrow → substantive native verify: strict oracle P
 6/6 platform launches без retry. Protected native dashboard/empty-day/Refresh
 работают после восстановления; purpose key отозван, disposable resources очищены.
 [Точные identities, квитанцы, стоимость и пределы](docs/goal91-final.md).
-PR #86/#88 подготовлены к owner decision; merge/release отдельным решением.
-Positive ЖР evidence остаётся историческим #80; новый acquisition — #90,
+#91 CLOSED; #86/#88 MERGED в main. [Точные merge commits, CI и disposition долгов](docs/issue90-debt-disposition.md).
+Merge не является новой native-приёмкой; production rollout/release не выполнялись.
+Positive ЖР evidence остаётся историческим #80; текущая Goal нового acquisition — #90,
 ненулевой web/пользовательские workflow и другие расширения — backlog #92.
 Это не отменяет прежние terminal FAIL или недоказанные этапы 2/3.
