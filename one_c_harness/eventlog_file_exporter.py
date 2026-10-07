@@ -265,7 +265,7 @@ def capture_to_xml(
     try:
         _validate_capture_binding(binding)
         actual = receipt["sourceBinding"]
-        if any(actual[key] != binding[key] for key in ("referenceId", "referenceImage", "vrdSha256")):
+        if not isinstance(actual, dict) or any(actual.get(key) != binding[key] for key in ("referenceId", "referenceImage", "vrdSha256")):
             raise base.ExportFailure("source_binding_mismatch")
         if (
             receipt["binarySha256"] != binding["binarySha256"]

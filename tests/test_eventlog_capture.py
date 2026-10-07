@@ -36,7 +36,43 @@ class CaptureTests(unittest.TestCase):
         self.assertNotIn('outputBase64', xml.decode())
         self.assertEqual(len(root.findall('{http://v8.1c.ru/eventLog}Event')), 1)
 
+    def test_requested_end_aliases_are_compared_by_datetime_not_spelling(self):
+        from datetime import datetime
+        from one_c_harness import eventlog_observation
+        for end in ('2026-10-07 10:15:00', '2026-10-07T10:15:00.000', '2026-10-07T10:15:00.5', '2026-10-07T10:15:00.123'):
+            with self.subTest(end=end):
+                request = {**REQUEST, 'end': end}
+                value = receipt()
+                value['sourceAfter'] = value['sourceBefore']
+                value['argv'][6] = '--to=' + end
+                xml = exporter.capture_to_xml(value, BINDING, request, now=NOW)
+                count, records, metadata = eventlog_observation._parse(xml, datetime.fromisoformat(request['start']), datetime.fromisoformat(end), {})
+                self.assertEqual(count, 1)
+                self.assertIsNotNone(metadata)
+                with self.assertRaises(ValueError):
+                    eventlog_observation._parse(xml, datetime.fromisoformat(request['start']), datetime.fromisoformat('2026-10-07T10:16:00'), {})
+
 class CaptureAdmissionTests(unittest.TestCase):
+
+    def test_actual_stale_capture_failure_survives_exporter_to_reader_boundary(self):
+        from one_c_harness import eventlog_observation
+        value = receipt()
+        value['sourceAfter'] = value['sourceBefore']
+        value['startedAtUnix'] = NOW - 61
+        with self.assertRaises(base.ExportFailure) as raised:
+            exporter.capture_to_xml(value, BINDING, REQUEST, now=NOW)
+        result = eventlog_observation._source_error(exporter._failure_line(str(raised.exception), {}))
+        self.assertEqual(result['reasonCode'], 'source_stale_capture')
+        self.assertEqual(result['status'], 'unavailable')
+
+    def test_malformed_binding_shape_is_a_binding_mismatch(self):
+        for actual in (None, [], 'foreign', {}, {'referenceId': BINDING['referenceId']}):
+            with self.subTest(actual=actual):
+                value = receipt()
+                value['sourceAfter'] = value['sourceBefore']
+                value['sourceBinding'] = actual
+                with self.assertRaisesRegex(base.ExportFailure, '^source_binding_mismatch$'):
+                    exporter.capture_to_xml(value, BINDING, REQUEST, now=NOW)
 
     def test_wrong_binding_is_rejected_before_conversion(self):
         for field in ['referenceId', 'referenceImage', 'vrdSha256']:

@@ -95,6 +95,24 @@ class EventLogObservationTests(unittest.TestCase):
         self.assertEqual(empty["summary"]["recordCount"], 0)
         self.assertFalse(empty["summary"]["coverage"]["temporalComplete"])
 
+    def test_count_boundary_keeps_temporal_reason_through_retained_reads(self) -> None:
+        from test_eventlog_capture import exporter, receipt, BINDING, REQUEST, NOW
+        for changed in (False, True):
+            with self.subTest(changed=changed):
+                value = receipt()
+                value['sourceAfter'] = [dict(item) for item in value['sourceBefore']]
+                if changed:
+                    value['sourceAfter'][1]['mtimeNs'] += 1
+                self.xml.write_bytes(exporter.capture_to_xml(value, BINDING, REQUEST, now=NOW))
+                selected = self._select(start=REQUEST['start'], end=REQUEST['end'], maximumCount=1)
+                coverage = selected['summary']['coverage']
+                self.assertEqual(coverage.get('temporalReasonCode'), 'source_changed' if changed else 'capture_consistency_unproven')
+                self.assertEqual(coverage.get('countReasonCode'), 'maximum_count_boundary')
+                paged = eventlog_observation.page(self.project, selected['selectionRef'], 0, 1)
+                record = eventlog_observation.record(self.project, paged['records'][0]['recordRef'])
+                self.assertEqual(paged['summary']['coverage'], {**coverage, 'limitedToRetainedSelection': True})
+                self.assertEqual(record['coverage'], coverage)
+
     def test_current_deployment_requires_capture_instead_of_accepting_legacy_archive_xml(self) -> None:
         with mock.patch.dict(os.environ, {"ONE_C_HARNESS_EVENTLOG_REQUIRE_CAPTURE": "1"}):
             selected = self._select()

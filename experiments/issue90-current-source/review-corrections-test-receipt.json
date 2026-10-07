@@ -1,0 +1,19 @@
+{
+  "reviewedHead": "e3cc3cc84bee2a5c949fd504b03cda31b61896db",
+  "reviewId": "dr-ba926b495ec84362",
+  "correctionScope": [
+    "F1 timestamp datetime equality",
+    "F2 actual stale reason propagation",
+    "F3 count/temporal reason separation",
+    "F4 malformed binding mismatch"
+  ],
+  "testCount": 373,
+  "seconds": 162.094,
+  "passed": true,
+  "artifactId": "sha256:d22e95c3317acae51cb0a059333f2ea3917f3ce1bd291f7757556097ea2e52c7",
+  "fullTestLogSha256": "0d8fadf81eadab7d2d94ec98c9d2d151133ba50bc14ecc495a0cb1217928ce13",
+  "nativeInvocations": 0,
+  "sshInvocations": 0,
+  "deployments": 0,
+  "scope": "source/fixtures only; Goal90 PARTIAL; no installed/fresh-session acceptance"
+}

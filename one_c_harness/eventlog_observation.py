@@ -68,7 +68,7 @@ def _source_error(stderr: bytes) -> dict[str, object]:
     if isinstance(value, dict) and set(value) == {"reasonCode"}:
         closed_capture_status = {
             "source_binding_mismatch": "blocked", "configuration_invalid": "blocked",
-            "source_stale": "unavailable", "source_unavailable": "unavailable",
+            "source_stale": "unavailable", "source_stale_capture": "unavailable", "source_unavailable": "unavailable",
         }
         reason = value.get("reasonCode")
         if isinstance(reason, str) and reason in closed_capture_status:
@@ -296,7 +296,7 @@ def _capture_metadata(root: ET.Element, end: datetime) -> dict[str, object] | No
     age = capture["receivedAtUnix"] - capture["startedAtUnix"]
     reason = "source_changed" if capture["inventoryChanged"] else "capture_consistency_unproven"
     if (not isinstance(freshness, dict) or set(freshness) != {"requestedEnd", "completeThrough", "captureAgeSeconds"}
-        or freshness["requestedEnd"] != end.isoformat() or freshness["completeThrough"] is not None
+        or _timestamp(freshness["requestedEnd"], "capture requestedEnd") != end or freshness["completeThrough"] is not None
         or type(freshness["captureAgeSeconds"]) not in (int, float)
         or not math.isfinite(freshness["captureAgeSeconds"]) or freshness["captureAgeSeconds"] != age
         or not -5 <= age <= 60 or capture["startedAtUnix"] + capture["durationSeconds"] > capture["receivedAtUnix"] + 5
@@ -501,8 +501,9 @@ def select(
         reason = "maximum_count_boundary"
     coverage = {"complete": reason is None, "partial": reason is not None, **({"reasonCode": reason} if reason else {})}
     if capture_metadata is not None:
-        coverage.update(retainedCountComplete=reason is None, temporalComplete=False, complete=False, partial=True)
-        coverage["reasonCode"] = reason or capture_metadata["temporalCoverage"]["reasonCode"]
+        coverage.update(retainedCountComplete=reason is None, temporalComplete=False, complete=False, partial=True,
+                        countReasonCode=reason, temporalReasonCode=capture_metadata["temporalCoverage"]["reasonCode"])
+        coverage["reasonCode"] = reason or coverage["temporalReasonCode"]
     created = time.time()
     selection = {
         "schemaVersion": 1, "id": selection_id, "createdAt": created, "expiresAt": created + _TTL_SECONDS,

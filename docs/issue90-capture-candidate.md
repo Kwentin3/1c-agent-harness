@@ -67,6 +67,20 @@ Candidate XML754542bytes. Local selection0.388994198s; source1445/matched25 Erro
 
 This closes a candidate consumer/provenance check only. It **does not** close installed positive selection→page→record/comment, a second new event, session lifecycle, current visibility latency or production performance. Old receipt replay is not a fresh source query.
 
+## Review corrections on the source candidate
+
+[DeepSeek review of e3cc3cc](https://github.com/Kwentin3/1c-agent-harness/pull/93#issuecomment-6037026702) was collected/published. It is static source inspection, not execution or merge authorization. Hermes reproduced F1–F4 against that candidate with regressions observed failing for the reported behavior, then made bounded fixes:
+
+- **F1:** reader compares offset-free parsed datetimes, not timestamp spelling. Space-separated and fractional aliases survive the exporter→XML→reader boundary; a genuinely different requested end still fails. This does **not** widen the #94 transport: `current-journal-client.py` still accepts only canonical seconds-only `YYYY-MM-DDTHH:MM:SS`. Fractional/native transport support is not claimed.
+- **F2:** actual `source_stale_capture` from exporter remains a distinct `unavailable` reason through reader decoding. Existing `source_stale` remains accepted for compatibility.
+- **F3:** `coverage.countReasonCode` and `coverage.temporalReasonCode` independently retain count and temporal limitations through selection/page/record; the existing primary `reasonCode` remains count-first for compatibility.
+- **F4:** non-dict or missing-pin `sourceBinding` is explicitly `source_binding_mismatch`, still rejected before conversion. Corrupt non-binding receipt fields remain `source_incomplete_receipt`.
+- **F5 retained limitation:** capture returns lifecycle/record/XML metrics to its caller but does not write the legacy optional `ONE_C_HARNESS_EVENTLOG_METRICS` file. Cost evidence comes from protected acquisition receipts and measured calls, not that file. No metrics parity or installed-performance acceptance is inferred.
+- **F6 clarified:** package metadata requires Python≥3.10; CI3.9 is a source compatibility test, not an installability claim. Deployment glue requires POSIX `sh`, `base64`, `python3`, and `/usr/bin/ssh`, plus the admitted operator-owned pinned config/alias. The unchanged coding dispatcher has a separate Python3.11+ requirement. The source reproduction commands below exercise fixture processes/dispatch only, not installation or live transport. These prerequisites must be checked before owner-authorized activation.
+- **F7 retained boundary:** operator SSH config/content and deployment-selected local companion remain trusted installation inputs. Harness does not edit that config, change the forced command, infer permission to activate, or repeat native exports for review.
+
+The original exact-head CI for e3cc3cc succeeded in run37614089055 (3.9/3.12). It does not apply to later correction bytes. The historical `candidate-test-receipt.json` is preserved for that candidate; corrections have a separate `review-corrections-test-receipt.json`. No native/SSH/session/deploy calls are part of this correction round. A later review must bind the replacement candidate; unfinished/failed reviews remain pending/INCONCLUSIVE, never a second approval.
+
 ## Validation and remaining acceptance
 
 Tests are added before the respective missing behavior (observed RED → GREEN): capture→XML metadata, foreign binding rejection, corrupt/stale/runtime receipt rejection, retained page/record/partial-empty, deployment capture-process path, timeout, and local eventlog dispatcher without fallback. Actual external-process fixtures exercise boundaries without native1C/network. New transport has a closed-command encoding fixture. Existing full gates/release sealing and CI apply; test receipts are in the PR report, not inferred from source inspection.
