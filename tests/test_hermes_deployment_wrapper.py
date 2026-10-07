@@ -49,6 +49,29 @@ class HermesDeploymentWrapperTests(unittest.TestCase):
         }
         return env, capture
 
+    def test_current_eventlog_routes_only_to_deployment_companion_with_no_archive_fallback(self) -> None:
+        with tempfile.TemporaryDirectory() as temporary:
+            root = Path(temporary)
+            env, ssh_capture = self._fixture(root)
+            command = root / "current companion with spaces"
+            local_capture = root / "local-argv"
+            command.write_text("#!/bin/sh\nprintf '%s\\n' \"$@\" > " + shlex.quote(str(local_capture)) + "\nprintf '%s\\n' '{\"status\":\"partial\"}'\n")
+            command.chmod(0o700)
+            env["ONE_C_HARNESS_CURRENT_EVENTLOG_COMPANION"] = str(command)
+            for operation in ("eventlog_select", "eventlog_page", "eventlog_record"):
+                token = base64.b64encode(json.dumps({"operation": operation}).encode()).decode()
+                result = subprocess.run([str(WRAPPER), "--request-base64", token], env=env,
+                                        capture_output=True, text=True, timeout=10)
+                self.assertEqual(result.returncode, 0, result.stderr)
+                self.assertTrue(local_capture.exists(), "current eventlog was not routed to the selected companion")
+                self.assertEqual(local_capture.read_text().splitlines(), ["--request-base64", token])
+                self.assertFalse(ssh_capture.exists())
+            env.pop("ONE_C_HARNESS_CURRENT_EVENTLOG_COMPANION")
+            result = subprocess.run([str(WRAPPER), "--request-base64", token], env=env,
+                                    capture_output=True, text=True, timeout=10)
+            self.assertEqual(result.returncode, 69)
+            self.assertFalse(ssh_capture.exists())
+
     def test_coding_forced_command_receives_request_on_stdin_not_argv(self) -> None:
         with tempfile.TemporaryDirectory() as temporary:
             root = Path(temporary)

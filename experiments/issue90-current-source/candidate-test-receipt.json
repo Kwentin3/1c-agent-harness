@@ -1,0 +1,12 @@
+{
+  "testCount": 369,
+  "seconds": 156.437,
+  "passed": true,
+  "artifactId": "sha256:1258db9668cb75fd75480c2ae3cf0993432b964c81c7fd23e7f6f1a4f0c019f4",
+  "deploymentGlueSha256": {
+    "hermes-plugin/deployment/current-journal-client.py": "a4b30541f2793f376705cc9de57c25cd6f555cb59583f4fcd30c93ac2252b393",
+    "hermes-plugin/deployment/one-c-harness": "e33e42239b78ab10bb3e4d7d23244123478374fd53f0c4b9bcc93afd2ef8cc50"
+  },
+  "scope": "source/fixtures only; neither installed/current session acceptance nor Product PASS",
+  "baselineHead": "eb075862345a23f70a6285a3a1190984527f385a"
+}

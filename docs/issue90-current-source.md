@@ -1,6 +1,13 @@
-# Goal90 — current-source admission checkpoint
+# Goal90 — current-source checkpoint
 
-Статус после возобновления: **PARTIAL / CURRENT_JOURNAL_ACCESS_BLOCKED**, не PRODUCT PASS.
+**Актуально: PARTIAL / SOURCE_CANDIDATE_NOT_INSTALLED**, не PRODUCT PASS.
+Доступ #94 принят и больше не является блокером. См. [source-кандидат и продолжение](issue90-capture-candidate.md),
+[реальный capture и отдельно маркированный replay](../experiments/issue90-current-source/current-capture-receipt.json).
+Ниже сохранён исторический отчёт до #94; его ACCESS_BLOCKED и exports0 не являются текущим состоянием.
+
+## Исторический checkpoint до передачи доступа #94
+
+Статус тогда: **PARTIAL / CURRENT_JOURNAL_ACCESS_BLOCKED**, не PRODUCT PASS.
 Issue #90 открыта. Повторный approval на read-only binding/help/bounded export/session
 контроли снят [уточнением владельца](https://github.com/Kwentin3/1c-agent-harness/issues/90#issuecomment-6034051631).
 Новый live-source, installed positive selection/page/record и пользовательская
