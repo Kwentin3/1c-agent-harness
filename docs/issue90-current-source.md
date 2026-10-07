@@ -1,7 +1,11 @@
 # Goal90 — current-source checkpoint
 
-**Актуально: PARTIAL / SOURCE_CANDIDATE_NOT_INSTALLED**, не PRODUCT PASS.
-Доступ #94 принят и больше не является блокером. См. [source-кандидат и продолжение](issue90-capture-candidate.md),
+**Актуально: PARTIAL / STAGED_CURRENT_COMPANION_NOT_ACTIVE_CHAT**, не PRODUCT PASS.
+Доступ #94 принят и больше не является блокером. [Текущая проверка установки](issue90-activation-checkpoint.md):
+изолированный exact companion прошёл live selection/page/record/comment; зарегистрированный chat-route
+пока не переключён, новые session-события требуют отсутствующей demo-авторизации.
+Обратимая активация уже разрешена единым допуском владельца; нового approval/review не требуется.
+См. также [source-кандидат и историческое продолжение](issue90-capture-candidate.md),
 [реальный capture и отдельно маркированный replay](../experiments/issue90-current-source/current-capture-receipt.json).
 Ниже сохранён исторический отчёт до #94; его ACCESS_BLOCKED и exports0 не являются текущим состоянием.
 

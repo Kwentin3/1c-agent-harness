@@ -1,7 +1,11 @@
 # Goal90 — current capture source candidate
 
-**PARTIAL / SOURCE_CANDIDATE_NOT_INSTALLED. #90 remains OPEN.**
-This candidate extends PR93; it does not deploy, restart, merge, or close the Goal.
+**Current status: PARTIAL / STAGED_CURRENT_COMPANION_NOT_ACTIVE_CHAT. #90 remains OPEN.**
+[Current activation checkpoint](issue90-activation-checkpoint.md): the exact companion has
+been installed in isolation and exercised on a fresh current export, including page/record/comment.
+Owner already authorized reversible activation without another approval or review cycle.
+The active ordinary-chat registry and new session-event acceptance are not complete.
+The execution figures below describe the preceding source-candidate checkpoint, not the current ledger.
 [Access #94](https://github.com/Kwentin3/1c-agent-harness/issues/94#issuecomment-6035866327) passed personally after operator cleanup.
 The former `CURRENT_JOURNAL_ACCESS_BLOCKED` is historical, not the current blocker.
 
@@ -97,7 +101,7 @@ git diff --check
 
 No replay command for private data is promised reproducible without its protected input; deterministic synthetic fixtures run from a clean checkout. Native exports cannot be casually repeated: use canonical remaining budget and reserve before invoking.
 
-**Next external prerequisite:** owner-bound installation/activation of this exact source candidate and its deployment glue/settings, without demo restart or replacing its runtime. Provide the already-existing demo session credential to the admitted Hermes secret/auth surface for the two permitted ordinary session cycles. User must not relay raw exports/passwords. This is one environment-enablement handoff, not a request to repeat read-only approval and not evidence of completed deployment. No new rights/key/mount is needed for journal reads.
+**Remaining enablement work (already owner-authorized):** reversible installation/activation of this exact source candidate and its deployment glue/settings, without demo restart or replacing its runtime. The [current checkpoint](issue90-activation-checkpoint.md) supersedes the earlier separate-approval prerequisite. Provide the already-existing demo session credential to the admitted Hermes secret/auth surface for the two permitted ordinary session cycles. User must not relay raw exports/passwords. Missing authentication remains a technical prerequisite, not an additional permission gate or evidence of completed deployment. No new rights/key/mount is needed for journal reads.
 
 After enablement Hermes still owns: genuine registered fresh query, two ordinary login/logout witnesses, detection of the subsequent event, stable prior selection, installed positive comment continuation, measured visibility/cost, and honest changing-source/rotation boundaries. Direct live capture currently lacks a documented fence/flush guarantee; no generalized consistency or rotation support is claimed. If an added capture mechanism requires changing the operator capability, obtain a separately bounded owner decision rather than quietly editing PR95's installed handler.
 

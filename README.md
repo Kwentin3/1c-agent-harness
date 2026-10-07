@@ -3,9 +3,11 @@
 > [Goal #91](https://github.com/Kwentin3/1c-agent-harness/issues/91) завершена (CLOSED).
 > Текущая продуктовая Goal — [#90](https://github.com/Kwentin3/1c-agent-harness/issues/90):
 > свежий ЖР текущей ИБ; это ещё не достигнутый live-source результат.
-> [Проверенная граница и текущий результат](docs/issue90-current-source.md): PARTIAL / SOURCE_CANDIDATE_NOT_INSTALLED.
+> [Проверенная граница и текущий результат](docs/issue90-current-source.md): PARTIAL.
 > Доступ к текущему ЖР принят после #94 cleanup; реальный export и retained replay выполнены.
-> Source-кандидат ещё не установлен; свежие session witnesses и registered приёмка не выполнены.
+> [Текущий checkpoint активации](docs/issue90-activation-checkpoint.md): exact companion
+> установлен изолированно и проверен на текущем ЖР; активный chat-route пока не переключён.
+> Свежие session witnesses требуют доступной demo-авторизации; registered приёмка не выполнена.
 > [Итог 7 октября](docs/goal91-final.md): fresh registered cold → warm → narrow →
 > native verify PASS, 6/6 запусков без retry; защищённая demo восстановлена и проверена.
 > PR #86/#88 MERGED; [merge SHA и post-merge CI](docs/issue90-debt-disposition.md#post-merge-source-и-ci).

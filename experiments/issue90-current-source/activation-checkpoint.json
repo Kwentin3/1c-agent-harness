@@ -1,0 +1,205 @@
+{
+  "schemaVersion": 1,
+  "classification": "PARTIAL_STAGED_LIVE_COMPANION_NOT_ACTIVE_CHAT_OR_NEW_EVENT_ACCEPTANCE",
+  "runtimeSourceCommit": "64420b4efc960d8b0554548a0c4d85328b3bfdd4",
+  "runtimeSourceTree": "9c2a337a8b9cd0896665e4b5575f67940e9fcaab",
+  "stagedFilesVerified": 31,
+  "candidateArtifactId": "sha256:d22e95c3317acae51cb0a059333f2ea3917f3ce1bd291f7757556097ea2e52c7",
+  "activeArtifactIdUnchanged": "sha256:415782d4419b82987e51f8539f0030cbcd3b3c5f3ae483541a1481bf25aa0ef9",
+  "activeWrapperSha256Unchanged": "e67bea4eb6f998097811639ff0701687b3b2ab0f7f3c44a631dc559b1a468326",
+  "firstQuery": {
+    "classification": "STAGED_COMPANION_LIVE_ROUTE_NOT_REGISTERED_ACCEPTANCE",
+    "calls": [
+      {
+        "operation": "eventlog_select",
+        "seconds": 18.826470361091197,
+        "exit": 0,
+        "status": "partial",
+        "reasonCode": null,
+        "wireBytes": 1941,
+        "artifactId": "sha256:d22e95c3317acae51cb0a059333f2ea3917f3ce1bd291f7757556097ea2e52c7"
+      },
+      {
+        "operation": "eventlog_page",
+        "seconds": 0.9505528812296689,
+        "exit": 0,
+        "status": "partial",
+        "reasonCode": null,
+        "wireBytes": 2178,
+        "artifactId": "sha256:d22e95c3317acae51cb0a059333f2ea3917f3ce1bd291f7757556097ea2e52c7"
+      }
+    ]
+  },
+  "positiveQuery": {
+    "classification": "STAGED_EXACT_COMPANION_CURRENT_EXPORT_NOT_REGISTERED_OR_NEW_EVENT_ACCEPTANCE",
+    "calls": [
+      {
+        "operation": "eventlog_select",
+        "seconds": 17.04848193982616,
+        "exit": 0,
+        "status": "partial",
+        "reasonCode": null,
+        "wireBytes": 12476
+      },
+      {
+        "operation": "eventlog_page",
+        "seconds": 1.278299302328378,
+        "exit": 0,
+        "status": "partial",
+        "reasonCode": null,
+        "wireBytes": 11864
+      },
+      {
+        "operation": "eventlog_page",
+        "seconds": 1.2686471329070628,
+        "exit": 0,
+        "status": "partial",
+        "reasonCode": null,
+        "wireBytes": 11835
+      },
+      {
+        "operation": "eventlog_page",
+        "seconds": 1.0414730473421514,
+        "exit": 0,
+        "status": "partial",
+        "reasonCode": null,
+        "wireBytes": 12103
+      },
+      {
+        "operation": "eventlog_page",
+        "seconds": 1.0916816229000688,
+        "exit": 0,
+        "status": "partial",
+        "reasonCode": null,
+        "wireBytes": 11841
+      },
+      {
+        "operation": "eventlog_page",
+        "seconds": 1.1021773316897452,
+        "exit": 0,
+        "status": "partial",
+        "reasonCode": null,
+        "wireBytes": 11871
+      },
+      {
+        "operation": "eventlog_record",
+        "seconds": 1.1650376818142831,
+        "exit": 0,
+        "status": "partial",
+        "reasonCode": null,
+        "wireBytes": 2200
+      },
+      {
+        "operation": "eventlog_record",
+        "seconds": 1.1711277761496603,
+        "exit": 0,
+        "status": "partial",
+        "reasonCode": null,
+        "wireBytes": 2201
+      },
+      {
+        "operation": "eventlog_record",
+        "seconds": 1.1042181551456451,
+        "exit": 0,
+        "status": "partial",
+        "reasonCode": null,
+        "wireBytes": 2201
+      },
+      {
+        "operation": "eventlog_record",
+        "seconds": 0.9574635117314756,
+        "exit": 0,
+        "status": "partial",
+        "reasonCode": null,
+        "wireBytes": 2169
+      },
+      {
+        "operation": "eventlog_page",
+        "seconds": 0.7578429700806737,
+        "exit": 0,
+        "status": "partial",
+        "reasonCode": null,
+        "wireBytes": 2178
+      }
+    ],
+    "sourceRecordCount": 196,
+    "retainedRecords": 100,
+    "uniqueRecords": 100,
+    "commentCalls": 4,
+    "commentBytes": 55,
+    "commentFullyRead": true,
+    "oldSelectionByteStable": true,
+    "oldSelectionSha256": "0fb38c231f8aaf19e4598a0e3a6380adc1bc2aa3a89ddaf9373ecba912701595",
+    "secondQueryNewEvents": "NOT_TESTED_NO_AUTHENTICATED_SESSION",
+    "coverage": {
+      "complete": false,
+      "countReasonCode": "maximum_count_exceeded",
+      "partial": true,
+      "reasonCode": "maximum_count_exceeded",
+      "retainedCountComplete": false,
+      "temporalComplete": false,
+      "temporalReasonCode": "capture_consistency_unproven"
+    }
+  },
+  "captureReceipts": [
+    {
+      "status": "COMPLETED",
+      "durationSeconds": 0.6166271010879427,
+      "nativeBudgetReservedSeconds": 0,
+      "nativeInvocations": 1,
+      "controllerWallSeconds": 9.697739478200674,
+      "receiptSha256": "f1f333f513f65abb208b051f538fda886aaf8e9d92c8331160ccbd9b4599b110",
+      "sshExit": 0,
+      "outputBytes": 590087,
+      "outputSha256": "2a5d4995b67bb138f8dc3e42a3f7014946c6ac0cd477d3c6a490341541dcb5a3",
+      "sha": "6e82e2203f91dde91f9c59cc2e009a217aa5679cae2dd9e55b9f1a1b07dded88",
+      "exportUsed": 3,
+      "nativeSeconds": 7.9096305191051215
+    },
+    {
+      "status": "COMPLETED",
+      "durationSeconds": 0.5705703739076853,
+      "nativeBudgetReservedSeconds": 0,
+      "nativeInvocations": 1,
+      "controllerWallSeconds": 7.883994679898024,
+      "receiptSha256": "8945f26ff808a8857574b8ecf66312a4c0bf1658d4566b0dcc6fa2104eeaa873",
+      "sshExit": 0,
+      "outputBytes": 130666,
+      "outputSha256": "cfc0fcd66f4043b00ab6c5f30f3151c7c765cde7b7e098e66a66159c6a75df09",
+      "sha": "86d8fc3551e2c81ca841fa455633ca42f013221a0dc73b81547893d9943fc24d",
+      "exportUsed": 4,
+      "nativeSeconds": 8.480200893012807
+    }
+  ],
+  "canonicalLedger": {
+    "ledgerSha256": "86d8fc3551e2c81ca841fa455633ca42f013221a0dc73b81547893d9943fc24d",
+    "helpUsed": 2,
+    "exportUsed": 4,
+    "sessionUsed": 0,
+    "nativeSeconds": 8.480200893012807,
+    "active": 0
+  },
+  "focusedTests": {
+    "count": 50,
+    "seconds": 21.088,
+    "status": "PASS"
+  },
+  "pluginDoctor": {
+    "status": "PASS",
+    "registeredTools": 9
+  },
+  "demoAuth": {
+    "status": "NOT_AVAILABLE_IN_ADMITTED_SECRET_SOURCES",
+    "unauthenticatedHttpStatus": 401
+  },
+  "browserAutomation": {
+    "status": "UNAVAILABLE_CONNECTION_REFUSED"
+  },
+  "registeredCurrentEventlog": "NOT_RUN",
+  "newSessionCycles": 0,
+  "visibilityMeasurement": "NOT_RUN",
+  "maximumFullSelectionSeconds": 18.826470361091197,
+  "selection10SecondThreshold": "NOT_MET",
+  "newReviewCycles": 0,
+  "demoRestart": 0
+}
