@@ -248,10 +248,15 @@ class HermesDeploymentWrapperTests(unittest.TestCase):
                 "command = command.replace('/opt/one-c-harness/60fa41bc6dcb6a6a4de38b22d2830501b9abfeba', os.environ['TEST_REMOTE_SOURCE'])\n"
                 "command = command.replace('/workspace/1c-agent-harness/.local/issue80-companion/source', os.environ['TEST_REMOTE_SOURCE'])\n"
                 "command = command.replace('/srv/goal91-jet', os.environ['TEST_REMOTE_BUSINESS'])\n"
+                "command = command.replace('/etc/one-c-harness/goal91-runtime.json', os.environ['TEST_REMOTE_RUNTIME'])\n"
                 "raise SystemExit(subprocess.call(command, shell=True))\n"
             )
             env["TEST_REMOTE_SOURCE"] = str(source)
             env["TEST_REMOTE_BUSINESS"] = str(business)
+            # This route test must never discover a real executor's runtime.
+            # Its intended boundary is runner import plus unavailable-runtime
+            # precheck, independent of the machine running the test suite.
+            env["TEST_REMOTE_RUNTIME"] = str(root / "unavailable-runtime.json")
             env["ONE_C_HARNESS_PROJECT_CWD"] = "/srv/goal91-jet"
             # The reference supplies the child's import environment. The isolated
             # bootstrap must not rewrite it when loading the companion itself.
@@ -286,8 +291,8 @@ class HermesDeploymentWrapperTests(unittest.TestCase):
                 "oracle": "task/oracle.py", "receipt": ".local/receipt.json", "timeoutSeconds": 60,
             })
             self.assertEqual(rejected["reasonCode"], "snapshot_invalid")
-            # Exercise the actual runner subprocess import, without 1C. An
-            # incomplete fixture may block admission, but must reach the runner.
+            # Exercise the actual runner subprocess import, without 1C. The
+            # explicit unavailable runtime must block before platform launch.
             request = business / ".local/request.json"
             request.write_text('{}')
             oracle = business / ".local/oracle.py"

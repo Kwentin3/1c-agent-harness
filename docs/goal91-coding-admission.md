@@ -1,8 +1,94 @@
 # Goal91: coding admission после проверки транспорта
 
-Статус: **source preparation; NOT DEPLOYED / NATIVE NOT RUN**.
+Статус на 7 октября 2026: **COLD_FAILED / WINDOW_CLOSED / WEB_RESTORED**.
 
-## Актуальное уточнение: ожидания согласованы в source
+## Текущее исправление CF materializer
+
+Первый registered cold `one_c_open` установленного кандидата
+`7b5ad3b756d07a7331d941b9376d01211532db7f` вернул `materialization_failed`.
+Warm/narrow/verify не выполнялись. Окно закрыто досрочно, purpose key отозван;
+demo восстановлена с проверкой входа, Refresh и штатного выхода на
+<https://1c-demo.speechbattle.com/jetcontrol/ru/>.
+[Completion и сохранённая диагностика](https://github.com/Kwentin3/1c-agent-harness/issues/91#issuecomment-6031464734).
+
+В сохранённой диагностике `create.result` содержит BOM + `0`, native create.log
+сообщает успешный CREATEINFOBASE; load/dump diagnostics отсутствуют. Перед cleanup
+наблюдался Xvfb PID61, но его running/zombie state не снимался. Эти факты сами по
+себе не доказывают причину отказа и не являются успешным cold open.
+
+На установленном companion под UID10001 ошибка воспроизведена **без 1С**:
+настоящий процесс-обёртка записывает result0 и завершается, оставшийся дочерний
+процесс становится zombie; прежний materializer отклоняет шаг с
+`native materialization left a running process`. Все процессы репетиции собраны.
+Это доказанный дефект очистки, согласующийся с cold failure; исходное состояние
+PID61 не восстанавливается предположением. Linux
+[kill(2)](https://man7.org/linux/man-pages/man2/kill.2.html) допускает наличие zombie
+при проверке существования процесса; одного killpg недостаточно для его сбора.
+
+Исправление использует уже существующие `_prepare_process_ownership` и
+`_stop_process_group` из `native_cycle`, включая child subreaper, сбор отделившихся
+потомков и сохранение прежних дочерних процессов. Отдельный владелец lifecycle не
+добавляется. Ленивый package import исключает цикл с `require_runtime`.
+Отсутствие механизма ownership блокирует запуск до Popen. Result0, exit status,
+600s на batch, immutable CF и cleanup staging сохраняются.
+
+Кандидат plugin/companion:
+`sha256:415782d4419b82987e51f8539f0030cbcd3b3c5f3ae483541a1481bf25aa0ef9`.
+Это **source candidate**, не установленная identity и не native PASS. Установленный
+artifact первого cold остаётся
+`sha256:3d1bb0ac848bb49f15e0325d8f62eaa2ed05e2516db63ee96ceb6d051d616acc`.
+
+Воспроизводимая локальная проверка на Linux:
+
+```sh
+python -m unittest discover -s tests -p test_cf_materializer_processes.py -v
+python -m unittest discover -s tests -v
+```
+
+Четыре regression checks используют реальные процессы, без платформы 1С:
+успешный result0 с orphan, потомок с setsid, timeout, nonzero result.
+Процессы после каждого случая отсутствуют; timeout/nonzero остаются FAIL.
+Отдельная проверка из изолированной копии 24 файлов production package layout
+под UID10001 импортирует только предоставленный companion через штатный cwd;
+checkout/scripts и дополнительные зависимости не требуются.
+
+При полном unit-прогоне внутри reference оператор допустил ошибку изоляции:
+старый deployment-wrapper test рассчитывал на отсутствие runtime contract,
+обнаружил реальный runtime и получил `load_failed` вместо `precheck_failed`.
+Он достиг CREATE и неудачной загрузки своей синтетической конфигурации; полный
+фактический счёт platform launches не инструментирован. Это не fresh Hermes
+replay, не native acceptance и не zero-native подготовка. Процессов 1С/Xvfb после
+прогона нет, временный fixture удалён; demo web unit не перезапускался, три
+immutable input SHA256 прежние.
+[Публичная коррекция и проверка последствий](https://github.com/Kwentin3/1c-agent-harness/issues/91#issuecomment-6031716774).
+Fixture исправлен: тест явно подставляет отсутствующий task-owned runtime.
+Полный regression вне reference, без установленной платформы/runtime: Python3.12,
+356 tests PASS (57.864s), compile PASS, 19 committed JSON examples PASS.
+Исходные неуспешные результаты сохраняются отдельно и не объявляются PASS.
+
+Для переноса кандидата с Windows нужен Git archive с
+`git -c core.autocrlf=false -c tar.umask=0022 archive <exact-tree-or-commit>`;
+byte-bound patches/receipts нельзя нормализовать вручную. При подготовке архив
+проверяется по Git blob hash каждого файла и executable bit.
+
+Следующая live-приёмка — **новое** ограниченное окно для точного исправленного
+кандидата после source/CI и отдельного решения владельца. Закрытое окно с
+NO_RETRY не переиспользуется. План: согласованное обслуживание до120мин,
+backup/rollback пары, versioned companion + согласованные plugin/release/launcher,
+проверка registration и безопасных negative routes; затем свежий Hermes agent
+через registered tools выполняет cold≤3 → warm/narrow0 → verify≤3, всего≤6
+platform launches, без retry/продления. До каждого cold/verify — прежний независимый
+watchdog2100s и survivor check. После результата — revoke/exact stop, сохранить
+evidence, убрать только task-owned disposable ИБ, restore и вход/Refresh/Exit.
+CF/project-target/runtime/demo и retained diagnostics остаются прежними.
+
+## История подготовки до первого cold
+
+Разделы ниже сохраняют прежние evidence и допуски для трассировки. Их installed
+paths/status относятся к соответствующим старым проверкам и не являются новым
+разрешением на запуск или текущей deployed identity.
+
+### Ожидания согласованы в source
 
 Эта секция заменяет прежний блокер foreground600 и прежние значения adapter/shared
 ниже; исторические проверки сохранены для трассировки.
@@ -19,7 +105,7 @@
   Длительность ожидания не гарантирует cleanup: watchdog остаётся операторской
   предпосылкой. При timeout никакого retry или success по частичным данным.
 
-### Один следующий допуск, пока НЕ выдан
+### Исторический план первого допуска (окно уже закрыто)
 
 Владелец должен разрешить до120мин обслуживания, включая кратковременную
 недоступность demo и необходимый перезапуск Hermes для обновлённого Python plugin.
@@ -57,7 +143,7 @@ T0 назначается только после готовности обои�
 - [Cleanup](https://github.com/Kwentin3/1c-agent-harness/issues/91#issuecomment-6021973588): оператор отозвал purpose key и проверил отсутствие всех трёх task sessions; owner service остался со стартом15:13:40UTC. Доступ сейчас не активен; автоматического продления нет.
 - Ненулевой web-сценарий исключён владельцем из обязательной Goal91 и перенесён в #92. Основная цель — полный цикл на имеющейся учебной конфигурации.
 
-## Источники и установленная identity
+## Исторические источники и установленная identity
 
 Companion в reference:
 `/opt/one-c-harness/60fa41bc6dcb6a6a4de38b22d2830501b9abfeba`.

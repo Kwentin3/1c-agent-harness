@@ -5,7 +5,6 @@ import json
 import os
 from pathlib import Path
 import shutil
-import signal
 import stat
 import subprocess
 import sys
@@ -22,6 +21,7 @@ import managed_probe_prepare
 import native_cycle
 import target_admission
 from one_c_harness import project_target
+from one_c_harness import native_cycle as native_process_owner
 
 
 def digest(payload: bytes) -> str:
@@ -486,31 +486,17 @@ class ProjectTargetTests(unittest.TestCase):
                 )
             self.assertFalse(output.exists())
 
-    def test_cf_materializer_cleans_xvfb_process_group_after_successful_step(self) -> None:
+    def test_cf_materializer_blocks_before_launch_when_process_ownership_is_unavailable(self) -> None:
         with tempfile.TemporaryDirectory() as temporary:
             root = Path(temporary)
             result = root / "result"
             result.write_text("0", encoding="utf-8")
 
-            class FinishedProcess:
-                pid = 4321
-                returncode = 0
-
-                def communicate(self, timeout):
-                    return (b"", b"")
-
-            group_alive = True
-
-            def process_group(signal_number):
-                nonlocal group_alive
-                if signal_number == 0 and not group_alive:
-                    raise ProcessLookupError()
-                if signal_number == signal.SIGTERM:
-                    group_alive = False
-
-            with mock.patch.object(cf_materializer.subprocess, "Popen", return_value=FinishedProcess()), \
-                 mock.patch.object(cf_materializer.os, "killpg", side_effect=lambda _pid, signal_number: process_group(signal_number)):
-                cf_materializer._run_step(["native"], {}, result, runner=subprocess.run)
+            with mock.patch.object(native_process_owner, "_prepare_process_ownership", side_effect=RuntimeError("unavailable")), \
+                 mock.patch.object(cf_materializer.subprocess, "Popen") as launch:
+                with self.assertRaises(cf_materializer.MaterializerUnavailable):
+                    cf_materializer._run_step(["native"], {}, result, runner=subprocess.run)
+                launch.assert_not_called()
 
     def test_owned_cleanup_does_not_follow_symlink_to_external_sentinel(self) -> None:
         with tempfile.TemporaryDirectory() as temporary:

@@ -1,16 +1,32 @@
 # Goal #91 — source checkpoint, delivery HOLD
 
-Проверка 2026-10-06. **Работа начата; Goal не завершена.**
+Проверка 2026-10-07. **Работа начата; Goal не завершена.**
 Контракт: [#91](https://github.com/Kwentin3/1c-agent-harness/issues/91).
 Следующие направления: [#92](https://github.com/Kwentin3/1c-agent-harness/issues/92).
 
-## Текущий результат: owner web доставлен; coding access проверен и отозван
+## Текущий результат: cold failed; web восстановлен; source repair подготовлен
 
 [Следующий coding admission и точные оставшиеся gates](goal91-coding-admission.md).
 Постоянная web-доставка завершена оператором в #89; Hermes отдельно проверил401
-без credentials. Новый runtime transport/permissions/package/import подтверждены
-Hermes; временный ключ отозван по завершении окна. Installed launcher ещё не
-переключён, cold/native и fresh-agent приёмка не выполнены. Nonzero web-сценарий
+без credentials. Кандидат `7b5ad3b756d07a7331d941b9376d01211532db7f` был установлен
+с проверкой plugin/companion/launcher и обычного непривилегированного доступа.
+Первый registered cold `one_c_open` 7 октября вернул `materialization_failed`;
+warm/narrow/verify не выполнялись. Окно закрыто досрочно, purpose key отозван,
+demo восстановлена; вход/Refresh/штатный выход подтверждены на
+<https://1c-demo.speechbattle.com/jetcontrol/ru/>.
+[Cold failure, cleanup и evidence](https://github.com/Kwentin3/1c-agent-harness/issues/91#issuecomment-6031464734).
+
+Source repair устраняет воспроизведённый без 1С дефект сбора zombie/отделившихся
+потомков через существующий owner `native_cycle`; локально356 tests PASS.
+Plugin/companion artifact кандидата:
+`sha256:415782d4419b82987e51f8539f0030cbcd3b3c5f3ae483541a1481bf25aa0ef9`.
+Исправление пока не установлено, native acceptance Goal91 остаётся недоказанной.
+При прежнем полном unit-прогоне внутри reference оператор допустил ошибку
+изоляции: fixture обнаружил реальный runtime и дошёл до CREATE/load_failed.
+[Инцидент, отсутствие survivors и исправление fixture](https://github.com/Kwentin3/1c-agent-harness/issues/91#issuecomment-6031716774).
+Последующий полный regression выполнен вне reference без платформы/runtime.
+
+Nonzero web-сценарий
 перенесён владельцем в #92 и больше не блокирует Goal91. Canonical/installed
 три skill-пакета сверены побайтно, ценные installed дополнения сохранены в Git.
 Старые статусы ниже — история соответствующих проверок, не текущее состояние demo.
