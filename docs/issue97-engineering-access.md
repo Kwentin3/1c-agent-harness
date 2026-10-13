@@ -35,6 +35,26 @@ HOME=`.local/home`, TMPDIR=`.local/tmp`, TZ=`UTC`.
 Xvfb/libraries/fontconfig указаны в runtime config. Native работоспособность
 требует отдельного учтённого disposable smoke; наличие executable её не доказывает.
 
+После утраты tmpfs Hermes может восстановить только свои каталоги/config без
+оператора и native вызова:
+
+```sh
+ssh -F /data/hermes-home/credentials/ssh/engineering97/config -T engineering97 'python3 -I -B -' <<'PY'
+import json, pathlib
+p = pathlib.Path('.local')
+for name in ['home', 'tmp', 'cache/fontconfig', 'runs']:
+    (p / name).mkdir(parents=True, exist_ok=True)
+runtime = p.resolve() / 'platform'
+(p / 'one-c-runtime.json').write_text(json.dumps({
+    'schemaVersion': 1,
+    'platform': str(runtime / '1cv8t/x86_64/8.5.1.1150/1cv8t'),
+    'xvfb': str(runtime / 'libs/usr/bin/xvfb-run'),
+    'fontconfig': str(runtime / 'fonts.conf'),
+    'libs': str(runtime / 'libs/usr/lib/x86_64-linux-gnu'),
+}))
+PY
+```
+
 Физические ограничения: read-only root и bind mounts, network none, private PID/IPC,
 capabilities ALL dropped, no-new-privileges, CPU1, RAM1GiB, PIDs128.
 `.local/` — tmpfs512MiB/65536 inodes; `/tmp` — tmpfs128MiB/16384 inodes.
@@ -51,8 +71,8 @@ read-only. Manifest не означает наличие самого snapshot: 
 Маршрут #94 прежний:
 
 ```sh
-printf '%s' '{"schemaVersion":1,"operation":"probe"}' |
-  ssh -F /data/hermes-home/credentials/ssh/current-journal/config -T current-journal
+ssh -F /data/hermes-home/credentials/ssh/current-journal/config -T current-journal \
+  'current-journal-v1 eyJzY2hlbWFWZXJzaW9uIjoxLCJvcGVyYXRpb24iOiJwcm9iZSJ9'
 ```
 
 Причина regression: новый `20261011000000.lgp` принадлежит UID/GID33 и имеет0600;
@@ -63,8 +83,13 @@ hardlinks существующих файлов, без изменения ис�
 
 Текущая связь: fixed reference container → `/var/www/jetcontrol/default.vrd`
 → `File=/var/lib/1c/ib` → `1Cv8Log`; timezone UTC. Native exports не запускались.
-ТЖ: проверка актуальных search roots/config redirection продолжается;
-retained18сентября не является current demo source. Logging не включать.
+ТЖ: `conf/conf.cfg` содержит `ConfLocation=/opt/1cv8t/conf`, Apache envvars
+задаёт HOME=`/var/lib/1c/home`. В фактических `/opt/1cv8t/conf`,
+`/var/lib/1c/home`, platform conf, `/etc/1c` и стандартных home roots
+`logcfg.xml` не найден; current ТЖ source/coverage не установлен.
+Это подтверждённое отсутствие настройки в проверенных roots, а не утверждение
+об отсутствии любых событий. Retained18сентября не является current demo source.
+Logging не включать.
 
 ## Demo admission и учёт
 
@@ -75,7 +100,19 @@ Native Secrets: `ONE_C_DEMO_HTTP_USERNAME`, `ONE_C_DEMO_HTTP_PASSWORD`;
 Authenticated HEAD дал200, без запуска сессии 1С. Это не login/logout witness.
 
 Engineering namespace не имеет сети и не предоставляет current-demo login.
-Startup side effects и безопасная session capability пока не доказаны.
+Retained canonical snapshot находится в reference
+`/srv/goal91-jet/.local/targets/jettr-1.0.3.1/snapshot`; его manifest совпал с
+immutable pin выше. SessionModule вызывает `StandardSubsystemsServer.SessionParametersSetting`,
+тот — `BeforeStartApplication` (line3727). Этот путь включает
+`CorrectSharedUserHomePage` (line3906, `CommonSettingsStorage.Save`) и
+`HandleCopiedSettingsQueue` (line4039, `SystemSettingsStorage.Save`).
+ManagedApplicationModule вызывает BeforeStart/OnStart библиотеки;
+`DisableSystemStartupLogic` в клиенте не отменяет server session handler
+и требует прав Administration/DataAdministration (ServerCall line200).
+Состояние условий этих записей в живой ИБ без запуска не доказано;
+retained snapshot сам по себе не является свежим dump текущей конфигурации.
+Business-write-free startup, текущие занятые sessions и safe login/logout
+capability поэтому остаются NOT_PROVEN, продуктовые cycles NOT_RUN.
 Не запускать demo клиент ради проверки доступа, не вытеснять sessions,
 не менять logging/business/configuration или lifecycle demo.
 
@@ -95,6 +132,10 @@ binding, source или credentials. Tmpfs данные исчезнут при �
 Runtime/CF/heavy copies остаются дома. Постоянная новая allocation — source,
 XKB dependencies и directory metadata; runtime borrowed read-only/hardlinked.
 Подробные bytes/inodes и raw receipts — защищённые locators ниже.
+На HOME новая physical allocation: source8146944 bytes, operator/XKB4501504,
+bundle2052096; runtime directory с540 hardlinked файлами —0 новых file bytes
+(logical1297523968), плюс metadata новых каталогов. Свободно268515135488 bytes,
+18811490 inodes перед smoke. Никакие runtime/ИБ на Hermes не копировались.
 
 Оператор rotation: создать новый ключ в том же защищённом credential source,
 заменить только tagged `issue97-engineering` authorized_keys entry с прежними
@@ -117,7 +158,7 @@ Rollback #94: CAS вернуть сохранённые handler и только 
 - VRD SHA256: `e5406c8e7352b43c6499e2ff4fe189c9b239fe045eb0ac46de2960555850ac7d`.
 - CF SHA256: `5694f9e4bdf9a0857185118ba816d562d8ee8de2b8da3f60792397a399ca128a`.
 - Manifest SHA256: `70972b5e11901ca31c7f7ec67dca03f78986206b024be01aeb34e0e1f3ff6691`.
-- Protected HOME deployment receipt: `/home/roman/.local/issue97-engineering/operator/provision.json`.
+- Protected HOME deployment receipt: `/home/roman/.local/issue97-engineering/operator/provisioning.json`.
 - Protected operator receipts: worktree `1c-agent-harness-issue97/.local/`,
   `engineering-provisioned.json`, `engineering_refusals.receipt.json`,
   `journal-installed.json`, `route_probe.receipt.json`, `check_demo_secret.receipt.json`.
