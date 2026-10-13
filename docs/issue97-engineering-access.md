@@ -199,6 +199,16 @@ SSLSubsystemsIntegrationClient.BeforeStart включает условные Inf
 Штатный параметр БСП DisableSystemStartupLogic — кандидат только при уже
 имеющихся требуемых правах, а не доказанный безопасный вход. Не обходить
 проверку прав и не считать HTTP credentials данными пользователя ИБ.
+Штатный web-кандидат: `?C=DisableSystemStartupLogic&DisableHomePageForms`.
+[Primary 1C syntax](https://kb.1ci.com/1C_Enterprise_Platform/Guides/Administrator_Guides/1C_Enterprise_8.3.22_Administrator_Guide/Appendix_7._The_parameters_of_the_command_line_to_launch_1C_Enterprise/7.8._Webclient_command_line/?language=en)
+описывает передачу application parameter через C и отключение home forms.
+Он не исполнялся; CLIENT hooks подавляются, SERVER SessionModule остаётся.
+Не использовать обычный startup fallback, UC или privileged mode.
+UsersInternal.SetInitialSettings и пустой UsersOverridable.OnSetInitialSettings
+меняют только client/interface settings; IBVersion!=0.0.0.0 не является
+обязательным no-business-write gate. Остаётся доказать current compiled-config/
+extensions binding к проверенному retained source и безопасные server hooks;
+HEAD/VRD binding сами по себе этого не подтверждают.
 Владелец подтвердил: после HTTPauth сразу открывается demo, отдельной формы
 1С нет. Дополнительный IB password не требуется; это не доказательство
 административных прав или отключения startup updates.
