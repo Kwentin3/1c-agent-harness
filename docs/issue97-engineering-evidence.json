@@ -1,0 +1,400 @@
+{
+  "schemaVersion": 1,
+  "issue": 97,
+  "date": "2026-10-13",
+  "installedSourceCommit": "bd40827a7e95bba9d08ed03d430559aca089c953",
+  "operatorNativeInvocations": 0,
+  "operatorDemoSessionCycles": 0,
+  "operatorEvidence": {
+    "protectedHomeLocator": "/home/roman/.local/issue97-engineering/operator/operator-evidence.json",
+    "sha256": "b54c9699f08f00b7462f0ca9b13076d6aba11090d28a57c6523374907a5c9bc4",
+    "bytes": 39360,
+    "manifest": [
+      {
+        "name": "engineering-provisioned.json",
+        "bytes": 2438,
+        "sha256": "4f698c8fdd4485f1ef47066ec11be834d69b0fb4eb5d6a76aa1cc3f703db48be"
+      },
+      {
+        "name": "engineering_probe.receipt.json",
+        "bytes": 400,
+        "sha256": "9a3a0ec51d5b30bebb8ddd46dda9b14da713cb7633e262691e994c05457ea20a"
+      },
+      {
+        "name": "engineering_refusals.receipt.json",
+        "bytes": 1397,
+        "sha256": "e8ad368ff8ccd0efce5e6c59aff6271e52354188a30027f1df7e74e13f4e9a1c"
+      },
+      {
+        "name": "journal-rehearsal.json",
+        "bytes": 1191,
+        "sha256": "a6f95e10c2d38c32aaab63f0f40752d956873c475bf8994ec891528c7a1eae4e"
+      },
+      {
+        "name": "journal-installed.json",
+        "bytes": 1577,
+        "sha256": "099f1bb2d5aa21b907d80de7d58caf503cba79aadab0afbffa1125a5efe4c3b8"
+      },
+      {
+        "name": "route_probe.receipt.json",
+        "bytes": 2140,
+        "sha256": "653a02c17a9c0c781773465b81a6feb4ac6e24958e95f57210c6e24eac7b14de"
+      },
+      {
+        "name": "check_demo_secret.receipt.json",
+        "bytes": 249,
+        "sha256": "2c894a86cd0c012aad069d1ca06756c0106f6924067b0913e18e4fda01ab9580"
+      },
+      {
+        "name": "actual_demo_policy.receipt.json",
+        "bytes": 7287,
+        "sha256": "07489c2a68a5cc77803cd7b5493e4c031c8a8a239753c86f0d1bc1befa6a6a63"
+      },
+      {
+        "name": "current_source_discovery.receipt.json",
+        "bytes": 2045,
+        "sha256": "fc6ffb6df8cff837975f236f575ab7655351009d36ccd3fd213815069bea3890"
+      },
+      {
+        "name": "allocation.receipt.json",
+        "bytes": 1916,
+        "sha256": "b7ece390a8d42d91a60b9cce9cd77f0e72eb53a4c57861439982897862763d86"
+      },
+      {
+        "name": "budget_read.receipt.json",
+        "bytes": 5178,
+        "sha256": "109d266cb6c9fa66fc30ad105650c15d8bee04b9062db10b6a4ffcb5609e877e"
+      }
+    ]
+  },
+  "engineering": {
+    "containerId": "1f3565421de9c18af24408e6a04db29297ba7c3dd61810ec8f6806fa77ffd5ba",
+    "image": "sha256:036a932ca78ec1f161b83fc3d26d663d950a8e845002c160771950ec72ce6488",
+    "handlerSha256": "141d35b42acca75de0553328fde3d859a4f792577a3abef75a380fcefd9cec68",
+    "uid": 10001,
+    "gid": 10001,
+    "operatorProbeExit": 0,
+    "refusalTransportExit": 0
+  },
+  "currentJournal": {
+    "probeStatus": "ACCESS_PROBE_PASS",
+    "probeExit": 0,
+    "uid": 33,
+    "gid": 33,
+    "files": 4,
+    "nativeInvocations": 0,
+    "probeStdoutSha256": "c8311af767e5d258f6f03be5d0e3c94e79d49d85828fd987521f89b627cbae1a"
+  },
+  "demoHttp": {
+    "status": 200,
+    "contentType": "text/html;charset=UTF-8"
+  },
+  "techlog": {
+    "configuredRoots": [
+      "/opt/1cv8t/conf",
+      "/var/lib/1c/home"
+    ],
+    "logcfgFilesFound": 0,
+    "currentCoverage": "NOT_ESTABLISHED"
+  },
+  "allocation": [
+    {
+      "path": "/home/roman/.local/issue97-engineering/source",
+      "files": 554,
+      "logicalBytes": 6784112,
+      "referencedAllocatedBytes": 8146944,
+      "newFileBytes": 8146944,
+      "symlinks": 0
+    },
+    {
+      "path": "/home/roman/.local/issue97-engineering/operator",
+      "files": 298,
+      "logicalBytes": 3815269,
+      "referencedAllocatedBytes": 4501504,
+      "newFileBytes": 4501504,
+      "symlinks": 0
+    },
+    {
+      "path": "/home/roman/.local/issue97-engineering/source.bundle",
+      "files": 1,
+      "logicalBytes": 2050260,
+      "referencedAllocatedBytes": 2052096,
+      "newFileBytes": 2052096,
+      "symlinks": 0
+    },
+    {
+      "path": "/home/roman/.local/issue97-current-journal-runtime",
+      "files": 540,
+      "logicalBytes": 1297523968,
+      "referencedAllocatedBytes": 1247125504,
+      "newFileBytes": 0,
+      "symlinks": 11
+    }
+  ],
+  "reference": {
+    "id": "d2f38aa86d7bc461712df72fc22d5eb924324cbf5f386ca44a458024fd24970c",
+    "image": "sha256:69f919497cada9a8611f3de61df902d9f94bf20f84552ef5bd93125c38608ef9",
+    "pid": 2763670,
+    "startedAt": "2026-10-07T06:33:35.714659532Z",
+    "restartPolicy": {
+      "Name": "no",
+      "MaximumRetryCount": 0
+    },
+    "running": true
+  },
+  "acceptanceStatus": "PARTIAL_CURRENT_DEMO_SESSION_CAPABILITY_NOT_PROVEN",
+  "remainingCapabilityGap": "current-demo safe startup and session admission NOT_PROVEN; engineering network none does not offer demo client",
+  "nativeSmoke": {
+    "n": 7,
+    "kind": "engineering-runtime-smoke",
+    "attemptId": "f700b97233d847dc8fd03e1f47b2c3bb",
+    "operation": "CREATEINFOBASE",
+    "issue": 97,
+    "status": "COMPLETED",
+    "nativeBudgetReservedSeconds": 0,
+    "durationSeconds": 5.590007265098393,
+    "startedAtUnix": 1791875442.092627,
+    "binarySha256": "0d11379cfd37c029a472fa500cbd8a64050cc5e53f7904036f8f6ce6a7fe0574",
+    "runtimeConfigSha256": "2086e1fddf1e6590048a596d3871c7ea9a4f9037ac0f92f25f7664739187969c",
+    "sourceCommit": "bd40827a7e95bba9d08ed03d430559aca089c953",
+    "planSha256": "4bc76b5dbb18681a5977af0886730144d404ccda1ecd058dbdbef388bf8e1f15",
+    "ownedRoot": "/workspace/1c-agent-harness/.local/runs/hermes97-empty-smoke-f700b97233d847dc8fd03e1f47b2c3bb",
+    "argv": [
+      "/workspace/1c-agent-harness/.local/platform/libs/usr/bin/xvfb-run",
+      "-a",
+      "-s",
+      "-screen 0 1280x1024x8 -nolisten tcp",
+      "/workspace/1c-agent-harness/.local/platform/1cv8t/x86_64/8.5.1.1150/1cv8t",
+      "CREATEINFOBASE",
+      "File=/workspace/1c-agent-harness/.local/runs/hermes97-empty-smoke-f700b97233d847dc8fd03e1f47b2c3bb/ib",
+      "/DisableStartupDialogs",
+      "/DisableStartupMessages",
+      "/Out",
+      "/workspace/1c-agent-harness/.local/runs/hermes97-empty-smoke-f700b97233d847dc8fd03e1f47b2c3bb/logs/create.log",
+      "/DumpResult",
+      "/workspace/1c-agent-harness/.local/runs/hermes97-empty-smoke-f700b97233d847dc8fd03e1f47b2c3bb/logs/create.result"
+    ],
+    "subprocessTimeoutSeconds": 25,
+    "nativeCeilingSeconds": 30,
+    "authority": "current owner authorisation #97 one empty disposable IB; no help/export/session",
+    "originalContractSha256": "325fbdc242d96de33774474408ce1482cb83806ab543ad398a1a7e751461fd8f",
+    "nativeInvocations": 1,
+    "receiptSha256": "27b96d6c42de717bb66f53edd3a240a37898fec2a08943f048620329640ddc83",
+    "sshExit": 0,
+    "controllerWallSeconds": 11.814282320003258,
+    "processReturn": 0,
+    "dumpResult": "0",
+    "actualIBBytes": 3203072,
+    "actualIBSha256": "e1559782df4ba4d6920cac632d0cff8e406c2e9b89eff7e06c563fa6a5ab7516",
+    "createLogSha256": "81844cd459524c12c9dd68f9ae6b6c9b8fd51208db74fc914256a2444113f009",
+    "createResultSha256": "e45825471ed10290785b62676dc5f453d228a1e1d933c45a733e9bb239c9e083",
+    "cleanup": {
+      "groupAbsent": true,
+      "leaderReaped": true,
+      "ownedChildrenRemaining": [],
+      "ownedRootAbsent": true
+    },
+    "protectedHashesUnchanged": true,
+    "nativeSecondsCeilingMet": true
+  },
+  "finalLedger": {
+    "sha256": "39de965f749fea23beb99611d4a1a7f7f04cb929b0b42d837ca553ae0c767669",
+    "nativeSeconds": 14.0702081581112,
+    "STARTED": 0,
+    "help": 2,
+    "exports": 4,
+    "session": 0
+  },
+  "startupEvidence": {
+    "protectedHomeLocator": "/home/roman/.local/issue97-engineering/operator/startup-effects.json",
+    "sha256": "649fd41bf23724c3bee1c79d853ae597fc383504d1c71c26f8a6164b2636726b"
+  },
+  "operatorCleanup": {
+    "operatorEnvironmentWorkCompletedAt": "2026-10-13T07:14:11.207217+00:00",
+    "removedOwnBundle": "/home/roman/.local/issue97-engineering/source.bundle",
+    "bundleSha256": "6e4fca909d6535bce04f1a89fb30a4913c8bd2c215a2058db8197081305ae9a4",
+    "hashVerifiedRetainedLocalCopy": ".local/source.bundle in issue97 operator worktree",
+    "releasedAllocatedBytes": 2052096,
+    "engineeringId": "1f3565421de9c18af24408e6a04db29297ba7c3dd61810ec8f6806fa77ffd5ba",
+    "engineeringProcesses": "PID                 UID                 COMMAND\n3350385             10001               sleep\n",
+    "temporaryWorkersRemaining": [],
+    "retainedReceipts": [
+      {
+        "path": "/home/roman/.local/issue97-engineering/operator/operator-evidence.json",
+        "sha256": "b54c9699f08f00b7462f0ca9b13076d6aba11090d28a57c6523374907a5c9bc4"
+      },
+      {
+        "path": "/home/roman/.local/issue97-engineering/operator/startup-effects.json",
+        "sha256": "649fd41bf23724c3bee1c79d853ae597fc383504d1c71c26f8a6164b2636726b"
+      },
+      {
+        "path": "/home/roman/.local/issue97-engineering/operator/provisioning.json",
+        "sha256": "c19fa80abe2a8888cc5205ca5191f9bed3d03e2881058e206c1be4641318f096"
+      }
+    ],
+    "demoLifecycleActions": 0,
+    "nativeInvocations": 0,
+    "ordinaryPostCleanupWitnessRequired": true
+  },
+  "initialHermesAcceptance": {
+    "protectedVpsLocator": "/workspace/1c-harnest/.local/issue97-hermes-intake-20261013T064825Z/acceptance.json",
+    "sha256": "83bf5b4eecda9784abea3ad94dfda1f97d964c5b00fc0daf20bb7c6d45752db7",
+    "nativeInvocations": 0
+  },
+  "postCleanupHermesAcceptance": {
+    "protectedVpsLocator": "/workspace/1c-harnest/.local/issue97-hermes-intake-20261013T064825Z/post-cleanup-acceptance.json",
+    "sha256": "679bb2004fe46cda1640dfaa63f0e9eb761be233e02abd241ae7f53e277f1014",
+    "verdict": "PARTIAL / ORDINARY_ENGINEERING_RUNTIME_AND_POST_CLEANUP_ACCEPTED",
+    "postOperatorCleanup": {
+      "allSSHStartedAfterCutoff": true,
+      "hostCleanupMechanics": "operator/user attested, not independently fetched",
+      "hostReceiptLocator": "/home/roman/.local/issue97-engineering/operator/cleanup.json",
+      "operatorReportedAt": "2026-10-13T07:14:11.207217+00:00"
+    },
+    "evidenceChecks": {
+      "post-canary": {
+        "durationSeconds": 6.003829073000816,
+        "requestSha256": "ef09b1f1ab7fab516d9d7e7c281b8eee0326b5d284c1b240f0383698c09ad16b",
+        "route": "engineering",
+        "sshExit": 0,
+        "startedAt": "2026-10-13T07:17:58.325723+00:00",
+        "stderrBytes": 0,
+        "stderrSha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+        "stdoutBytes": 3630,
+        "stdoutSha256": "84afd7002be0379eb5d157a63d936110e776dacd8552cfa8b5240335cee1d52d"
+      },
+      "post-diagnostics": {
+        "durationSeconds": 3.439326161009376,
+        "requestSha256": "145c819c77e476fa2bb051d755d923e0596b140a4430b12c1b12948fa5e44bb1",
+        "route": "diagnostics",
+        "sshExit": 0,
+        "startedAt": "2026-10-13T07:18:23.749521+00:00",
+        "stderrBytes": 0,
+        "stderrSha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+        "stdoutBytes": 2139,
+        "stdoutSha256": "82c1c59750b4993fc7f268b4fe60346caeb8ee625a0397d242a35275d37a5a29"
+      },
+      "post-identity": {
+        "durationSeconds": 5.717898404007428,
+        "requestSha256": "c2cf2f699243d5d39cc630b402c210f3d8e63cd381fed840c921fa2c3e269be7",
+        "route": "engineering",
+        "sshExit": 0,
+        "startedAt": "2026-10-13T07:18:04.794850+00:00",
+        "stderrBytes": 0,
+        "stderrSha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+        "stdoutBytes": 8418,
+        "stdoutSha256": "91fe5f9390c616e75f1699fde8049c49fc4521562ca7aad0cb0f421b16a7028e"
+      },
+      "post-journal-probe": {
+        "durationSeconds": 5.793227318004938,
+        "requestSha256": "a3a789a05c73d15654529988d4405dbf061efd37ee4d63891d5047490e1cabd8",
+        "route": "journal",
+        "sshExit": 0,
+        "startedAt": "2026-10-13T07:18:11.312108+00:00",
+        "stderrBytes": 0,
+        "stderrSha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+        "stdoutBytes": 1903,
+        "stdoutSha256": "03ef5afe1e5f7a501db1dd468d5dec3357d381777975e8c41fac2ffa51bd02c2"
+      },
+      "post-journal-refusal": {
+        "durationSeconds": 5.372881400006008,
+        "requestSha256": "1edf48b5696c41c35ff28544699250e9c58df4caba361451a2a97687bdc96025",
+        "route": "journal",
+        "sshExit": 2,
+        "startedAt": "2026-10-13T07:18:17.575429+00:00",
+        "stderrBytes": 99,
+        "stderrSha256": "4bf441ab4b700d3c016aced67d0e3d8a71a851f0f76f31f57ef136fad615ceed",
+        "stdoutBytes": 0,
+        "stdoutSha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+      },
+      "post-ledger": {
+        "durationSeconds": 3.0019427760125836,
+        "requestSha256": "acd6aba1322b10ab99e19d988cab6f3c68b2b7501ec20b475248ab5aea94d39e",
+        "route": "diagnostics",
+        "sshExit": 0,
+        "startedAt": "2026-10-13T07:18:27.603067+00:00",
+        "stderrBytes": 0,
+        "stderrSha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+        "stdoutBytes": 854,
+        "stdoutSha256": "40eb09bd6029e94fd9bf5d681fd5fd0777c1ef192c540b2b6061e4359f873abb"
+      }
+    },
+    "freshOwnCanary": {
+      "allocationBytes": 8192,
+      "canaryBytes": 32,
+      "codeSha256": "3078c340d8544e00252fecf9f5f6f5b7cccbd8401b2a390ce9bd55ffb8f9ec10",
+      "createdAndExecuted": true,
+      "exitCode": -15,
+      "inodes": 3,
+      "pid": 107,
+      "procAbsent": true,
+      "procStartTicks": "187683546",
+      "reaped": true,
+      "remainingOutputBytes": 0,
+      "taskPath": "/workspace/1c-agent-harness/.local/hermes-canary-beace30965544513ba329aa90629443a"
+    },
+    "safeRefusals": {
+      "setuid0": {
+        "after": 10001,
+        "before": 10001,
+        "denied": true,
+        "errno": 1
+      },
+      "tmpfsMount": {
+        "denied": true,
+        "errno": 1,
+        "filesystem": "tmpfs",
+        "rc": -1,
+        "target": "task-owned empty mountpoint"
+      },
+      "writeOpen": {
+        "CF": {
+          "denied": true,
+          "errno": 13,
+          "flags": "O_WRONLY|O_NOFOLLOW; no create/truncate/write",
+          "writes": 0
+        },
+        "foreign_sentinel": {
+          "denied": true,
+          "errno": 30,
+          "flags": "O_WRONLY|O_NOFOLLOW; no create/truncate/write",
+          "writes": 0
+        },
+        "manifest": {
+          "denied": true,
+          "errno": 13,
+          "flags": "O_WRONLY|O_NOFOLLOW; no create/truncate/write",
+          "writes": 0
+        },
+        "runtime": {
+          "denied": true,
+          "errno": 30,
+          "flags": "O_WRONLY|O_NOFOLLOW; no create/truncate/write",
+          "writes": 0
+        },
+        "source": {
+          "denied": true,
+          "errno": 13,
+          "flags": "O_WRONLY|O_NOFOLLOW; no create/truncate/write",
+          "writes": 0
+        }
+      }
+    },
+    "sameInitialRouteAliasAndConfigPath": true,
+    "immutableHashesMatchInitial": true,
+    "postPhaseInvocations": {
+      "demoSession": 0,
+      "deployment": 0,
+      "export": 0,
+      "help": 0,
+      "native": 0,
+      "restart": 0,
+      "review": 0,
+      "subagents": 0
+    }
+  },
+  "finalHermesAcceptance": {
+    "protectedVpsLocator": "/workspace/1c-harnest/.local/issue97-hermes-intake-20261013T064825Z/acceptance-final.json",
+    "sha256": "6c3c1d22740eadaa6d1cbde61564b0a87177f939fa36bae5448540efc14e26a3"
+  }
+}

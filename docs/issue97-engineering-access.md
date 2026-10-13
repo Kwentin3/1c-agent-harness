@@ -29,11 +29,15 @@ ssh -F /data/hermes-home/credentials/ssh/engineering97/config -T engineering97 '
 
 stdin доступен собственным программам; команда исполняется `/bin/bash -c`
 в `/workspace/1c-agent-harness`. Source read-only; работа — только `.local/`.
+Для Git в root-owned read-only checkout использовать только per-command
+`git -c safe.directory=/workspace/1c-agent-harness ...`, без global config.
 Native config: `ONE_C_HARNESS_RUNTIME_CONFIG=/workspace/1c-agent-harness/.local/one-c-runtime.json`.
 HOME=`.local/home`, TMPDIR=`.local/tmp`, TZ=`UTC`.
 Платформа: `.local/platform/1cv8t/x86_64/8.5.1.1150/1cv8t`, учебная 8.5.1.1150.
-Xvfb/libraries/fontconfig указаны в runtime config. Native работоспособность
-требует отдельного учтённого disposable smoke; наличие executable её не доказывает.
+Xvfb/libraries/fontconfig указаны в runtime config. Hermes подтвердил native
+работоспособность одним учтённым CREATEINFOBASE: process0, DumpResult0,
+штатный success log и созданная пустая1CD3203072 bytes. CF load/business
+runtime этим smoke не проверялись.
 
 После утраты tmpfs Hermes может восстановить только свои каталоги/config без
 оператора и native вызова:
@@ -123,6 +127,17 @@ native8.480200893012807/900s, STARTED0. До любого связанного n
 не более30s с предварительным учётом в существующем ledger, без help/export/demo.
 Оператор продуктовые циклы не расходует.
 
+Hermes выполнил ровно один такой smoke лично: attempt
+`f700b97233d847dc8fd03e1f47b2c3bb`, настоящая STARTED/reservation30s под
+существующим LOCK_EX; terminal COMPLETED,5.590007265098393s включая cleanup.
+Canonical ledger теперь help2, exports4, session0, native14.0702081581112/900s,
+STARTED0, SHA256 `39de965f749fea23beb99611d4a1a7f7f04cb929b0b42d837ca553ae0c767669`.
+Original contract SHA256 `325fbdc242d96de33774474408ce1482cb83806ab543ad398a1a7e751461fd8f`
+не изменён. Runtime smoke записан отдельным kind `engineering-runtime-smoke`;
+не export/session/help. Owned IB/process group/children удалены, защищённые
+source/CF/manifest/sentinel hashes неизменны. Runtime receipt stdout SHA256
+`27b96d6c42de717bb66f53edd3a240a37898fec2a08943f048620329640ddc83`.
+
 ## Durability, retention и отзыв
 
 Container `1c-engineering-issue97` имеет restart policy unless-stopped;
@@ -136,6 +151,11 @@ XKB dependencies и directory metadata; runtime borrowed read-only/hardlinked.
 bundle2052096; runtime directory с540 hardlinked файлами —0 новых file bytes
 (logical1297523968), плюс metadata новых каталогов. Свободно268515135488 bytes,
 18811490 inodes перед smoke. Никакие runtime/ИБ на Hermes не копировались.
+Bundle удалён после SHA-verified retention в operator worktree, освобождено
+2052096 allocated bytes. Environment work завершена2026-10-13T07:14:11.207217Z;
+`operator/cleanup.json` подтверждает retained route и отсутствие helper workers,
+engineering namespace содержит только PID1 sleep. Receipts/source/XKB/rollback
+retained без TTL; компактные raw evidence имеют0600 в защищённом operator root.
 
 Оператор rotation: создать новый ключ в том же защищённом credential source,
 заменить только tagged `issue97-engineering` authorized_keys entry с прежними
@@ -166,5 +186,19 @@ Rollback #94: CAS вернуть сохранённые handler и только 
 Operator boundary check: own code/process/cleanup PASS; source/CF/manifest/runtime/
 foreign sentinel writes denied with hashes unchanged; setuid0/mount denied;
 foreign process absent from namespace; no demo/socket visible. #94 probe PASS,
-four journal files, native0. Unit current-journal7 PASS. Ordinary Hermes acceptance,
-native smoke и повтор после cleanup ещё требуются; статус PARTIAL.
+four journal files, native0. Unit current-journal7 и engineering5 PASS.
+Hermes лично повторил own-code/process/cleanup, namespace/refusals, current ЖР
+и прежний diagnostics/registered retained ТЖ: PASS. Защищённый receipt:
+`/workspace/1c-harnest/.local/issue97-hermes-intake-20261013T064825Z/acceptance.json`,
+SHA256 `83bf5b4eecda9784abea3ad94dfda1f97d964c5b00fc0daf20bb7c6d45752db7`.
+[Sanitised operator evidence](issue97-engineering-evidence.json) связывает
+raw locators/hashes с реальными checks. Native smoke PASS. После operator cleanup
+Hermes лично повторил fresh own code/process/cleanup, refusals, ЖР и старые
+diagnostics/registered retained ТЖ через те же config/aliases: PASS, native0.
+Повторные SSH witnesses начаты2026-10-13T07:17:58Z, после cleanup07:14:11Z.
+Post-cleanup protected receipt:
+`/workspace/1c-harnest/.local/issue97-hermes-intake-20261013T064825Z/post-cleanup-acceptance.json`,
+SHA256 `679bb2004fe46cda1640dfaa63f0e9eb761be233e02abd241ae7f53e277f1014`.
+Статус **PARTIAL / ORDINARY_ENGINEERING_RUNTIME_AND_POST_CLEANUP_ACCEPTED**:
+остаётся current-demo safe-session capability gap. Два продуктовых login/logout
+и fresh-event acceptance #90 не запускались; source candidate не merged/released.
