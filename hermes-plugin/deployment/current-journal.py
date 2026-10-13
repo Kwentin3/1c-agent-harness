@@ -38,7 +38,9 @@ request=json.load(sys.stdin)
 journal=pathlib.Path('/source/journal')
 binary=pathlib.Path('/opt/admitted-ibcmd/ibcmd')
 expected='62e72e15bb4550c4ffcf421f962c27fd1e1ddde1ba31e5bc0d7c9e0c2352dde7'
-assert os.getuid()==10001 and os.getgid()==33
+# Rotated journal segments may be owner-only (0600). Use the source owner
+# inside the isolated read-only worker; group readability is not guaranteed.
+assert os.getuid()==33 and os.getgid()==33
 assert hashlib.sha256(binary.read_bytes()).hexdigest()==expected
 mounts=pathlib.Path('/proc/mounts').read_text().splitlines()
 for mount in ['/','/source/journal','/opt/admitted-ibcmd']:
@@ -108,9 +110,9 @@ def docker_args(merged, name):
     source = f'{merged}/var/lib/1c/ib/1Cv8Log'
     return ['/usr/bin/docker', 'run', '-i', '--rm', '--pull', 'never', '--name', name,
             '--label', 'one-c-access=issue94', '--network', 'none', '--read-only',
-            '--user', '10001:33', '--cap-drop', 'ALL', '--security-opt', 'no-new-privileges',
+            '--user', '33:33', '--cap-drop', 'ALL', '--security-opt', 'no-new-privileges',
             '--pids-limit', '128', '--memory', '256m', '--cpus', '1', '--log-driver', 'none',
-            '--tmpfs', '/work:rw,noexec,nosuid,nodev,size=33554432,uid=10001,gid=33,mode=0700',
+            '--tmpfs', '/work:rw,noexec,nosuid,nodev,size=33554432,uid=33,gid=33,mode=0700',
             '--mount', f'type=bind,src={source},dst=/source/journal,readonly,bind-recursive=disabled',
             '--mount', f'type=bind,src={RUNTIME_HOST},dst={RUNTIME_TARGET},readonly,bind-recursive=disabled',
             '--env', 'TZ=UTC', '--env', 'HOME=/work/home', '--env', 'TMPDIR=/work/tmp',
