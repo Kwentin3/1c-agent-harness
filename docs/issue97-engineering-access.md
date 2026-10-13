@@ -313,3 +313,51 @@ source-admission-v2.md SHA256 `53fcab69e032ad468ed3a8345900b4254e7ca41f7983ed741
 Полный #97 PARTIAL: current compiled configuration/active extensions binding
 к проверенному retained source ещё NOT_PROVEN. Дополнительный IB password
 не требуется; два предусмотренных #90 cycles остаются0/2.
+
+## Проверка чтения конфигурации, 13 октября
+
+После browser acceptance оператор согласовал с consumer #90 bounded native
+репетицию на disposable копиях **retained**, не текущей ИБ. Проверенный оригинал:
+`refine87-reference/operator/reference-ib/1Cv8.1CD`, 118210560 bytes, SHA256
+`b060127640773fda03a8c2bef5e9847d35f0b159bb116e043ce1e2ba84b9ac42`.
+Использован существующий ibcmd8.5.1.1150, SHA256
+`62e72e15bb4550c4ffcf421f962c27fd1e1ddde1ba31e5bc0d7c9e0c2352dde7`.
+Каждая попытка отдельно зарезервирована как export в canonical ledger;
+лимит30s, учтено время контейнера и cleanup, включая ошибки.
+
+| Проверка | Результат | Учтено, s | Protected receipt SHA256 |
+| --- | --- | ---: | --- |
+| extension list без отдельного `/tmp` | exit255: невозможен IPC в read-only root | 1.6048002920579165 | `971861ffc0edbbd8ebbd57a2f03f9e522dce6e8c03a1c083391154594a5c58c8` |
+| config save --db, writable disposable ИБ и tmpfs `/tmp` | exit0, CF18500297 bytes; хеш ИБ неизменён | 8.382368819089606 | `5c6ddacdb7f2abe4e87d099f825fe17764172366b28ce8671ea531c2e47fcc4a` |
+| та же config save --db, файл ИБ mounted RO, locks/state/IPC в tmpfs | exit255: `Database file access error` | 1.8925854018889368 | `92f07a972d88084aac98c708efc24c7114d7d0115a7f756271766835b1875364` |
+
+Receipts на HOME: `/home/roman/.local/issue97-config-rehearsal/<attemptId>/receipt.json`.
+Attempt IDs соответственно `4ec4c4c4a0c54822b785ccefe8823f02`,
+`c29d70208c464225a473fce935b1de53`, `efe759574735496a87487575981c5ce4`.
+Команда успешной репетиции внутри отдельного worker:
+`/opt/ibcmd/ibcmd infobase config save /work/current.cf --db --db-path=/work/ib --data=/work/state`.
+Это **не команда для запуска против demo**. Успех writable disposable не доказывает
+безопасность конкурентного открытия живой ИБ. RO-пробе предшествовала non-native
+проверка mount flag `ro`, отказа открытия на запись и доступности своих lock-файлов.
+Первый preflight ошибочно ожидал только EROFS вместо допустимого EACCES; исправлен
+до native reservation, исходный отказ сохранён. После общего RO-отказа второй
+native вызов не выполнялся. Список расширений остаётся непроверенным.
+
+Все три попытки сохранили исходный и disposable 1CD SHA256. Temporary workers,
+копии и CF удалены; компактные receipts сохранены в защищённых каталогах.
+CF SHA256 `c30267b4b9737a8165eb84b56c65cfb494d7b67dda8912ef670304af78968255`
+не совпадает с исходным CF; это само по себе не доказывает изменение кода:
+семантическое сравнение выгрузок не выполнено.
+
+**Текущий ledger:** help2/3, exports7/12, session0/2,
+native25.94996267114766/900s, STARTED0/reserved0; SHA256
+`095d195ca4d5ebb8161a47f023902c334500502279ffa57625139774a87a7342`.
+Предыдущие значения выше относятся к завершённой browser/engineering приёмке.
+Operator native3 — только retained rehearsal; current-demo native/session0.
+
+Общий результат **PARTIAL**: безопасное чтение текущей конфигурации ещё не обеспечено.
+Рассмотренный следующий вариант — согласованное окно обслуживания через существующий
+`1c-jet-demo.service`, штатное завершение без принудительного вытеснения sessions,
+консистентная копия на HOME и немедленное восстановление публикации; исследование
+проводится на копии. Этот вариант требует отдельного решения владельца, поскольку
+#97 прямо запрещает stop/restart demo. **Не выполнен и пока не разрешён.**

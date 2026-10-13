@@ -3,7 +3,7 @@
   "issue": 97,
   "date": "2026-10-13",
   "installedSourceCommit": "bd40827a7e95bba9d08ed03d430559aca089c953",
-  "operatorNativeInvocations": 0,
+  "operatorNativeInvocations": 3,
   "operatorDemoSessionCycles": 0,
   "operatorEvidence": {
     "protectedHomeLocator": "/home/roman/.local/issue97-engineering/operator/operator-evidence.json",
@@ -198,11 +198,11 @@
     "nativeSecondsCeilingMet": true
   },
   "finalLedger": {
-    "sha256": "39de965f749fea23beb99611d4a1a7f7f04cb929b0b42d837ca553ae0c767669",
-    "nativeSeconds": 14.0702081581112,
+    "sha256": "095d195ca4d5ebb8161a47f023902c334500502279ffa57625139774a87a7342",
+    "nativeSeconds": 25.94996267114766,
     "STARTED": 0,
     "help": 2,
-    "exports": 4,
+    "exports": 7,
     "session": 0
   },
   "startupEvidence": {
