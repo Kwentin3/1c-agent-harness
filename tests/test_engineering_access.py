@@ -94,6 +94,7 @@ class EngineeringAccessTests(unittest.TestCase):
         browser = copy.deepcopy(ADMITTED)
         browser['Config']['Labels']['one-c-access'] = 'issue97-browser'
         browser['HostConfig']['NetworkMode'] = 'bridge'
+        browser['HostConfig']['Init'] = True
         environment, inspect, run = self.invoke(browser)
         with environment, inspect, run as execution:
             self.assertEqual(ACCESS.main(), 7)
@@ -106,6 +107,9 @@ class EngineeringAccessTests(unittest.TestCase):
         engineering = copy.deepcopy(ADMITTED)
         engineering['HostConfig']['NetworkMode'] = 'bridge'
         self.reject_binding(engineering)
+        browser['HostConfig']['NetworkMode'] = 'bridge'
+        browser['HostConfig']['Init'] = False
+        self.reject_binding(browser)
 
     def test_persistent_write_socket_or_host_mount_refuses(self):
         for mount in [{'Type': 'bind', 'RW': True, 'Destination': '/workspace'},

@@ -28,6 +28,7 @@ def main():
             or purpose not in NETWORKS
             or not host['ReadonlyRootfs'] or host['Privileged']
             or host['NetworkMode'] != NETWORKS[purpose] or host['PidMode']
+            or (purpose == 'issue97-browser' and host.get('Init') is not True)
             or host['IpcMode'] != 'private'
             or host['CapAdd'] or host['CapDrop'] != ['ALL']
             or 'no-new-privileges' not in host['SecurityOpt']
