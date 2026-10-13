@@ -1,5 +1,10 @@
 # #94 — persistent access to the current demo journal
 
+**2026-10-13 update:** a rotated owner-only segment caused the former UID10001
+worker to fail. [#97 runbook](issue97-engineering-access.md) describes the installed
+UID33 fix, current identities and fresh acceptance. The report below records
+the historical 2026-10-07 acceptance, not the current installed worker identity.
+
 **DONE / ORDINARY_HERMES_PERSISTENT_ACCESS_PASS.** Contract: [operator task #94](https://github.com/Kwentin3/1c-agent-harness/issues/94).
 The owner approved the restricted entry/config and read-only mounts on 2026-10-07.
 The installed capability is source commit `cd0100aa5312fb7411d16dc56caa0bd3277990a3`,
