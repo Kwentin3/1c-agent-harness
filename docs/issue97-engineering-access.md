@@ -302,3 +302,14 @@ SHA256 `679bb2004fe46cda1640dfaa63f0e9eb761be233e02abd241ae7f53e277f1014`.
 Статус **PARTIAL / ORDINARY_ENGINEERING_RUNTIME_AND_POST_CLEANUP_ACCEPTED**:
 остаётся current-demo safe-session capability gap. Два продуктовых login/logout
 и fresh-event acceptance #90 не запускались; source candidate не merged/released.
+
+Личная [final browser/post-init приёмка Hermes](https://github.com/Kwentin3/1c-agent-harness/issues/97#issuecomment-6142147442):
+PASS, включая native init orphan adoption/reaping и повтор engineering/ЖР/diagnostics/
+registered retained ТЖ после cutoff. Protected `final-acceptance-v2.json` SHA256
+`6f4b59f76213cba9fd8ed1c4d3f70215f1f3979e160377dbbfb44faaad2d0597`;
+`manifest-v2.json` SHA256 `d12c627aea7f53b638bdab099df5b565f6813ace3fd1f131ea320126acdfb897`,
+102 files/390409 logical bytes. V2 исправляет ошибочный UI initialization gate;
+source-admission-v2.md SHA256 `53fcab69e032ad468ed3a8345900b4254e7ca41f7983ed741e8d32bfee79b9a8`.
+Полный #97 PARTIAL: current compiled configuration/active extensions binding
+к проверенному retained source ещё NOT_PROVEN. Дополнительный IB password
+не требуется; два предусмотренных #90 cycles остаются0/2.

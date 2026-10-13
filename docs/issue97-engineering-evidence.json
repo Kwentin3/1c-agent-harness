@@ -143,7 +143,7 @@
     "running": true
   },
   "acceptanceStatus": "PARTIAL_CURRENT_DEMO_SESSION_CAPABILITY_NOT_PROVEN",
-  "remainingCapabilityGap": "Current-demo startup admission: conditional update hooks/current readiness and safe-session conditions NOT_PROVEN. Extra IB password is not required by owner flow; browser capability personally accepted after cleanup.",
+  "remainingCapabilityGap": "NOT_PROVEN: current effective compiled configuration/active extensions not bound to inspected retained startup closure; see source-admission-v2.md",
   "nativeSmoke": {
     "n": 7,
     "kind": "engineering-runtime-smoke",
@@ -895,7 +895,140 @@
       "sha256": "4fdf0bc777bc16b9bac221e90cdb27127bdec558ecb9a12c68d42b407d2a3e9a"
     },
     "nativeInvocations": 0,
-    "demoSessions": 0
+    "demoSessions": 0,
+    "finalHermesAcceptance": {
+      "protectedVpsLocator": "/workspace/1c-harnest/.local/browser97-hermes-20261013T082233Z/final-acceptance-v2.json",
+      "sha256": "6f4b59f76213cba9fd8ed1c4d3f70215f1f3979e160377dbbfb44faaad2d0597",
+      "verdict": "PARTIAL",
+      "postCleanupVerdict": "PASS",
+      "manifest": {
+        "protectedVpsLocator": "/workspace/1c-harnest/.local/browser97-hermes-20261013T082233Z/manifest-v2.json",
+        "sha256": "d12c627aea7f53b638bdab099df5b565f6813ace3fd1f131ea320126acdfb897",
+        "files": 102,
+        "logicalBytes": 390409
+      },
+      "sourceAdmission": {
+        "protectedVpsLocator": "/workspace/1c-harnest/.local/browser97-hermes-20261013T082233Z/source-admission-v2.md",
+        "sha256": "53fcab69e032ad468ed3a8345900b4254e7ca41f7983ed741e8d32bfee79b9a8"
+      },
+      "oldRoutes": {
+        "currentJournalBinding": {
+          "currentIbPath": "/var/lib/1c/ib",
+          "journalPath": "/var/lib/1c/ib/1Cv8Log",
+          "referenceHostPid": 2763670,
+          "referenceId": "d2f38aa86d7bc461712df72fc22d5eb924324cbf5f386ca44a458024fd24970c",
+          "referenceImage": "sha256:69f919497cada9a8611f3de61df902d9f94bf20f84552ef5bd93125c38608ef9",
+          "referenceStartedAt": "2026-10-07T06:33:35.714659532Z",
+          "referenceStorageDriver": "overlay2",
+          "sourceProbe": {
+            "ibBindings": [
+              "/var/lib/1c/ib"
+            ],
+            "journalDirectory": {
+              "device": 71,
+              "inode": 6180626
+            },
+            "timeZonePath": "/usr/share/zoneinfo/Etc/UTC",
+            "vrdSha256": "e5406c8e7352b43c6499e2ff4fe189c9b239fe045eb0ac46de2960555850ac7d"
+          },
+          "vrdSha256": "e5406c8e7352b43c6499e2ff4fe189c9b239fe045eb0ac46de2960555850ac7d"
+        },
+        "currentJournalFileCount": 4,
+        "currentJournalProbe": "ACCESS_PROBE_PASS",
+        "currentJournalUIDGID": [
+          33,
+          33
+        ],
+        "diagnostics": "PASS same route; foreign namespace/process identity readable; canonical ledger read-only",
+        "engineeringCanary": true,
+        "engineeringNetworkInterfaces": [
+          "lo"
+        ],
+        "extraSourceRefusal": {
+          "nativeInvocations": 0,
+          "reasonCode": "invalid_request",
+          "schemaVersion": 1,
+          "status": "blocked"
+        },
+        "registeredTechlog": {
+          "coverage": {
+            "bytesRead": 47170,
+            "filesRead": 3,
+            "partial": false,
+            "recordLimit": 200
+          },
+          "evidenceSource": "actual registered one_c_observation_info tool response in this session",
+          "notCurrentDemoTechlog": true,
+          "observedEvents": [
+            "EXCP",
+            "EXCPCNTX"
+          ],
+          "observedInterval": {
+            "complete": true,
+            "end": "2026-09-18T15:26:22.170000+00:00",
+            "start": "2026-09-18T15:25:25.291000+00:00"
+          },
+          "source": "1c_techlog",
+          "sourceTimeZone": "UTC",
+          "status": "ok",
+          "supportedFilters": [
+            "events",
+            "text",
+            "sourceComponent",
+            "process"
+          ]
+        }
+      },
+      "ledgerUnchanged": true,
+      "initOrphanReaping": {
+        "sha256": "8e54fd3ed81b82d421fdac8f4c3fe2652f03748ec2069dd1ea9ed5c92a4f2768",
+        "bytes": 862,
+        "value": {
+          "adoptedByPID1": true,
+          "baselineProcessesUnchanged": true,
+          "customReaper": false,
+          "durationSeconds": 2.052230492932722,
+          "foreignProcessesSignalled": false,
+          "gid": 10001,
+          "grandchildActualArgv": [
+            "/usr/bin/python3",
+            "-B",
+            "-c",
+            "import time;time.sleep(2)"
+          ],
+          "grandchildPid": 103,
+          "grandchildProcAbsent": true,
+          "hostname": "b547e8ac3708",
+          "init": "docker-init",
+          "namespace": "pid:[4026533133]",
+          "nativeInvocations": 0,
+          "newProcessesRemaining": {},
+          "orphanIdentity": {
+            "comm": "python3",
+            "ppid": 1,
+            "startTicks": "188241746",
+            "state": "R"
+          },
+          "parentActualArgv": [
+            "/usr/bin/python3",
+            "-B",
+            "-c",
+            "import subprocess,json; p=subprocess.Popen(['/usr/bin/python3', '-B', '-c', 'import time;time.sleep(2)']); print(json.dumps({'grandchildPid':p.pid}),flush=True)"
+          ],
+          "parentExit": 0,
+          "parentPid": 102,
+          "parentReaped": true,
+          "passed": true,
+          "uid": 10001,
+          "zombiesAfter": 0
+        }
+      },
+      "personalComment": "https://github.com/Kwentin3/1c-agent-harness/issues/97#issuecomment-6142147442",
+      "native": 0,
+      "sessions": 0,
+      "exports": 0,
+      "help": 0
+    }
   },
   "ownerAuthClarification": {
     "source": "owner chat 2026-10-13",
