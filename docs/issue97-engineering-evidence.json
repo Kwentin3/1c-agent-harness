@@ -3,7 +3,7 @@
   "issue": 97,
   "date": "2026-10-13",
   "installedSourceCommit": "bd40827a7e95bba9d08ed03d430559aca089c953",
-  "operatorNativeInvocations": 3,
+  "operatorNativeInvocations": 7,
   "operatorDemoSessionCycles": 0,
   "operatorEvidence": {
     "protectedHomeLocator": "/home/roman/.local/issue97-engineering/operator/operator-evidence.json",
@@ -134,16 +134,34 @@
   "reference": {
     "id": "d2f38aa86d7bc461712df72fc22d5eb924324cbf5f386ca44a458024fd24970c",
     "image": "sha256:69f919497cada9a8611f3de61df902d9f94bf20f84552ef5bd93125c38608ef9",
-    "pid": 2763670,
-    "startedAt": "2026-10-07T06:33:35.714659532Z",
+    "pid": 3591944,
+    "startedAt": "2026-10-13T10:05:57.302519757Z",
     "restartPolicy": {
       "Name": "no",
       "MaximumRetryCount": 0
     },
     "running": true
   },
-  "acceptanceStatus": "PARTIAL_CURRENT_DEMO_SESSION_CAPABILITY_NOT_PROVEN",
-  "remainingCapabilityGap": "NOT_PROVEN: current effective compiled configuration/active extensions not bound to inspected retained startup closure; see source-admission-v2.md",
+  "acceptanceStatus": "CONSUMER_SOURCE_CAPABILITY_ACCEPTED",
+  "remainingCapabilityGap": null,
+  "productAcceptanceIssue90": "NOT_RUN; one remaining export does not guarantee full fresh-selection criterion",
+  "currentHermesAcceptance": {
+    "protectedVpsLocator": "/workspace/1c-harnest/.local/issue97-consumer-binding-20261013T103456Z-51450fb5/acceptance.json",
+    "sha256": "dec73238275a9c94e8c41825a5bc79e3d5d9c91ede270b781003db09717609c5",
+    "verdict": "CONSUMER_SOURCE_CAPABILITY_ACCEPTED",
+    "startupBindingGap": "CLOSED",
+    "otherConcreteSourceCapabilityBlocker": null,
+    "verifiedAt": "2026-10-13T10:45:43.847426+00:00",
+    "sourceAdmission": "source-admission-v3.md",
+    "sourceAdmissionSha256": "6d89cd47f4e941bf06f80d211fb76242c9d53e9d254ef811e0c6882469c21882",
+    "manifest": "manifest.json",
+    "manifestSha256": "bef263e60de86fc043ebbc4828070013225e22deab02e75934e8cd0eaeb72d26",
+    "personalChecks": "21 retained startup hashes; current ledger and four export rows; fresh current-journal probe; complete Dashboard source and raw-byte hash reconstruction; server-dispatch source seam",
+    "operatorAttestationBoundary": "HOME live==copy and full XML comparison remain operator evidence, not consumer direct live-IB reads",
+    "nativeInvocations": 0,
+    "demoSessions": 0,
+    "runtimeParameterAndRightsAcceptance": "NOT_RUN"
+  },
   "nativeSmoke": {
     "n": 7,
     "kind": "engineering-runtime-smoke",
@@ -198,11 +216,11 @@
     "nativeSecondsCeilingMet": true
   },
   "finalLedger": {
-    "sha256": "095d195ca4d5ebb8161a47f023902c334500502279ffa57625139774a87a7342",
-    "nativeSeconds": 25.94996267114766,
+    "sha256": "d43b7e247158e9c24d5b60b923e284a663068deeb4927833f0d204e936842ab9",
+    "nativeSeconds": 52.73141303029843,
     "STARTED": 0,
     "help": 2,
-    "exports": 7,
+    "exports": 11,
     "session": 0
   },
   "startupEvidence": {
@@ -1030,6 +1048,62 @@
       "help": 0
     }
   },
+  "currentConfigurationBinding": {
+    "protectedHomeLocator": "/home/roman/.local/issue97-current-config/05b6b7cd54224065a15a098d39bf33d2/binding.json",
+    "sha256": "55b07d1657c65df517f7f50c2fbc3895428bfe3b2d79c678c85e56c3d2312ed0",
+    "consumerCopy": "/workspace/1c-harnest/.local/issue97-current-binding/operator-binding.json",
+    "quiescedIbSha256": "a9ccb83b209f8e6e5f886c746d3f02aa7073a4f30b0034d81a1b5810f573cb50",
+    "currentDbCfSha256": "c30267b4b9737a8165eb84b56c65cfb494d7b67dda8912ef670304af78968255",
+    "nativeExtensionListExit": 0,
+    "nativeExtensionListStdoutBytes": 0,
+    "nativeExtensionListStderrBytes": 0,
+    "xmlFiles": 5100,
+    "xmlBytes": 61772537,
+    "byteIdenticalFiles": 5096,
+    "missingFiles": [],
+    "changedFiles": ["ConfigDumpInfo.xml", "Reports/Dashboard/Forms/ReportForm/Ext/Form.xml", "Reports/Dashboard/Forms/ReportForm/Ext/Form/Module.bsl"],
+    "addedFiles": ["Reports/Dashboard/Ext/ObjectModule.bsl"],
+    "startupFilesAndMetadataByteIdentical": true,
+    "dumpInfoChangesExcludingConfigVersion": "Only added Report.Dashboard.ObjectModule; no changed IDs or missing entries",
+    "liveIbStillMatchesCopyAfterExtraction": true,
+    "temporaryWorkersRemaining": 0,
+    "currentCopyNativeAttempts": 4,
+    "retainedRehearsalNativeAttempts": 3,
+    "productSessionCycles": 0,
+    "remainingIssue90BudgetBoundary": "One single-shot export remains; this alone does not guarantee first event -> selection -> later event -> fresh selection with original selection unchanged. No budget expansion."
+  },
+  "ownerApprovedMaintenance": {
+    "authority": "Owner chat 2026-10-13: permits maintenance now; confirms no open user sessions",
+    "owner": "existing 1c-jet-demo.service",
+    "unitSha256": "287c4033486292719be93603330c708f8a8fddc914fa6b121803dc779a56cccd",
+    "scope": "One consistent HOME copy and immediate restore; no standing lifecycle authority",
+    "firstAttemptSeconds": 19.420614635106176,
+    "firstAttemptResult": "No copy: operator incorrectly expected container running after service stop. Service restored; initial old-PID recovery alarm superseded by actual active/new-PID verification.",
+    "successfulWindowSeconds": 18.60350263887085,
+    "copyBytes": 121946112,
+    "copyMode": "0400 within 0700 parent",
+    "receiptLocator": "/home/roman/.local/issue97-current-copy/issue97-copy-9329e50f20f2/receipt.json",
+    "receiptSha256": "bb6c4fe27fafd759d755c23b77baad5a95783d31a0c2a7a2f6a29fe9402ef90a",
+    "serviceRestored": true,
+    "nativeInvocations": 0,
+    "productSessionCycles": 0
+  },
+  "postMaintenanceHermesAcceptance": {
+    "protectedVpsLocator": "/workspace/1c-harnest/.local/issue97-post-maintenance-20261013T100951Z-43512b28/receipt.json",
+    "sha256": "cf40a635e7bdc166b6f1157761c749883dffe5bffaffeee6e6d89ae475e365da",
+    "verdict": "POST_MAINTENANCE_NON_NATIVE_PASS",
+    "currentReferenceIdentityVerified": true,
+    "engineeringBrowserJournalRoutes": "PASS",
+    "authenticatedHEAD": 200,
+    "demoGET": 0,
+    "nativeInvocations": 0,
+    "newProcessesRemaining": 0
+  },
+  "currentCopyRetention": [
+    {"path": "/home/roman/.local/issue97-current-copy", "files": 6, "logicalBytes": 121958011, "allocatedBytes": 121966592},
+    {"path": "/home/roman/.local/issue97-current-config", "files": 5116, "logicalBytes": 80401890, "allocatedBytes": 92741632},
+    {"path": "/home/roman/.local/issue97-config-rehearsal", "files": 13, "logicalBytes": 6601, "allocatedBytes": 32768}
+  ],
   "ownerAuthClarification": {
     "source": "owner chat 2026-10-13",
     "afterHttpAuth": "demo opens immediately; no separate 1C login form",
