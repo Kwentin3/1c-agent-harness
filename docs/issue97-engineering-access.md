@@ -1,7 +1,7 @@
 # Домашний engineering access (#97)
 
 Дата: 2026-10-13. Кандидат доступа, без merge/release. Продуктовая приёмка #90
-остаётся отдельной. Источник установленного кода: `bd40827a7e95bba9d08ed03d430559aca089c953`;
+остаётся отдельной. Источник engineering/native кода: `bd40827a7e95bba9d08ed03d430559aca089c953`;
 это потомок PR #95 (`0dbfa1c0cd9f61e547e95d4aef3b2d28531ad39c`).
 
 ## Владельцы и границы
@@ -13,6 +13,7 @@
 | ЖР текущей demo | существующий #94, фиксированный probe/export JSON | reader #90 |
 | Native budget и admission | существующий canonical ledger #90 | native caller |
 | HTTP credentials | native Hermes Secrets активного профиля | проверка HTTP и разрешённый будущий клиент |
+| HOME browser | существующий Playwright/Chromium, тот же fixed-container SSH transport | browser97; session admission остаётся у #90 |
 
 `engineering-shell.py` — только транспорт команд в фиксированную изоляцию;
 не владелец reader, бюджета или бизнес-смысла. Старый executor содержит чужие
@@ -70,6 +71,81 @@ read-only. Manifest не означает наличие самого snapshot: 
 в этой среде ещё не материализован. Изменять configuration в work copy разрешает
 конкретная продуктовая issue; shell не расширяет этот допуск.
 
+## HOME browser без изменения backend
+
+Для браузера предоставлен отдельный fixed worker: engineering97 сохраняет
+network none, browser97 использует обычный Docker bridge без published ports.
+Это тот же `engineering-shell.py`, не новый harness/API или global backend.
+Новая проверка label/network не допускает bridge для engineering или host/foreign
+network для browser. Source нового handler:
+`c6a8c951a930117ec9f10a21b9a7df7e95ee77fc`, installed SHA256
+`9e76e384ae3080a69668df31a1e61be25acab09e76e9bd9ac1cf45561015e38b`.
+Прежний engineering handler и journal-only handler не заменялись.
+
+```sh
+ssh -F /data/hermes-home/credentials/ssh/browser97/config -T browser97 'id; pwd'
+```
+
+CID `b547e8ac370892449a89b16148ff7f2c3a0169b25dcf0198dad6ea7077bb39f8`,
+тот же image pin, source checkout bd40827. UID/GID10001, private PID/IPC,
+capabilities0/no-new-privileges, CPU1/RAM1GiB/PIDs128, read-only root/binds,
+собственные `.local/`512MiB и `/tmp`128MiB. Живая ИБ/socket/host PID не доступны.
+Browser/libs borrowed read-only, новых browser file bytes0:1003 files,
+466079922 logical bytes; heavy данные остаются на HOME. Приложение может
+использовать сеть, поэтому доступ к URL не является правом менять demo.
+
+Установленные Playwright1.58/Chromium145.0.7632.6 доступны через
+`PYTHONPATH=/opt/issue97-browser/python`,
+`PLAYWRIGHT_BROWSERS_PATH=/opt/issue97-browser/cache`; loader/fontconfig env
+задан оператором в worker. Выполнять `python3 -B`, поскольку `-I` исключает
+PYTHONPATH. После потери tmpfs обычный Hermes самостоятельно выполняет
+`mkdir -p .local/home .local/tmp .local/cache/fontconfig .local/runs`.
+Вести не более одного browser/client процесса одновременно; закрывать свой
+context/browser штатно и убирать только свои task files/process groups.
+
+Секреты читать native getter на Hermes в `/app/venv/bin/python` и передавать
+SSH stdin в память HOME процесса; не сохранять в task files/argv/logs.
+Для исключительно HEAD admission использовать `APIRequestContext` с
+`http_credentials={username: ..., password: ..., send: 'always',
+origin: 'https://1c-demo.speechbattle.com'}`, timeout15000 и max_redirects0.
+Ошибки сохранять только как type/первую строку: полный Playwright call log
+может содержать Authorization. Для реального browser context эти параметры
+APIRequestContext не подставлять автоматически; он получает отдельные
+http_credentials и допускается только после session admission #90.
+
+Operator ordinary-UID probe: own about:blank DOM rendered, HEAD200HTML,
+native/session/export/help0. Initial8s challenge retry timed out; заранее
+переданная Basic authorization дала200 за1.73s, без изменения сервера.
+Отдельный network-none browser rehearsal PASS, контейнер удалён. Первый
+rehearsal отказал на inherited executor entrypoint; использован явный python3
+entrypoint. Неудачный диагностический lifetime test сохранён; исправлена
+граница context manager. Ни один browser probe не открывал demo JS/session.
+Личная Hermes browser/post-cleanup проверка PASS после operator cutoff08:40:14UTC:
+SSH08:44:10UTC, hostnameb547e8ac3708, own loopback DOM/JavaScript rendered,
+HEAD200HTML, UID/GID10001, protected inputs unchanged, все refusals PASS.
+Baseline zombies0, new/owned processes0 и own root absent после cleanup.
+Receipt `receipts/post-init-browser.stdout` SHA256
+`047365cc71cc2334db3692022192578a6bb5cb155f83cf556b3d0637eabc7ebe`,
+protected root `/workspace/1c-harnest/.local/browser97-hermes-20261013T082233Z/`.
+Первый личный witness PASS выявил baseline6 zombies; перед native `--init`
+миграцией проверено отсутствие active client,8 собственных файлов сохранены
+и restored manifest совпал. Native/session/demoGET0. Полный #97 PARTIAL:
+безопасность старта именно current demo ещё не подтверждена.
+
+Protected HOME provisioning receipt:
+`/home/roman/.local/issue97-browser/operator/provisioning.json`;
+Init migration/cleanup receipt: `operator/init-migration.json`, SHA256
+`4fdf0bc777bc16b9bac221e90cdb27127bdec558ecb9a12c68d42b407d2a3e9a`.
+Protected recovery: `operator/pre-init-tmpfs.tar`, SHA256
+`d1fa10e23792165f7a71c829e7b29a1ac4aebff53fee31d15d4bfc8b54c03f8f`.
+Protected browser evidence: `operator/browser-evidence.json`, SHA256
+`f5fd21c8923f1a6adefd6e39373d7d7c8b7d22a55e0823908910dc7eefc5da5a`.
+Native credential config `/data/hermes-home/credentials/ssh/browser97/config`,
+SHA256 `84fce698740ba1f34aeeb5b2b3e8706c1bab93e9b8f724c4ea915144e38f5504`.
+Rotation/revoke как engineering97, только tagged `issue97-browser` entry;
+не восстанавливать весь authorized_keys из before backup. Retain source,
+readonly borrowed assets и protected evidence; route/key без TTL.
+
 ## ЖР и ТЖ
 
 Маршрут #94 прежний:
@@ -103,20 +179,34 @@ Native Secrets: `ONE_C_DEMO_HTTP_USERNAME`, `ONE_C_DEMO_HTTP_PASSWORD`;
 `/data/hermes-home/.env`. Значения не печатать, не помещать в Git/workspace/chat.
 Authenticated HEAD дал200, без запуска сессии 1С. Это не login/logout witness.
 
-Engineering namespace не имеет сети и не предоставляет current-demo login.
+Engineering namespace не имеет сети; browser97 предоставляет HTTPS client,
+но безопасный current-demo startup admission пока не доказан.
 Retained canonical snapshot находится в reference
 `/srv/goal91-jet/.local/targets/jettr-1.0.3.1/snapshot`; его manifest совпал с
 immutable pin выше. SessionModule вызывает `StandardSubsystemsServer.SessionParametersSetting`,
-тот — `BeforeStartApplication` (line3727). Этот путь включает
+тот — `BeforeStartApplication` (line3727). Этот путь включает условные
 `CorrectSharedUserHomePage` (line3906, `CommonSettingsStorage.Save`) и
 `HandleCopiedSettingsQueue` (line4039, `SystemSettingsStorage.Save`).
 ManagedApplicationModule вызывает BeforeStart/OnStart библиотеки;
 `DisableSystemStartupLogic` в клиенте не отменяет server session handler
 и требует прав Administration/DataAdministration (ServerCall line200).
-Состояние условий этих записей в живой ИБ без запуска не доказано;
-retained snapshot сам по себе не является свежим dump текущей конфигурации.
-Business-write-free startup, текущие занятые sessions и safe login/logout
-capability поэтому остаются NOT_PROVEN, продуктовые cycles NOT_RUN.
+Эти записи — служебные настройки; их наличие само по себе не доказывает
+business writes. Retained Dashboard.OnOpen строит отчёт, app overrides
+BeforeStart/OnStart пустые; CTL/OSL/UsersSaaS модули отсутствуют. Однако
+SSLSubsystemsIntegrationClient.BeforeStart включает условные InfobaseUpdateClient
+и другие hooks. Retained source не является свежим dump текущей конфигурации;
+актуальная готовность startup и права пользователя ИБ не установлены.
+Штатный параметр БСП DisableSystemStartupLogic — кандидат только при уже
+имеющихся требуемых правах, а не доказанный безопасный вход. Не обходить
+проверку прав и не считать HTTP credentials данными пользователя ИБ.
+Владелец подтвердил: после HTTPauth сразу открывается demo, отдельной формы
+1С нет. Дополнительный IB password не требуется; это не доказательство
+административных прав или отключения startup updates.
+Business-write-free startup и safe login/logout пока NOT_PROVEN;
+продуктовые cycles NOT_RUN. При занятом/заблокированном slot не повторять
+вход, не подтверждать обновление/отключение пользователей; failed attempts
+тоже учитываются существующим ledger. Завершать только собственный сеанс
+штатным Exit с подтверждением, не объявлять закрытие tab нормальным logout.
 Не запускать demo клиент ради проверки доступа, не вытеснять sessions,
 не менять logging/business/configuration или lifecycle demo.
 
@@ -186,7 +276,7 @@ Rollback #94: CAS вернуть сохранённые handler и только 
 Operator boundary check: own code/process/cleanup PASS; source/CF/manifest/runtime/
 foreign sentinel writes denied with hashes unchanged; setuid0/mount denied;
 foreign process absent from namespace; no demo/socket visible. #94 probe PASS,
-four journal files, native0. Unit current-journal7 и engineering5 PASS.
+four journal files, native0. Unit current-journal7 и engineering6 PASS.
 Hermes лично повторил own-code/process/cleanup, namespace/refusals, current ЖР
 и прежний diagnostics/registered retained ТЖ: PASS. Защищённый receipt:
 `/workspace/1c-harnest/.local/issue97-hermes-intake-20261013T064825Z/acceptance.json`,
