@@ -90,6 +90,23 @@ class EngineeringAccessTests(unittest.TestCase):
             with self.subTest(field=field):
                 self.reject_binding(candidate)
 
+    def test_browser_network_is_separate_from_offline_engineering(self):
+        browser = copy.deepcopy(ADMITTED)
+        browser['Config']['Labels']['one-c-access'] = 'issue97-browser'
+        browser['HostConfig']['NetworkMode'] = 'bridge'
+        environment, inspect, run = self.invoke(browser)
+        with environment, inspect, run as execution:
+            self.assertEqual(ACCESS.main(), 7)
+            argv = execution.call_args.args[0]
+            self.assertEqual(argv[argv.index('--user') + 1], '10001:10001')
+        for network in ['none', 'host', 'container:foreign']:
+            browser['HostConfig']['NetworkMode'] = network
+            with self.subTest(browser_network=network):
+                self.reject_binding(browser)
+        engineering = copy.deepcopy(ADMITTED)
+        engineering['HostConfig']['NetworkMode'] = 'bridge'
+        self.reject_binding(engineering)
+
     def test_persistent_write_socket_or_host_mount_refuses(self):
         for mount in [{'Type': 'bind', 'RW': True, 'Destination': '/workspace'},
                 {'Type': 'volume', 'RW': False, 'Destination': '/workspace'},

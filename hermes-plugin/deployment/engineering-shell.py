@@ -1,5 +1,5 @@
 #!/usr/bin/python3
-"""SSH shell in the fixed, isolated #97 engineering container only."""
+"""SSH shell in the fixed, isolated #97 engineering or browser container."""
 import json
 import os
 import re
@@ -7,6 +7,7 @@ import subprocess
 import sys
 
 IMAGE = 'sha256:036a932ca78ec1f161b83fc3d26d663d950a8e845002c160771950ec72ce6488'
+NETWORKS = {'issue97-engineering': 'none', 'issue97-browser': 'bridge'}
 
 
 def main():
@@ -20,12 +21,13 @@ def main():
         ['/usr/bin/docker', 'inspect', container], timeout=5))[0]
     host = inspected['HostConfig']
     config = inspected['Config']
+    purpose = config['Labels'].get('one-c-access')
     if (inspected['Id'] != container or inspected['Image'] != IMAGE
             or not inspected['State']['Running']
             or config['User'] != '10001:10001'
-            or config['Labels'].get('one-c-access') != 'issue97-engineering'
+            or purpose not in NETWORKS
             or not host['ReadonlyRootfs'] or host['Privileged']
-            or host['NetworkMode'] != 'none' or host['PidMode']
+            or host['NetworkMode'] != NETWORKS[purpose] or host['PidMode']
             or host['IpcMode'] != 'private'
             or host['CapAdd'] or host['CapDrop'] != ['ALL']
             or 'no-new-privileges' not in host['SecurityOpt']
