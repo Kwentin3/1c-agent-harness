@@ -7,8 +7,10 @@ import hashlib
 import json
 from pathlib import Path
 import re
+import shlex
 import sys
 import unittest
+from unittest.mock import patch
 
 ROOT = Path(__file__).resolve().parents[1]
 PLUGIN = ROOT / "hermes-plugin"
@@ -46,6 +48,7 @@ class _Context:
         self.skill: tuple[str, Path, str] | None = None
         self.calls: list[tuple[str, dict[str, object]]] = []
         self.terminal_response = terminal_response
+        self.prompt_sections = []
 
     def register_tool(self, **kwargs):
         self.tools[kwargs["name"]] = kwargs["handler"]
@@ -54,10 +57,12 @@ class _Context:
         self.skill = (name, path, description)
 
     def register_system_prompt_section(self, *args, **kwargs):
-        return None
+        self.prompt_sections.append((args, kwargs))
 
     def dispatch_tool(self, name: str, args: dict[str, object]) -> str:
         self.calls.append((name, args))
+        if name == 'write_file':
+            return json.dumps({'verified': True, 'resolved_path': '/workspace/project/' + args['path']})
         return json.dumps(self.terminal_response)
 
 
@@ -101,17 +106,213 @@ class HermesPluginTests(unittest.TestCase):
         self.assertEqual(expected, companion)
         self.assertEqual(expected, _artifact_id())
 
-    def test_registers_one_skill_and_nine_closed_tools(self) -> None:
+    def test_registers_one_skill_and_ten_closed_tools(self) -> None:
         plugin = _plugin_module()
         context = _Context({"output": "{}", "exit_code": 1})
 
         plugin.register(context)
 
-        self.assertEqual(set(context.tools), {"one_c_open", "one_c_narrow_context", "one_c_native_verify", "one_c_observation_info", "one_c_observe", "one_c_expand_observation", "one_c_select_registration_log", "one_c_page_registration_log", "one_c_read_registration_log_record"})
+        self.assertEqual(set(context.tools), {"one_c_open", "one_c_narrow_context", "one_c_native_verify", "one_c_observation_info", "one_c_observe", "one_c_expand_observation", "one_c_select_registration_log", "one_c_page_registration_log", "one_c_read_registration_log_record", "one_c_stage_task"})
+        manifest = (PLUGIN / "plugin.yaml").read_text(encoding="utf-8")
+        declared = re.findall(r"^  - (one_c_\w+)$", manifest, re.MULTILINE)
+        self.assertEqual(len(declared), 10)
+        self.assertEqual(set(declared), set(context.tools))
         self.assertIsNotNone(context.skill)
         assert context.skill is not None
         self.assertEqual(context.skill[0], "one-c-harness")
         self.assertTrue(context.skill[1].is_file())
+        self.assertEqual(len(context.prompt_sections), 1)
+        args, options = context.prompt_sections[0]
+        self.assertLessEqual(len(args[1]), options['max_chars'],
+            'Hermes drops an oversized section rather than truncating it')
+        self.assertIn('one-c-harness:one-c-harness', args[1])
+        self.assertIn('one_c_open first for configuration work', args[1])
+        self.assertEqual(options['max_chars'], 1000)
+        self.assertIn('one_c_stage_task stages data only', args[1])
+        self.assertIn('workcopy/apply/freeze/native/discard', args[1])
+        self.assertIn('existing read-only experiments/<single-task>/oracle.py', args[1])
+
+    def test_stage_task_schema_is_closed_and_keeps_byte_validation_with_owner(self) -> None:
+        plugin = _plugin_module()
+        schemas = {tool['name']: tool['parameters'] for tool in sys.modules[plugin.__name__ + '.schemas'].TOOLS}
+        schema = schemas['one_c_stage_task']
+        fields = {'snapshotRef', 'request', 'productionPatch', 'instrumentationPatch', 'oracle'}
+        self.assertEqual(schema['type'], 'object')
+        self.assertFalse(schema['additionalProperties'])
+        self.assertEqual(set(schema['required']), fields)
+        self.assertEqual(set(schema['properties']), fields)
+        self.assertEqual(schema['properties']['request']['type'], 'object')
+        for name in ('productionPatch', 'instrumentationPatch'):
+            self.assertEqual(schema['properties'][name]['type'], 'string')
+            self.assertEqual(schema['properties'][name]['minLength'], 1)
+            self.assertNotIn('maxLength', schema['properties'][name], 'UTF-8 byte limits belong to the companion')
+        pattern = schema['properties']['oracle']['pattern']
+        self.assertIsNotNone(re.search(pattern, 'experiments/synthetic-task/oracle.py'))
+        for invalid in ('oracle.py', '/experiments/task/oracle.py', 'experiments/../oracle.py',
+                        'experiments/./oracle.py', 'experiments/a/b/oracle.py',
+                        'experiments/a\\b/oracle.py', 'experiments/a:task/oracle.py',
+                        'experiments/task/oracle.py\n', 'print("inline oracle")'):
+            with self.subTest(invalid=invalid):
+                self.assertIsNone(re.search(pattern, invalid))
+
+    def test_native_verify_has_two_closed_forms_and_canonical_task_ref(self) -> None:
+        plugin = _plugin_module()
+        schema = next(tool['parameters'] for tool in sys.modules[plugin.__name__ + '.schemas'].TOOLS
+                      if tool['name'] == 'one_c_native_verify')
+        self.assertEqual(schema['type'], 'object')
+        self.assertEqual(len(schema['oneOf']), 2)
+        legacy, staged = schema['oneOf']
+        old_fields = {'snapshotRef', 'request', 'productionPatch', 'instrumentationPatch', 'oracle', 'receipt', 'timeoutSeconds'}
+        new_fields = {'snapshotRef', 'taskRef', 'timeoutSeconds'}
+        for form, fields in ((legacy, old_fields), (staged, new_fields)):
+            self.assertFalse(form['additionalProperties'])
+            self.assertEqual(set(form['properties']), fields)
+            self.assertEqual(set(form['required']), fields)
+            self.assertEqual(form['properties']['timeoutSeconds'], {'type': 'integer', 'minimum': 1, 'maximum': 480})
+        # A mixed request cannot match either closed branch; no caller paths in taskRef form.
+        for keys, expected_matches in ((old_fields, 1), (new_fields, 1),
+                                       (old_fields | new_fields, 0), (new_fields - {'taskRef'}, 0),
+                                       (new_fields | {'receipt'}, 0)):
+            matches = sum(set(form['required']) <= keys <= set(form['properties']) for form in schema['oneOf'])
+            self.assertEqual(matches, expected_matches)
+        ref = staged['properties']['taskRef']
+        self.assertEqual(ref['type'], 'object')
+        self.assertFalse(ref['additionalProperties'])
+        self.assertEqual(set(ref['required']), {'schemaVersion', 'taskId', 'manifestSha256'})
+        self.assertEqual(set(ref['properties']), set(ref['required']))
+        self.assertEqual(ref['properties']['schemaVersion'], {'type': 'integer', 'const': 1})
+        uuid_pattern = ref['properties']['taskId']['pattern']
+        valid_id = 'b4a514b2-84af-4d19-a06b-f33dcc0e6176'
+        self.assertIsNotNone(re.search(uuid_pattern, valid_id))
+        for invalid in (valid_id.upper(), valid_id + '\n', valid_id.replace('-4d19-', '-1d19-'),
+                        valid_id.replace('-a06b-', '-706b-'), valid_id.replace('-', '')):
+            self.assertIsNone(re.search(uuid_pattern, invalid))
+        digest_pattern = ref['properties']['manifestSha256']['pattern']
+        self.assertIsNotNone(re.search(digest_pattern, 'a' * 64))
+        for invalid in ('A' * 64, 'a' * 63, 'g' * 64, 'a' * 64 + '\n', 'sha256:' + 'a' * 64):
+            self.assertIsNone(re.search(digest_pattern, invalid))
+
+    def test_stage_task_returns_owner_task_ref_without_claiming_verification(self) -> None:
+        plugin = _plugin_module()
+        task_ref = {'schemaVersion': 1, 'taskId': 'b4a514b2-84af-4d19-a06b-f33dcc0e6176', 'manifestSha256': 'a' * 64}
+        response = {'artifactId': _artifact_id(), 'capabilityVersion': '0.3.0', 'schemaVersion': 1,
+                    'operation': 'stage_task', 'status': 'ok', 'taskRef': task_ref}
+        context = _Context({'output': json.dumps(response) + '\n', 'exit_code': 0})
+        plugin.register(context)
+        arguments = {'snapshotRef': {'schemaVersion': 1, 'token': 'synthetic'}, 'request': {},
+                     'productionPatch': 'production data', 'instrumentationPatch': 'instrumentation data',
+                     'oracle': 'experiments/synthetic-task/oracle.py'}
+        actual = json.loads(context.tools['one_c_stage_task'](arguments))
+        self.assertEqual(actual, response)
+        self.assertEqual(actual['taskRef'], task_ref)
+        self.assertNotIn('receipt', actual)
+        self.assertNotIn('verified', actual)
+
+    def test_stage_task_passes_data_and_owner_refusal_through_terminal(self) -> None:
+        plugin = _plugin_module()
+        response = {'artifactId': _artifact_id(), 'capabilityVersion': '0.3.0', 'schemaVersion': 1,
+                    'operation': 'stage_task', 'status': 'blocked', 'reasonCode': 'synthetic_owner_refusal'}
+        context = _Context({'output': json.dumps(response) + '\n', 'exit_code': 0})
+        plugin.register(context)
+        patch_data = '\u044f' * 2049 + '\n$(never execute); quoted'
+        arguments = {'snapshotRef': {'schemaVersion': 1, 'token': 'synthetic'},
+                     'request': {'nested': {'businessValue': '\u0434\u0430\u043d\u043d\u044b\u0435'}},
+                     'productionPatch': patch_data, 'instrumentationPatch': 'instrumentation data',
+                     'oracle': 'experiments/synthetic-task/oracle.py'}
+        self.assertGreater(len(patch_data.encode('utf-8')), 4096)
+        actual = json.loads(context.tools['one_c_stage_task'](arguments))
+        self.assertEqual(actual, response)
+        self.assertEqual(len(context.calls), 2)
+        write_name, written = context.calls[0]
+        self.assertEqual(write_name, 'write_file')
+        self.assertRegex(written['path'], r'\A\.one-c-harness-transport/[0-9a-f]{8}-[0-9a-f]{4}-4[0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}\.json\Z')
+        wire = written['content'].encode('utf-8')
+        self.assertNotIn('\n', written['content'])
+        self.assertEqual(json.loads(wire), {'schemaVersion': 1, 'operation': 'stage_task', 'arguments': arguments})
+        name, dispatched = context.calls[1]
+        self.assertEqual(name, 'terminal')
+        self.assertEqual(dispatched['timeout'], 60)
+        self.assertEqual(shlex.split(dispatched['command']), [
+            '$HERMES_HOME/bin/one-c-harness', '--request-file', '/workspace/project/' + written['path'],
+            '--sha256', hashlib.sha256(wire).hexdigest(),
+        ])
+        self.assertLess(len(dispatched['command']), 250)
+        self.assertNotIn('never execute', dispatched['command'])
+        self.assertNotIn(base64.b64encode(wire).decode(), dispatched['command'])
+
+    def test_stage_file_write_failures_are_safe_and_never_dispatch_terminal(self) -> None:
+        plugin = _plugin_module()
+        for raw in ('not-json private detail', '[]', '{"verified":false}', '{"verified":1}',
+                    '{"verified":true,"error":"private detail"}', '{"verified":true}'):
+            with self.subTest(raw=raw):
+                context = _Context({})
+                plugin.register(context)
+                with patch.object(context, 'dispatch_tool', return_value=raw) as dispatch:
+                    result = json.loads(context.tools['one_c_stage_task']({'productionPatch': 'private detail'}))
+                self.assertEqual(result['reasonCode'], 'request_file_failed')
+                self.assertNotIn('private detail', json.dumps(result))
+                self.assertEqual(dispatch.call_count, 1)
+                self.assertEqual(dispatch.call_args.args[0], 'write_file')
+        context = _Context({})
+        plugin.register(context)
+        with patch.object(context, 'dispatch_tool', side_effect=RuntimeError('private detail')) as dispatch:
+            result = json.loads(context.tools['one_c_stage_task']({}))
+        self.assertEqual(result['reasonCode'], 'request_file_failed')
+        self.assertNotIn('private detail', json.dumps(result))
+        self.assertEqual(dispatch.call_count, 1)
+
+    def test_stage_rejects_misbound_or_unsafe_resolved_path(self) -> None:
+        plugin = _plugin_module()
+        for prefix, suffix in (('', ''), ('/workspace/../', ''), ('//workspace/', ''),
+                               ('/workspace/./', ''), ('/workspace/\n', ''), ('/workspace/\\', ''),
+                               ('/' + 'x' * 512 + '/', ''), ('/workspace/', '.extra'),
+                               ('/workspace/foreign/', '/other.json')):
+            with self.subTest(prefix=prefix, suffix=suffix):
+                context = _Context({})
+                plugin.register(context)
+                def dispatch(name, args):
+                    self.assertEqual(name, 'write_file')
+                    return json.dumps({'verified': True, 'resolved_path': prefix + args['path'] + suffix})
+                with patch.object(context, 'dispatch_tool', side_effect=dispatch) as called:
+                    result = json.loads(context.tools['one_c_stage_task']({}))
+                self.assertEqual(result['reasonCode'], 'request_file_failed')
+                self.assertEqual(called.call_count, 1)
+
+    def test_stage_transport_caps_complete_utf8_wire_before_file_write(self) -> None:
+        plugin = _plugin_module()
+        adapter = sys.modules[plugin.__name__ + '.adapter']
+        response = {'artifactId': _artifact_id(), 'capabilityVersion': '0.3.0', 'status': 'ok'}
+        arguments = {'productionPatch': ''}
+        budget = 16384 - len(adapter._request('stage_task', arguments))
+        arguments['productionPatch'] = '\u044f' * (budget // 2) + 'x' * (budget % 2)
+        self.assertEqual(len(adapter._request('stage_task', arguments)), 16384)
+        context = _Context({'output': json.dumps(response), 'exit_code': 0})
+        plugin.register(context)
+        self.assertEqual(json.loads(context.tools['one_c_stage_task'](arguments)), response)
+        self.assertEqual([name for name, _ in context.calls], ['write_file', 'terminal'])
+        context.calls.clear()
+        arguments['productionPatch'] += 'x'
+        result = json.loads(context.tools['one_c_stage_task'](arguments))
+        self.assertEqual(result['reasonCode'], 'invalid_request')
+        self.assertEqual(context.calls, [])
+
+    def test_native_verify_forwards_both_argument_forms_without_rewriting_refs(self) -> None:
+        plugin = _plugin_module()
+        response = {'artifactId': _artifact_id(), 'capabilityVersion': '0.3.0',
+                    'operation': 'verify', 'status': 'ok', 'receipt': {'synthetic': True}}
+        task_ref = {'schemaVersion': 1, 'taskId': 'b4a514b2-84af-4d19-a06b-f33dcc0e6176', 'manifestSha256': 'a' * 64}
+        common = {'snapshotRef': {'schemaVersion': 1, 'token': 'synthetic'}, 'timeoutSeconds': 300}
+        for arguments in (dict(common, taskRef=task_ref), dict(common, request='experiments/task/request.json',
+                          productionPatch='experiments/task/production.patch', instrumentationPatch='experiments/task/instrumentation.patch',
+                          oracle='experiments/task/oracle.py', receipt='.local/task/receipt.json')):
+            with self.subTest(fields=sorted(arguments)):
+                context = _Context({'output': json.dumps(response) + '\n', 'exit_code': 0})
+                plugin.register(context)
+                self.assertEqual(json.loads(context.tools['one_c_native_verify'](arguments)), response)
+                self.assertEqual(context.calls[0][0], 'terminal')
+                self.assertEqual(context.calls[0][1]['timeout'], 2160)
+                payload = json.loads(base64.b64decode(context.calls[0][1]['command'].rsplit(' ', 1)[1]))
+                self.assertEqual(payload, {'schemaVersion': 1, 'operation': 'verify', 'arguments': arguments})
 
     def test_manifest_schema_and_registration_agree_on_observation_tools(self) -> None:
         plugin = _plugin_module()
@@ -221,6 +422,45 @@ class HermesPluginTests(unittest.TestCase):
         self.assertEqual(response["nextOffset"], 1)
         self.assertEqual(response["records"][0]["event"], "_$Session$_.Start")
         self.assertIn("recordRef", response["records"][0])
+
+    def test_narrow_context_preserves_line_endings_and_rejects_invalid_json_output(self) -> None:
+        plugin = _plugin_module()
+        result = {
+            "artifactId": _artifact_id(), "capabilityVersion": "0.3.0",
+            "schemaVersion": 1, "status": "ok", "truncated": False,
+            "results": [{
+                "fragment": "Procedure Posting(Cancel)", "fragmentTruncated": False,
+                "line": 1, "lineEnding": "", "utf8Bom": True,
+                "path": "Documents/Order/Ext/ObjectModule.bsl",
+            }],
+        }
+        arguments = {"snapshotRef": {"token": "synthetic"}, "query": "Posting"}
+        for line_ending in ("\u0085", "\u2028", "\u2029", "\n", "\r\n", ""):
+            result["results"][0]["lineEnding"] = line_ending
+            for terminal_ending in ("\n", "\r\n", ""):
+                with self.subTest(lineEnding=repr(line_ending), terminalEnding=repr(terminal_ending)):
+                    output = json.dumps(result, ensure_ascii=False) + terminal_ending
+                    context = _Context({"output": output, "exit_code": 0})
+                    plugin.register(context)
+                    response = json.loads(context.tools["one_c_narrow_context"](arguments))
+                    self.assertEqual(response, result, response)
+        document = json.dumps(result, ensure_ascii=False)
+        invalid_outputs = {
+            "second_document": document + "\n" + document,
+            "concatenated_documents": document + document,
+            "prefix_noise": "noise " + document,
+            "suffix_noise": document + " noise",
+            "prefix_noise_line": "noise\n" + document,
+            "suffix_noise_line": document + "\nnoise",
+            "malformed_document": document[:-1],
+        }
+        for case, output in invalid_outputs.items():
+            with self.subTest(invalid=case):
+                context = _Context({"output": output, "exit_code": 0})
+                plugin.register(context)
+                response = json.loads(context.tools["one_c_narrow_context"](arguments))
+                self.assertEqual(response["status"], "blocked")
+                self.assertEqual(response["reasonCode"], "invalid_request")
 
     def test_open_dispatches_only_the_public_terminal_tool_and_checks_version(self) -> None:
         plugin = _plugin_module()

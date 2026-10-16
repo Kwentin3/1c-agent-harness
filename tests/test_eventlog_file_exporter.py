@@ -218,7 +218,7 @@ class FileJournalExporterTests(unittest.TestCase):
             '"TransactionStatus":"RolledBack","Comment":"Page event 02"}\n'
         ).encode()
 
-        xml = exporter._json_sequence_to_xml(payload, 1048576)
+        xml = exporter.project_ibcmd_json(payload, 1048576)
         root = ET.fromstring(xml)
         self.assertEqual(root.tag.rsplit("}", 1)[-1], "EventLog")
         records = list(root)
@@ -253,7 +253,7 @@ class FileJournalExporterTests(unittest.TestCase):
         ]
         payload = "\n".join(json.dumps(row) for row in rows).encode()
 
-        xml = exporter._json_sequence_to_xml(payload, 1048576, {
+        xml = exporter.project_ibcmd_json(payload, 1048576, {
             "event": "Issue80.Lab.Page", "level": "Information",
             "user": "user-id", "metadata": "Document.SalesInvoice",
         })
@@ -268,7 +268,7 @@ class FileJournalExporterTests(unittest.TestCase):
         for payload in (b"not json", b'{"Date":"2026-09-23T18:22:32"}'):
             with self.subTest(payload=payload):
                 with self.assertRaises(base.ExportFailure) as caught:
-                    exporter._json_sequence_to_xml(payload, 1048576)
+                    exporter.project_ibcmd_json(payload, 1048576)
                 self.assertEqual(str(caught.exception), "source_incomplete_receipt")
 
     def test_run_once_invokes_one_fixed_ibcmd_export_and_preserves_journal(self) -> None:

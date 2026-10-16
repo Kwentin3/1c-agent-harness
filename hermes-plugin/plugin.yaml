@@ -16,3 +16,4 @@ provides_tools:
   - one_c_select_registration_log
   - one_c_page_registration_log
   - one_c_read_registration_log_record
+  - one_c_stage_task

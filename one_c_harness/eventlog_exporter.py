@@ -139,7 +139,8 @@ def _load_settings(*, require_epf: bool = True) -> Settings:
     )
 
 
-def _validate_request(value: object) -> dict[str, Any]:
+def validate_request(value: object) -> dict[str, Any]:
+    """Admit the closed exporter request before a deployment invokes its source."""
     if not isinstance(value, dict) or set(value) != _REQUEST_KEYS:
         raise ExportFailure("invalid_request")
     if value.get("schemaVersion") != 1 or value.get("operation") != "unloadEventLog":
@@ -284,7 +285,7 @@ def _write_request(root: Path, request: dict[str, Any]) -> None:
 
 
 def run_once(request: object) -> tuple[bytes, dict[str, object]]:
-    admitted = _validate_request(request)
+    admitted = validate_request(request)
     settings = _load_settings()
     started = time.monotonic()
     with tempfile.TemporaryDirectory(prefix="request-", dir=settings.work_root) as raw_root:

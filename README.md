@@ -192,6 +192,33 @@ Plugin формирует тот же closed JSON, вызывает только
 Operator обязан pin-ить оба install sources к одному immutable Git revision.
 Любой несовпадающий `capabilityVersion` или `artifactId` блокируется fail-closed.
 
+В исходниках добавлен `one_c_stage_task`: exact `snapshotRef`, JSON-object request,
+две текстовые правки и существующий readonly locator `experiments/<task>/oracle.py`
+превращаются в связанный хешами `taskRef`. Request и каждая правка ограничены
+4 KiB UTF-8, весь запрос companion — 16 KiB. Этот шаг сохраняет только данные;
+он не применяет правки и не принимает тело Python-проверки. Затем
+`one_c_native_verify` принимает exact `snapshotRef`, `taskRef` и `timeoutSeconds`
+и вызывает прежний shared task route. Старая форма с семью аргументами сохранена
+для окружений без выбранного deployment oracle root; новые managed artifacts
+через неё использовать нельзя. Повторная или одновременно
+выполняющаяся проверка одной staged задачи блокируется.
+
+Корень trusted oracle выбирает deployment через `ONE_C_HARNESS_TASK_ORACLE_ROOT`:
+это относительная папка внутри business workspace, например source generation
+в `.local`; без настройки используется корень workspace. Locator выше разрешается
+только в этом одном корне, без fallback. Выбранный root связан с task manifest;
+после его изменения старый taskRef не принимается, даже если файл совпал по bytes.
+Tool arguments не позволяют менять этот root. При явной настройке root проверка
+принимает только форму с `taskRef`, без обхода через старые caller paths.
+Это позволяет установить reviewed
+oracle рядом с immutable runtime, сохранив read-only исходную конфигурацию.
+
+Новый шаг требует соответствующей текущей deployment-привязки. Исторический
+Goal91 wrapper ниже не выдаёт новый допуск и не является маршрутом этого переноса.
+Экспериментальный `experiments/hermes-browser-dev-marker/oracle.py` проверяет
+заданный marker-протокол; его unit tests не доказывают вызов BSL-функции. Для этого
+нужны сверка frozen patches/call site и связанных нативных client/server receipts.
+
 Эти source artifacts сами по себе не включают SSH backend и не выполняют deployment/restart.
 Remote executor и его selected workspace должны быть явно настроены terminal boundary до
 установочного canary.

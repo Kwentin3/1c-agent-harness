@@ -74,8 +74,11 @@ class CompanionContractTests(unittest.TestCase):
             self.assertEqual(narrow["status"], "ok")
             self.assertEqual(narrow["results"], [{
                 "fragment": "Procedure Posting(Cancel)",
+                "fragmentTruncated": False,
                 "line": 1,
+                "lineEnding": "\n",
                 "path": "Documents/Order/Ext/ObjectModule.bsl",
+                "utf8Bom": False,
             }])
             self.assertFalse((project / "scripts").exists())
 

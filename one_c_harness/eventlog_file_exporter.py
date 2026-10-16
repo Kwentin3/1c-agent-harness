@@ -19,7 +19,10 @@ import time
 from typing import Any
 import xml.etree.ElementTree as ET
 
-import eventlog_exporter as base
+try:
+    from . import eventlog_exporter as base
+except ImportError:  # Existing executable-script deployment.
+    import eventlog_exporter as base
 
 IBCMD_ENV = "ONE_C_HARNESS_EVENTLOG_IBCMD"
 JOURNAL_ENV = "ONE_C_HARNESS_EVENTLOG_JOURNAL"
@@ -185,9 +188,14 @@ def _source_value(record: dict[str, Any], field: str) -> object:
     return record.get(field)
 
 
-def _json_sequence_to_xml(
+def project_ibcmd_json(
     payload: bytes, maximum_bytes: int, filters: dict[str, str] | None = None,
 ) -> bytes:
+    """Project bounded ibcmd JSON using filters admitted by base.validate_request.
+
+    Source acquisition, identity and stability remain the deployment's concern;
+    this function owns field mapping/filtering and validates every source record.
+    """
     try:
         text = payload.decode("utf-8")
     except UnicodeDecodeError:
@@ -399,7 +407,7 @@ def _run_ibcmd(settings: Settings, request: dict[str, Any], root: Path, deadline
 
 
 def run_once(request: object) -> tuple[bytes, dict[str, object]]:
-    admitted = base._validate_request(request)
+    admitted = base.validate_request(request)
     settings = _settings()
     started = time.monotonic()
     deadline = started + _TIMEOUT_SECONDS
@@ -410,7 +418,7 @@ def run_once(request: object) -> tuple[bytes, dict[str, object]]:
     try:
         with tempfile.TemporaryDirectory(prefix="eventlog-ibcmd-", dir=settings.work_root) as raw:
             payload, export_milliseconds = _run_ibcmd(settings, admitted, Path(raw), deadline)
-            xml = _json_sequence_to_xml(
+            xml = project_ibcmd_json(
                 payload, admitted["maximumBytes"], admitted["filters"],
             )
             document = ET.fromstring(xml)
