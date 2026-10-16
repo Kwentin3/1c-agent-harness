@@ -214,7 +214,9 @@ Tool arguments не позволяют менять этот root. При явн
 oracle рядом с immutable runtime, сохранив read-only исходную конфигурацию.
 
 Новый шаг требует соответствующей текущей deployment-привязки. Исторический
-Goal91 wrapper ниже не выдаёт новый допуск и не является маршрутом этого переноса.
+[Goal91 wrapper](deployment/goal91/one-c-harness) не выдаёт новый допуск и не является маршрутом этого переноса.
+`hermes-plugin/` содержит только шесть файлов нативного plugin package; текущий
+deployment launcher и operator configuration поставляются отдельно.
 Экспериментальный `experiments/hermes-browser-dev-marker/oracle.py` проверяет
 заданный marker-протокол; его unit tests не доказывают вызов BSL-функции. Для этого
 нужны сверка frozen patches/call site и связанных нативных client/server receipts.
@@ -223,7 +225,7 @@ Goal91 wrapper ниже не выдаёт новый допуск и не явл
 Remote executor и его selected workspace должны быть явно настроены terminal boundary до
 установочного canary.
 
-Для принятого fixed deployment route wrapper в `hermes-plugin/deployment/one-c-harness`
+Для исторического принятого Goal91 fixed deployment route [wrapper в `deployment/goal91/one-c-harness`](deployment/goal91/one-c-harness)
 использует operator-owned переменную `ONE_C_HARNESS_PROJECT_CWD` в окружении Hermes process:
 она обозначает **одну явно допущенную бизнес-папку на executor**, не локальную папку WebUI.
 Для `open/narrow/verify` отсутствие привязки блокирует SSH-вызов; допустим только абсолютный
