@@ -12,7 +12,7 @@ BINARY_SHA256 = '62e72e15bb4550c4ffcf421f962c27fd1e1ddde1ba31e5bc0d7c9e0c2352dde
 VRD_SHA256 = 'e5406c8e7352b43c6499e2ff4fe189c9b239fe045eb0ac46de2960555850ac7d'
 LOCK_FILE = str(Path(__file__).resolve().with_name('access.lock'))
 ACCOUNTING_EXECUTOR = '2b5cf583d41f24bd4b4dde0d3678f3d3ad1b5e16293e03a5b43ea96258b0e5d7'
-CONTRACT_SHA256 = '1322f0668a1d48b447333062bdf569946d32ecf0a75b6528b250d55441cb639e'
+CONTRACT_SHA256 = '929163f9aabb98aaa878b5672c6f10f901a9eab2e9706413cd27a3c8767a0faa'
 
 # Runs only in the existing executor/file owner's namespace, never in the UID33 worker.
 # This replaces export_research.py's per-capture accounting, not its ledger.
