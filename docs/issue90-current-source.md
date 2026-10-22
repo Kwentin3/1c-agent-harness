@@ -3,11 +3,17 @@
 ## Текущий checkpoint, 2026-10-22
 
 **УСТАНОВЛЕНО / ОБЫЧНОЕ ЧТЕНИЕ ПРОВЕРЕНО / PRODUCT ACCEPTANCE OPEN.**
-Matched runtime EBD/c0 установлен штатно; новый реальный чат прочитал код и свежий ЖР,
-страницы и комментарий. Повторная выборка не изменила прежнюю. Полная приёмка не пройдена:
-select19.832/10.2156s выше10s, visibility30s не доказана, два успешных UI входа/выхода
-не подтверждены; coverage остаётся partial. Учёт15/16 exports и2/2 failed session attempts
-сохранён. [Единый исполненный итог и границы](issue90-activation-checkpoint.md),
+Matched runtime `ca642e3e2b7ca566840e0c614ab49caae7aed30a`/c0 установлен штатно;
+handler SHA256 `389185892a1653afabb994c4c9dcc48fb3d0af7ff82a6c564c2ef23f608a2ce0`.
+Один обычный cold select прошёл за9.05949s: raw/cache/public 3/3, пропусков0;
+coverage остаётся partial. Прежние19.832/10.2156s сохранены как история, не заменены
+этим одним результатом. Visibility30s и два успешных UI входа/выхода не доказаны.
+Canonical ledger SHA256 `865f7ae78d97a327dadf0156f38c40009f16ad3f27dcda85f7fe14a7d20c3ec0`:
+16/18 exports,3/4 FAILED UI attempts, help2/3, native71.38398242811672/900s, pending0/reserved0.
+UI C показала native training/infobase connection cap. Restart не выполнялся:
+предложение recovery охватывает существующий service и reference-container stop/start,
+просит общий лимит5 попыток с сохранением3FAILED, exports18 без изменения;
+это не разрешение на выполнение. [Единый исполненный итог и границы](issue90-activation-checkpoint.md),
 [квитанция](../experiments/issue90-current-source/runtime-20261022.json).
 
 ### Предшествующий source-only checkpoint того же дня

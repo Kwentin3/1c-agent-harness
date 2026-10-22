@@ -2,6 +2,39 @@
 
 ## Current checkpoint, 2026-10-22
 
+**CA INSTALLED / ONE COLD SELECT ≤10s / PRODUCT ACCEPTANCE OPEN.**
+Latest dated follow-up is in the existing [runtime receipt](../experiments/issue90-current-source/runtime-20261022.json),
+field `latestFollowup`; the EBD evidence below is preserved as history.
+
+- Native PM metadata and exact source readback match runtime `ca642e3e2b7ca566840e0c614ab49caae7aed30a`:
+  35 Agent files,35 engineering files,6 plugin files. Handler SHA256
+  `389185892a1653afabb994c4c9dcc48fb3d0af7ff82a6c564c2ef23f608a2ce0`;
+  core/plugin artifact `sha256:c0cb33198c4538830a5577c26fb418c853ea76987d0c3d23b2286fbd0ee8469f` unchanged.
+  [CA exact-runtime CI Python3.9/3.12](https://github.com/Kwentin3/1c-agent-harness/actions/runs/39767665396) PASS.
+  A later native `plugins list` readback timed out; exact file/PM-metadata readback succeeded.
+- One real ordinary cold select measured **9.059488534927368s**; native capture0.5659700338728726s.
+  Raw/cache/public Date/Level/Event/Comment match for3/3 records with0 omissions; page/record
+  used retained bytes, no additional export. H18 evidence SHA256
+  `e46f55e722b0805b2c6af11f2ded4e577a324cdd5908e4bc84b19677b2f425bd`.
+  Coverage remains `partial/capture_consistency_unproven`, `completeThrough:null`.
+  One passing select does not erase the earlier slower measurements or prove visibility≤30s.
+- Approved task limits are exports18/sessions4, contract SHA256
+  `929163f9aabb98aaa878b5672c6f10f901a9eab2e9706413cd27a3c8767a0faa`.
+  Source-bound canonical ledger SHA256 `865f7ae78d97a327dadf0156f38c40009f16ad3f27dcda85f7fe14a7d20c3ec0`:
+  exports16, UI attempts3 (all FAILED), help2, native71.38398242811672/900s,
+  pending0/reserved0; all prior spending is retained.
+- C native details establish **Training version limitation reached / Infobase connections limitation reached**.
+  They do not identify A as the current slot occupant. Two successful normal UI cycles
+  and visibility≤30s remain unproven. No recovery restart was applied.
+- The prepared recovery asks separate approval for **one existing `1c-jet-demo.service` restart,
+  including its exact69f reference-container stop/start**; every publication connection is affected.
+  `ExecStop` stops Apache, `ExecStopPost` stops the container, and `ExecStartPre` starts it again.
+  Agent/WebUI/engineering/browser containers, image/VRD/config/mounts remain outside the change.
+  The proposed total5 UI attempts preserves3FAILED and exports18; neither that extension nor
+  recovery is authorized by this document. Two successful normal cycles are still required.
+
+## Earlier EBD checkpoint, 2026-10-22
+
 **INSTALLED / ORDINARY READS VERIFIED / PRODUCT ACCEPTANCE OPEN.** This continues
 Goal90/PR93. [Sanitised executed receipt](../experiments/issue90-current-source/runtime-20261022.json).
 

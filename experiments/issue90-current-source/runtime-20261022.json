@@ -165,5 +165,74 @@
   ],
   "merged": false,
   "released": false,
-  "productPass": false
+  "productPass": false,
+  "latestFollowup": {
+    "date": "2026-10-22",
+    "classification": "CA_INSTALLED_ONE_COLD_SELECT_LE10S_PRODUCT_ACCEPTANCE_OPEN",
+    "historicalFieldsPreserved": "All preceding EBD runtime, budget and measurement fields are historical and unchanged",
+    "runtimeRevision": "ca642e3e2b7ca566840e0c614ab49caae7aed30a",
+    "runtimeCi": "https://github.com/Kwentin3/1c-agent-harness/actions/runs/39767665396",
+    "runtimeCiStatus": "SUCCESS",
+    "runtimeCiVersions": ["3.9", "3.12"],
+    "handlerSha256": "389185892a1653afabb994c4c9dcc48fb3d0af7ff82a6c564c2ef23f608a2ce0",
+    "artifactId": "sha256:c0cb33198c4538830a5577c26fb418c853ea76987d0c3d23b2286fbd0ee8469f",
+    "corePluginArtifactUnchanged": true,
+    "matchedFiles": {"agent": 35, "engineering": 35, "plugin": 6},
+    "nativePmEvidence": "Exact installed files and PM source/revision metadata match; later plugins list readback timed out",
+    "budget": {
+      "contractSha256": "929163f9aabb98aaa878b5672c6f10f901a9eab2e9706413cd27a3c8767a0faa",
+      "limits": {"export": 18, "sessionCycles": 4, "help": 3},
+      "counts": {"export": 16, "session": 3, "help": 2},
+      "allSessionAttemptsFailed": true,
+      "nativeSeconds": 71.38398242811672,
+      "nativeTotalSecondsLimit": 900,
+      "pendingStarted": 0,
+      "reservedSeconds": 0,
+      "ledgerSha256": "865f7ae78d97a327dadf0156f38c40009f16ad3f27dcda85f7fe14a7d20c3ec0",
+      "countsEvidence": "Source-bound canonical ledger read in post-c-shortpath-ledger.safe.jsonl; not a new ledger read by this documentation update",
+      "reset": false
+    },
+    "ordinaryColdSelection": {
+      "fullSelectSeconds": 9.059488534927368,
+      "nativeCaptureSeconds": 0.5659700338728726,
+      "rawRecords": 3,
+      "cacheRecords": 3,
+      "publicRecords": 3,
+      "criticalFields": ["Date", "Level", "Event", "Comment"],
+      "perRowMismatches": 0,
+      "rawRowsOmitted": 0,
+      "pageRecordSourceExact": true,
+      "extraExportsForReadback": 0,
+      "rawOutputSha256": "a35988382c31df6b4d6af0d50a743c19936821588a8858010b9af6f4bb61be64",
+      "captureReceiptCanonicalSha256": "05dd11d7a6bae9b12de68fcb482950ad937cde6a596476556a0438da102d2cc7",
+      "coverage": "partial/capture_consistency_unproven",
+      "completeThrough": null,
+      "singlePassingSelectDoesNotReplaceEarlierSlowerMeasurements": true,
+      "visibilityThresholdProven": false
+    },
+    "browserC": {
+      "status": "FAILED_NO_RETRY",
+      "nativeDetails": ["Training version limitation reached", "Infobase connections limitation reached"],
+      "ownBrowserCleanupComplete": true,
+      "successfulNormalUiCyclesProven": 0,
+      "AIdentifiedAsCurrentSlotOccupant": false
+    },
+    "recoveryProposal": {
+      "applied": false,
+      "requiresSeparateOwnerApproval": true,
+      "existingService": "1c-jet-demo.service",
+      "scope": "One existing service restart includes exact69f reference-container stop/start and affects all publication connections",
+      "unitSha256": "287c4033486292719be93603330c708f8a8fddc914fa6b121803dc779a56cccd",
+      "otherContainersAffected": false,
+      "proposedSessionLimit": 5,
+      "failedAttemptsPreserved": 3,
+      "exportLimitUnchanged": 18,
+      "proposalSha256": "393ef4a7d903a409cd681349fcb7ab1fb40fa3d0c31962ae3f39e276394aba4a"
+    },
+    "evidenceSha256": {
+      "h18-current-c-reader.safe.json": "e46f55e722b0805b2c6af11f2ded4e577a324cdd5908e4bc84b19677b2f425bd",
+      "post-c-shortpath-ledger.safe.jsonl": "08302eefe86279fd65ee9520800c82723af38575313b59a25994c0ebd14d6f6b"
+    },
+    "productPass": false
+  }
 }
