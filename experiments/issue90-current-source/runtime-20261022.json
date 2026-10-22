@@ -1,0 +1,169 @@
+{
+  "schemaVersion": 1,
+  "date": "2026-10-22",
+  "classification": "INSTALLED_ORDINARY_READS_VERIFIED_PRODUCT_ACCEPTANCE_OPEN",
+  "runtime": {
+    "revision": "ebd3109319e68bdfbfb48b60f1cb1d257dbd613f",
+    "artifactId": "sha256:c0cb33198c4538830a5577c26fb418c853ea76987d0c3d23b2286fbd0ee8469f",
+    "deploymentRecipeRevision": "d3abc92f59e8f569d76e46b76fc1ff9ee52980e1",
+    "agentFiles": 35,
+    "engineeringFiles": 35,
+    "pluginFiles": 6,
+    "activation": "native PluginManager explicit ref; Gateway reload for new sessions; no restart",
+    "handlerSha256": "ebe5ee675b0fbddf27a36aafb8fb0a89a90984ef585e4cc8467eb76753a94191",
+    "installation": "existing roman sudo; protected backup and exact readback; no new mount or privilege grant",
+    "declaredTools": 10,
+    "dispatcherSupportedOperations": 7,
+    "technologicalJournalMigrationPending": 3
+  },
+  "sourceIdentity": {
+    "binarySha256": "62e72e15bb4550c4ffcf421f962c27fd1e1ddde1ba31e5bc0d7c9e0c2352dde7",
+    "name": "issue90-current-demo",
+    "referenceId": "d2f38aa86d7bc461712df72fc22d5eb924324cbf5f386ca44a458024fd24970c",
+    "referenceImage": "sha256:69f919497cada9a8611f3de61df902d9f94bf20f84552ef5bd93125c38608ef9",
+    "vrdSha256": "e5406c8e7352b43c6499e2ff4fe189c9b239fe045eb0ac46de2960555850ac7d"
+  },
+  "sourceValidation": {
+    "tests": 460,
+    "status": "PASS",
+    "runtimeCi": "https://github.com/Kwentin3/1c-agent-harness/actions/runs/39734317214",
+    "runtimeCiVersions": [
+      "3.9",
+      "3.12"
+    ]
+  },
+  "ordinaryChat": {
+    "route": "existing production WebUI trusted operator route",
+    "publicSsoBrowserTested": false,
+    "model": "gpt-6.1-sol",
+    "provider": "openai-codex",
+    "codingPositiveBslFragment": {
+      "status": "POSITIVE_BSL_FRAGMENT_PASS",
+      "session_id": "261201491f33",
+      "targets": [
+        "one_c_open",
+        "one_c_narrow_context"
+      ],
+      "returned_results": 1,
+      "exact_snapshot_reused": true,
+      "native_verification_run": false,
+      "evidence_sha256": "4eb9ed85e6a0f24b8c2587a541b8a061d1a60b51655672b30aeff9670fc9c1e5"
+    },
+    "selectionA": {
+      "recordCount": 56,
+      "selectionRef": "eventlog:45c93c2940f00a5f0348a42e",
+      "selectionSha256AfterB": "a7369e5af3d787e91c60f91485a485f80527759bf3a41b63c1ebbb631852e4e8",
+      "fullSelectSeconds": 19.832152,
+      "nativeSeconds": 8.692313183099031
+    },
+    "selectionB": {
+      "recordCount": 24,
+      "selectionRef": "eventlog:da7ca7d57892b7bdfafb90e5",
+      "window": {
+        "start": "2026-10-22T10:38:30",
+        "end": "2026-10-22T10:39:04",
+        "filters": {},
+        "maximumCount": 100,
+        "limit": 20
+      },
+      "fullSelectSeconds": 10.215601682662964,
+      "nativeSeconds": 1.3168438030406833,
+      "rawOutputSha256": "4c5b6c29670adbcf5cf2570f0936518c72794ee03bda440c041c6911dec8413a",
+      "commentBytes": 39,
+      "commentComplete": true,
+      "allRawCachePublicCriticalFieldsMatch": true,
+      "observedOmissions": 0
+    },
+    "selectionAStableAfterB": true,
+    "nativeCodingVerificationRun": false,
+    "cachedCommentContinuation": {
+      "chunkBytes": [
+        16,
+        16,
+        7
+      ],
+      "offsetBytes": [
+        0,
+        16,
+        32
+      ],
+      "totalBytes": 39,
+      "sourceExact": true,
+      "nativeExports": 0,
+      "evidenceSha256": "fbb19c9ed1271277492da705e828e0333f78912ae3414450647d1136cdb87a47",
+      "finalStreamActive": false
+    }
+  },
+  "coverage": {
+    "status": "partial",
+    "reasonCode": "capture_consistency_unproven",
+    "completeThrough": null,
+    "appendRotationFenceProven": false
+  },
+  "browserAttempts": {
+    "A": "Opened own WebClient; own browser closed; native logout not proven through 10:36:54 UTC",
+    "B": "Native StartupError/unavailable; automatic reconnect cancelled; own browser closed",
+    "successfulUiCyclesProven": 0,
+    "nativeWebClientGroupsInB": 2,
+    "nativeGroupsAreSuccessfulUiProof": false,
+    "startupCause": "UNKNOWN"
+  },
+  "latency": {
+    "requiredFullSelectSeconds": 10,
+    "fullSelectThresholdMet": false,
+    "requiredVisibilitySeconds": 30,
+    "visibilityThresholdProven": false,
+    "nonNativeSameRouteRejectionSeconds": 5.624193649040535,
+    "observerConclusion": "Measured ibcmd CPU does not establish CPU saturation; wait cause unknown",
+    "sshMultiplexingImplemented": false
+  },
+  "budget": {
+    "contractSha256": "1322f0668a1d48b447333062bdf569946d32ecf0a75b6528b250d55441cb639e",
+    "ledgerSha256": "77163ed2ed0b487e55893bdbb79eb5baf36601dd89b658487d504476c330919c",
+    "counts": {
+      "help": 2,
+      "export": 15,
+      "engineering-runtime-smoke": 1,
+      "session": 2
+    },
+    "limits": {
+      "help": 3,
+      "export": 16,
+      "sessionCycles": 2,
+      "callSeconds": 30,
+      "nativeTotalSeconds": 900
+    },
+    "nativeSeconds": 70.81801239424385,
+    "pendingStarted": 0,
+    "reservedSeconds": 0.0,
+    "newExports": 4,
+    "sessionAttemptStatuses": [
+      "FAILED_NO_RETRY",
+      "FAILED_NO_RETRY"
+    ],
+    "reset": false
+  },
+  "privateEvidenceSha256": {
+    "native-install-readback.safe.jsonl": "b8f8405cf2f841d6cb732d95a8a9f411f7fea7049ca85dac59812848984f1933",
+    "representative-once.private.json": "1bff1945447e8c4416c789dbaa6ef2e2e98d67a3789aa91e355ceab7f8ed3c16",
+    "e3-canary-selection-a-final.private.json": "e042928e815d3500ef17068e28354e00b54255e0eb23a1070a89ff85d1b23645",
+    "e3-canary-selection-b-final.private.json": "fcfbd0d07b3cad3e0f2eda44e4863c200ba56effc7d6b5529c004dbcad33e19b",
+    "e4-browser-cycle-a.private.jsonl": "518d890c6b09810226b9d5106c5eb17023fa4ee428a70517d6f7722d9db88912",
+    "e4-browser-cycle-b.private.jsonl": "09a1c15f640583c3aee08cfa23ec29f408ccf281ade8c33564198955d5bdddf2",
+    "h12-selection-b-offline.safe.json": "f3bb93eb96e04d9c761279d39dc22c9b116d157fb1b923298d73b2dc7d142def",
+    "p9-observer-analysis.safe.json": "cf70acc632d4ede5274433a6d744914f6b23dd458a832d1944d8a3b07bd6d24a",
+    "e7-runtime-cause.safe.json": "b053f9926ac443cc628a0cfb97b00a1f103b938748f2a0990c215349c7ef8592",
+    "comment-continuation.safe.json": "5359f6e6fc81c06e5dab28df409f2531d7e99f77824be2e55a4f2d99327b6503",
+    "final-chat-status.safe.json": "86dafe47b057b2bd82e2470ee5e4c65bea2dbf605502bdf2cdd6b9e9350d092c"
+  },
+  "remaining": [
+    "Full-query <=10s",
+    "Visibility <=30s in a promptly observed control-event scenario",
+    "Two successful normal UI login/logout cycles within explicitly approved budget",
+    "Honest source consistency/append/rotation boundary",
+    "Retained TJ migration remains #92"
+  ],
+  "merged": false,
+  "released": false,
+  "productPass": false
+}

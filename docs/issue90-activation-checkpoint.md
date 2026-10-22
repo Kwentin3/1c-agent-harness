@@ -2,28 +2,36 @@
 
 ## Current checkpoint, 2026-10-22
 
-**SOURCE-ONLY IN PROGRESS; no new native PRODUCT PASS.** This continues Goal90/PR93.
+**INSTALLED / ORDINARY READS VERIFIED / PRODUCT ACCEPTANCE OPEN.** This continues
+Goal90/PR93. [Sanitised executed receipt](../experiments/issue90-current-source/runtime-20261022.json).
 
 | Boundary | Accepted fact / remaining work |
 |---|---|
-| Source | Canonical `/workspace/1c-agent-harness` is based on `4b4c3d24ae7f534a03398157878c849fc52f98a8`, with ten native tools including `one_c_stage_task`. PR93 capture/provenance work is being integrated without losing that route. Admission/process cleanup and exact candidate checks are in progress. |
-| Access | [Final #97 handoff](https://github.com/Kwentin3/1c-agent-harness/issues/97#issuecomment-6143900400) accepted access/capability and current startup binding. Earlier missing-credential/CDP blockers are historical. Access is reused, not recreated. |
-| Installed | Source HEAD, package seal, installed plugin/companion and loaded registry remain separate identities. Previous installed acceptance does not activate this new candidate. The October7 nine-tool candidate below is historical, not the ten-tool canonical installation. |
-| Product | Fresh registered event witnesses, ≤10s full selection and ≤30s visibility remain unaccepted. Historical full selections took17.05–18.83s. No current ТЖ configuration was found in the #97 effective roots; retained September ТЖ is not current telemetry. |
+| Source | Runtime Git revision `ebd3109319e68bdfbfb48b60f1cb1d257dbd613f`, matched artifact `sha256:c0cb33198c4538830a5577c26fb418c853ea76987d0c3d23b2286fbd0ee8469f`. 460 source tests and [exact-runtime CI Python3.9/3.12](https://github.com/Kwentin3/1c-agent-harness/actions/runs/39734317214) PASS. Ten declared tools preserve `one_c_stage_task`; the current dispatcher supports seven routes and retains three TJ migration refusals in #92. |
+| Access | Owner supplied demo credentials through the protected carrier and approved the dedicated browser key. Existing restricted SSH routes are restored. Normal `roman` sudo installed the protected HOME handler with verified backup. No Docker installation workaround, new mount, permanent privilege grant or password reset was used. |
+| Installed | Exact 35-file generations in Agent and engineering, six plugin files, two launchers and capture binding were read back. Native PluginManager installed explicit EBD ref and acknowledged Gateway reload for new sessions, without restart. Canonical checkout remains clean at `4b4c3d24ae7f534a03398157878c849fc52f98a8`; retained oracle/task roots remain unchanged. Source lock and normal installation/rollback recipe are in [Hermes PR175](https://github.com/Kwentin3/hermes/pull/175). |
+| Ordinary chat | New real-model chats used registered tools through the existing trusted operator WebUI route. Coding open → positive English-BSL fragment reused the same snapshot. JR A returned56 records; later B returned24, pages and a full39-byte natural comment. A further ordinary chat read that comment in16+16+7 UTF-8 bytes, following actual continuation offsets; concatenation equals raw source. B raw/cache/public Date/Level/Event/Comment agree for all24 with no observed omissions. A page, record and persisted cache hash stayed unchanged after B. Public SSO browser acceptance and native coding verification were not performed. |
+| Remaining | Full selects measured19.832s and10.2156s against ≤10s; native portions8.6923s and1.31684s are not substitutes. Visibility ≤30s was not established. UI A opened but native logout was unproven; UI B showed StartupError/unavailable and its reconnect was cancelled. Native B WebClient Start/Finish groups do not turn those attempts into two successful UI cycles. Error cause remains unknown. Coverage stays `partial/capture_consistency_unproven`, `completeThrough:null`; unchanged inventories are not a consistency fence. |
 
-The last published #97 ledger records help2/3, exports11/12, sessions0/2,
-native52.73141303029843/900s, STARTED0/reserved0, SHA256
-`d43b7e247158e9c24d5b60b923e284a663068deeb4927833f0d204e936842ab9`.
-This is a dated handoff, not a new ledger read. One remaining single-shot export
-does not establish two consecutive fresh acquisitions; no budget is reset or extended.
+The owner approved16 total exports, preserving eleven already spent. Latest canonical
+ledger: help2/3, exports15/16, session attempts2/2 (both FAILED_NO_RETRY),
+native70.81801239424385/900s, STARTED0/reserved0; SHA256
+`77163ed2ed0b487e55893bdbb79eb5baf36601dd89b658487d504476c330919c`.
+Four new exports were charged exactly once by the installed handler; retained-source
+readback/replay and page/record reads required no further exports. No retry or budget reset
+is hidden. A further browser attempt exceeds the currently approved limit.
 
-Activation must use the current deployment-owned Compose/S6 lifecycle after exact
-source/installed parity and an idle boundary are established. The current deployment
-has `agent`/`webui` services and an external Gateway; the old WebUI health-restart
-transaction is not its activation owner (UI restart409). The deployment owner must
-bind the minimal activation/rollback to the actual installed candidate. No new
-restart API, self-restart or registry workaround is prescribed here. A subsequent
-ordinary chat must verify the loaded identities and registered behavior.
+Representative actual input was rehearsed before the UI checks:882 raw/XML/projected
+records agree and replay uses identical retained bytes. A later bounded capture found no
+matching A WebClient Finish through10:36:54UTC. Read-only current logs did not identify
+the B startup cause. HOME was not CPU saturated; a same-route non-native rejection took
+5.624s, demonstrating substantial connection/startup cost. Worker samples do not prove
+CPU exhaustion or a specific I/O/lock cause. SSH reuse is an unimplemented native option
+for repeated requests, with no cold-query performance promise.
+
+Both PRs remain draft. No merge/release or product PASS. The maintained rollback restores
+exact previous handler/wrappers/plugin while preserving credentials, ledger and spent budget.
+Old WebUI health-restart recipes below are historical, not the current activation owner.
 
 ## Historical checkpoints, 2026-10-07
 

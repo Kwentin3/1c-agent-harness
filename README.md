@@ -2,14 +2,16 @@
 
 > [Goal #91](https://github.com/Kwentin3/1c-agent-harness/issues/91) завершена (CLOSED).
 > Текущая продуктовая Goal — [#90](https://github.com/Kwentin3/1c-agent-harness/issues/90):
-> свежий ЖР текущей ИБ; это ещё не достигнутый live-source результат.
-> [Текущий checkpoint, 22 октября](docs/issue90-current-source.md): source-only завершение #90
-> в работе; новый PRODUCT PASS не заявлен. [Доступ #97 принят](https://github.com/Kwentin3/1c-agent-harness/issues/97#issuecomment-6143900400)
+> свежий ЖР текущей ИБ; полная продуктовая приёмка остаётся открытой.
+> [Текущий checkpoint, 22 октября](docs/issue90-activation-checkpoint.md): matched runtime установлен,
+> обычный чат читает код/свежий ЖР; latency, полнота и UI-сессии ещё не приняты. PRODUCT PASS не заявлен.
+> [Доступ #97 принят](https://github.com/Kwentin3/1c-agent-harness/issues/97#issuecomment-6143900400)
 > в границах access/capability: старые credential/CDP/startup blockers сняты.
 > Это не приёмка свежих событий, полной latency или текущего ТЖ.
-> Canonical source — `/workspace/1c-agent-harness`, опора `4b4c3d24ae7f534a03398157878c849fc52f98a8`:
-> десять нативных tools, включая `one_c_stage_task`. PR #93 сохраняет доработки capture;
-> текущая работа объединяет их с этой опорой, сохраняя staged-task route.
+> Canonical checkout `/workspace/1c-agent-harness` сохранён на `4b4c3d24ae7f534a03398157878c849fc52f98a8`;
+> native PluginManager установил exact runtime `ebd3109319e68bdfbfb48b60f1cb1d257dbd613f` из PR #93.
+> Десять declared tools включают `one_c_stage_task`; текущий dispatcher поддерживает семь маршрутов,
+> три маршрута ТЖ сохраняют migration-pending из #92.
 > [Checkpoint установки и активации](docs/issue90-activation-checkpoint.md) разделяет source,
 > installed identity и ordinary-chat результат. Рецепты 7 октября ниже в документах исторические.
 > [Итог 7 октября](docs/goal91-final.md): fresh registered cold → warm → narrow →

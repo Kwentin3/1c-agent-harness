@@ -2,6 +2,16 @@
 
 ## Текущий checkpoint, 2026-10-22
 
+**УСТАНОВЛЕНО / ОБЫЧНОЕ ЧТЕНИЕ ПРОВЕРЕНО / PRODUCT ACCEPTANCE OPEN.**
+Matched runtime EBD/c0 установлен штатно; новый реальный чат прочитал код и свежий ЖР,
+страницы и комментарий. Повторная выборка не изменила прежнюю. Полная приёмка не пройдена:
+select19.832/10.2156s выше10s, visibility30s не доказана, два успешных UI входа/выхода
+не подтверждены; coverage остаётся partial. Учёт15/16 exports и2/2 failed session attempts
+сохранён. [Единый исполненный итог и границы](issue90-activation-checkpoint.md),
+[квитанция](../experiments/issue90-current-source/runtime-20261022.json).
+
+### Предшествующий source-only checkpoint того же дня
+
 **SOURCE-ONLY IN PROGRESS / PRODUCT ACCEPTANCE OPEN.** Продолжаются #90 и PR #93,
 без нового Goal или review-цикла. Canonical source — `/workspace/1c-agent-harness`,
 опорный commit `4b4c3d24ae7f534a03398157878c849fc52f98a8`. Его десять нативных tools
