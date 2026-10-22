@@ -55,7 +55,9 @@ evidence. [Native technological log documentation](https://1c-dn.com/library/tut
 
 ## Evidence and acceptance boundary
 
-This candidate is not yet installed or product-accepted.
+The matched source is installed and its ordinary-chat case is accepted within
+the admitted demo scope described below. This does not establish portability
+to other IBs/platform versions, production-1C acceptance or a performance SLA.
 
 The actual native web form was opened in the current demo, its five level choices
 and current `Week` storage period were read, then Cancel/File/Exit returned to
@@ -69,9 +71,83 @@ A separate external-processor approach built successfully on a disposable blank
 IB but failed before its entry marker. It was removed from the new product path;
 build success is not represented as native logging-control success.
 
-Acceptance still requires required Linux CI on the exact source, matched
-installation/update/rollback, and one ordinary-chat case proving
-the current target, temporary collection, current evidence and restoration.
+### Installed ordinary-chat acceptance — 22 October 2026
+
+- Installed source: [`706b34e7aec767dccff7b0bccbc67a265c0b7039`](https://github.com/Kwentin3/1c-agent-harness/commit/706b34e7aec767dccff7b0bccbc67a265c0b7039).
+  Matched core/plugin artifact:
+  `sha256:bdaafda26024b0b8e66f160a26cb6954720f906a027df1c2fafe60f85686c901`.
+- Matched Hermes recipe: [`6a21772bce6a623f80ed0f26bcd1baed69983ad7`](https://github.com/Kwentin3/hermes/commit/6a21772bce6a623f80ed0f26bcd1baed69983ad7).
+  The existing native PluginManager installed six plugin files at that source;
+  both Agent and engineering source generations verified the same 44-file pin.
+- Exact-source [Linux CI run 39809606959](https://github.com/Kwentin3/1c-agent-harness/actions/runs/39809606959)
+  passed on Python 3.9 and 3.12. Matched Hermes Shared
+  [39809651730](https://github.com/Kwentin3/hermes/actions/runs/39809651730), Office
+  [39809651951](https://github.com/Kwentin3/hermes/actions/runs/39809651951) and AgentBridge
+  [39809651924](https://github.com/Kwentin3/hermes/actions/runs/39809651924) checks passed.
+  CI supplements the executed case; it is not its substitute.
+
+One ordinary model chat used the registered public tools to inspect and start
+both diagnostic collections on the same verified current target, read current
+evidence, drill down, stop both using the exact returned refs, and inspect final
+status. All 20 tool calls have matching durable results and the stream ended
+inactive. This used the supported private trusted-operator path to the ordinary
+WebUI chat/model owner; public Authelia SSO was not tested.
+
+The comparison included source records and omissions, not only tool statuses:
+
+- JR native capture, retained selection and reconstructed public records match
+  as multisets of Date/Event/Level/Comment: **13/13/13**, zero omissions or
+  invented records from that captured output. Its output SHA256 is
+  `d770260392e835a1d4a2820a2379e252cf2f1c79d5db7e1d85508c25e92f4a57`.
+  Temporal coverage remains **partial**, with `capture_consistency_unproven`
+  and `completeThrough=null`; this is not proof of complete temporal history.
+- TJ produced natural EXCP evidence after the native polling interval, without
+  a manufactured business error. Source headers within the requested window,
+  retained records and public selection match **12/12/12**, with zero omissions;
+  11 groups, group drilldown and exact-record drilldown refer to that selection.
+  Later source appends do not alter the retained selection.
+- JR returned to its original four levels, confirmed through the native form.
+  TJ returned to its original configuration absence; its owned state/backup
+  were removed. Retained evidence remains available under its original TTL.
+  Source/CI tests cover foreign-change conflicts; no unrelated administrator's
+  live settings were changed to manufacture that test.
+- The same chat successfully reused the exact `SnapshotRef` from `one_c_open`
+  for a bounded positive `one_c_narrow_context` result. Existing coding owners
+  and SnapshotRef/oracle admission remain preserved; this was not a new coding
+  write/native-verification experiment.
+
+The maintained installer applied the handler/source-pin pair under the existing
+access lock and retained its previous pair. The exact reverse pair passed
+rollback preview; the accepted installation was not rolled back. No Hermes
+restart, new permissions or business-data write was part of this delivery.
+Post-case Gateway/WebUI active-agent/run/stream counts were zero.
+
+Known unresolved Hermes core issue: its native failure classifier marks nested
+diagnostic `error` data as a failed tool result and increments the failure
+streak. Both successful TJ drilldowns in this case received that annotation;
+the agent correctly read the domain results and completed restoration. The
+classifier is **not fixed in the installed runtime**. This limits any broader
+claim about uninterrupted longer workflows; the acceptance above is the
+demonstrated functional Harness case only.
+
+Operator evidence is retained outside Git at
+`comfyUI/.local/harness-goal99-20261022/`. The following immutable locators bind
+the claims without publishing raw logs, credentials or private transcripts:
+
+| Receipt | SHA256 |
+| --- | --- |
+| `acceptance.safe.json` — source/cache/public parity and restoration | `4e2fe0169e0d9c1a891bed54a0c8ded1c312c9de68d85adcaf9cc0f532047880` |
+| `chat-case-start.private.json` — ordinary-chat status/start | `52c2e891491b5c867ad2ef783ed9ae51045327de4a1692c41ed1136ee664f8f5` |
+| `chat-case-finish.private.json` — reads/drilldown/stop/coding | `9295f86ee17352fcbe089d6149ef48cb1787566bfb75b9ff9b53890a0d061072` |
+| `log-source-after-stop.private.json` — source/config restoration | `9317402639d5f29b291322e3e5c08847cd06b866a67a753ca3d82b84b1ea40d5` |
+| `home-apply.safe.json` — paired handler/pin install | `75b194a7ffdcfd643723b6b74b5677499b3ebff412b98087c0aeaec61cc373de` |
+| `runtime-stage-apply.safe.jsonl` — matched 44+44 source files | `e89f2b20633bff183f2389149247405d89c67fedb4706c905ec5957bdbd923ae` |
+| `runtime-launcher-apply.safe.json` — existing launcher activation | `8957cea44232fcefd743eb7878d7cf2e507c26b60a13768982ea7ef7e69d517a` |
+| `plugin-apply.private.json` — native pinned PluginManager install | `fba9041bf69e24373cdcca638b70eb9f97556e9e790aed523c9146bbb8e725e1` |
+| `post-case-idle.safe.jsonl` — final native idle/pointer readback | `865d2f2aeaed6ad7e2db1009681e4a39c731c71e2aa0f841fa173b7a9b2cdd9a` |
+
+PR #100 and the matched Hermes PR #178 remain draft/unmerged at this checkpoint.
+This receipt does not authorize merge/release or activation of a Hermes core fix.
 There is no new 5/10/30-second performance experiment in this goal.
 
 Refresh matched core/plugin artifact IDs with `python scripts/update_release.py`.
