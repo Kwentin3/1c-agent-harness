@@ -2,9 +2,16 @@
 
 ## Current checkpoint, 2026-10-22
 
-**34a INSTALLED / THREE UI CYCLES AND SOURCE PARITY VERIFIED / SELECT COST ACCEPTED ≤11s / VISIBILITY ACCEPTANCE OPEN / PRODUCT ACCEPTANCE OPEN.**
+**34a INSTALLED / THREE UI CYCLES AND SOURCE PARITY VERIFIED / SELECT COST ACCEPTED ≤11s / MILESTONE ACCEPTED BY OWNER / VISIBILITY≤30s DEFERRED.**
 The same [runtime receipt](../experiments/issue90-current-source/runtime-20261022.json)
 appends `session6TransportFreshnessFollowup`; all previous fields remain historical evidence.
+
+Final owner decision,2026-10-22: finish this milestone using the existing functional evidence;
+defer additional live tests and the unproven visibility≤30s measurement to real cases in
+[#92](https://github.com/Kwentin3/1c-agent-harness/issues/92). Existing tests remain intact.
+This explicitly revises milestone acceptance; it does not turn the missing measurement into
+PASS, grant21/7, or authorize merge/release. No further native/UI/export runs are required
+for this closeout. Installed sources and the exhausted20/6 ledger remain unchanged.
 
 Owner timing decision, 2026-10-22: accept the measured selects at a revised ≤11s threshold:
 F10.185808181762695s, D10.566930055618286s and E9.672648191452026s. The 5s target is an
@@ -49,9 +56,10 @@ exhausted export/UI budget or authorize another restart; the spent 20/6 budget i
   Separate final health read found Gateway/WebUI idle; launcher c594/thin3f04/binding07b
   hashes, modes and owners matched. The ledger/CM receipt alone does not establish health.
 
-Product acceptance remains OPEN: select cost is accepted under the revised≤11s decision,
-but valid visibility≤30s remains unproven. Coverage is explicitly partial/completeThrough:null;
-three TJ routes remain pending#92.
+The milestone is accepted under the owner's revised closeout decision. Select cost meets
+the accepted≤11s tolerance; visibility≤30s remains unproven and is deferred to real cases,
+not reported as PRODUCT PASS. Coverage is explicitly partial/completeThrough:null;
+three TJ routes remain pending#92. Source PRs remain reviewable; merge/release is separate.
 
 ## Earlier FE checkpoint, 2026-10-22
 

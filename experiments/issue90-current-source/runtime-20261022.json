@@ -434,6 +434,20 @@
       "spentExports20AndSessionAttempts6Unchanged": true,
       "additionalExportUiBudgetOrRestartAuthorized": false
     },
+    "ownerFinalizationDecision": {
+      "date": "2026-10-22",
+      "milestoneDeliveryAccepted": true,
+      "basis": "Existing functional evidence and owner-approved select tolerance<=11s",
+      "additionalLiveTestsDeferredToRealCases": true,
+      "visibility30SecondsVerified": false,
+      "visibilityFollowupIssue": 92,
+      "existingTestsPreserved": true,
+      "additional21Exports7AttemptsApproved": false,
+      "newNativeUiExportRuns": 0,
+      "runtimeAndLedgerChanged": false,
+      "fullProductPassClaimed": false,
+      "mergeReleaseAuthorized": false
+    },
     "productPass": false,
     "merged": false,
     "released": false

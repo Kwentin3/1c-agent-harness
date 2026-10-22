@@ -1,11 +1,11 @@
 # 1C Agent Harness
 
 > [Goal #91](https://github.com/Kwentin3/1c-agent-harness/issues/91) завершена (CLOSED).
-> Текущая продуктовая Goal — [#90](https://github.com/Kwentin3/1c-agent-harness/issues/90):
-> свежий ЖР текущей ИБ; полная продуктовая приёмка остаётся открытой.
+> Этап [#90](https://github.com/Kwentin3/1c-agent-harness/issues/90) завершён по решению владельца:
+> чтение свежего ЖР текущей ИБ принято по имеющимся результатам; дополнительные live-проверки отложены на реальные кейсы в [#92](https://github.com/Kwentin3/1c-agent-harness/issues/92).
 > [Текущий checkpoint, 22 октября](docs/issue90-activation-checkpoint.md): matched runtime установлен,
 > UI D/E/F завершены штатным Exit → native Log in; raw/cache/public каждого цикла совпали3/3, пропусков0.
-> SELECT COST ACCEPTED ≤11s по новому решению владельца: F10.185808s/D10.566930s/E9.672648s; 5s — необязательное будущее улучшение. VISIBILITY ACCEPTANCE OPEN: F NOT_MEASURED, прежняя E32.032268s сохранена; coverage partial. Новых измерений или допуска на live-запуски это решение не добавляет.
+> SELECT COST ACCEPTED ≤11s: F10.185808s/D10.566930s/E9.672648s; 5s — необязательное будущее улучшение. Visibility≤30s НЕ ПОДТВЕРЖДЕНА и отложена владельцем на реальные кейсы; F NOT_MEASURED, прежняя E32.032268s сохранена, coverage partial. Дополнительный цикл21/7 не запускается; существующие тесты сохранены.
 > Это не доказательство задержки самого native ЖР; PRODUCT PASS не заявлен.
 > [Доступ #97 принят](https://github.com/Kwentin3/1c-agent-harness/issues/97#issuecomment-6143900400)
 > в границах access/capability: старые credential/CDP/startup blockers сняты.
