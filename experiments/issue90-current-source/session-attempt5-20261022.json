@@ -1,0 +1,101 @@
+{
+  "schemaVersion": 1,
+  "issue": 90,
+  "purpose": "Owner-approved fifth total session attempt; source preparation only",
+  "sourceBaseCommit": "c289279efef9fcf422ea36a50759fd018c022adb",
+  "approvedLimits": {
+    "help": 3,
+    "export": 18,
+    "sessionCycles": 5,
+    "callSeconds": 30,
+    "nativeTotalSeconds": 900
+  },
+  "priorContractSha256": "929163f9aabb98aaa878b5672c6f10f901a9eab2e9706413cd27a3c8767a0faa",
+  "candidateContractSha256": "a6a13b1eb39867537257e51998685d145bec92d5302dcd2dc102214f755bcb5f",
+  "contractByteDelta": "Only integer sessionCycles4->5; all other bytes preserved",
+  "actualLedgerSha256": "865f7ae78d97a327dadf0156f38c40009f16ad3f27dcda85f7fe14a7d20c3ec0",
+  "retainedRows": 22,
+  "retainedExportAttempts": 16,
+  "retainedFailedSessionAttempts": 3,
+  "nativeSecondsAlreadySpent": 71.38398242811672,
+  "pendingStarted": 0,
+  "reservedSeconds": 0,
+  "handlerCanonicalLfSha256": "b67fdefd6e21bf732676201b3c0cbe0ef10e0b909e830e7c585a8bee7b1d9fc0",
+  "handlerChange": "CONTRACT_SHA256 only; ACCOUNTING and capture code byte-identical",
+  "immutableCorePluginArtifactId": "sha256:c0cb33198c4538830a5577c26fb418c853ea76987d0c3d23b2286fbd0ee8469f",
+  "corePluginReleaseBytesChanged": false,
+  "rehearsal": {
+    "cases": [
+      {
+        "final_export_count": 18,
+        "final_session_count": 4,
+        "limits": {
+          "callSeconds": 30,
+          "export": 18,
+          "help": 3,
+          "nativeTotalSeconds": 900,
+          "sessionCycles": 4
+        },
+        "next_export": "budget_exhausted",
+        "next_session": "budget_exhausted",
+        "original22_rows_exact": true,
+        "pending_started": 0,
+        "preserved_failed_sessions": 3,
+        "reserved_seconds": 0,
+        "synthetic_exports_added": 2,
+        "synthetic_sessions_added": 1
+      },
+      {
+        "final_export_count": 18,
+        "final_session_count": 5,
+        "limits": {
+          "callSeconds": 30,
+          "export": 18,
+          "help": 3,
+          "nativeTotalSeconds": 900,
+          "sessionCycles": 5
+        },
+        "next_export": "budget_exhausted",
+        "next_session": "budget_exhausted",
+        "original22_rows_exact": true,
+        "pending_started": 0,
+        "preserved_failed_sessions": 3,
+        "reserved_seconds": 0,
+        "synthetic_exports_added": 2,
+        "synthetic_sessions_added": 2
+      }
+    ],
+    "handler_sha256": "b67fdefd6e21bf732676201b3c0cbe0ef10e0b909e830e7c585a8bee7b1d9fc0",
+    "input_ledger_sha256": "865f7ae78d97a327dadf0156f38c40009f16ad3f27dcda85f7fe14a7d20c3ec0",
+    "input_rows": 22,
+    "max_accounting_stdin_bytes": 484,
+    "new_contract_sha256": "a6a13b1eb39867537257e51998685d145bec92d5302dcd2dc102214f755bcb5f",
+    "old_contract_sha256": "929163f9aabb98aaa878b5672c6f10f901a9eab2e9706413cd27a3c8767a0faa",
+    "production_writeback": false,
+    "public_reserve_settle_executed": true,
+    "real_export_calls": 0,
+    "real_native_calls": 0,
+    "status": "PASS",
+    "temp_cleanup": true,
+    "transaction_mocked": false,
+    "transport_only_redirected_to_real_accounting_child": true
+  },
+  "isolation": {
+    "image": "sha256:5788b36f195e1710bda384ddcc0e5914492f063271c2839668888289245f284c",
+    "network": "none",
+    "uid": 1000,
+    "source_mount": "readonly",
+    "secrets_mounted": false,
+    "one_c_mounted": false,
+    "exit_code": 0
+  },
+  "operatorHelper": "ignored h20-raise-session5.remote.py; default preview; explicit apply; reverse from exact backup only while fixed ledger CAS remains",
+  "operatorHelperSha256": "e31cbfa303a827f88d4ef6ccfea1c9eb2f3edb82af440a63c0d3300cc9855287",
+  "actualOwnerDefaultPreview": "PASS: exact contract/ledger SHA, UID/GID10001, mode0600; no changes",
+  "actualContractWriteback": false,
+  "actualLedgerWriteback": false,
+  "actualNativeCalls": 0,
+  "actualExports": 0,
+  "actualSessions": 0,
+  "acceptanceBoundary": "Actual retained-ledger tempfile accounting proof, not UI/native/product acceptance"
+}
