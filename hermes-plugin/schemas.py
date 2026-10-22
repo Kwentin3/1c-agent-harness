@@ -63,6 +63,18 @@ def _eventlog_filters() -> dict[str, object]:
 
 
 TOOLS = (
+    {
+        "name": "one_c_logging",
+        "description": "Inspect or control deployment-owned registration/technological logging. Status returns the exact opaque targetRef; start is explicit and stop restores only the owned capture. Configured does not mean platform collection was observed.",
+        "parameters": {
+            "type": "object",
+            "oneOf": [
+                {"properties": {"action": {"const": "status"}, "journal": {"enum": ["registration", "technological"]}}, "required": ["action", "journal"], "additionalProperties": False},
+                {"properties": {"action": {"const": "start"}, "journal": {"enum": ["registration", "technological"]}, "profile": {"enum": ["errors", "diagnostic"]}, "targetRef": {"type": "string", "pattern": r"^target:[0-9a-f]{64}(?![\s\S])"}}, "required": ["action", "journal", "profile", "targetRef"], "additionalProperties": False},
+                {"properties": {"action": {"const": "stop"}, "journal": {"enum": ["registration", "technological"]}, "captureRef": {"type": "string", "pattern": r"^capture:[0-9a-f]{32}(?![\s\S])"}, "targetRef": {"type": "string", "pattern": r"^target:[0-9a-f]{64}(?![\s\S])"}}, "required": ["action", "journal", "captureRef", "targetRef"], "additionalProperties": False},
+            ],
+        },
+    },
     _tool("one_c_open", {}, [], "Open the admitted target in the currently selected Hermes terminal workspace."),
     _tool(
         "one_c_narrow_context",

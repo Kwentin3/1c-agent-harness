@@ -254,6 +254,9 @@ class CaptureAttemptError(ValueError):
 
 def main():
     command = os.environ.get('SSH_ORIGINAL_COMMAND', '')
+    if command.startswith('current-harness-v1 '):
+        print(json.dumps(_product_command(command), sort_keys=True))
+        return
     match = re.fullmatch(r'current-journal-v1 ([A-Za-z0-9+/=]{1,4096})', command)
     if not match:
         raise ValueError('invalid_request')
@@ -291,6 +294,36 @@ def _capture(value):
         fcntl.flock(lock,fcntl.LOCK_EX|fcntl.LOCK_NB)
     except BlockingIOError:
         raise ValueError('access_busy') from None
+    inspected, driver, merged, source = _binding()
+    pid = inspected['State']['Pid']
+    name = 'issue94-journal-' + uuid.uuid4().hex
+    process = None
+    def interrupted(signum, frame):
+        raise SystemExit(128+signum)
+    for signum in [signal.SIGTERM, signal.SIGHUP, signal.SIGINT]:
+        signal.signal(signum, interrupted)
+    try:
+        process = subprocess.Popen(docker_args(merged, name), stdin=subprocess.PIPE, stdout=subprocess.PIPE, stderr=subprocess.PIPE)
+        stdout, stderr = process.communicate(json.dumps(value).encode(), timeout=40)
+        if process.returncode:
+            raise ValueError('capability_failed')
+        result = json.loads(stdout)
+        if result['sourceDirectory'] != source['journalDirectory']:
+            raise ValueError('binding_unavailable')
+        result['sourceBinding'] = {'referenceId':REFERENCE,'referenceImage':REFERENCE_IMAGE,
+            'referenceHostPid':pid,'referenceStartedAt':inspected['State']['StartedAt'],
+            'referenceStorageDriver':driver['Name'],'referenceMergedRoot':merged,
+            'vrdSha256':VRD_SHA256,'currentIbPath':'/var/lib/1c/ib','journalPath':'/var/lib/1c/ib/1Cv8Log','sourceProbe':source}
+        return result
+    finally:
+        # Docker owns the task cgroup. Remove this unique helper only, never the reference.
+        subprocess.run(['/usr/bin/docker','rm','--force',name],stdout=subprocess.DEVNULL,stderr=subprocess.DEVNULL,timeout=10)
+        if process is not None and process.poll() is None:
+            process.kill();process.wait(timeout=5)
+
+
+def _binding():
+    """Single existing authority for both legacy capture and product control."""
     inspected = json.loads(subprocess.check_output(['/usr/bin/docker', 'inspect', REFERENCE], timeout=5))[0]
     if inspected['Id'] != REFERENCE or inspected['Image'] != REFERENCE_IMAGE or not inspected['State']['Running']:
         raise ValueError('binding_unavailable')
@@ -317,30 +350,74 @@ print(json.dumps({'vrdSha256':hashlib.sha256(raw).hexdigest(),'ibBindings':ibs,'
         '/usr/bin/python3', '-I', '-B', '-c', probe], timeout=5))
     if source['vrdSha256'] != VRD_SHA256 or source['ibBindings'] != ['/var/lib/1c/ib'] or source['timeZonePath'] != '/usr/share/zoneinfo/Etc/UTC':
         raise ValueError('binding_unavailable')
-    name = 'issue94-journal-' + uuid.uuid4().hex
-    process = None
-    def interrupted(signum, frame):
-        raise SystemExit(128+signum)
-    for signum in [signal.SIGTERM, signal.SIGHUP, signal.SIGINT]:
-        signal.signal(signum, interrupted)
+    return inspected, driver, merged, source
+
+
+PRODUCT_BOOTSTRAP = r'''
+import os,pathlib,stat,sys
+root=pathlib.Path(sys.argv[1])
+if not root.is_absolute() or root.resolve()!=root:raise SystemExit(2)
+for path in (root,*root.parents):
+ s=path.stat()
+ if not stat.S_ISDIR(s.st_mode) or s.st_uid!=0 or s.st_mode&0o022:raise SystemExit(2)
+sys.path.insert(0,str(root))
+sys.argv=['current_logging']
+from one_c_harness.current_logging import main
+main()
+'''
+
+
+def _product_command(command):
+    match = re.fullmatch(r'current-harness-v1 ([A-Za-z0-9+/=]{1,24576})', command)
+    if not match:
+        raise ValueError('invalid_request')
     try:
-        process = subprocess.Popen(docker_args(merged, name), stdin=subprocess.PIPE, stdout=subprocess.PIPE, stderr=subprocess.PIPE)
-        stdout, stderr = process.communicate(json.dumps(value).encode(), timeout=40)
-        if process.returncode:
+        raw = base64.b64decode(match[1], validate=True)
+        if len(raw) > 16384:
+            raise ValueError
+        value = json.loads(raw)
+        if (not isinstance(value, dict) or set(value) != {'schemaVersion', 'operation', 'arguments'}
+                or type(value['schemaVersion']) is not int or value['schemaVersion'] != 1
+                or value['operation'] not in ('logging_control','observation_info','observe','expand_observation','eventlog_capture')
+                or not isinstance(value['arguments'], dict)):
+            raise ValueError
+    except (ValueError, UnicodeError):
+        raise ValueError('invalid_request') from None
+    source = os.environ.get('CURRENT_HARNESS_SOURCE', '')
+    if not re.fullmatch(r'/[A-Za-z0-9_./-]+', source) or '..' in Path(source).parts:
+        raise ValueError('binding_unavailable')
+    if value['operation'] == 'eventlog_capture':
+        capture = admit(value['arguments'])
+        if capture['operation'] != 'export':
+            raise ValueError('invalid_request')
+        return _capture(capture)
+    import fcntl
+    lock = os.open(LOCK_FILE, os.O_RDWR | os.O_NOFOLLOW)
+    try:
+        try:
+            fcntl.flock(lock, fcntl.LOCK_EX | fcntl.LOCK_NB)
+        except BlockingIOError:
+            raise ValueError('access_busy') from None
+        _, _, _, bound = _binding()
+        # Canonical technical identity; neither caller targetRef nor a model path owns it.
+        identity = {'referenceId': REFERENCE, 'image': REFERENCE_IMAGE, 'vrd': VRD_SHA256,
+                    'ibPath': '/var/lib/1c/ib', 'journalDevice': bound['journalDirectory']['device'],
+                    'journalInode': bound['journalDirectory']['inode']}
+        target_ref = 'target:' + hashlib.sha256(json.dumps(identity, sort_keys=True, separators=(',', ':')).encode()).hexdigest()
+        reply = subprocess.run(['/usr/bin/docker', 'exec', '-i', '--user', '0:0',
+            '--env', 'ONE_C_HARNESS_CURRENT_TARGET_REF=' + target_ref,
+            '--env', 'ONE_C_HARNESS_CURRENT_SOURCE=' + source,
+            '--env', 'ONE_C_HARNESS_CURRENT_IB_PATH=' + bound['ibBindings'][0],
+            REFERENCE, '/usr/bin/python3', '-I', '-B',
+            '-c', PRODUCT_BOOTSTRAP, source], input=raw, capture_output=True, timeout=56)
+        if reply.returncode or len(reply.stdout) > 16384 or len(reply.stderr) > 1024:
             raise ValueError('capability_failed')
-        result = json.loads(stdout)
-        if result['sourceDirectory'] != source['journalDirectory']:
-            raise ValueError('binding_unavailable')
-        result['sourceBinding'] = {'referenceId':REFERENCE,'referenceImage':REFERENCE_IMAGE,
-            'referenceHostPid':pid,'referenceStartedAt':inspected['State']['StartedAt'],
-            'referenceStorageDriver':driver['Name'],'referenceMergedRoot':merged,
-            'vrdSha256':VRD_SHA256,'currentIbPath':'/var/lib/1c/ib','journalPath':'/var/lib/1c/ib/1Cv8Log','sourceProbe':source}
+        result = json.loads(reply.stdout)
+        if not isinstance(result, dict):
+            raise ValueError('capability_failed')
         return result
     finally:
-        # Docker owns the task cgroup. Remove this unique helper only, never the reference.
-        subprocess.run(['/usr/bin/docker','rm','--force',name],stdout=subprocess.DEVNULL,stderr=subprocess.DEVNULL,timeout=10)
-        if process is not None and process.poll() is None:
-            process.kill();process.wait(timeout=5)
+        os.close(lock)
 
 if __name__ == '__main__':
     try:

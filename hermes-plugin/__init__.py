@@ -2,7 +2,7 @@
 from pathlib import Path
 
 from .adapter import (
-    expand_observation, narrow_context, native_verify, observation_info, observe, open_target,
+    expand_observation, logging_control, narrow_context, native_verify, observation_info, observe, open_target,
     page_registration_log, read_registration_log_record, select_registration_log, stage_task,
 )
 from .schemas import TOOLS
@@ -28,6 +28,7 @@ def register(ctx):
         "one_c_narrow_context": narrow_context(ctx),
         "one_c_native_verify": native_verify(ctx),
         "one_c_observation_info": observation_info(ctx),
+        "one_c_logging": logging_control(ctx),
         "one_c_observe": observe(ctx),
         "one_c_expand_observation": expand_observation(ctx),
         "one_c_select_registration_log": select_registration_log(ctx),

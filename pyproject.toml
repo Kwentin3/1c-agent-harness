@@ -17,5 +17,5 @@ one-c-eventlog-exporter = "one_c_harness.eventlog_exporter:main"
 packages = ["one_c_harness"]
 
 [tool.setuptools.package-data]
-one_c_harness = ["release.json", "eventlog_epf/**/*.xml", "eventlog_epf/**/*.bsl"]
+one_c_harness = ["release.json", "eventlog_epf/**/*.xml", "eventlog_epf/**/*.bsl", "logging_epf/**/*.xml", "logging_epf/**/*.bsl"]
 

@@ -334,6 +334,13 @@ def observation_info(ctx: Any) -> Callable[[object], str]:
     return handler
 
 
+def logging_control(ctx: Any) -> Callable[[object], str]:
+    def handler(arguments: object, **_kwargs: object) -> str:
+        # Native transport timeout is60s; terminal also covers dispatch/cleanup.
+        return _call(ctx, "logging_control", arguments, 75)
+    return handler
+
+
 def observe(ctx: Any) -> Callable[[object], str]:
     def handler(arguments: object, **_kwargs: object) -> str:
         return _call(ctx, "observe", arguments, 60)

@@ -40,6 +40,7 @@ _REQUEST_KEYS = {
 _FILTERS = {"event", "level", "user", "metadata"}
 _LEVELS = {"Information", "Error", "Warning", "Note"}
 _TIMEOUT_SECONDS = 115
+_SETTINGS_TIMEOUT_SECONDS = 15
 _MAX_BYTES = 1024 * 1024
 _DIAGNOSTIC_BYTES = 4096
 _DIAGNOSTIC_MESSAGE_BYTES = 512
@@ -170,6 +171,11 @@ def validate_request(value: object) -> dict[str, Any]:
     return value
 
 
+def load_settings(*, require_epf: bool = True) -> Settings:
+    """Load the deployment-selected settings through the existing validator."""
+    return _load_settings(require_epf=require_epf)
+
+
 def _environment(settings: Settings, home: Path, temporary: Path) -> dict[str, str]:
     environment = dict(os.environ)
     environment["LD_LIBRARY_PATH"] = f"{settings.platform.parent}:{settings.libs}"
@@ -201,12 +207,16 @@ def _connection(settings: Settings) -> list[str]:
 
 def _stop_group(process: subprocess.Popen[bytes]) -> None:
     try:
-        os.killpg(process.pid, signal.SIGTERM)
-    except ProcessLookupError:
-        pass
-    try:
-        process.wait(timeout=1)
-    except subprocess.TimeoutExpired:
+        try:
+            os.killpg(process.pid, signal.SIGTERM)
+        except ProcessLookupError:
+            pass
+        try:
+            process.wait(timeout=1)
+        except subprocess.TimeoutExpired:
+            pass
+    finally:
+        # A departed leader does not prove its descendants have exited.
         try:
             os.killpg(process.pid, signal.SIGKILL)
         except ProcessLookupError:
@@ -287,72 +297,101 @@ def _write_request(root: Path, request: dict[str, Any]) -> None:
 def run_once(request: object) -> tuple[bytes, dict[str, object]]:
     admitted = validate_request(request)
     settings = _load_settings()
+    return run_epf(settings, admitted)
+
+
+def run_epf(
+    settings: Settings, request: dict[str, Any], *, settings_request: bool = False,
+) -> tuple[bytes, dict[str, object]]:
+    """Run either of the two repository-owned EPFs with the same process owner.
+
+    This is a deployment seam, never a tool argument: Settings selects the EPF
+    and infobase. The settings EPF consumes a closed JSON request instead of the
+    registration-log export files. Neither mode accepts caller code or paths.
+    """
+    maximum_bytes = 4096 if settings_request else request["maximumBytes"]
+    started_marker = "settings-started" if settings_request else "export-started"
+    returned_marker = "settings-returned" if settings_request else "export-returned"
     started = time.monotonic()
     with tempfile.TemporaryDirectory(prefix="request-", dir=settings.work_root) as raw_root:
         root = Path(raw_root)
         home = root / "home"; home.mkdir()
         temporary = root / "tmp"; temporary.mkdir()
-        _write_request(root, admitted)
+        if settings_request:
+            (root / "request.json").write_text(json.dumps(request), encoding="utf-8")
+        else:
+            _write_request(root, request)
         argv = _prefix(settings, root / "wrapper.log") + [
             "ENTERPRISE", *_connection(settings), "/DisableStartupDialogs", "/DisableStartupMessages",
+            *(["/RunModeManagedApplication", "/DisableUnrecoverableErrorMessage"] if settings_request else []),
             "/Execute", str(settings.epf), "/C", str(root),
             "/Out", str(root / "runtime.log"), "/DumpResult", str(root / "runtime.result"),
         ]
-        try:
-            process = subprocess.Popen(
-                argv, env=_environment(settings, home, temporary), stdin=subprocess.DEVNULL,
-                stdout=subprocess.DEVNULL, stderr=subprocess.PIPE, start_new_session=True,
-            )
-        except OSError:
-            raise ExportFailure("source_unavailable") from None
-        assert process.stderr is not None
+        process = None
+        reader = None
         stderr = _BoundedStderr()
+        failure = None
         try:
-            reader = threading.Thread(target=stderr.consume, args=(process.stderr,), daemon=True)
-            reader.start()
-        except RuntimeError:
-            # The process is already owned even when stderr admission fails.
             try:
-                _stop_group(process)
-            finally:
-                process.stderr.close()
-            raise ExportFailure("source_unavailable") from None
-        deadline = started + _TIMEOUT_SECONDS
-        export_started: float | None = None
-        export_returned: float | None = None
-        output = root / "output.xml"
-        while process.poll() is None:
-            now = time.monotonic()
-            if export_started is None and (root / "export-started").is_file():
-                export_started = now
-            if export_returned is None and (root / "export-returned").is_file():
-                export_returned = now
-            try:
-                output_size = output.stat().st_size
+                process = subprocess.Popen(
+                    argv, env=_environment(settings, home, temporary), stdin=subprocess.DEVNULL,
+                    stdout=subprocess.DEVNULL, stderr=subprocess.PIPE, start_new_session=True,
+                )
+            except TimeoutError:
+                raise
             except OSError:
-                output_size = 0
-            if output_size > admitted["maximumBytes"]:
-                _stop_group(process)
-                stderr.join(reader)
-                process.stderr.close()
-                raise ExportFailure("source_byte_limit", _runtime_diagnostic(root, process, stderr, started))
-            if now >= deadline:
-                _stop_group(process)
-                stderr.join(reader)
-                process.stderr.close()
-                raise ExportFailure("source_timeout", _runtime_diagnostic(root, process, stderr, started))
-            time.sleep(.02)
-        ended = time.monotonic()
-        stderr.join(reader)
-        process.stderr.close()
+                raise ExportFailure("source_unavailable") from None
+            assert process.stderr is not None
+            try:
+                reader = threading.Thread(target=stderr.consume, args=(process.stderr,), daemon=True)
+                reader.start()
+            except RuntimeError:
+                raise ExportFailure("source_unavailable") from None
+            deadline = started + (_SETTINGS_TIMEOUT_SECONDS if settings_request else _TIMEOUT_SECONDS)
+            export_started: float | None = None
+            export_returned: float | None = None
+            output = root / ("response.json" if settings_request else "output.xml")
+            while process.poll() is None:
+                now = time.monotonic()
+                if export_started is None and (root / started_marker).is_file():
+                    export_started = now
+                if export_returned is None and (root / returned_marker).is_file():
+                    export_returned = now
+                try:
+                    output_size = output.stat().st_size
+                except TimeoutError:
+                    raise
+                except OSError:
+                    output_size = 0
+                if output_size > maximum_bytes:
+                    failure = "source_byte_limit"
+                    break
+                if now >= deadline:
+                    failure = "source_timeout"
+                    break
+                time.sleep(.02)
+            ended = time.monotonic()
+        finally:
+            if process is not None:
+                try:
+                    _stop_group(process)
+                finally:
+                    try:
+                        if reader is not None and reader.ident is not None:
+                            stderr.join(reader)
+                    finally:
+                        if process.stderr is not None:
+                            process.stderr.close()
         diagnostic = _runtime_diagnostic(root, process, stderr, started)
+        if failure is not None:
+            raise ExportFailure(failure, diagnostic)
         if process.returncode != 0:
             raise ExportFailure("source_process_failed", diagnostic)
-        required = ("client-entered", "server-entered", "export-started", "export-returned", "complete")
+        required = ("client-entered", "server-entered", started_marker, returned_marker, "complete")
         if any(not (root / name).is_file() for name in required) or not output.is_file():
             raise ExportFailure("source_incomplete_receipt", diagnostic)
         xml = output.read_bytes()
-        if len(xml) > admitted["maximumBytes"]:
+        if len(xml) > maximum_bytes:
             raise ExportFailure("source_byte_limit", diagnostic)
         if export_started is None:
             export_started = started
@@ -372,11 +411,12 @@ def run_once(request: object) -> tuple[bytes, dict[str, object]]:
         return xml, metrics
 
 
-def build_epf(destination: Path) -> dict[str, object]:
+def build_epf(destination: Path, *, settings_processor: bool = False) -> dict[str, object]:
     settings = _load_settings(require_epf=False)
     if not destination.is_absolute() or destination.is_symlink():
         raise ExportFailure("configuration_invalid")
-    source = Path(__file__).with_name("eventlog_epf") / "Issue80EventLog.xml"
+    source = (Path(__file__).with_name("logging_epf") / "Issue99Logging.xml" if settings_processor
+              else Path(__file__).with_name("eventlog_epf") / "Issue80EventLog.xml")
     if not source.is_file():
         raise ExportFailure("configuration_invalid")
     with tempfile.TemporaryDirectory(prefix="build-", dir=settings.work_root) as raw_root:

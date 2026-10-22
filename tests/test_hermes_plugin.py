@@ -94,6 +94,11 @@ class HermesPluginTests(unittest.TestCase):
         paths = []
         for pattern in ("one_c_harness/*.py", "hermes-plugin/*.py"):
             paths.extend(ROOT.glob(pattern))
+        for pattern in ("one_c_harness/eventlog_epf/**/*", "one_c_harness/logging_epf/**/*"):
+            paths.extend(path for path in ROOT.glob(pattern) if path.is_file())
+        paths += [ROOT / 'deployment/goal91' / name for name in (
+            'current-journal.py', 'current-harness-client.py', 'current-capture-client.py',
+            'current-logging-client.py', 'current-logging.json')]
         paths += [PLUGIN / "plugin.yaml", PLUGIN / "skills/one-c-harness/SKILL.md", ROOT / "pyproject.toml"]
         digest = hashlib.sha256()
         for path in sorted(path for path in paths if path.name != "release.json"):
@@ -106,16 +111,16 @@ class HermesPluginTests(unittest.TestCase):
         self.assertEqual(expected, companion)
         self.assertEqual(expected, _artifact_id())
 
-    def test_registers_one_skill_and_ten_closed_tools(self) -> None:
+    def test_registers_one_skill_and_eleven_closed_tools(self) -> None:
         plugin = _plugin_module()
         context = _Context({"output": "{}", "exit_code": 1})
 
         plugin.register(context)
 
-        self.assertEqual(set(context.tools), {"one_c_open", "one_c_narrow_context", "one_c_native_verify", "one_c_observation_info", "one_c_observe", "one_c_expand_observation", "one_c_select_registration_log", "one_c_page_registration_log", "one_c_read_registration_log_record", "one_c_stage_task"})
+        self.assertEqual(set(context.tools), {"one_c_open", "one_c_narrow_context", "one_c_native_verify", "one_c_observation_info", "one_c_logging", "one_c_observe", "one_c_expand_observation", "one_c_select_registration_log", "one_c_page_registration_log", "one_c_read_registration_log_record", "one_c_stage_task"})
         manifest = (PLUGIN / "plugin.yaml").read_text(encoding="utf-8")
         declared = re.findall(r"^  - (one_c_\w+)$", manifest, re.MULTILINE)
-        self.assertEqual(len(declared), 10)
+        self.assertEqual(len(declared), 11)
         self.assertEqual(set(declared), set(context.tools))
         self.assertIsNotNone(context.skill)
         assert context.skill is not None

@@ -18,7 +18,7 @@ from typing import Any
 
 try:  # Installed package.
     from . import ARTIFACT_ID, CAPABILITY_VERSION
-    from . import project_target, shared_task_route, snapshot_search, native_run_history, techlog_observation, eventlog_observation, task_artifacts
+    from . import project_target, shared_task_route, snapshot_search, native_run_history, techlog_observation, eventlog_observation, task_artifacts, logging_control
     from .target_admission import TargetBlocked, resolve_snapshot_value
 except ImportError:  # Repository-local compatibility for focused tests.
     from __init__ import ARTIFACT_ID, CAPABILITY_VERSION
@@ -29,6 +29,7 @@ except ImportError:  # Repository-local compatibility for focused tests.
     import techlog_observation
     import eventlog_observation
     import task_artifacts
+    import logging_control
     from target_admission import TargetBlocked, resolve_snapshot_value
 
 SCHEMA_VERSION = 1
@@ -436,6 +437,9 @@ def execute(raw: bytes, project_root: Path) -> dict[str, object]:
             return _observe(arguments, root)
         if operation == "expand_observation":
             return _expand_observation(arguments, root)
+        if operation == "logging_control":
+            return {"artifactId": ARTIFACT_ID, "capabilityVersion": CAPABILITY_VERSION,
+                    "operation": operation, "schemaVersion": SCHEMA_VERSION, **logging_control.execute(arguments)}
         if operation == "eventlog_select":
             return _eventlog_select(arguments, root)
         if operation == "eventlog_page":

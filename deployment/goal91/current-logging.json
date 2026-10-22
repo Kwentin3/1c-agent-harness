@@ -1,0 +1,12 @@
+{
+  "schemaVersion": 1,
+  "techlogConfig": "/opt/1cv8t/x86_64/8.5.1.1150/conf/logcfg.xml",
+  "techlogDirectory": "/evidence/.one-c-harness/techlog",
+  "techlogState": "/evidence/.one-c-harness/techlog-control",
+  "registrationState": "/evidence/.one-c-harness/registration",
+  "workDirectory": "/evidence/.one-c-harness/native-work",
+  "observationRoot": "/evidence/.one-c-harness/observations",
+  "runtimeProfile": "/etc/one-c-harness/goal91-runtime.json",
+  "settingsEpf": "one_c_harness/logging.epf",
+  "timeZone": "UTC"
+}
