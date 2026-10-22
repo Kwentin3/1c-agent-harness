@@ -415,6 +415,25 @@
       "final20-health.safe.jsonl": "edd243f986e6e30a489d9484ccb63202bf33fee3cfea5e9349a0502cf2012a8f",
       "r18-short-carrier-acceptance.safe.json": "c657316af34f766eea1aa26b69548012ee96621163ce51de43dea0eb87f95f9c"
     },
+    "timingAcceptanceDecision": {
+      "date": "2026-10-22",
+      "ownerApproved": true,
+      "selectThresholdSeconds": 11,
+      "acceptedMeasuredSelects": {
+        "F": {"seconds": 10.185808181762695, "accepted": true},
+        "D": {"seconds": 10.566930055618286, "accepted": true},
+        "E": {"seconds": 9.672648191452026, "accepted": true}
+      },
+      "optionalFutureImprovementSeconds": 5,
+      "newMeasurement": false,
+      "coldPerformanceChanged": false,
+      "historical10SecondEvaluationsPreserved": true,
+      "visibilityThresholdSeconds": 30,
+      "visibilityAcceptance": "OPEN_UNPROVEN",
+      "productPass": false,
+      "spentExports20AndSessionAttempts6Unchanged": true,
+      "additionalExportUiBudgetOrRestartAuthorized": false
+    },
     "productPass": false,
     "merged": false,
     "released": false

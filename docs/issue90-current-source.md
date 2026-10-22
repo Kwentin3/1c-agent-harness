@@ -2,7 +2,13 @@
 
 ## Текущий checkpoint, 2026-10-22
 
-**34a УСТАНОВЛЕН / ТРИ UI-ЦИКЛА И SOURCE-ПАРИТЕТ ПОДТВЕРЖДЕНЫ / COST GAP OPEN / PRODUCT ACCEPTANCE OPEN.**
+**34a УСТАНОВЛЕН / ТРИ UI-ЦИКЛА И SOURCE-ПАРИТЕТ ПОДТВЕРЖДЕНЫ / SELECT COST ACCEPTED ≤11s / VISIBILITY ACCEPTANCE OPEN / PRODUCT ACCEPTANCE OPEN.**
+Решение владельца от 2026-10-22: принять текущую select latency при пороге ≤11s:
+F10.185808181762695s/D10.566930055618286s/E9.672648191452026s. 5s — необязательное
+будущее улучшение. Новых измерений и ускорения cold-route не было; прежние оценки
+по 10s сохранены ниже. Visibility≤30s не подтверждена, PRODUCT PASS не заявлен.
+Решение не расширяет исчерпанный бюджет exports/UI20/6 и не разрешает новый restart.
+
 Matched runtime `34a4110a0bf04cba68404689e19d523f2279cfed`/c0, handler `fffd0fe2…`,
 recipe `a249aae848a1fdd8117a40c801d1c370291eb47f`:35+35 source/6 plugin files,
 canonical4b clean, native PM reload без Agent restart. Export19 — отдельный cold transport

@@ -2,9 +2,15 @@
 
 ## Current checkpoint, 2026-10-22
 
-**34a INSTALLED / THREE UI CYCLES AND SOURCE PARITY VERIFIED / COST GAP OPEN / PRODUCT ACCEPTANCE OPEN.**
+**34a INSTALLED / THREE UI CYCLES AND SOURCE PARITY VERIFIED / SELECT COST ACCEPTED ≤11s / VISIBILITY ACCEPTANCE OPEN / PRODUCT ACCEPTANCE OPEN.**
 The same [runtime receipt](../experiments/issue90-current-source/runtime-20261022.json)
 appends `session6TransportFreshnessFollowup`; all previous fields remain historical evidence.
+
+Owner timing decision, 2026-10-22: accept the measured selects at a revised ≤11s threshold:
+F10.185808181762695s, D10.566930055618286s and E9.672648191452026s. The 5s target is an
+optional future improvement. This changes acceptance policy, not measurements or cold-route
+performance; historical 10s evaluations below remain unchanged. It does not extend the
+exhausted export/UI budget or authorize another restart; the spent 20/6 budget is unchanged.
 
 - Installed runtime `34a4110a0bf04cba68404689e19d523f2279cfed`, handler SHA256
   `fffd0fe238d9cf335da4ea349a530280e7bad4366868a667f40a6612016daf7c`,
@@ -43,8 +49,8 @@ appends `session6TransportFreshnessFollowup`; all previous fields remain histori
   Separate final health read found Gateway/WebUI idle; launcher c594/thin3f04/binding07b
   hashes, modes and owners matched. The ledger/CM receipt alone does not establish health.
 
-Product acceptance remains OPEN: the final bounded F select exceeds10s, and valid
-visibility≤30s remains unproven. Coverage is explicitly partial/completeThrough:null;
+Product acceptance remains OPEN: select cost is accepted under the revised≤11s decision,
+but valid visibility≤30s remains unproven. Coverage is explicitly partial/completeThrough:null;
 three TJ routes remain pending#92.
 
 ## Earlier FE checkpoint, 2026-10-22

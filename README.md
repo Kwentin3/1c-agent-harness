@@ -5,7 +5,7 @@
 > свежий ЖР текущей ИБ; полная продуктовая приёмка остаётся открытой.
 > [Текущий checkpoint, 22 октября](docs/issue90-activation-checkpoint.md): matched runtime установлен,
 > UI D/E/F завершены штатным Exit → native Log in; raw/cache/public каждого цикла совпали3/3, пропусков0.
-> COST GAP OPEN: select F10.185808s >10s; visibility F NOT_MEASURED после сбоя доставки prompt до model/export. D10.566930s/E9.672648s и E visibility32.032268s сохранены, coverage partial.
+> SELECT COST ACCEPTED ≤11s по новому решению владельца: F10.185808s/D10.566930s/E9.672648s; 5s — необязательное будущее улучшение. VISIBILITY ACCEPTANCE OPEN: F NOT_MEASURED, прежняя E32.032268s сохранена; coverage partial. Новых измерений или допуска на live-запуски это решение не добавляет.
 > Это не доказательство задержки самого native ЖР; PRODUCT PASS не заявлен.
 > [Доступ #97 принят](https://github.com/Kwentin3/1c-agent-harness/issues/97#issuecomment-6143900400)
 > в границах access/capability: старые credential/CDP/startup blockers сняты.
