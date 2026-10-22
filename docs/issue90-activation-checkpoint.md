@@ -2,6 +2,46 @@
 
 ## Current checkpoint, 2026-10-22
 
+**FE INSTALLED / TWO UI CYCLES AND SOURCE PARITY VERIFIED / COST GAP OPEN / PRODUCT ACCEPTANCE OPEN.**
+The current [runtime receipt](../experiments/issue90-current-source/runtime-20261022.json)
+appends `session5RecoveryFollowup`; earlier CA/EBD evidence remains unchanged below.
+
+- Installed runtime `fe956b2293346b3fa965d198f461799a92eae668`, handler SHA256
+  `b67fdefd6e21bf732676201b3c0cbe0ef10e0b909e830e7c585a8bee7b1d9fc0`,
+  recipe `12c598dcceb2a35292977ce476f7ef6776502cb9`: exact35 Agent/35 engineering/6 plugin files,
+  native PM reload, no Hermes restart. Core/plugin artifact remains
+  `sha256:c0cb33198c4538830a5577c26fb418c853ea76987d0c3d23b2286fbd0ee8469f`.
+- One explicitly approved `1c-jet-demo.service` restart included the exact69f reference-container
+  stop/start. R12 finished in18.391s, unit Result=success, Apache healthy, exact pre/post
+  unit/VRD/config/module/source-binding/handler/image/network/mount pins equal.
+  No other restart was performed; that single permission is consumed, no repeat authorized.
+  No business commands were issued; whole-IB byte immutability is not claimed.
+- Actual D/E browser snapshots prove distinct fresh own contexts, Jet main → observed File/Exit
+  → native Log in, followed by own context/browser/driver cleanup. Source Start/Finish matches
+  each UI cycle; raw/cache/public Date/Level/Event/Comment agree for3/3 each, zero omissions.
+  D retained page/record and cache SHA `02c4adcdefd37c879367c6c3715f6d41211141dea9229d5b66181cf53b008c9f`
+  remain unchanged after E. H22/H23 receipt SHA256:
+  `667a78ac714593634dff99f6db5594efe5856e4436902dfc7c0d8b18bed625d1` /
+  `180c154ad090946cfb74a83b4f82b42bf9df812b72f924b5de43af93a8919e20`.
+- **Select cost gap remains:** D10.566930055618286s exceeds10s; E9.672648191452026s passes.
+  D visibility is **NOT_MEASURED**: query submitted37.36649513244629s after Exit, already late.
+  E Exit→first result32.032267808914185s exceeds30s:13.974735021591187s pre-submit
+  +8.384884595870972s model-before-tool +9.672648191452026s tool. This is an end-to-end
+  observation gap; it does not establish that native journal visibility itself was delayed.
+  Coverage remains `partial/capture_consistency_unproven`, `completeThrough:null`.
+- Canonical ledger SHA256 `0a92fe15ec336efadb35d70b67d19a5abd1be7b4e0734293bd88d2c2fcb6bb51`,
+  contract SHA256 `a6a13b1eb39867537257e51998685d145bec92d5302dcd2dc102214f755bcb5f`:
+  exports18/18, UI attempts5/5 (3FAILED retained +2COMPLETED), help2/3,
+  native72.92417605989613/900s, pending/reserved0. No reset or further budget is authorized.
+  A final nonblocking LOCK_SH read matched all five hashed attempt IDs/statuses to the receipts.
+  Read-only native `ssh -O check` found no master/socket after idle; config remained unchanged.
+  No new current-journal connection, export, control exit, process kill or socket removal was issued.
+
+No PRODUCT PASS, merge or release is claimed. #92 TJ migration and the explicit performance/
+consistency gaps remain. A later run requires its own bounded owner decision.
+
+## Earlier CA checkpoint, 2026-10-22
+
 **CA INSTALLED / ONE COLD SELECT ≤10s / PRODUCT ACCEPTANCE OPEN.**
 Latest dated follow-up is in the existing [runtime receipt](../experiments/issue90-current-source/runtime-20261022.json),
 field `latestFollowup`; the EBD evidence below is preserved as history.

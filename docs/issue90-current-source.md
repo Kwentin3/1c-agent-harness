@@ -2,6 +2,30 @@
 
 ## Текущий checkpoint, 2026-10-22
 
+**ДВА UI-ЦИКЛА И SOURCE-ПАРИТЕТ ПОДТВЕРЖДЕНЫ / COST GAP OPEN / PRODUCT ACCEPTANCE OPEN.**
+Установлен matched runtime `fe956b2293346b3fa965d198f461799a92eae668`/c0:
+handler `b67fdefd6e21bf732676201b3c0cbe0ef10e0b909e830e7c585a8bee7b1d9fc0`,
+recipe `12c598dcceb2a35292977ce476f7ef6776502cb9`, 35+35 source files и6 plugin files;
+native PM reload без Hermes restart. Один отдельно одобренный restart существующего
+`1c-jet-demo.service` включил exact reference-container stop/start; pins до/после совпали.
+Ровно это разрешение на restart израсходовано, повтор не разрешён.
+
+D/E: fresh Jet main → File/Exit → native Log in, собственные context/browser/driver закрыты.
+Source подтверждает Start/Finish каждого цикла; raw/cache/public3/3 каждый, пропусков0.
+Прежняя D selection/page/record и cache SHA сохранились после E. Select D10.566930s
+выше10s, E9.672648s укладывается. D visibility **NOT_MEASURED**: запрос отправлен
+через37.366s после Exit, уже за30s. E Exit→first result32.032268s выше30s:
+13.974735s до отправки +8.384885s model до tool +9.672648s tool. Это end-to-end gap,
+не доказанная задержка публикации самого native ЖР. Coverage partial, completeThrough:null.
+
+Canonical ledger `0a92fe15ec336efadb35d70b67d19a5abd1be7b4e0734293bd88d2c2fcb6bb51`:
+exports18/18, attempts5/5 (3FAILED+2COMPLETED), help2/3,
+native72.92417605989613/900s, pending/reserved0. Новый бюджет не предложен как одобренный.
+[Текущая приёмка и границы](issue90-activation-checkpoint.md),
+[квитанция: session5RecoveryFollowup](../experiments/issue90-current-source/runtime-20261022.json).
+
+### Предшествующий CA checkpoint, 2026-10-22
+
 **УСТАНОВЛЕНО / ОБЫЧНОЕ ЧТЕНИЕ ПРОВЕРЕНО / PRODUCT ACCEPTANCE OPEN.**
 Matched runtime `ca642e3e2b7ca566840e0c614ab49caae7aed30a`/c0 установлен штатно;
 handler SHA256 `389185892a1653afabb994c4c9dcc48fb3d0af7ff82a6c564c2ef23f608a2ce0`.

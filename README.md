@@ -4,15 +4,16 @@
 > Текущая продуктовая Goal — [#90](https://github.com/Kwentin3/1c-agent-harness/issues/90):
 > свежий ЖР текущей ИБ; полная продуктовая приёмка остаётся открытой.
 > [Текущий checkpoint, 22 октября](docs/issue90-activation-checkpoint.md): matched runtime установлен,
-> обычный cold select 9.05949s: raw/cache/public 3/3, пропусков 0, coverage partial;
-> visibility≤30s и два успешных UI-цикла не доказаны. PRODUCT PASS не заявлен.
+> два fresh UI-цикла D/E с native Exit подтверждены source Start/Finish; raw/cache/public 3/3 каждый, пропусков 0.
+> COST GAP OPEN: select D10.566930s/E9.672648s; E Exit→first result32.032268s выше30s, coverage partial.
+> Это не доказательство задержки самого native ЖР; PRODUCT PASS не заявлен.
 > [Доступ #97 принят](https://github.com/Kwentin3/1c-agent-harness/issues/97#issuecomment-6143900400)
 > в границах access/capability: старые credential/CDP/startup blockers сняты.
 > Это не приёмка свежих событий, полной latency или текущего ТЖ.
 > Canonical checkout `/workspace/1c-agent-harness` сохранён на `4b4c3d24ae7f534a03398157878c849fc52f98a8`;
-> native PluginManager установил exact runtime `ca642e3e2b7ca566840e0c614ab49caae7aed30a` из PR #93, artifact c0 не изменён.
-> Учёт 22 октября: exports16/18, UI attempts3/4 (все FAILED), pending0. Restart не выполнялся;
-> recovery всей публикации и расширение до5 попыток требуют отдельного разрешения.
+> native PluginManager установил exact runtime `fe956b2293346b3fa965d198f461799a92eae668` из PR #93, artifact c0 не изменён.
+> Учёт 22 октября: exports18/18, UI attempts5/5 (3 FAILED + 2 COMPLETED), pending/reserved0.
+> Выполнен один одобренный restart demo-service/reference-container с exact pins; Hermes не перезапускался.
 > Десять declared tools включают `one_c_stage_task`; текущий dispatcher поддерживает семь маршрутов,
 > три маршрута ТЖ сохраняют migration-pending из #92.
 > [Checkpoint установки и активации](docs/issue90-activation-checkpoint.md) разделяет source,
