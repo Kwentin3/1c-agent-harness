@@ -15,6 +15,27 @@ Cleanup при ошибке запуска stderr-reader исправлен в �
 секретов и 1C mounts. [Квитанция и точные identities](../experiments/issue90-current-source/source-finish-20261022.json).
 Exact-head CI3.9/3.12, установка и native PRODUCT PASS этим прогоном не удостоверяются.
 
+Последующий source-срез завершён: учёт каждого capture перенесён к существующему
+fixed handler и использует тот же ledger/lock/file owner. Полный прогон — **460 PASS**;
+офлайн-репетиция на копии 14 фактических строк сохраняет 11 spent exports.
+Большой receipt передаётся учёту как ограниченная техническая сводка с SHA полного
+результата. [Квитанция accounting-среза](../experiments/issue90-current-source/accounting-source-20261022.json).
+Старый операторский `export_research.py` нельзя оборачивать вокруг нового handler:
+его предварительный STARTED приведёт к правильному отказу второго резерва.
+
+Владелец одобрил и применён общий export-limit **16**; 11 использованных вызовов
+сохранены. Effective contract SHA256:
+`1322f0668a1d48b447333062bdf569946d32ecf0a75b6528b250d55441cb639e`.
+Остальные лимиты неизменны. В этой continuation exports/session/native coding — **0**.
+Новый source ещё не установлен, измеренная live latency не улучшена этим отчётом.
+
+Readiness текущего профиля проверяется отдельно от принятого #97: предназначенные
+demo credentials предоставлены владельцем через защищённый ввод; browser97 key/config
+в текущем профиле отсутствуют. Его восстановление требует точного owner-действия.
+Текущий dispatcher ТЖ возвращает migration-pending; это исходная граница deployment,
+а не десять доказанно рабочих маршрутов. Подключение retained ТЖ оставлено отдельным
+остатком [#92](https://github.com/Kwentin3/1c-agent-harness/issues/92), без новой logging policy.
+
 [Финальный handoff #97](https://github.com/Kwentin3/1c-agent-harness/issues/97#issuecomment-6143900400)
 принят в границах access/capability; [продолжение #90](https://github.com/Kwentin3/1c-agent-harness/issues/90#issuecomment-6143905887)
 отделяет его от продуктовой приёмки. Engineering/browser routes, текущий read-only ЖР

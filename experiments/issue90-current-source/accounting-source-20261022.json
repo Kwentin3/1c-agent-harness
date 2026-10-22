@@ -1,0 +1,22 @@
+{
+  "schemaVersion": 1,
+  "classification": "SOURCE_VALIDATED_NOT_DEPLOYED_NOT_PRODUCT_ACCEPTANCE",
+  "testedSourceTree": "cd6a9bf4f9d345edfcec84a973f92510fbcdd20b",
+  "handlerSha256": "ebe5ee675b0fbddf27a36aafb8fb0a89a90984ef585e4cc8467eb76753a94191",
+  "accountingSha256": "5b78e47646d5849aec7a9a0b51805a1a997a6011f847a0407346e7ab2ee02b1a",
+  "candidateArtifactId": "sha256:c0cb33198c4538830a5577c26fb418c853ea76987d0c3d23b2286fbd0ee8469f",
+  "change": "Move the existing per-capture reservation/settlement beside the fixed capture handler; reuse the same executor UID10001, canonical contract, ledger and lock. Two local Docker exec calls replace five ledger SSH round trips. No new external action, service or ledger.",
+  "regressions": [
+    "Exact prior PR98 handler launches worker without a reservation: RED; guarded handler reserves durably before launch: GREEN.",
+    "Large native receipt exceeds bounded accounting stdin: RED; six technical fields plus the full owner-derived receipt SHA: GREEN.",
+    "Post-worker binding rejection falsely claims zero native invocations: RED; preserve reason and report UNKNOWN_IF_EXPORT_REQUESTED: GREEN.",
+    "One remaining slot can be reserved only once; probe never debits; failures/timeouts consume budget; unsettled attempt retains reservation; two operator sessions reuse the same owner."
+  ],
+  "sourceValidation": {"command": "python -m unittest discover -s tests -v", "interpreter": "3.14.7", "tests": 460, "seconds": 130.743, "status": "PASS", "network": "none", "oneCOrCredentialsMounted": false, "archiveSha256": "382f4468f8d0caaa86f8dd9acc0034c8758cfe2637687dd8704ed9be02d32a8a"},
+  "actualHistoryOfflineRehearsal": {"status": "PASS", "rows": 14, "spentExportsPreserved": 11, "nextEntry": 15, "nextExport": 12, "syntheticNativeSeconds": 0.25, "sessionCyclesOnTemporaryCopy": 2, "thirdSession": "budget_exhausted", "largeSyntheticReceiptBytes": 266959, "maximumAccountingInputBytes": 489, "fullReceiptShaPreserved": true, "transactionMocked": false},
+  "budget": {"contractSha256": "1322f0668a1d48b447333062bdf569946d32ecf0a75b6528b250d55441cb639e", "limits": {"help": 3, "export": 16, "sessionCycles": 2, "callSeconds": 30, "nativeTotalSeconds": 900}, "ledgerSha256Unchanged": "d43b7e247158e9c24d5b60b923e284a663068deeb4927833f0d204e936842ab9", "exportsSpent": 11, "nativeSeconds": 52.73141303029843, "pendingStarted": 0, "reservedSeconds": 0},
+  "liveCallsThisContinuation": {"exports": 0, "sessionCycles": 0, "nativeCoding": 0},
+  "unchangedNativeBoundary": ["PR98 worker body", "UID33", "read-only source mounts", "source/binary/image pins", "successful full receipt", "closed current-journal-v1 probe/export actions"],
+  "remaining": ["Final exact-head Python 3.9/3.12 CI", "Matched native installation and rollback", "Restore absent browser97 credential material through its existing protected owner", "Two fresh ordinary-chat witnesses and measured latency/coverage"],
+  "productAcceptance": "NOT_RUN"
+}
