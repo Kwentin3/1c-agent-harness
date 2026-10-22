@@ -2,6 +2,53 @@
 
 ## Current checkpoint, 2026-10-22
 
+**34a INSTALLED / THREE UI CYCLES AND SOURCE PARITY VERIFIED / COST GAP OPEN / PRODUCT ACCEPTANCE OPEN.**
+The same [runtime receipt](../experiments/issue90-current-source/runtime-20261022.json)
+appends `session6TransportFreshnessFollowup`; all previous fields remain historical evidence.
+
+- Installed runtime `34a4110a0bf04cba68404689e19d523f2279cfed`, handler SHA256
+  `fffd0fe238d9cf335da4ea349a530280e7bad4366868a667f40a6612016daf7c`,
+  recipe `a249aae848a1fdd8117a40c801d1c370291eb47f`: matched35+35/6, canonical4b clean,
+  native PM/Gateway reload without Agent restart; core/plugin artifact c0 unchanged.
+  [Exact34a runtime-source CI Python3.9/3.12](https://github.com/Kwentin3/1c-agent-harness/actions/runs/39781596612) PASS.
+- One separately accounted cold transport profile used export19: wall7.554746s,
+  observed start→SSH Sending-command4.913607s, native0.820590s. The first interval includes
+  control check/spawn/proxy/SSH setup; per-hop and internal handler phases are unmeasured.
+  Own capture process/group was reaped; debug stderr EOF was not claimed while the native
+  persistent master retained its pipe. This diagnostic is not ordinary-chat SLO acceptance.
+- F used a fresh own UI context, normal File/Exit → native Log in and cleanup of its own
+  context/browser/driver. H24 prompt delivery failed before model/tool/export. A local
+  Windows PTY reproduction changed2117 valid input bytes to512 total bytes (510+CRLF) and reproduced
+  JSONDecodeError; the actual failed remote input was not retained, so the cause is qualified.
+  A short-carrier offline rehearsal preserved the full UTF-8 prompt through the same unchanged
+  H24 decoder (285→286bytes, only LF→CRLF); it grants no future UI/model/export permission.
+  The same actual F prompt then used the existing file-backed ordinary follow-up once,
+  consuming export20, with no hidden repeated native capture. Stream is inactive.
+- F raw/cache/public Date/Level/Event/Comment match3/3 with zero omissions. One WebClient group
+  has native Authentication/Start13:03:10 UTC and Finish13:03:46, matching root's observed
+  Exit13:03:45.864138 within native one-second precision. The UI witness supplies own-cycle
+  provenance; session ID alone is not globally unique. Page/record use retained data.
+- F select10.185808181762695s exceeds10s (native0.5652431533671916s). F visibility is **NOT_MEASURED**, because the prompt
+  delivery failure prevented the planned timely query; it is not a30s pass or proof of delayed
+  native journal visibility. Exit→submit81.9240517616272s and Exit→result97.20366215705872s
+  are late observations, not a valid30s threshold test. Prior D-after-E stability remains historical;
+  no new D/E stability check after F is claimed.
+- Final ledger SHA256 `814073c4f62be8c1705945d691ab9bfa841aee46f287c9ad1b81f8494a9d35a2`,
+  contract SHA256 `9ddb68dba6c8eb365c682e4f51dd71105d4659fde5bae0b7bafe8c0414a401e6`:
+  29rows, exports20/20, UI attempts6/6 (3FAILED+3COMPLETED), help2/3,
+  native74.31000937824138/900s, pending/reserved0. All prior spending remains;21/7 is not approved.
+  The one earlier authorized demo restart remains consumed; no further restart was performed.
+  A final read-only LOCK_SH check matched all six hashed attempt IDs/statuses; native idle
+  cleanup left no master/socket, config unchanged. No control exit, kill or socket deletion was used.
+  Separate final health read found Gateway/WebUI idle; launcher c594/thin3f04/binding07b
+  hashes, modes and owners matched. The ledger/CM receipt alone does not establish health.
+
+Product acceptance remains OPEN: the final bounded F select exceeds10s, and valid
+visibility≤30s remains unproven. Coverage is explicitly partial/completeThrough:null;
+three TJ routes remain pending#92.
+
+## Earlier FE checkpoint, 2026-10-22
+
 **FE INSTALLED / TWO UI CYCLES AND SOURCE PARITY VERIFIED / COST GAP OPEN / PRODUCT ACCEPTANCE OPEN.**
 The current [runtime receipt](../experiments/issue90-current-source/runtime-20261022.json)
 appends `session5RecoveryFollowup`; earlier CA/EBD evidence remains unchanged below.

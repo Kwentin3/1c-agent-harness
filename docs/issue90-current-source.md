@@ -2,6 +2,36 @@
 
 ## Текущий checkpoint, 2026-10-22
 
+**34a УСТАНОВЛЕН / ТРИ UI-ЦИКЛА И SOURCE-ПАРИТЕТ ПОДТВЕРЖДЕНЫ / COST GAP OPEN / PRODUCT ACCEPTANCE OPEN.**
+Matched runtime `34a4110a0bf04cba68404689e19d523f2279cfed`/c0, handler `fffd0fe2…`,
+recipe `a249aae848a1fdd8117a40c801d1c370291eb47f`:35+35 source/6 plugin files,
+canonical4b clean, native PM reload без Agent restart. Export19 — отдельный cold transport
+profile:7.554746s wall,4.913607s до наблюдаемого SSH Sending-command,0.820590s native;
+это не ordinary-chat SLO и не измерение отдельных фаз handler.
+
+F: собственный UI context → File/Exit → native Log in, cleanup context/browser/driver завершён.
+H24 JSONDecodeError возник до model/tool/export. Local Windows PTY воспроизвёл2117→512 total (510+CRLF);
+remote failed input не сохранён, поэтому точная причинная связь квалифицирована.
+Тот же фактический F prompt затем передан один раз штатным file-backed ordinary follow-up:
+export20, select10.185808181762695s >10s (native0.5652431533671916s), stream inactive.
+F raw/cache/public3/3 совпали без пропусков; native Start13:03:10/Finish13:03:46 UTC
+согласованы с наблюдаемым root Exit13:03:45.864138. Visibility F **NOT_MEASURED**:
+Exit→submit81.9240517616272s, →result97.20366215705872s — поздно, не30s PASS.
+Прежняя D-after-E stability сохранена как history, новой проверки D/E после F не было.
+
+Ledger `814073c4f62be8c1705945d691ab9bfa841aee46f287c9ad1b81f8494a9d35a2`,
+contract `9ddb68dba6c8eb365c682e4f51dd71105d4659fde5bae0b7bafe8c0414a401e6`:
+29rows,20/20 exports,6/6 UI attempts (3FAILED+3COMPLETED), help2/3,
+native74.31000937824138/900s, pending/reserved0. Учёт не сброшен;21/7 не одобрены,
+единственный разрешённый demo restart уже использован. Coverage остаётся partial,
+valid visibility≤30s не доказана; documented partial coverage сохранён, ТЖ3 pending#92.
+Финальный LOCK_SH read сопоставил6 hashed attempt IDs/statuses; native idle cleanup
+оставил no master/socket при неизменном SSH config, без control exit/kill/socket removal.
+[Единая приёмка](issue90-activation-checkpoint.md),
+[session6TransportFreshnessFollowup](../experiments/issue90-current-source/runtime-20261022.json).
+
+### Предшествующий FE checkpoint, 2026-10-22
+
 **ДВА UI-ЦИКЛА И SOURCE-ПАРИТЕТ ПОДТВЕРЖДЕНЫ / COST GAP OPEN / PRODUCT ACCEPTANCE OPEN.**
 Установлен matched runtime `fe956b2293346b3fa965d198f461799a92eae668`/c0:
 handler `b67fdefd6e21bf732676201b3c0cbe0ef10e0b909e830e7c585a8bee7b1d9fc0`,
