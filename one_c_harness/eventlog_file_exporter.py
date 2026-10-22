@@ -21,7 +21,10 @@ import time
 from typing import Any
 import xml.etree.ElementTree as ET
 
-import eventlog_exporter as base
+try:
+    from . import eventlog_exporter as base
+except ImportError:  # Existing executable-script deployment.
+    import eventlog_exporter as base
 
 IBCMD_ENV = "ONE_C_HARNESS_EVENTLOG_IBCMD"
 JOURNAL_ENV = "ONE_C_HARNESS_EVENTLOG_JOURNAL"
@@ -188,9 +191,14 @@ def _source_value(record: dict[str, Any], field: str) -> object:
     return record.get(field)
 
 
-def _json_sequence_to_xml(
+def project_ibcmd_json(
     payload: bytes, maximum_bytes: int, filters: dict[str, str] | None = None,
 ) -> bytes:
+    """Project bounded ibcmd JSON using filters admitted by base.validate_request.
+
+    Source acquisition, identity and stability remain the deployment's concern;
+    this function owns field mapping/filtering and validates every source record.
+    """
     try:
         text = payload.decode("utf-8")
     except UnicodeDecodeError:
@@ -261,7 +269,7 @@ def capture_to_xml(
     Unchanged inventory is not a consistency fence or a completeness claim.
     The expected binding is deployment-owned, never a model argument.
     """
-    base._validate_request(request)
+    base.validate_request(request)
     try:
         _validate_capture_binding(binding)
         actual = receipt["sourceBinding"]
@@ -326,7 +334,7 @@ def capture_to_xml(
             raise base.ExportFailure("source_incomplete_receipt")
     except (KeyError, TypeError, ValueError, AttributeError):
         raise base.ExportFailure("source_incomplete_receipt") from None
-    xml = _json_sequence_to_xml(payload, request["maximumBytes"])
+    xml = project_ibcmd_json(payload, request["maximumBytes"])
     root = ET.fromstring(xml)
     changed = receipt["sourceBefore"] != receipt["sourceAfter"]
     reason = "source_changed" if changed else "capture_consistency_unproven"
@@ -482,9 +490,13 @@ def _run_ibcmd(settings: Settings, request: dict[str, Any], root: Path, deadline
             stderr=subprocess.PIPE, start_new_session=True,
         )
         assert process.stderr is not None
-        stderr_reader = threading.Thread(target=stderr.consume, args=(process.stderr,), daemon=True)
-        stderr_reader.start()
         _active = process
+        try:
+            stderr_reader = threading.Thread(target=stderr.consume, args=(process.stderr,), daemon=True)
+            stderr_reader.start()
+        except RuntimeError:
+            base._stop_group(process)
+            raise base.ExportFailure("source_unavailable") from None
         while process.poll() is None:
             if time.monotonic() >= deadline:
                 base._stop_group(process)
@@ -498,7 +510,7 @@ def _run_ibcmd(settings: Settings, request: dict[str, Any], root: Path, deadline
         raise base.ExportFailure("source_unavailable") from None
     finally:
         _active = None
-        if stderr_reader is not None:
+        if stderr_reader is not None and stderr_reader.ident is not None:
             stderr.join(stderr_reader)
         if process is not None and process.stderr is not None:
             process.stderr.close()
@@ -609,7 +621,7 @@ def _run_capture(request: dict[str, Any]) -> tuple[bytes, dict[str, object]]:
 
 
 def run_once(request: object) -> tuple[bytes, dict[str, object]]:
-    admitted = base._validate_request(request)
+    admitted = base.validate_request(request)
     if ("ONE_C_HARNESS_EVENTLOG_CAPTURE_COMMAND" in os.environ
         or "ONE_C_HARNESS_EVENTLOG_CAPTURE_BINDING" in os.environ):
         return _run_capture(admitted)
@@ -623,7 +635,7 @@ def run_once(request: object) -> tuple[bytes, dict[str, object]]:
     try:
         with tempfile.TemporaryDirectory(prefix="eventlog-ibcmd-", dir=settings.work_root) as raw:
             payload, export_milliseconds = _run_ibcmd(settings, admitted, Path(raw), deadline)
-            xml = _json_sequence_to_xml(
+            xml = project_ibcmd_json(
                 payload, admitted["maximumBytes"], admitted["filters"],
             )
             document = ET.fromstring(xml)

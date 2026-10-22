@@ -11,7 +11,17 @@ Use only the registered tools. Do not replace them with shell or SSH calls.
 ## Configuration
 
 1. Call `one_c_open` first.
-2. Preserve its exact `snapshotRef` object for `one_c_narrow_context` or `one_c_native_verify`; never substitute a filesystem path.
+2. Preserve its exact `snapshotRef` object for `one_c_narrow_context`, `one_c_stage_task` or `one_c_native_verify`; never substitute a filesystem path.
+3. When preparing patches from `one_c_narrow_context`, preserve each fragment's exact whitespace and `lineEnding`; do not assume LF. `utf8Bom` describes the file; preserve its BOM, which remains in the first line's fragment. A `fragmentTruncated=true` fragment is not a complete source line.
+
+## Task data and native verification
+
+1. For explicitly authorized development, call `one_c_stage_task` with the exact `snapshotRef`, a JSON-object `request`, nonempty text `productionPatch` and `instrumentationPatch`, and an `oracle` locator. These are staging data, not shell commands. The companion owns the limits: 4 KiB of UTF-8 bytes for the serialized request and each patch, 12 KiB combined; character counts do not replace byte counts.
+2. The oracle must already exist as a read-only trusted deployment-owned file selected by the logical locator `experiments/<single-task>/oracle.py`. Deployment chooses its single root; tools cannot change it. Do not supply inline Python, arbitrary oracle paths or a new oracle body. If that prerequisite is missing, stop with the missing prerequisite rather than bypassing the route.
+3. Preserve the exact returned `taskRef` object (`schemaVersion: 1`, canonical UUID4 `taskId`, lowercase-hex `manifestSha256`). Call `one_c_native_verify` with only that `taskRef`, the same `snapshotRef` and `timeoutSeconds` from 1 through 480. Do not invent caller paths or a receipt path in this form. Deployments with an explicitly selected oracle root require this form. The existing seven-argument path form remains compatible only in environments without that setting and cannot address managed task artifacts.
+4. Staging does not apply a patch, execute native code or start a service. Verification delegates to the existing `shared_task_route`, which creates a separate workcopy, applies the exact patches, freezes the input, runs the native cycle/oracle and discards the workcopy. Source, snapshot and live IB stay immutable; development and native execution use only that separate copy and disposable test IB. `timeoutSeconds` bounds ENTERPRISE, not the whole create/load/cleanup lifecycle. A staged handle alone is not a verified task result.
+
+Use no shell/SSH fallback, new privileges or global terminal-backend override.
 
 ## Technological journal
 

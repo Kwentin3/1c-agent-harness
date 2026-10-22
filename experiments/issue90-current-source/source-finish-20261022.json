@@ -1,0 +1,29 @@
+{
+  "schemaVersion": 1,
+  "classification": "SOURCE_VALIDATED_NOT_DEPLOYED_NOT_PRODUCT_ACCEPTANCE",
+  "date": "2026-10-22",
+  "canonicalBase": "4b4c3d24ae7f534a03398157878c849fc52f98a8",
+  "captureBase": "db7f7e894b847cd3fdf29c4da9be60751636c70d",
+  "candidateArtifactId": "sha256:c0cb33198c4538830a5577c26fb418c853ea76987d0c3d23b2286fbd0ee8469f",
+  "testedSourceTree": "5c96864300228cd79830ca06e08b3a6516cf7a67",
+  "canonicalArchiveSha256": "b68976e4b63c9bd13989e9799b3f60d17af87c314fcf436e250ed5b2dd209e76",
+  "cleanupRegression": {
+    "red": "Three real harmless child processes remained running or unreaped after injected thread admission failure.",
+    "green": "All three paths reap the owned process, remove its process group, close pipes and return a non-secret source_unavailable.",
+    "tests": 3
+  },
+  "sourceChecks": {
+    "command": "python -m unittest discover -s tests -v",
+    "interpreter": "3.14.7",
+    "tests": 448,
+    "seconds": 127.539,
+    "status": "PASS",
+    "isolation": "Linux container; network none; source read-only; no installed runtime, credentials or 1C mounts",
+    "python39And312CI": "NOT_RUN_AT_THIS_CHECKPOINT"
+  },
+  "preservedContracts": ["ten native tools", "stage_task", "public validate_request and project_ibcmd_json", "selection/page/record/comment", "bounded errors and output"],
+  "liveCallsThisContinuation": {"exports": 0, "sessionCycles": 0, "nativeCoding": 0, "deployment": 0},
+  "ledgerRead": {"sha256": "d43b7e247158e9c24d5b60b923e284a663068deeb4927833f0d204e936842ab9", "helpUsed": 2, "exportUsed": 11, "sessionCycles": 0, "nativeSeconds": 52.73141303029843, "pendingStarted": 0, "reservedSeconds": 0},
+  "budgetRefinement": "Owner approved total exports 12 to 16, preserving 11 spent; effective contract update remains pending at this checkpoint. Other limits unchanged.",
+  "remaining": ["Exact-head Python 3.9/3.12 CI", "Account each ordinary capture through the existing canonical ledger owner", "Matched installation and rollback", "Two fresh-event ordinary-chat witnesses", "Full selection <=10s and visibility <=30s", "Explicit live coverage limits"]
+}

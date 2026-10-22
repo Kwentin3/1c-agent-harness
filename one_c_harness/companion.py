@@ -3,19 +3,22 @@
 from __future__ import annotations
 
 from datetime import datetime
+from contextlib import ExitStack
 import argparse
 import base64
 import binascii
 import copy
+import fcntl
 import hashlib
 import json
+import os
 from pathlib import Path, PurePosixPath
 import sys
 from typing import Any
 
 try:  # Installed package.
     from . import ARTIFACT_ID, CAPABILITY_VERSION
-    from . import project_target, shared_task_route, snapshot_search, native_run_history, techlog_observation, eventlog_observation
+    from . import project_target, shared_task_route, snapshot_search, native_run_history, techlog_observation, eventlog_observation, task_artifacts
     from .target_admission import TargetBlocked, resolve_snapshot_value
 except ImportError:  # Repository-local compatibility for focused tests.
     from __init__ import ARTIFACT_ID, CAPABILITY_VERSION
@@ -25,11 +28,13 @@ except ImportError:  # Repository-local compatibility for focused tests.
     import native_run_history
     import techlog_observation
     import eventlog_observation
+    import task_artifacts
     from target_admission import TargetBlocked, resolve_snapshot_value
 
 SCHEMA_VERSION = 1
 MAX_REQUEST_BYTES = 16 * 1024
 MAX_OUTPUT_BYTES = 32 * 1024
+_TASK_ORACLE_ROOT_ENV = "ONE_C_HARNESS_TASK_ORACLE_ROOT"
 _EVENTLOG_OUTPUT_TARGET_BYTES = 24 * 1024
 
 
@@ -230,26 +235,66 @@ def _narrow(arguments: dict[str, object], project_root: Path) -> dict[str, objec
     return {"artifactId": ARTIFACT_ID, "capabilityVersion": CAPABILITY_VERSION, **result}
 
 
+def _stage_task(arguments: dict[str, object], project_root: Path) -> dict[str, object]:
+    required = {"snapshotRef", "request", "productionPatch", "instrumentationPatch", "oracle"}
+    if set(arguments) != required:
+        raise CompanionError("stage_task arguments are invalid")
+    reference = task_artifacts.stage_task(
+        repo_root=project_root, snapshot_ref=arguments["snapshotRef"],
+        request=arguments["request"], production_patch=arguments["productionPatch"],
+        instrumentation_patch=arguments["instrumentationPatch"], oracle=arguments["oracle"],
+        oracle_root=os.environ.get(_TASK_ORACLE_ROOT_ENV),
+    )
+    return {
+        "artifactId": ARTIFACT_ID, "capabilityVersion": CAPABILITY_VERSION,
+        "operation": "stage_task", "schemaVersion": SCHEMA_VERSION,
+        "status": "ok", "taskRef": reference,
+    }
+
+
 def _verify(arguments: dict[str, object], project_root: Path) -> dict[str, object]:
     required = {
         "snapshotRef", "request", "productionPatch", "instrumentationPatch", "oracle", "receipt", "timeoutSeconds",
     }
-    if set(arguments) != required:
+    staged = set(arguments) == {"snapshotRef", "taskRef", "timeoutSeconds"}
+    if not staged and set(arguments) != required:
         raise CompanionError("verify arguments are invalid")
-    snapshot, _entries = resolve_snapshot_value(project_root, arguments["snapshotRef"])
-    receipt_path = _relative_path(arguments["receipt"], "receipt")
-    receipt = shared_task_route.run_task(
-        repo_root=project_root,
-        input_tree=snapshot,
-        request_path=_relative_path(arguments["request"], "request"),
-        patch_paths=[
-            ("production", _relative_path(arguments["productionPatch"], "productionPatch")),
-            ("instrumentation", _relative_path(arguments["instrumentationPatch"], "instrumentationPatch")),
-        ],
-        oracle_path=_relative_path(arguments["oracle"], "oracle"),
-        receipt_path=receipt_path,
-        timeout_seconds=_positive(arguments["timeoutSeconds"], "timeoutSeconds", 480, 300),
-    )
+    timeout = _positive(arguments["timeoutSeconds"], "timeoutSeconds", 480, 300)
+    oracle_root = os.environ.get(_TASK_ORACLE_ROOT_ENV)
+    if oracle_root is not None and not staged:
+        raise CompanionError("deployment-selected oracle root requires the exact taskRef")
+    with ExitStack() as stack:
+        if staged:
+            resolved = task_artifacts.resolve_task(
+                repo_root=project_root, snapshot_ref=arguments["snapshotRef"], task_ref=arguments["taskRef"],
+                oracle_root=oracle_root,
+            )
+            # Lock an existing immutable input inode; no competing task-state store.
+            lock = stack.enter_context((project_root / resolved["request_path"]).open("rb"))
+            try:
+                fcntl.flock(lock, fcntl.LOCK_EX | fcntl.LOCK_NB)
+            except BlockingIOError:
+                return _blocked("task_busy", "Task verification is already running")
+            resolved = task_artifacts.resolve_task(
+                repo_root=project_root, snapshot_ref=arguments["snapshotRef"], task_ref=arguments["taskRef"],
+                oracle_root=oracle_root,
+            )
+        else:
+            snapshot, _entries = resolve_snapshot_value(project_root, arguments["snapshotRef"])
+            paths = {key: _relative_path(arguments[key], key) for key in
+                     ("request", "productionPatch", "instrumentationPatch", "oracle", "receipt")}
+            managed = Path(task_artifacts.TASK_NAMESPACE).parts
+            if any(path.parts[:len(managed)] == managed for path in paths.values()):
+                raise CompanionError("managed task artifacts require the exact taskRef")
+            resolved = {
+                "repo_root": project_root, "input_tree": snapshot,
+                "request_path": paths["request"],
+                "patch_paths": [("production", paths["productionPatch"]),
+                                ("instrumentation", paths["instrumentationPatch"])],
+                "oracle_path": paths["oracle"], "receipt_path": paths["receipt"],
+            }
+        receipt_path = resolved["receipt_path"]
+        receipt = shared_task_route.run_task(**resolved, timeout_seconds=timeout)
     receipt_file = project_root / receipt_path
     if not receipt_file.is_file():
         raise CompanionError("verify receipt is unavailable")
@@ -377,6 +422,8 @@ def execute(raw: bytes, project_root: Path) -> dict[str, object]:
             return _open(arguments, root)
         if operation == "narrow":
             return _narrow(arguments, root)
+        if operation == "stage_task":
+            return _stage_task(arguments, root)
         if operation == "verify":
             return _verify(arguments, root)
         if operation == "investigate":

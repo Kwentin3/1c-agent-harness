@@ -1,6 +1,37 @@
 # Goal #90: current-journal activation checkpoint
 
-**PARTIAL / BLOCKED — current-journal access works; active registered fresh-event acceptance is incomplete.**
+## Current checkpoint, 2026-10-22
+
+**SOURCE-ONLY IN PROGRESS; no new native PRODUCT PASS.** This continues Goal90/PR93.
+
+| Boundary | Accepted fact / remaining work |
+|---|---|
+| Source | Canonical `/workspace/1c-agent-harness` is based on `4b4c3d24ae7f534a03398157878c849fc52f98a8`, with ten native tools including `one_c_stage_task`. PR93 capture/provenance work is being integrated without losing that route. Admission/process cleanup and exact candidate checks are in progress. |
+| Access | [Final #97 handoff](https://github.com/Kwentin3/1c-agent-harness/issues/97#issuecomment-6143900400) accepted access/capability and current startup binding. Earlier missing-credential/CDP blockers are historical. Access is reused, not recreated. |
+| Installed | Source HEAD, package seal, installed plugin/companion and loaded registry remain separate identities. Previous installed acceptance does not activate this new candidate. The October7 nine-tool candidate below is historical, not the ten-tool canonical installation. |
+| Product | Fresh registered event witnesses, ≤10s full selection and ≤30s visibility remain unaccepted. Historical full selections took17.05–18.83s. No current ТЖ configuration was found in the #97 effective roots; retained September ТЖ is not current telemetry. |
+
+The last published #97 ledger records help2/3, exports11/12, sessions0/2,
+native52.73141303029843/900s, STARTED0/reserved0, SHA256
+`d43b7e247158e9c24d5b60b923e284a663068deeb4927833f0d204e936842ab9`.
+This is a dated handoff, not a new ledger read. One remaining single-shot export
+does not establish two consecutive fresh acquisitions; no budget is reset or extended.
+
+Activation must use the current deployment-owned Compose/S6 lifecycle after exact
+source/installed parity and an idle boundary are established. The current deployment
+has `agent`/`webui` services and an external Gateway; the old WebUI health-restart
+transaction is not its activation owner (UI restart409). The deployment owner must
+bind the minimal activation/rollback to the actual installed candidate. No new
+restart API, self-restart or registry workaround is prescribed here. A subsequent
+ordinary chat must verify the loaded identities and registered behavior.
+
+## Historical checkpoints, 2026-10-07
+
+The receipts and recipes below describe their exact historical environment. Missing
+credentials/browser and the WebUI restart transaction are not current prerequisites
+or activation instructions. Their original measurements and budgets are retained.
+
+**Historical status: PARTIAL / BLOCKED — current-journal access works; active registered fresh-event acceptance is incomplete.**
 No new external review was initiated. Owner's unified reversible-enablement authorization:
 [Goal90 comment](https://github.com/Kwentin3/1c-agent-harness/issues/90#issuecomment-6040941684).
 This supersedes the earlier request for a separate activation approval; it does not supply missing credentials or prove deployment.

@@ -5,7 +5,7 @@ import os
 from pathlib import Path
 import unittest
 from unittest import mock
-PATH = Path(__file__).resolve().parents[1] / 'hermes-plugin/deployment/current-journal-client.py'
+PATH = Path(__file__).resolve().parents[1] / 'deployment/goal91/current-journal-client.py'
 
 class CurrentJournalClientTests(unittest.TestCase):
 

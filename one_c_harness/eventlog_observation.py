@@ -199,9 +199,6 @@ def _export(command: Path, request: dict[str, object], project_root: Path) -> tu
             if len(stderr) < _MAX_SOURCE_ERROR_BYTES:
                 stderr.extend(chunk[:_MAX_SOURCE_ERROR_BYTES - len(stderr)])
 
-    stderr_reader = threading.Thread(target=drain_stderr, daemon=True)
-    stderr_reader.start()
-
     def stop_owned_group() -> None:
         try:
             os.killpg(process.pid, signal.SIGTERM)
@@ -215,6 +212,18 @@ def _export(command: Path, request: dict[str, object], project_root: Path) -> tu
             except ProcessLookupError:
                 pass
             process.wait(timeout=1)
+
+    try:
+        stderr_reader = threading.Thread(target=drain_stderr, daemon=True)
+        stderr_reader.start()
+    except RuntimeError:
+        try:
+            stop_owned_group()
+        finally:
+            process.stdin.close()
+            process.stdout.close()
+            process.stderr.close()
+        return None, _result("unavailable", reasonCode="source_unavailable", message="registration log source is unavailable")
 
     try:
         process.stdin.write(encoded)

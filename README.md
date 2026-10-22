@@ -3,11 +3,15 @@
 > [Goal #91](https://github.com/Kwentin3/1c-agent-harness/issues/91) завершена (CLOSED).
 > Текущая продуктовая Goal — [#90](https://github.com/Kwentin3/1c-agent-harness/issues/90):
 > свежий ЖР текущей ИБ; это ещё не достигнутый live-source результат.
-> [Проверенная граница и текущий результат](docs/issue90-current-source.md): PARTIAL.
-> Доступ к текущему ЖР принят после #94 cleanup; реальный export и retained replay выполнены.
-> [Текущий checkpoint активации](docs/issue90-activation-checkpoint.md): exact companion
-> установлен изолированно и проверен на текущем ЖР; активный chat-route пока не переключён.
-> Свежие session witnesses требуют доступной demo-авторизации; registered приёмка не выполнена.
+> [Текущий checkpoint, 22 октября](docs/issue90-current-source.md): source-only завершение #90
+> в работе; новый PRODUCT PASS не заявлен. [Доступ #97 принят](https://github.com/Kwentin3/1c-agent-harness/issues/97#issuecomment-6143900400)
+> в границах access/capability: старые credential/CDP/startup blockers сняты.
+> Это не приёмка свежих событий, полной latency или текущего ТЖ.
+> Canonical source — `/workspace/1c-agent-harness`, опора `4b4c3d24ae7f534a03398157878c849fc52f98a8`:
+> десять нативных tools, включая `one_c_stage_task`. PR #93 сохраняет доработки capture;
+> текущая работа объединяет их с этой опорой, сохраняя staged-task route.
+> [Checkpoint установки и активации](docs/issue90-activation-checkpoint.md) разделяет source,
+> installed identity и ordinary-chat результат. Рецепты 7 октября ниже в документах исторические.
 > [Итог 7 октября](docs/goal91-final.md): fresh registered cold → warm → narrow →
 > native verify PASS, 6/6 запусков без retry; защищённая demo восстановлена и проверена.
 > PR #86/#88 MERGED; [merge SHA и post-merge CI](docs/issue90-debt-disposition.md#post-merge-source-и-ci).
@@ -192,6 +196,8 @@ filters и stable ref navigation по выбранному deployment техно
 Standalone Hermes plugin лежит в [`hermes-plugin/`](hermes-plugin/). Он регистрирует coding tools,
 TechLog tools и три registration-log tools `one_c_select_registration_log`,
 `one_c_page_registration_log`, `one_c_read_registration_log_record`, а также короткую plugin skill.
+С `one_c_stage_task` manifest содержит десять инструментов; число регистраций не доказывает
+доступ к свежему ЖР и не заменяет проверку установленной пары plugin/companion.
 Plugin формирует тот же closed JSON, вызывает только public `ctx.dispatch_tool("terminal", ...)`
 и не реализует SSH, executor discovery или domain parser. Версия plugin и companion `0.3.0` принята в Git: PR #77, #79 и #81 смёржены.
 Для `0.2.0` опубликована ordinary-chat приёмка навигации по ТЖ в PR #77.
@@ -201,11 +207,40 @@ Plugin формирует тот же closed JSON, вызывает только
 Operator обязан pin-ить оба install sources к одному immutable Git revision.
 Любой несовпадающий `capabilityVersion` или `artifactId` блокируется fail-closed.
 
+В исходниках добавлен `one_c_stage_task`: exact `snapshotRef`, JSON-object request,
+две текстовые правки и существующий readonly locator `experiments/<task>/oracle.py`
+превращаются в связанный хешами `taskRef`. Request и каждая правка ограничены
+4 KiB UTF-8, весь запрос companion — 16 KiB. Этот шаг сохраняет только данные;
+он не применяет правки и не принимает тело Python-проверки. Затем
+`one_c_native_verify` принимает exact `snapshotRef`, `taskRef` и `timeoutSeconds`
+и вызывает прежний shared task route. Старая форма с семью аргументами сохранена
+для окружений без выбранного deployment oracle root; новые managed artifacts
+через неё использовать нельзя. Повторная или одновременно
+выполняющаяся проверка одной staged задачи блокируется.
+
+Корень trusted oracle выбирает deployment через `ONE_C_HARNESS_TASK_ORACLE_ROOT`:
+это относительная папка внутри business workspace, например source generation
+в `.local`; без настройки используется корень workspace. Locator выше разрешается
+только в этом одном корне, без fallback. Выбранный root связан с task manifest;
+после его изменения старый taskRef не принимается, даже если файл совпал по bytes.
+Tool arguments не позволяют менять этот root. При явной настройке root проверка
+принимает только форму с `taskRef`, без обхода через старые caller paths.
+Это позволяет установить reviewed
+oracle рядом с immutable runtime, сохранив read-only исходную конфигурацию.
+
+Новый шаг требует соответствующей текущей deployment-привязки. Исторический
+[Goal91 wrapper](deployment/goal91/one-c-harness) не выдаёт новый допуск и не является маршрутом этого переноса.
+`hermes-plugin/` содержит только шесть файлов нативного plugin package; текущий
+deployment launcher и operator configuration поставляются отдельно.
+Экспериментальный `experiments/hermes-browser-dev-marker/oracle.py` проверяет
+заданный marker-протокол; его unit tests не доказывают вызов BSL-функции. Для этого
+нужны сверка frozen patches/call site и связанных нативных client/server receipts.
+
 Эти source artifacts сами по себе не включают SSH backend и не выполняют deployment/restart.
 Remote executor и его selected workspace должны быть явно настроены terminal boundary до
 установочного canary.
 
-Для принятого fixed deployment route wrapper в `hermes-plugin/deployment/one-c-harness`
+Для исторического принятого Goal91 fixed deployment route [wrapper в `deployment/goal91/one-c-harness`](deployment/goal91/one-c-harness)
 использует operator-owned переменную `ONE_C_HARNESS_PROJECT_CWD` в окружении Hermes process:
 она обозначает **одну явно допущенную бизнес-папку на executor**, не локальную папку WebUI.
 Для `open/narrow/verify` отсутствие привязки блокирует SSH-вызов; допустим только абсолютный

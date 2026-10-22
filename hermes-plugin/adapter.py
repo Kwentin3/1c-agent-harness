@@ -3,13 +3,20 @@ from __future__ import annotations
 
 import base64
 import copy
+import hashlib
 import json
+from pathlib import PurePosixPath
+import shlex
 from typing import Any, Callable
+from uuid import uuid4
 
 from .schemas import ARTIFACT_ID, CAPABILITY_VERSION
 
 SCHEMA_VERSION = 1
 MAX_TERMINAL_OUTPUT_BYTES = 40 * 1024
+MAX_REQUEST_BYTES = 16 * 1024
+MAX_TRANSPORT_PATH_BYTES = 512
+TRANSPORT_DIRECTORY = ".one-c-harness-transport"
 
 
 def _blocked(reason_code: str, message: str) -> str:
@@ -45,10 +52,30 @@ def _parse_terminal(raw: object) -> str:
     output = outer.get("output")
     if not isinstance(output, str) or len(output.encode("utf-8")) > MAX_TERMINAL_OUTPUT_BYTES:
         raise ValueError("terminal output is invalid")
-    lines = output.splitlines()
-    if len(lines) != 1:
-        raise ValueError("companion output is ambiguous")
-    return lines[0]
+    return output
+
+
+def _stage_command(ctx: Any, request: bytes) -> str:
+    relative = f"{TRANSPORT_DIRECTORY}/{uuid4()}.json"
+    raw = ctx.dispatch_tool("write_file", {"path": relative, "content": request.decode("utf-8")})
+    result = json.loads(raw)
+    if not isinstance(result, dict) or result.get("error") or result.get("verified") is not True:
+        raise ValueError("request file write was not verified")
+    resolved = result.get("resolved_path")
+    if (
+        not isinstance(resolved, str) or len(resolved.encode("utf-8")) > MAX_TRANSPORT_PATH_BYTES
+        or not resolved.startswith("/") or resolved.startswith("//")
+        or any(ord(character) < 32 or ord(character) == 127 for character in resolved)
+        or "\\" in resolved
+    ):
+        raise ValueError("request file path is invalid")
+    path = PurePosixPath(resolved)
+    if str(path) != resolved or ".." in path.parts or "/".join(path.parts[-2:]) != relative:
+        raise ValueError("request file path is invalid")
+    return (
+        f'"$HERMES_HOME/bin/one-c-harness" --request-file {shlex.quote(resolved)} '
+        f'--sha256 {hashlib.sha256(request).hexdigest()}'
+    )
 
 
 def _all_have_equal(items: list[dict[str, Any]], key: str) -> bool:
@@ -257,8 +284,16 @@ def _compact_diagnostic_response(response: dict[str, Any], operation: str) -> di
 def _call(ctx: Any, operation: str, arguments: object, timeout: int) -> str:
     try:
         request = _request(operation, arguments)
-        encoded = base64.b64encode(request).decode("ascii")
-        command = f'"$HERMES_HOME/bin/one-c-harness" --request-base64 {encoded}'
+        if operation == "stage_task":
+            if len(request) > MAX_REQUEST_BYTES:
+                return _blocked("invalid_request", "request exceeds transport byte limit")
+            try:
+                command = _stage_command(ctx, request)
+            except Exception:
+                return _blocked("request_file_failed", "request file transport could not be prepared")
+        else:
+            encoded = base64.b64encode(request).decode("ascii")
+            command = f'"$HERMES_HOME/bin/one-c-harness" --request-base64 {encoded}'
         raw = ctx.dispatch_tool("terminal", {"command": command, "timeout": timeout})
         response = json.loads(_parse_terminal(raw))
         if not isinstance(response, dict) or response.get("capabilityVersion") != CAPABILITY_VERSION:
@@ -326,6 +361,12 @@ def page_registration_log(ctx: Any) -> Callable[[object], str]:
 def read_registration_log_record(ctx: Any) -> Callable[[object], str]:
     def handler(arguments: object, **_kwargs: object) -> str:
         return _call(ctx, "eventlog_record", arguments, 60)
+    return handler
+
+
+def stage_task(ctx: Any) -> Callable[[object], str]:
+    def handler(arguments: object, **_kwargs: object) -> str:
+        return _call(ctx, "stage_task", arguments, 60)
     return handler
 
 

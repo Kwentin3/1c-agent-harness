@@ -1,15 +1,46 @@
 # Goal90 — current-source checkpoint
 
-**Актуально: PARTIAL / STAGED_CURRENT_COMPANION_NOT_ACTIVE_CHAT**, не PRODUCT PASS.
-Доступ #94 принят и больше не является блокером. [Текущая проверка установки](issue90-activation-checkpoint.md):
-изолированный exact companion прошёл live selection/page/record/comment; зарегистрированный chat-route
-пока не переключён, новые session-события требуют отсутствующей demo-авторизации.
-Обратимая активация уже разрешена единым допуском владельца; нового approval/review не требуется.
+## Текущий checkpoint, 2026-10-22
+
+**SOURCE-ONLY IN PROGRESS / PRODUCT ACCEPTANCE OPEN.** Продолжаются #90 и PR #93,
+без нового Goal или review-цикла. Canonical source — `/workspace/1c-agent-harness`,
+опорный commit `4b4c3d24ae7f534a03398157878c849fc52f98a8`. Его десять нативных tools
+включают `one_c_stage_task`; current-capture branch PR93
+`db7f7e894b847cd3fdf29c4da9be60751636c70d` объединяется с этой опорой без отката
+staged tasks и публичных owner seams `validate_request` / `project_ibcmd_json`.
+Cleanup при ошибке запуска stderr-reader исправлен в трёх существующих путях.
+Три регрессии воспроизводят утечку реальных безвредных процессов до исправления
+и подтверждают reap, отсутствие группы, закрытые pipes и безопасный отказ после него.
+Полный source-прогон: **448 tests PASS** в изолированном Linux/Python3.14.7 без сети,
+секретов и 1C mounts. [Квитанция и точные identities](../experiments/issue90-current-source/source-finish-20261022.json).
+Exact-head CI3.9/3.12, установка и native PRODUCT PASS этим прогоном не удостоверяются.
+
+[Финальный handoff #97](https://github.com/Kwentin3/1c-agent-harness/issues/97#issuecomment-6143900400)
+принят в границах access/capability; [продолжение #90](https://github.com/Kwentin3/1c-agent-harness/issues/90#issuecomment-6143905887)
+отделяет его от продуктовой приёмки. Engineering/browser routes, текущий read-only ЖР
+и startup binding предоставлены. Прежние credential/CDP/access blockers ниже —
+исторические, не повод пересоздавать доступ. Конфигурации текущего ТЖ в проверенных
+effective roots не найдено; retained сентябрьский ТЖ не стал текущим.
+
+Последний опубликованный ledger #97: help **2/3**, exports **11/12**, sessions **0/2**,
+native **52.73141303029843/900 s**, STARTED/reserved **0**; SHA256
+`d43b7e247158e9c24d5b60b923e284a663068deeb4927833f0d204e936842ab9`.
+Это dated handoff, не новое чтение ledger. Один оставшийся single-shot export не
+доказывает две fresh acquisitions; бюджет не сбрасывается и не расширяется.
+Registered fresh-event witnesses и улучшенная full selection latency пока не приняты.
+Исторические 17.05–18.83 s превышают порог ≤10 s; visibility ≤30 s не проверена.
+
+[Checkpoint установки и активации](issue90-activation-checkpoint.md) отделяет исходники,
+installed pair и результат обычного чата. Текущую активацию выполняет deployment
+lifecycle owner; старый WebUI restart-рецепт ниже к текущему стеку не переносится.
 См. также [source-кандидат и историческое продолжение](issue90-capture-candidate.md),
 [реальный capture и отдельно маркированный replay](../experiments/issue90-current-source/current-capture-receipt.json).
 Ниже сохранён исторический отчёт до #94; его ACCESS_BLOCKED и exports0 не являются текущим состоянием.
 
-## Исторический checkpoint до передачи доступа #94
+## Исторические checkpoints 7 октября, до принятого handoff #97
+
+Ниже сохранены прежние измерения, рецепты и действовавшие тогда ограничения.
+Они не являются текущей инструкцией доступа, активации или новым бюджетом.
 
 Статус тогда: **PARTIAL / CURRENT_JOURNAL_ACCESS_BLOCKED**, не PRODUCT PASS.
 Issue #90 открыта. Повторный approval на read-only binding/help/bounded export/session
@@ -147,7 +178,7 @@ rotation behavior или полноту live-экспорта. Наличие `-
   selection/ref/TTL, различает empty/unavailable и count-based partial. Его
   `coverage.complete` относится к полученной выборке, не автоматически к текущему
   времени или к полноте live history. Максимальная дата записи не является fence.
-- [Wrapper](../hermes-plugin/deployment/one-c-harness) разделяет diagnostic и coding
+- [Исторический wrapper](../deployment/goal91/one-c-harness) разделяет diagnostic и coding
   routes. Целевая demo находится в другом retained reference; purpose coding key
   #91 отозван по [completion](https://github.com/Kwentin3/1c-agent-harness/issues/91#issuecomment-6032686960).
   Его закрытое окно нельзя активировать или использовать для ЖР автоматически.

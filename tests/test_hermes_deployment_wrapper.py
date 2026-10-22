@@ -12,7 +12,7 @@ import unittest
 
 
 ROOT = Path(__file__).resolve().parents[1]
-WRAPPER = ROOT / "hermes-plugin" / "deployment" / "one-c-harness"
+WRAPPER = ROOT / "deployment" / "goal91" / "one-c-harness"
 
 
 class HermesDeploymentWrapperTests(unittest.TestCase):
