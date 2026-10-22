@@ -1,4 +1,4 @@
-"""Registration policy tests: real state/locks, only the native EPF boundary replaced."""
+"""Registration policy tests: real state/locks, only native Get/Set is replaced."""
 from __future__ import annotations
 
 import copy
@@ -7,7 +7,7 @@ from pathlib import Path
 import sys
 import tempfile
 import unittest
-from unittest.mock import patch
+from unittest.mock import Mock
 
 from one_c_harness import registration_logging as registration
 
@@ -24,9 +24,7 @@ class NativeApi:
         self.after_set = None
         self.get_conflict = False
 
-    def __call__(self, settings, request, *, settings_request=False):
-        if not settings_request:
-            raise AssertionError("native settings API was not selected")
+    def __call__(self, request):
         self.calls.append(copy.deepcopy(request))
         if request["action"] == "get":
             result = {"status": "conflict" if self.get_conflict else "ok", "levels": self.levels[:]}
@@ -40,34 +38,52 @@ class NativeApi:
                 if self.after_set:
                     self.after_set(request)
                 result = {"status": "ok", "levels": self.levels[:]}
-        return json.dumps(result).encode(), {}
+        return result
 
 
 class NativeSettingsContractTests(unittest.TestCase):
     def test_native_get_conflict_is_not_accepted_as_observed_policy(self):
         api = NativeApi(["Warning"])
         api.get_conflict = True
-        with patch.object(registration.eventlog_exporter, "run_epf", side_effect=api):
-            with self.assertRaises(ValueError):
-                registration.native(object(), {"action": "get"})
+        with self.assertRaises(ValueError):
+            registration.native(api, {"action": "get"})
         self.assertEqual(api.levels, ["Warning"])
 
     def test_native_compare_set_cannot_overwrite_a_foreign_current_policy(self):
         api = NativeApi(["Warning"])
-        with patch.object(registration.eventlog_exporter, "run_epf", side_effect=api):
-            observed = registration.native(object(), {"action": "get"})
-            api.levels = ["Information"]  # Another actor changed policy after Get.
-            result = registration.native(object(), {"action": "set", "expectedLevels": observed["levels"],
-                                                      "levels": ["Error", "Warning"]})
+        observed = registration.native(api, {"action": "get"})
+        api.levels = ["Information"]  # Another actor changed policy after Get.
+        result = registration.native(api, {"action": "set", "expectedLevels": observed["levels"],
+                                           "levels": ["Error", "Warning"]})
         self.assertEqual(result, {"status": "conflict", "levels": ["Information"]})
         self.assertEqual(api.levels, ["Information"])
 
     def test_native_false_success_without_requested_readback_is_refused(self):
-        with patch.object(registration.eventlog_exporter, "run_epf",
-                          return_value=(b'{"status":"ok","levels":["Warning"]}', {})):
-            with self.assertRaisesRegex(ValueError, "native_readback_mismatch"):
-                registration.native(object(), {"action": "set", "expectedLevels": ["Warning"],
-                                                 "levels": ["Error", "Warning"]})
+        invoke = Mock(return_value={"status": "ok", "levels": ["Warning"]})
+        with self.assertRaisesRegex(ValueError, "native_readback_mismatch"):
+            registration.native(invoke, {"action": "set", "expectedLevels": ["Warning"],
+                                         "levels": ["Error", "Warning"]})
+
+    def test_invalid_request_is_rejected_before_native_callback(self):
+        for request in (None, [], {"action": "get", "levels": []},
+                        {"action": "set", "levels": [], "expectedLevels": ["Other"]},
+                        {"action": "set", "levels": ["Error", "Error"], "expectedLevels": []},
+                        {"action": "set", "levels": [], "expectedLevels": [], "path": "/caller"}):
+            with self.subTest(request=request):
+                invoke = Mock()
+                with self.assertRaises(ValueError):
+                    registration.native(invoke, request)
+                invoke.assert_not_called()
+
+    def test_callback_must_return_closed_observed_settings_not_transport_payload(self):
+        for result in (b'{"status":"ok","levels":[]}', None,
+                       {"status": "ok", "levels": [], "cookie": "not-policy"},
+                       {"status": "ok", "levels": ["Error", "Error"]},
+                       {"status": "ok", "levels": ["Other"]},
+                       {"status": "blocked", "reasonCode": "native_settings_failed"}):
+            with self.subTest(result=result):
+                with self.assertRaises(ValueError):
+                    registration.native(Mock(return_value=result), {"action": "get"})
 
 
 @unittest.skipUnless(sys.platform.startswith("linux"), "state transactions use real Linux flock/O_NOFOLLOW")
@@ -77,12 +93,9 @@ class RegistrationPolicyTests(unittest.TestCase):
         self.addCleanup(self.temporary.cleanup)
         self.root = Path(self.temporary.name).resolve() / "control"
         self.api = NativeApi(["Warning", "Note"])
-        boundary = patch.object(registration.eventlog_exporter, "run_epf", side_effect=self.api)
-        boundary.start()
-        self.addCleanup(boundary.stop)
 
     def control(self, action, **kwargs):
-        return registration.control(action, object(), self.root, kwargs.pop("target_ref", TARGET), **kwargs)
+        return registration.control(action, self.api, self.root, kwargs.pop("target_ref", TARGET), **kwargs)
 
     def state(self):
         return json.loads((self.root / "registration.json").read_bytes())

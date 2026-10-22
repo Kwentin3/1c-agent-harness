@@ -12,8 +12,10 @@ from unittest import mock
 
 from one_c_harness import current_logging as backend
 from one_c_harness import techlog_config
+from one_c_harness.registration_web import RegistrationWeb
 
 TARGET = 'target:' + 'a' * 64
+URL = 'http://127.0.0.1:18090/jetcontrol/ru/?C=DisableSystemStartupLogic&DisableHomePageForms#e1cib/system/EventLogSettings'
 
 
 def request(action='status', journal='technological', **fields):
@@ -28,17 +30,16 @@ class CurrentLoggingTests(unittest.TestCase):
         self.root = Path(temporary.name).resolve()
         self.source = self.root / 'source'
         (self.source / 'deployment/goal91').mkdir(parents=True)
-        (self.source / 'one_c_harness').mkdir()
-        (self.source / 'one_c_harness/logging.epf').write_bytes(b'not executed')
         self.ib = self.root / 'infobase'
         self.ib.mkdir()
-        self.config = {'schemaVersion': 1, 'settingsEpf': 'one_c_harness/logging.epf', 'timeZone': 'UTC'}
+        self.config = {'schemaVersion': 1, 'registrationUrl': URL, 'timeZone': 'UTC'}
         for key in backend._PATHS:
             path = self.root / key
             if key == 'techlogConfig':
                 path.write_bytes(b'<config><dump create="false"/></config>')
-            elif key == 'runtimeProfile':
-                path.write_text('{}')
+            elif key in ('browserExecutable', 'python'):
+                path.write_bytes(b'not executed')
+                path.chmod(0o700)
             else:
                 path.mkdir(mode=0o700)
             self.config[key] = str(path)
@@ -92,7 +93,7 @@ class CurrentLoggingTests(unittest.TestCase):
                     b'{"schemaVersion":1,"schemaVersion":1,"operation":"observe","arguments":{}}'):
             with self.assertRaises(ValueError):
                 backend.execute(raw)
-        self.config['settingsEpf'] = '../foreign.epf'
+        self.config['browserExecutable'] = '../foreign'
         self.config_path.write_text(json.dumps(self.config))
         with self.assertRaises(ValueError):
             backend.execute(request())
@@ -105,22 +106,14 @@ class CurrentLoggingTests(unittest.TestCase):
         self.assertFalse(Path(self.config['techlogState']).exists())
         self.assertEqual(Path(self.config['techlogConfig']).read_bytes(), before)
 
-    def test_registration_drops_uid_before_existing_control_and_uses_fixed_settings(self):
-        paths = {'runtimeProfile': self.root / 'profile', 'settingsEpf': self.source / 'one_c_harness/logging.epf',
-                 'workDirectory': Path(self.config['workDirectory'])}
-        for name in ('platform', 'xvfb', 'fontconfig'):
-            path = self.root / name
-            path.write_bytes(b'not executed')
-            path.chmod(0o700)
-        paths['runtimeProfile'].write_text(json.dumps({name: str(self.root / name) for name in ('platform', 'xvfb', 'fontconfig')} | {'libs': '/fixed/libs'}))
-        self.config['runtimeProfile'] = str(paths['runtimeProfile'])
-        self.config_path.write_text(json.dumps(self.config))
+    def test_registration_drops_uid_before_existing_control_and_uses_fixed_web_callback(self):
         calls = []
-        def control(action, settings, state, target, **kwargs):
+        def control(action, native, state, target, **kwargs):
             calls.append('control')
             self.assertEqual(calls, ['drop', 'control'])
-            self.assertEqual((settings.infobase, settings.epf, state, target),
-                             (self.ib, paths['settingsEpf'], Path(self.config['registrationState']), TARGET))
+            self.assertIsInstance(native, RegistrationWeb)
+            self.assertEqual((native.settings.url, native.settings.browser, state, target),
+                             (URL, Path(self.config['browserExecutable']), Path(self.config['registrationState']), TARGET))
             return {'status': 'ok', 'journal': 'registration'}
         with mock.patch.object(backend, '_drop_privileges', side_effect=lambda: calls.append('drop')), \
                 mock.patch.object(backend.registration_logging, 'control', side_effect=control):

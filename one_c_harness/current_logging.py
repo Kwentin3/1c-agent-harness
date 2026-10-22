@@ -7,13 +7,13 @@ import signal
 import stat
 import sys
 
-from . import ARTIFACT_ID, CAPABILITY_VERSION, eventlog_exporter, logging_control, registration_logging
+from . import ARTIFACT_ID, CAPABILITY_VERSION, logging_control, registration_logging
 from .techlog_config import TechlogConfig, TechlogConfigError
 
 _MAX_BYTES = 16384
 _READS = ('observation_info', 'observe', 'expand_observation')
 _PATHS = ('techlogConfig', 'techlogDirectory', 'techlogState', 'registrationState',
-          'workDirectory', 'observationRoot', 'runtimeProfile')
+          'observationRoot', 'browserExecutable', 'python')
 
 
 def _path(value, *, directory=False, optional=False, trusted=False):
@@ -58,26 +58,16 @@ def _configuration():
         raise ValueError('binding_unavailable')
     infobase = _path(os.environ.get('ONE_C_HARNESS_CURRENT_IB_PATH'), directory=True)
     config = _json_file(_path(str(source / 'deployment/goal91/current-logging.json'), trusted=True))
-    if (not isinstance(config, dict) or set(config) != {'schemaVersion', *_PATHS, 'settingsEpf', 'timeZone'}
+    if (not isinstance(config, dict) or set(config) != {'schemaVersion', *_PATHS, 'registrationUrl', 'timeZone'}
             or type(config['schemaVersion']) is not int or config['schemaVersion'] != 1 or config['timeZone'] != 'UTC'):
         raise ValueError('configuration_invalid')
-    paths = {key: _path(config[key], directory=key not in ('techlogConfig', 'runtimeProfile'),
-                         optional=key == 'techlogConfig', trusted=key == 'runtimeProfile') for key in _PATHS}
-    relative = Path(config['settingsEpf'])
-    if relative.is_absolute() or '..' in relative.parts or str(relative) != 'one_c_harness' + os.sep + 'logging.epf':
+    paths = {key: _path(config[key], directory=key not in ('techlogConfig', 'browserExecutable'),
+                         optional=key == 'techlogConfig', trusted=key == 'browserExecutable')
+             for key in _PATHS if key != 'python'}
+    # The fixed bootstrap already verified and selected this native venv interpreter.
+    if not isinstance(config['python'], str) or not Path(config['python']).is_absolute():
         raise ValueError('configuration_invalid')
-    paths['settingsEpf'] = _path(str(source / relative))
     return config, paths, target, infobase
-
-
-def _settings(paths, infobase):
-    for key in eventlog_exporter.ENVIRONMENT_KEYS:
-        os.environ.pop(key, None)
-    os.environ.update(ONE_C_HARNESS_EVENTLOG_RUNTIME_PROFILE=str(paths['runtimeProfile']),
-                      ONE_C_HARNESS_EVENTLOG_INFOBASE=str(infobase),
-                      ONE_C_HARNESS_EVENTLOG_EPF=str(paths['settingsEpf']),
-                      ONE_C_HARNESS_EVENTLOG_WORK_ROOT=str(paths['workDirectory']))
-    return eventlog_exporter.load_settings()
 
 
 def _drop_privileges():
@@ -131,9 +121,10 @@ def execute(raw):
         if arguments['journal'] == 'technological':
             result = _techlog(arguments, paths, target)
         else:
-            settings = _settings(paths, infobase)
+            from .registration_web import BrowserSettings, RegistrationWeb
+            native = RegistrationWeb(BrowserSettings(config['registrationUrl'], paths['browserExecutable']))
             _drop_privileges()
-            result = registration_logging.control(arguments['action'], settings, paths['registrationState'], target,
+            result = registration_logging.control(arguments['action'], native, paths['registrationState'], target,
                 profile=arguments.get('profile'), capture_ref=arguments.get('captureRef'))
         return {'artifactId': ARTIFACT_ID, 'capabilityVersion': CAPABILITY_VERSION,
                 'schemaVersion': 1, 'operation': operation, **result}
@@ -165,11 +156,13 @@ def main():
         output = json.dumps(result, ensure_ascii=True, separators=(',', ':'), allow_nan=False)
         if len(output.encode()) + 1 > _MAX_BYTES:
             raise ValueError('source_byte_limit')
-    except (ValueError, TypeError, OSError, TimeoutError, eventlog_exporter.ExportFailure) as error:
+    except (ValueError, TypeError, OSError, TimeoutError) as error:
         reason = str(error)
         if reason not in {'invalid_request', 'configuration_invalid', 'configuration_unavailable', 'binding_unavailable',
                           'target_mismatch', 'capture_not_found', 'profile_in_use', 'configuration_changed',
-                          'busy', 'source_timeout', 'source_byte_limit'}:
+                          'busy', 'source_timeout', 'source_byte_limit', 'unsupported_levels',
+                          'native_exit_unproven', 'native_web_unavailable', 'browser_unavailable',
+                          'native_form_invalid', 'native_readback_mismatch', 'browser_cleanup_failed'}:
             reason = 'source_unavailable'
         failure = {'schemaVersion': 1, 'status': 'blocked', 'reasonCode': reason}
         # Preserve only public error context, never raw arguments.

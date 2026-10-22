@@ -94,7 +94,7 @@ class HermesPluginTests(unittest.TestCase):
         paths = []
         for pattern in ("one_c_harness/*.py", "hermes-plugin/*.py"):
             paths.extend(ROOT.glob(pattern))
-        for pattern in ("one_c_harness/eventlog_epf/**/*", "one_c_harness/logging_epf/**/*"):
+        for pattern in ("one_c_harness/eventlog_epf/**/*",):
             paths.extend(path for path in ROOT.glob(pattern) if path.is_file())
         paths += [ROOT / 'deployment/goal91' / name for name in (
             'current-journal.py', 'current-harness-client.py', 'current-capture-client.py',

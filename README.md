@@ -1,10 +1,10 @@
 # 1C Agent Harness
 
-> В работе [Goal #99](https://github.com/Kwentin3/1c-agent-harness/issues/99):
-> рабочий агентский lifecycle ЖР/ТЖ текущей разрешённой 1С.
-> [Контракт и текущая граница](docs/issue99-agent-logging.md): source candidate,
-> нативный вход нового обработчика ЖР ещё не подтверждён; установка и продуктовая
-> приёмка не объявлены завершёнными. Завершённая #90 не возобновляется.
+> In progress: [Goal #99](https://github.com/Kwentin3/1c-agent-harness/issues/99),
+> current-target registration and technological logging lifecycle.
+> [Contract and acceptance boundary](docs/issue99-agent-logging.md): native settings
+> form reading is verified; installation and end-to-end acceptance remain pending.
+> The closed historical #90 experiment is not reopened.
 
 > [Goal #91](https://github.com/Kwentin3/1c-agent-harness/issues/91) завершена (CLOSED).
 > Этап [#90](https://github.com/Kwentin3/1c-agent-harness/issues/90) завершён по решению владельца:

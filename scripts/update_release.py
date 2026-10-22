@@ -7,7 +7,7 @@ from pathlib import Path
 root = Path(__file__).resolve().parents[1]
 paths = []
 for pattern in ('one_c_harness/*.py', 'hermes-plugin/*.py',
-                'one_c_harness/eventlog_epf/**/*', 'one_c_harness/logging_epf/**/*'):
+                'one_c_harness/eventlog_epf/**/*'):
     paths += [path for path in root.glob(pattern) if path.is_file()]
 paths += [root/'hermes-plugin/plugin.yaml', root/'hermes-plugin/skills/one-c-harness/SKILL.md', root/'pyproject.toml']
 paths += [root/'deployment/goal91'/name for name in (

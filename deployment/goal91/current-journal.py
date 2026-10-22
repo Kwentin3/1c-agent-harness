@@ -1,6 +1,6 @@
 #!/usr/bin/python3
 """Fixed SSH capability for one admitted demo journal; no shell or path input."""
-import base64, datetime, hashlib, json, os, re, signal, subprocess, sys, time, uuid
+import base64, datetime, hashlib, json, os, re, signal, stat, subprocess, sys, time, uuid
 from pathlib import Path
 
 REFERENCE = 'd2f38aa86d7bc461712df72fc22d5eb924324cbf5f386ca44a458024fd24970c'
@@ -283,18 +283,20 @@ def main():
     print(json.dumps(result, sort_keys=True))
 
 
-def _capture(value):
+def _capture(value, *, binding=None):
     runtime=Path(RUNTIME_HOST)
     # Docker resolves this trusted root-owned binding; SSH UID need not traverse it.
     if not runtime.is_absolute() or ',' in RUNTIME_HOST:
         raise ValueError('binding_unavailable')
-    import fcntl
-    lock = os.open(LOCK_FILE,os.O_RDWR|os.O_NOFOLLOW)
-    try:
-        fcntl.flock(lock,fcntl.LOCK_EX|fcntl.LOCK_NB)
-    except BlockingIOError:
-        raise ValueError('access_busy') from None
-    inspected, driver, merged, source = _binding()
+    if binding is None:
+        import fcntl
+        lock = os.open(LOCK_FILE,os.O_RDWR|os.O_NOFOLLOW)
+        try:
+            fcntl.flock(lock,fcntl.LOCK_EX|fcntl.LOCK_NB)
+        except BlockingIOError:
+            raise ValueError('access_busy') from None
+        binding = _binding()
+    inspected, driver, merged, source = binding
     pid = inspected['State']['Pid']
     name = 'issue94-journal-' + uuid.uuid4().hex
     process = None
@@ -354,17 +356,71 @@ print(json.dumps({'vrdSha256':hashlib.sha256(raw).hexdigest(),'ibBindings':ibs,'
 
 
 PRODUCT_BOOTSTRAP = r'''
-import os,pathlib,stat,sys
+import json,os,pathlib,stat,sys
 root=pathlib.Path(sys.argv[1])
 if not root.is_absolute() or root.resolve()!=root:raise SystemExit(2)
 for path in (root,*root.parents):
  s=path.stat()
  if not stat.S_ISDIR(s.st_mode) or s.st_uid!=0 or s.st_mode&0o022:raise SystemExit(2)
+config=root/'deployment/goal91/current-logging.json'
+s=config.lstat()
+if not stat.S_ISREG(s.st_mode) or s.st_nlink!=1 or s.st_uid!=0 or s.st_mode&0o022:raise SystemExit(2)
+with config.open('rb') as stream:raw=stream.read(16385)
+if len(raw)>16384:raise SystemExit(2)
+python=pathlib.Path(json.loads(raw)['python'])
+if not python.is_absolute() or '..' in python.parts:raise SystemExit(2)
+for path in (python.resolve(),*python.parents):
+ s=path.stat()
+ if s.st_uid!=0 or s.st_mode&0o022:raise SystemExit(2)
+if not python.is_file() or not os.access(python,os.X_OK):raise SystemExit(2)
+if sys.executable!=str(python):os.execv(str(python),[str(python),'-I','-B','-c',sys.argv[2],str(root),sys.argv[2]])
 sys.path.insert(0,str(root))
 sys.argv=['current_logging']
 from one_c_harness.current_logging import main
 main()
 '''
+
+
+def _product_source():
+    if 'CURRENT_HARNESS_SOURCE' in os.environ:
+        source = os.environ['CURRENT_HARNESS_SOURCE']
+        if not re.fullmatch(r'/[A-Za-z0-9_./-]+', source) or '..' in Path(source).parts:
+            raise ValueError('binding_unavailable')
+        return source
+    if os.name != 'posix':
+        raise ValueError('binding_unavailable')
+    try:
+        handler = Path(__file__).absolute()
+        pin_path = handler.with_name('one-c-source.json')
+        if any(path.is_symlink() for path in (pin_path, handler, *pin_path.parents)):
+            raise ValueError
+        fd = os.open(pin_path, os.O_RDONLY | os.O_NOFOLLOW)
+        with os.fdopen(fd, 'rb') as stream:
+            info = os.fstat(stream.fileno())
+            if (not stat.S_ISREG(info.st_mode) or info.st_nlink != 1 or info.st_uid != 0
+                    or info.st_gid != 0 or stat.S_IMODE(info.st_mode) != 0o444):
+                raise ValueError
+            raw = stream.read(65537)
+        if len(raw) > 65536:
+            raise ValueError
+        pin = json.loads(raw)
+        if (not isinstance(pin, dict) or set(pin) != {'repository', 'commit', 'artifact_id', 'source_directory', 'files'}
+                or pin['repository'] != 'https://github.com/Kwentin3/1c-agent-harness.git'
+                or not isinstance(pin['commit'], str) or not re.fullmatch('[0-9a-f]{40}', pin['commit'])
+                or not isinstance(pin['artifact_id'], str) or not re.fullmatch('sha256:[0-9a-f]{64}', pin['artifact_id'])
+                or pin['source_directory'] != '.' or not isinstance(pin['files'], dict)):
+            raise ValueError
+        info = handler.lstat()
+        if not stat.S_ISREG(info.st_mode) or info.st_nlink != 1:
+            raise ValueError
+        digest = pin['files']['deployment/goal91/current-journal.py']
+        if not isinstance(digest, str) or not re.fullmatch('[0-9a-f]{64}', digest):
+            raise ValueError
+        if hashlib.sha256(handler.read_bytes()).hexdigest() != digest:
+            raise ValueError
+        return '/opt/one-c-harness/' + pin['commit']
+    except (ValueError, TypeError, KeyError, OSError):
+        raise ValueError('binding_unavailable') from None
 
 
 def _product_command(command):
@@ -383,22 +439,23 @@ def _product_command(command):
             raise ValueError
     except (ValueError, UnicodeError):
         raise ValueError('invalid_request') from None
-    source = os.environ.get('CURRENT_HARNESS_SOURCE', '')
-    if not re.fullmatch(r'/[A-Za-z0-9_./-]+', source) or '..' in Path(source).parts:
-        raise ValueError('binding_unavailable')
+    capture = None
     if value['operation'] == 'eventlog_capture':
         capture = admit(value['arguments'])
         if capture['operation'] != 'export':
             raise ValueError('invalid_request')
-        return _capture(capture)
     import fcntl
-    lock = os.open(LOCK_FILE, os.O_RDWR | os.O_NOFOLLOW)
+    lock = os.open(LOCK_FILE, os.O_RDWR | getattr(os, 'O_NOFOLLOW', 0))
     try:
         try:
             fcntl.flock(lock, fcntl.LOCK_EX | fcntl.LOCK_NB)
         except BlockingIOError:
             raise ValueError('access_busy') from None
-        _, _, _, bound = _binding()
+        source = _product_source()
+        binding = _binding()
+        _, _, _, bound = binding
+        if capture is not None:
+            return _capture(capture, binding=binding)
         # Canonical technical identity; neither caller targetRef nor a model path owns it.
         identity = {'referenceId': REFERENCE, 'image': REFERENCE_IMAGE, 'vrd': VRD_SHA256,
                     'ibPath': '/var/lib/1c/ib', 'journalDevice': bound['journalDirectory']['device'],
@@ -409,7 +466,7 @@ def _product_command(command):
             '--env', 'ONE_C_HARNESS_CURRENT_SOURCE=' + source,
             '--env', 'ONE_C_HARNESS_CURRENT_IB_PATH=' + bound['ibBindings'][0],
             REFERENCE, '/usr/bin/python3', '-I', '-B',
-            '-c', PRODUCT_BOOTSTRAP, source], input=raw, capture_output=True, timeout=56)
+            '-c', PRODUCT_BOOTSTRAP, source, PRODUCT_BOOTSTRAP], input=raw, capture_output=True, timeout=56)
         if reply.returncode or len(reply.stdout) > 16384 or len(reply.stderr) > 1024:
             raise ValueError('capability_failed')
         result = json.loads(reply.stdout)

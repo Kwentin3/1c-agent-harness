@@ -128,7 +128,10 @@ class ProcessAdmissionCleanupTests(unittest.TestCase):
         class OwnerAbort(BaseException):
             pass
         with mock.patch.object(subprocess, "Popen", side_effect=self.launch), \
-             mock.patch.object(enterprise.time, "sleep", side_effect=OwnerAbort):
+             mock.patch.object(enterprise, "time", wraps=time) as clock:
+            # Replace the exporter's reference, not the shared stdlib module:
+            # POSIX Popen.wait(timeout=...) must keep its real time.sleep.
+            clock.sleep.side_effect = OwnerAbort
             with self.assertRaises(OwnerAbort):
                 enterprise.run_once(self.request)
         self.assert_reaped_and_closed()
@@ -148,7 +151,8 @@ class ProcessAdmissionCleanupTests(unittest.TestCase):
         signal.signal(signal.SIGALRM, alarm_handler)
         try:
             with mock.patch.object(subprocess, "Popen", side_effect=self.launch), \
-                 mock.patch.object(enterprise.time, "sleep", side_effect=alarm_after_ownership):
+                 mock.patch.object(enterprise, "time", wraps=time) as clock:
+                clock.sleep.side_effect = alarm_after_ownership
                 with self.assertRaisesRegex(TimeoutError, "test-owned parent deadline"):
                     enterprise.run_once(self.request)
         finally:
@@ -156,25 +160,15 @@ class ProcessAdmissionCleanupTests(unittest.TestCase):
             signal.signal(signal.SIGALRM, previous)
         self.assert_reaped_and_closed()
 
-    def test_settings_timeout_is_15_seconds_with_real_child_cleanup(self) -> None:
-        settings = enterprise.load_settings()
-        ticks = iter((0, 15.01))
-        with mock.patch.object(subprocess, "Popen", side_effect=self.launch), \
-             mock.patch.object(enterprise.time, "monotonic", side_effect=lambda: next(ticks, 15.01)), \
-             mock.patch.object(enterprise.time, "sleep") as sleep:
-            with self.assertRaisesRegex(enterprise.ExportFailure, "source_timeout"):
-                enterprise.run_epf(settings, {"action": "get"}, settings_request=True)
-        sleep.assert_not_called()
-        self.assert_reaped_and_closed()
-
     def test_existing_export_does_not_timeout_at_15_seconds_and_still_stops_at_115(self) -> None:
         ticks = iter((0, 15.01, 115.01))
         with mock.patch.object(subprocess, "Popen", side_effect=self.launch), \
-             mock.patch.object(enterprise.time, "monotonic", side_effect=lambda: next(ticks, 115.01)), \
-             mock.patch.object(enterprise.time, "sleep") as sleep:
+             mock.patch.object(enterprise, "time", wraps=time) as clock:
+            clock.monotonic.side_effect = lambda: next(ticks, 115.01)
+            clock.sleep = mock.Mock()
             with self.assertRaisesRegex(enterprise.ExportFailure, "source_timeout"):
                 enterprise.run_once(self.request)
-        sleep.assert_called_once_with(.02)
+        clock.sleep.assert_called_once_with(.02)
         self.assert_reaped_and_closed()
 
     @unittest.skipUnless(sys.platform.startswith("linux"), "requires own orphan adoption for fixture cleanup")
@@ -210,7 +204,8 @@ class ProcessAdmissionCleanupTests(unittest.TestCase):
             raise TimeoutError("test-owned deadline after group is ready")
         try:
             with mock.patch.object(subprocess, "Popen", side_effect=self.launch), \
-                 mock.patch.object(enterprise.time, "sleep", side_effect=deadline_after_descendant_ready):
+                 mock.patch.object(enterprise, "time", wraps=time) as clock:
+                clock.sleep.side_effect = deadline_after_descendant_ready
                 with self.assertRaises(TimeoutError):
                     enterprise.run_once(self.request)
             until = time.monotonic() + 1

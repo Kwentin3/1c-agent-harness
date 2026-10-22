@@ -1,8 +1,8 @@
 """Temporary registration-log levels, owned by the native Get/Set API.
 
-Deployment supplies the fixed Settings, state directory and validated target.
-The model cannot select a database, processing file or state path. Starting a
-profile adds required levels; it never disables pre-existing registration.
+Deployment supplies the native Get/Set callable, state directory and validated
+target. The model cannot select a database, transport or state path. Starting
+a profile adds required levels; it never disables pre-existing registration.
 """
 from __future__ import annotations
 
@@ -14,8 +14,7 @@ import re
 import secrets
 import stat
 import tempfile
-
-from . import eventlog_exporter
+from typing import Callable
 
 _LEVELS = {"Error", "Warning", "Information", "Note"}
 _PROFILES = {"errors": {"Error"}, "diagnostic": _LEVELS}
@@ -28,17 +27,20 @@ def _levels(value: object) -> list[str]:
     return sorted(value)
 
 
-def native(settings: eventlog_exporter.Settings, request: dict[str, object]) -> dict[str, object]:
-    """Get, or compare then set, levels through the repository-owned native EPF."""
+def native(
+    invoke: Callable[[dict[str, object]], dict[str, object]], request: dict[str, object],
+) -> dict[str, object]:
+    """Validate the closed native Get/compare-set request and observed result."""
+    if not isinstance(request, dict):
+        raise ValueError("invalid_request")
     if request == {"action": "get"}:
-        admitted = request
+        admitted = {"action": "get"}
     elif set(request) == {"action", "levels", "expectedLevels"} and request["action"] == "set":
         admitted = {"action": "set", "levels": _levels(request["levels"]),
                     "expectedLevels": _levels(request["expectedLevels"])}
     else:
         raise ValueError("invalid_request")
-    raw, _ = eventlog_exporter.run_epf(settings, admitted, settings_request=True)
-    value = json.loads(raw.decode("utf-8-sig"))
+    value = invoke(admitted)
     if not isinstance(value, dict) or set(value) - {"status", "levels", "reasonCode"}:
         raise ValueError("native_settings_invalid")
     if value.get("status") not in {"ok", "conflict"}:
@@ -119,7 +121,7 @@ def _store(root: Path, state: dict[str, object]) -> None:
 
 
 def control(
-    action: str, settings: eventlog_exporter.Settings, state_directory: Path,
+    action: str, invoke: Callable[[dict[str, object]], dict[str, object]], state_directory: Path,
     target_ref: str, *, profile: str | None = None, capture_ref: str | None = None,
 ) -> dict[str, object]:
     """One native configuration transaction; keep a recoverable baseline first."""
@@ -130,7 +132,7 @@ def control(
         raise ValueError("invalid_request")
     with _locked(state_directory):
         state = _load(state_directory, target_ref)
-        current = native(settings, {"action": "get"})["levels"]
+        current = native(invoke, {"action": "get"})["levels"]
         result: dict[str, object] = {
             "status": "ok", "journal": "registration", "targetRef": target_ref,
             "state": "configured" if current else "inactive", "platformState": "observed",
@@ -160,7 +162,7 @@ def control(
                 return {**result, "configurationState": "applied"}
             if current != state["before"] or state["phase"] == "applied":
                 return {**result, "status": "conflict", "configurationState": "conflict", "reasonCode": "configuration_conflict"}
-            changed = native(settings, {"action": "set", "expectedLevels": current, "levels": state["applied"]})
+            changed = native(invoke, {"action": "set", "expectedLevels": current, "levels": state["applied"]})
             if changed["status"] != "ok":
                 return {**result, "status": "conflict", "configurationState": "conflict", "reasonCode": "configuration_conflict"}
             state["phase"] = "applied"
@@ -177,7 +179,7 @@ def control(
             return {**result, "configurationState": "restored"}
         if current != state["applied"]:
             return {**result, "status": "conflict", "configurationState": "conflict", "reasonCode": "configuration_conflict"}
-        restored = native(settings, {"action": "set", "expectedLevels": current, "levels": state["before"]})
+        restored = native(invoke, {"action": "set", "expectedLevels": current, "levels": state["before"]})
         if restored["status"] != "ok":
             return {**result, "status": "conflict", "configurationState": "conflict", "reasonCode": "configuration_conflict"}
         state["phase"] = "restored"

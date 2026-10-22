@@ -40,7 +40,6 @@ _REQUEST_KEYS = {
 _FILTERS = {"event", "level", "user", "metadata"}
 _LEVELS = {"Information", "Error", "Warning", "Note"}
 _TIMEOUT_SECONDS = 115
-_SETTINGS_TIMEOUT_SECONDS = 15
 _MAX_BYTES = 1024 * 1024
 _DIAGNOSTIC_BYTES = 4096
 _DIAGNOSTIC_MESSAGE_BYTES = 512
@@ -171,11 +170,6 @@ def validate_request(value: object) -> dict[str, Any]:
     return value
 
 
-def load_settings(*, require_epf: bool = True) -> Settings:
-    """Load the deployment-selected settings through the existing validator."""
-    return _load_settings(require_epf=require_epf)
-
-
 def _environment(settings: Settings, home: Path, temporary: Path) -> dict[str, str]:
     environment = dict(os.environ)
     environment["LD_LIBRARY_PATH"] = f"{settings.platform.parent}:{settings.libs}"
@@ -297,33 +291,17 @@ def _write_request(root: Path, request: dict[str, Any]) -> None:
 def run_once(request: object) -> tuple[bytes, dict[str, object]]:
     admitted = validate_request(request)
     settings = _load_settings()
-    return run_epf(settings, admitted)
-
-
-def run_epf(
-    settings: Settings, request: dict[str, Any], *, settings_request: bool = False,
-) -> tuple[bytes, dict[str, object]]:
-    """Run either of the two repository-owned EPFs with the same process owner.
-
-    This is a deployment seam, never a tool argument: Settings selects the EPF
-    and infobase. The settings EPF consumes a closed JSON request instead of the
-    registration-log export files. Neither mode accepts caller code or paths.
-    """
-    maximum_bytes = 4096 if settings_request else request["maximumBytes"]
-    started_marker = "settings-started" if settings_request else "export-started"
-    returned_marker = "settings-returned" if settings_request else "export-returned"
+    maximum_bytes = admitted["maximumBytes"]
+    started_marker = "export-started"
+    returned_marker = "export-returned"
     started = time.monotonic()
     with tempfile.TemporaryDirectory(prefix="request-", dir=settings.work_root) as raw_root:
         root = Path(raw_root)
         home = root / "home"; home.mkdir()
         temporary = root / "tmp"; temporary.mkdir()
-        if settings_request:
-            (root / "request.json").write_text(json.dumps(request), encoding="utf-8")
-        else:
-            _write_request(root, request)
+        _write_request(root, admitted)
         argv = _prefix(settings, root / "wrapper.log") + [
             "ENTERPRISE", *_connection(settings), "/DisableStartupDialogs", "/DisableStartupMessages",
-            *(["/RunModeManagedApplication", "/DisableUnrecoverableErrorMessage"] if settings_request else []),
             "/Execute", str(settings.epf), "/C", str(root),
             "/Out", str(root / "runtime.log"), "/DumpResult", str(root / "runtime.result"),
         ]
@@ -347,10 +325,10 @@ def run_epf(
                 reader.start()
             except RuntimeError:
                 raise ExportFailure("source_unavailable") from None
-            deadline = started + (_SETTINGS_TIMEOUT_SECONDS if settings_request else _TIMEOUT_SECONDS)
+            deadline = started + _TIMEOUT_SECONDS
             export_started: float | None = None
             export_returned: float | None = None
-            output = root / ("response.json" if settings_request else "output.xml")
+            output = root / "output.xml"
             while process.poll() is None:
                 now = time.monotonic()
                 if export_started is None and (root / started_marker).is_file():
@@ -411,12 +389,11 @@ def run_epf(
         return xml, metrics
 
 
-def build_epf(destination: Path, *, settings_processor: bool = False) -> dict[str, object]:
+def build_epf(destination: Path) -> dict[str, object]:
     settings = _load_settings(require_epf=False)
     if not destination.is_absolute() or destination.is_symlink():
         raise ExportFailure("configuration_invalid")
-    source = (Path(__file__).with_name("logging_epf") / "Issue99Logging.xml" if settings_processor
-              else Path(__file__).with_name("eventlog_epf") / "Issue80EventLog.xml")
+    source = Path(__file__).with_name("eventlog_epf") / "Issue80EventLog.xml"
     if not source.is_file():
         raise ExportFailure("configuration_invalid")
     with tempfile.TemporaryDirectory(prefix="build-", dir=settings.work_root) as raw_root:
