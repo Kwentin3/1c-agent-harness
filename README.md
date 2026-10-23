@@ -1,5 +1,12 @@
 # 1C Agent Harness
 
+> [Контекст и диагностика](docs/context-and-diagnostics.md#установка-и-приёмка-linux--24-октября-2026):
+> на Linux-полигоне принят source `6371c1ce`, artifact `20659dd3`, matched Hermes
+> recipe `37712460`. Диагностика ошибок и граница количества ЖР исправлены;
+> отдельный патч ядра Hermes устраняет повтор навыка после resume. В документе
+> сохранены состав патчей, upstream issues и условия удаления. Исторические
+> этапы ниже сохраняют свои версии; текущая установленная версия — этот pin.
+
 > [Goal #107](docs/issue107-relay.md#живая-проверка-linux--23-октября-2026): Linux-полигон
 > использует Hermes Relay. Установленный source `285750aa`, artifact `ef59b235`,
 > matched Hermes recipe `a0a946e4`. Ordinary-chat open/narrow/native verify и свежие
@@ -36,7 +43,7 @@
 > matched logging source/plugin generation described above.
 
 > The #90/#91 runtime identities and tool counts below describe the earlier checkpoint;
-> the current installed source is the Goal107 pin above; Goal99 records its own
+> the current installed source is the context/diagnostics pin above; Goal99 records its own
 > historical acceptance.
 >
 > [Goal #91](https://github.com/Kwentin3/1c-agent-harness/issues/91) завершена (CLOSED).

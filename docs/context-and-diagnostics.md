@@ -29,8 +29,8 @@ Harness → Relay → допущенная 1С и существующие во�
 Принятый runtime Harness: source `285750aa0f9eaf7e807292c91310f0447481db64`,
 artifact `ef59b2358c515bd312d7b372de020925cbe36afd23e4be7829ee6018b415077a`;
 matched Hermes recipe `a0a946e4da5505f7664155eb1e00bc93cb1ad3f1`.
-Source/docs базы: Harness `b0ebfcca`, Hermes `efc678ed`. Новый кандидат пока
-не установлен; установленная версия и source-кандидат различаются явно.
+Source/docs базы: Harness `b0ebfcca`, Hermes `efc678ed`. Это историческая опора
+до рефакторинга; принятая установленная версия приведена ниже.
 
 Наблюдения, а не готовые диагнозы:
 
@@ -67,7 +67,7 @@ Source/docs базы: Harness `b0ebfcca`, Hermes `efc678ed`. Новый канд
 исполнитель читает артефакты и сводит результат; отчёт агента и зелёные тесты
 сами по себе не являются приёмкой установленной версии.
 
-## Source-кандидат D2/D3
+## Изменения D2/D3
 
 В существующем native-адаптере первичная ошибка сохраняется отдельно от Exit
 и очистки ресурсов. Ограниченный `diagnosis` доходит через прежний logging
@@ -112,8 +112,66 @@ backend до companion и предметного инструмента. Он р
 Изолированный Linux-прогон source-кандидата: 595 тестов, 6 предусмотренных
 пропусков; адресные проверки native-адаптера, logging-проекции и ЖР также прошли.
 После обновления инструкций проверен plugin boundary (27 тестов). Native 1С,
-новые экспорты, установка и изменение живых настроек этим не выполнялись.
+новые экспорты, установка и изменение живых настроек этим source-прогоном не выполнялись.
 Независимый review выявил ещё один путь потери ошибки при Playwright shutdown;
 после его устранения адресные Linux-проверки: native-адаптер 16 и проекция 13,
 включая подтверждённый Set и неизвестный Save. Прежний CI-кандидат не подменяет
 обязательный CI окончательного коммита.
+
+## Установка и приёмка Linux — 24 октября 2026
+
+Работы завершены 23 октября UTC / 24 октября по Москве. Установленный Harness:
+source `6371c1ceb9012df862b7e80e630f13362fec7b60`, artifact SHA256
+`20659dd38761ecf9bca4a4efd7ee41a90ae1fdfc352c32c44ae39c7e70d99805`;
+matched Hermes recipe `37712460d856864b652f143edc6d44a00706be23`.
+[Harness PR109](https://github.com/Kwentin3/1c-agent-harness/pull/109) и
+[Hermes PR185](https://github.com/Kwentin3/hermes/pull/185) хранят source delivery;
+установка не означает merge этих PR в основные ветки.
+
+- D1: исправлены три файла **ядра Hermes** в Agent и WebUI SDK. После реального
+  перезапуска владельцев исходный полный результат навыка (10 625 символов)
+  остался в истории, повторный явный запрос вернул короткий ответ (372 символа).
+  Инженерный аудит в системных инструкциях Relay не обнаружен; `auto_load=[]`.
+- D2: обычный `one_c_logging status` проверил Get и штатный Exit/cleanup.
+  Отдельно разрешённый операторский native Get подтвердил четыре исходных
+  уровня `Error, Information, Note, Warning`; обычный status их не показывает.
+  Фактический Save не выполнялся; ветки неизвестного Save и вторичных ошибок
+  проверены source-тестами, а не новой записью в живую ИБ.
+- D3: один native export дал 5 записей; native = retained = public = 5,
+  все пять drilldown сверены по полям, пропусков и выдуманных записей нет.
+  `retainedCountComplete=true` относится к этой выборке. Полнота истории окна
+  остаётся недоказанной: `temporalComplete=false`, `completeThrough=null`.
+
+Итог native-приёмки: Get2 (обычный1 + отдельно разрешённый операторский1),
+export1, Save0, перезапусков сервисов 1С0. Обязательный CI исходников и независимая
+приёмка прошли. Source/CF/manifest, бизнес-данные и исходные настройки сохранены;
+незавершённых jobs и собственных временных native-процессов не осталось.
+
+### Учёт патчей и связь с upstream
+
+Изменения диагностики и count boundary принадлежат самому Harness и остаются
+в его native-адаптере, logging lifecycle и eventlog projection. Платформа 1С
+не патчилась. Отдельный временный патч ядра Hermes сопровождается у владельца
+сборки: [состав, SHA256, образы, проверки, rollback и условия удаления](https://github.com/Kwentin3/hermes/blob/feat/context-diagnostics/docs/infra-ops/HERMES_DELIVERY_OPERATIONS.md#native-skill-context-dedup-installed--23-october-2026).
+Не переносите его в Harness и не создавайте здесь второй cache/registry.
+
+Разработчикам отправлены:
+
+- [Hermes issue143745](https://github.com/NousResearch/hermes-agent/issues/143745):
+  повтор полной инструкции при resume в новом процессе с сохранённым контекстом;
+  приложены source-кандидат и регрессии. Патч снимается после проверки подходящего
+  upstream на том же resume и на реальной потере/изменении текста.
+- [Relay issue787](https://github.com/Codename-11/hermes-relay/issues/787):
+  наблюдённый выход Linux-клиента0 при обслуживании сервера. Один native start
+  восстановил прежнее устройство; код Relay и `Restart=on-failure` сохранены.
+  Внутренняя причина неизвестна, будущая автовосстанавливаемость не доказана.
+
+Приватные receipts остаются в операторской `.local/context-diagnostics/activation/`,
+в Git публикуются только их идентичности и ограниченные выводы:
+
+| Receipt | SHA256 |
+| --- | --- |
+| `d1-live-review.safe.json` | `d9e71e37143cbf278d86db1d92a351bc49c291b3bb1a96ed302d30d7fcbc6df8` |
+| `d2-live-final-review.safe.json` | `f8f749d9e5d08a918eee68bde21786aeeee34d923fc466d3ce34c8bcea997086` |
+| `one-c-retained-comparison.safe.json` | `6fd49b4a93a0dbf480452eb74037878abd0e62287c3564cce6bbf7ec6d87c562` |
+| `relay-post-cutover.safe.json` | `2d16e294888d614dacb8952e22bdeec53d8b1ae12b1f44a34999c66b8416d2cf` |
