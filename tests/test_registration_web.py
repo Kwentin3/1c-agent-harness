@@ -126,6 +126,29 @@ class RegistrationWebTests(unittest.TestCase):
         context.close.assert_called_once()
         browser.close.assert_called_once()
 
+    def test_native_save_can_persist_baseline_before_exit_failure(self):
+        chromium, browser, context, page = (mock.Mock() for _ in range(4))
+        chromium.launch.return_value = browser
+        browser.new_context.return_value = context
+        context.new_page.return_value = page
+        baseline = {'levels': ['Error', 'Warning'], 'period': 'Week'}
+        active = {'levels': ['Error', 'Information', 'Note', 'Warning'], 'period': 'Week'}
+        persisted = dict(active)
+        items = {}
+        def locator(selector):
+            item = items.setdefault(selector, mock.Mock())
+            if selector == "[id='form0_FormOK']":
+                item.click.side_effect = lambda **kw: persisted.update(baseline)
+            return item
+        page.locator.side_effect = locator
+        with mock.patch.object(web, '_read_form', side_effect=[active, baseline]), \
+                mock.patch.object(web, '_normal_exit', side_effect=TimeoutError('lost exit confirmation')), \
+                self.assertRaisesRegex(ValueError, '^native_exit_unproven$'):
+            self.adapter._visit(chromium, time.monotonic() + 30, baseline['levels'], active['levels'])
+        self.assertEqual(persisted, baseline)
+        context.close.assert_called_once()
+        browser.close.assert_called_once()
+
 
 if __name__ == '__main__':
     unittest.main()

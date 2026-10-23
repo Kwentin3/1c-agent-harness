@@ -91,7 +91,7 @@ def _load(root: Path, target_ref: str) -> dict[str, object] | None:
     if (not isinstance(state, dict)
             or set(state) != {"targetRef", "captureRef", "profile", "before", "applied", "phase"}
             or state["targetRef"] != target_ref or state["profile"] not in _PROFILES
-            or state["phase"] not in {"prepared", "applied", "restored"}
+            or state["phase"] not in {"prepared", "applied", "restoring", "restored"}
             or not isinstance(state["captureRef"], str)
             or not re.fullmatch(r"capture:[0-9a-f]{32}", state["captureRef"])):
         raise ValueError("configuration_conflict")
@@ -138,6 +138,21 @@ def control(
             "state": "configured" if current else "inactive", "platformState": "observed",
             "configurationState": "unchanged", "capabilities": {"status": True, "start": True, "stop": True},
         }
+        # A stop's durable intent distinguishes our interrupted restore from an
+        # unrelated change to an active collection. A fresh successful Get also
+        # proves the adapter's readback/normal-exit contract; do not swallow the
+        # preceding failed call or infer success from its missing reply.
+        if state is not None and state["phase"] == "restoring":
+            if action == "stop" and state["captureRef"] != capture_ref:
+                return {**result, "status": "blocked", "reasonCode": "capture_not_found"}
+            result.update(captureRef=state["captureRef"], profile=state["profile"])
+            if current == state["before"]:
+                state["phase"] = "restored"
+                _store(state_directory, state)
+                result["configurationState"] = "restored"
+            elif action != "stop" or current != state["applied"]:
+                return {**result, "status": "conflict", "configurationState": "conflict",
+                        "reasonCode": "restoration_pending" if current == state["applied"] else "configuration_conflict"}
         active = state is not None and state["phase"] != "restored"
         if action == "status":
             if active:
@@ -179,6 +194,11 @@ def control(
             return {**result, "configurationState": "restored"}
         if current != state["applied"]:
             return {**result, "status": "conflict", "configurationState": "conflict", "reasonCode": "configuration_conflict"}
+        # Persist before the irreversible native Save. Until this write succeeds
+        # no policy change is attempted. Keep intent on lost reply/final-write
+        # failure, so retries can confirm the baseline without another Save.
+        state["phase"] = "restoring"
+        _store(state_directory, state)
         restored = native(invoke, {"action": "set", "expectedLevels": current, "levels": state["before"]})
         if restored["status"] != "ok":
             return {**result, "status": "conflict", "configurationState": "conflict", "reasonCode": "configuration_conflict"}

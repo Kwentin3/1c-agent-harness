@@ -1,10 +1,18 @@
 # 1C Agent Harness
 
+> [Goal #104](https://github.com/Kwentin3/1c-agent-harness/issues/104): interrupted
+> registration-log restoration is being repaired in the existing lifecycle owner.
+> [Recovery protocol and acceptance boundary](docs/issue104-registration-recovery.md).
+> Candidate tests are separate from installation and the required ordinary-chat
+> case with genuinely added levels; neither is claimed completed here.
+
 > [Goal #99](https://github.com/Kwentin3/1c-agent-harness/issues/99): installed and
 > ordinary-chat accepted on 22 October for the admitted demo's registration and
 > technological logging lifecycle. [Exact installed identities, evidence and limits](docs/issue99-agent-logging.md#installed-ordinary-chat-acceptance--22-october-2026):
 > source `706b34e7`, artifact `bdaafda2`, matched Hermes recipe `6a21772b`.
 > Both owned collections were stopped and original settings restored; coding remains available.
+> All four JR levels were already enabled in that chat: it did not demonstrate
+> adding missing JR levels or restoring a changed JR level set.
 > JR temporal coverage remains partial. The Hermes core false-failure classifier
 > was repaired and accepted on 23 October through its maintained upstream backport;
 > [installation and bounded chat check](docs/issue99-agent-logging.md#core-followup-installed--23-october-2026).
