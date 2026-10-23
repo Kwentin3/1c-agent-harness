@@ -7,7 +7,7 @@ from pathlib import Path
 import sys
 import tempfile
 import unittest
-from unittest.mock import Mock
+from unittest.mock import Mock, patch
 
 from one_c_harness import registration_logging as registration
 
@@ -195,6 +195,151 @@ class RegistrationPolicyTests(unittest.TestCase):
         self.assertEqual((result["status"], result["configurationState"]), ("conflict", "conflict"))
         self.assertEqual(self.api.levels, ["Information"])
         self.assertEqual(self.state_bytes(), retained)
+
+    def test_lost_restore_reply_recovers_on_each_existing_action_and_allows_next_collection(self):
+        for retry in ("status", "stop", "start"):
+            with self.subTest(retry=retry):
+                self.root = Path(self.temporary.name).resolve() / retry
+                self.api = NativeApi(["Error", "Warning"])
+                original = self.api.levels[:]
+                started = self.control("start", profile="diagnostic")
+                self.assertNotEqual(self.api.levels, original)
+                def lose_reply(request):
+                    self.assertEqual(self.api.levels, original)
+                    raise ValueError("native_exit_unproven")
+                self.api.after_set = lose_reply
+                with self.assertRaisesRegex(ValueError, "native_exit_unproven"):
+                    self.control("stop", capture_ref=started["captureRef"])
+                self.assertEqual(self.api.levels, original)
+                self.api.after_set = None
+                kwargs = ({"capture_ref": started["captureRef"]} if retry == "stop"
+                          else {"profile": "diagnostic"} if retry == "start" else {})
+                recovered = self.control(retry, **kwargs)
+                self.assertEqual(recovered["status"], "ok")
+                if retry == "start":
+                    next_capture = recovered
+                else:
+                    self.assertEqual(recovered["configurationState"], "restored")
+                    self.assertEqual(self.api.levels, original)
+                    self.assertEqual(self.state()["phase"], "restored")
+                    next_capture = self.control("start", profile="diagnostic")
+                self.assertNotEqual(next_capture["captureRef"], started["captureRef"])
+                self.assertNotEqual(self.api.levels, original)
+                stopped = self.control("stop", capture_ref=next_capture["captureRef"])
+                self.assertEqual((stopped["status"], stopped["configurationState"]), ("ok", "restored"))
+                self.assertEqual(self.api.levels, original)
+
+    def test_final_state_write_failure_before_or_after_replace_recovers_without_native_rewrite(self):
+        for committed in (False, True):
+            with self.subTest(committed=committed):
+                self.root = Path(self.temporary.name).resolve() / str(committed)
+                self.api = NativeApi(["Error", "Warning"])
+                original = self.api.levels[:]
+                started = self.control("start", profile="diagnostic")
+                store = registration._store
+                def fail_final_write(root, state):
+                    if state["phase"] == "restored":
+                        if committed:
+                            store(root, state)
+                        raise OSError("state write interrupted")
+                    store(root, state)
+                with patch.object(registration, "_store", side_effect=fail_final_write):
+                    with self.assertRaisesRegex(OSError, "state write interrupted"):
+                        self.control("stop", capture_ref=started["captureRef"])
+                self.assertEqual(self.api.levels, original)
+                self.api.calls.clear()
+                recovered = self.control("stop", capture_ref=started["captureRef"])
+                self.assertEqual((recovered["status"], recovered["configurationState"]), ("ok", "restored"))
+                self.assertEqual(self.state()["phase"], "restored")
+                self.assertEqual(self.api.calls, [{"action": "get"}])
+
+    def test_restore_intent_is_durable_before_native_change_and_wrong_ref_cannot_finish_it(self):
+        original = self.api.levels[:]
+        started = self.control("start", profile="diagnostic")
+        def interrupt_before_save(request):
+            self.assertEqual(self.state()["phase"], "restoring")
+            self.assertEqual(self.state()["captureRef"], started["captureRef"])
+            self.assertEqual(request["levels"], original)
+            raise TimeoutError("before native Save")
+        self.api.before_set = interrupt_before_save
+        with self.assertRaises(TimeoutError):
+            self.control("stop", capture_ref=started["captureRef"])
+        retained = self.state_bytes()
+        applied = self.api.levels[:]
+        self.api.before_set = None
+        for action in ("status", "start"):
+            result = self.control(action, **({"profile": "diagnostic"} if action == "start" else {}))
+            self.assertEqual((result["status"], result["reasonCode"]), ("conflict", "restoration_pending"))
+            self.assertEqual(result["captureRef"], started["captureRef"])
+            self.assertEqual(self.state_bytes(), retained)
+            self.assertEqual(self.api.levels, applied)
+        result = self.control("stop", capture_ref="capture:" + "f" * 32)
+        self.assertEqual(result["reasonCode"], "capture_not_found")
+        self.assertEqual(self.state_bytes(), retained)
+        result = self.control("stop", capture_ref=started["captureRef"])
+        self.assertEqual(result["configurationState"], "restored")
+        self.assertEqual(self.api.levels, original)
+
+    def test_failed_intent_write_does_not_change_native_policy(self):
+        started = self.control("start", profile="diagnostic")
+        retained, applied = self.state_bytes(), self.api.levels[:]
+        self.api.calls.clear()
+        with patch.object(registration, "_store", side_effect=OSError("intent not durable")):
+            with self.assertRaises(OSError):
+                self.control("stop", capture_ref=started["captureRef"])
+        self.assertEqual(self.state_bytes(), retained)
+        self.assertEqual(self.api.levels, applied)
+        self.assertEqual(self.api.calls, [{"action": "get"}])
+
+    def test_pending_restore_preserves_foreign_policy_and_refuses_unconfirmed_reads(self):
+        started = self.control("start", profile="diagnostic")
+        self.api.after_set = Mock(side_effect=ValueError("native_readback_mismatch"))
+        with self.assertRaises(ValueError):
+            self.control("stop", capture_ref=started["captureRef"])
+        retained = self.state_bytes()
+        self.api.after_set = None
+        self.api.get_conflict = True
+        with self.assertRaises(ValueError):
+            self.control("status")
+        self.assertEqual(self.state_bytes(), retained)
+        self.api.get_conflict = False
+        self.api.levels = ["Information"]
+        for action in ("status", "start", "stop"):
+            kwargs = ({"profile": "diagnostic"} if action == "start" else
+                      {"capture_ref": started["captureRef"]} if action == "stop" else {})
+            result = self.control(action, **kwargs)
+            self.assertEqual((result["status"], result["reasonCode"]), ("conflict", "configuration_conflict"))
+            self.assertEqual(self.api.levels, ["Information"])
+            self.assertEqual(self.state_bytes(), retained)
+
+    def test_foreign_restore_to_baseline_without_own_stop_intent_is_still_a_conflict(self):
+        original = self.api.levels[:]
+        started = self.control("start", profile="diagnostic")
+        self.api.levels = original
+        retained = self.state_bytes()
+        for action in ("status", "start", "stop"):
+            kwargs = ({"profile": "diagnostic"} if action == "start" else
+                      {"capture_ref": started["captureRef"]} if action == "stop" else {})
+            result = self.control(action, **kwargs)
+            self.assertEqual(result["reasonCode"], "configuration_conflict")
+            self.assertEqual(self.api.levels, original)
+            self.assertEqual(self.state_bytes(), retained)
+
+    def test_noop_all_levels_is_distinct_from_changed_levels_and_recovers_lost_reply(self):
+        self.api = NativeApi(["Error", "Warning", "Information", "Note"])
+        original = self.api.levels[:]
+        started = self.control("start", profile="diagnostic")
+        self.assertEqual(self.api.levels, original)
+        self.assertEqual(self.state()["before"], self.state()["applied"])
+        self.api.after_set = Mock(side_effect=TimeoutError("lost reply"))
+        with self.assertRaises(TimeoutError):
+            self.control("stop", capture_ref=started["captureRef"])
+        self.api.after_set = None
+        self.api.calls.clear()
+        result = self.control("stop", capture_ref=started["captureRef"])
+        self.assertEqual((result["status"], result["configurationState"]), ("ok", "restored"))
+        self.assertEqual(self.api.levels, original)
+        self.assertEqual(self.api.calls, [{"action": "get"}])
 
     def test_target_mismatch_and_corrupt_capture_ref_refuse_before_native_mutation(self):
         self.control("start", profile="errors")

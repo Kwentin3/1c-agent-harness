@@ -32,6 +32,15 @@ read tools; they never start logging automatically. Preserve the returned `captu
 and call `stop` with both exact refs in a finally step. Report a restore conflict rather
 than overwriting another owner's changes. `configured` alone does not prove collection;
 `source_unavailable` means no usable deployment backend, not successful enablement.
+After a failed registration stop, preserve both refs and use status or repeat stop.
+A successful fresh native read can confirm an interrupted owned restoration;
+`configurationState=restored` means it completed. If `restoration_pending` is
+returned, the old applied levels remain: finish stop with that capture's exact
+refs before starting another collection. On `configuration_conflict`, preserve
+the actual policy and ask the owner to resolve the unexplained change; do not
+delete internal state, force settings, or blindly retry. A failure itself never
+proves restoration. Already enabled levels are a no-op case, not evidence of
+adding and restoring a changed level set.
 The platform polls technological-log configuration every 60 seconds; allow that
 native reload before reproducing a diagnostic case. `diagnostic` collects errors
 and server-connection events, not all activity. An empty selection proves neither

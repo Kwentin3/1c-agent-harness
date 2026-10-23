@@ -106,7 +106,11 @@ The comparison included source records and omissions, not only tool statuses:
   retained records and public selection match **12/12/12**, with zero omissions;
   11 groups, group drilldown and exact-record drilldown refer to that selection.
   Later source appends do not alter the retained selection.
-- JR returned to its original four levels, confirmed through the native form.
+- JR's original four levels were already enabled before start and remained
+  enabled, confirmed through the native form. This accepted the unchanged-level
+  case; it did **not** demonstrate adding missing JR levels or restoring an
+  actually changed level set. That separate gate belongs to
+  [Goal #104](issue104-registration-recovery.md).
   TJ returned to its original configuration absence; its owned state/backup
   were removed. Retained evidence remains available under its original TTL.
   Source/CI tests cover foreign-change conflicts; no unrelated administrator's
