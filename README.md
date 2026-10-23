@@ -1,10 +1,15 @@
 # 1C Agent Harness
 
-> [Goal #104](https://github.com/Kwentin3/1c-agent-harness/issues/104): interrupted
-> registration-log restoration is being repaired in the existing lifecycle owner.
+> [Goal #104](https://github.com/Kwentin3/1c-agent-harness/issues/104): registration
+> restoration repair installed on 23 October, source `e4ea89f6`, artifact `b08132cc`,
+> matched Hermes recipe `7c5385d6`. Required CI passed. The first ordinary-chat
+> cycle actually added missing JR levels and read 13 matching source/cache/public
+> records. Both owned captures now stopped with confirmed restoration, in the same
+> chat without state edits. The owner's true original four levels were subsequently
+> confirmed in the native form after the separately authorized demo restart.
+> The owner accepts the connection limit as a normal training-edition restriction;
+> changing it is outside this repair.
 > [Recovery protocol and acceptance boundary](docs/issue104-registration-recovery.md).
-> Candidate tests are separate from installation and the required ordinary-chat
-> case with genuinely added levels; neither is claimed completed here.
 
 > [Goal #99](https://github.com/Kwentin3/1c-agent-harness/issues/99): installed and
 > ordinary-chat accepted on 22 October for the admitted demo's registration and
@@ -20,10 +25,12 @@
 > The closed historical #90 experiment is not reopened.
 > [Access source closeout #102](docs/issue102-access-pr-closeout.md) preserves the
 > older #94/#97 evidence and the existing isolated engineering/browser handler;
-> the accepted Goal99 runtime/artifact stays unchanged.
+> its historical accepted identities stay preserved; Goal104 updates only the
+> matched logging source/plugin generation described above.
 
 > The #90/#91 runtime identities and tool counts below describe the earlier checkpoint;
-> the current installed Goal99 result is the one linked above.
+> the current installed source is the Goal104 pin above; Goal99 records its own
+> historical acceptance.
 >
 > [Goal #91](https://github.com/Kwentin3/1c-agent-harness/issues/91) завершена (CLOSED).
 > Этап [#90](https://github.com/Kwentin3/1c-agent-harness/issues/90) завершён по решению владельца:
