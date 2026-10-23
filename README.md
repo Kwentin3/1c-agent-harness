@@ -5,9 +5,10 @@
 > technological logging lifecycle. [Exact installed identities, evidence and limits](docs/issue99-agent-logging.md#installed-ordinary-chat-acceptance--22-october-2026):
 > source `706b34e7`, artifact `bdaafda2`, matched Hermes recipe `6a21772b`.
 > Both owned collections were stopped and original settings restored; coding remains available.
-> JR temporal coverage remains partial. A known Hermes core false-failure classifier
-> remains unfixed in runtime; this is scoped functional acceptance, not a performance
-> SLA or production-1C acceptance.
+> JR temporal coverage remains partial. The Hermes core false-failure classifier
+> was repaired and accepted on 23 October through its maintained upstream backport;
+> [installation and bounded chat check](docs/issue99-agent-logging.md#core-followup-installed--23-october-2026).
+> This is scoped functional acceptance, not a performance SLA or production-1C acceptance.
 > The closed historical #90 experiment is not reopened.
 
 > The #90/#91 runtime identities and tool counts below describe the earlier checkpoint;
