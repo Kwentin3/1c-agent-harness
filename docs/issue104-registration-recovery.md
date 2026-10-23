@@ -71,8 +71,9 @@ Private operator receipts remain outside Git under
 
 ## Delivery and final acceptance
 
-The repair is installed on 23 October 2026; both chat captures finished, but the
-owner's true original policy is **not yet confirmed restored**. Refresh matched release IDs with the maintained
+The repair is installed and the admitted case completed on 23 October 2026:
+both captures finished and the owner's true original policy was natively confirmed.
+For subsequent updates, refresh matched release IDs with the maintained
 `scripts/update_release.py`; the Hermes companion source lock must name that exact
 Git source, artifact and file hashes. Use the existing installer/pin transaction,
 immutable Agent/engineering generations and native PluginManager. Preserve the
@@ -96,7 +97,7 @@ The earlier [#99 acceptance](issue99-agent-logging.md) and
 [#102 access closeout](issue102-access-pr-closeout.md) retain their exact historical
 identities and evidence. In #99 all four JR levels were already enabled; its
 successful no-op collection does not prove actual addition/restoration of missing
-levels. This goal closes that distinct acceptance gap only after the new case.
+levels. The new case below closes that distinct changed-level acceptance gap.
 
 ### Installed source and executed case — 23 October 2026
 
@@ -168,14 +169,23 @@ with 16 matched durable tool calls/results overall. The stream ended inactive.
 No third collection or second export was requested.
 
 The subsequent operator action to return the owner's true original all-four
-policy failed. One read-only diagnostic again revealed the native training
+policy initially remained unconfirmed. One read-only diagnostic again revealed the native training
 connection-limit error; the saved second capture remains `restored` and untouched.
-Actual current native levels are unknown. Therefore the overall goal is still
-incomplete. The owner explicitly accepts the connection limit as a normal
+At that point current native levels were unknown. The owner explicitly accepts the connection limit as a normal
 training-edition restriction, not a Harness defect to repair in this goal.
 This does not itself confirm native levels or authorize another restart.
-A concrete cleanup is prepared: one separately admitted service
-restart (explicitly including demo-container stop/start), immediately followed by
-the existing guarded native compare-set and fresh confirmation; no extra chat,
-collection or export. This additional restart has **not** been executed or
-authorized. Private evidence stays under the ignored operator directory above.
+The owner subsequently authorized the concrete final cleanup and both companion
+documentation merges. Exactly one additional service restart was performed,
+explicitly including stop/start of the retained demo container. The existing
+guarded native compare-set then freshly observed **all four original levels**,
+completed normal Exit and made **no additional Save**: the desired policy was
+already present. The exact saved second capture remained `restored` and unchanged.
+This confirms the desired final settings; it does not prove who last wrote equal
+values or that the training connection restriction has been removed.
+
+Final live receipt: `restore-original-after-service.receipt.private.jsonl`,
+status `NATIVE_POLICY_CONFIRMED`, `nativeWrite=false`, `stateUnmodified=true`.
+Same target/container/image; final demo start time is 23 October 11:22:06 UTC.
+No new chat, collection, export, business change or live fault injection was used
+for cleanup. The installed source/artifact and prepared scoped rollback remain
+unchanged. Private evidence stays under the ignored operator directory above.

@@ -5,8 +5,8 @@
 > matched Hermes recipe `7c5385d6`. Required CI passed. The first ordinary-chat
 > cycle actually added missing JR levels and read 13 matching source/cache/public
 > records. Both owned captures now stopped with confirmed restoration, in the same
-> chat without state edits. The training platform's native connection limit recurred:
-> return to the owner's true original four levels remains unconfirmed.
+> chat without state edits. The owner's true original four levels were subsequently
+> confirmed in the native form after the separately authorized demo restart.
 > The owner accepts the connection limit as a normal training-edition restriction;
 > changing it is outside this repair.
 > [Recovery protocol and acceptance boundary](docs/issue104-registration-recovery.md).
