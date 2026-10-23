@@ -10,6 +10,9 @@
 > [installation and bounded chat check](docs/issue99-agent-logging.md#core-followup-installed--23-october-2026).
 > This is scoped functional acceptance, not a performance SLA or production-1C acceptance.
 > The closed historical #90 experiment is not reopened.
+> [Access source closeout #102](docs/issue102-access-pr-closeout.md) preserves the
+> older #94/#97 evidence and the existing isolated engineering/browser handler;
+> the accepted Goal99 runtime/artifact stays unchanged.
 
 > The #90/#91 runtime identities and tool counts below describe the earlier checkpoint;
 > the current installed Goal99 result is the one linked above.
