@@ -255,6 +255,72 @@ class RegistrationWebTests(unittest.TestCase):
                 page.locator.assert_not_called()
                 details.click.assert_not_called()
 
+    def test_playwright_context_exit_cannot_mask_primary_or_unknown_save_diagnosis(self):
+        for action in ('get', 'set'):
+            with self.subTest(action=action):
+                failure = web.NativeWebError('source_timeout', {
+                    'operationOutcome': 'not_completed', 'saveAttempted': False,
+                    'primaryReasonCode': 'source_timeout', 'platformReasonCode': 'training_connection_limit',
+                    'exitReasonCode': 'native_exit_unproven', 'cleanupReasonCode': None,
+                })
+                class Manager:
+                    exit_calls = 0
+                    def __enter__(self):
+                        return types.SimpleNamespace(chromium=mock.Mock())
+                    def __exit__(self, *args):
+                        self.exit_calls += 1
+                        raise RuntimeError('driver cleanup failed /private/secret')
+                manager = Manager()
+                api = types.ModuleType('playwright.sync_api')
+                api.sync_playwright = mock.Mock(return_value=manager)
+                effects = ([{'status': 'ok', 'levels': ['Error'], 'period': 'Week'}, failure]
+                           if action == 'set' else [failure])
+                request = ({'action': 'set', 'expectedLevels': [], 'levels': ['Error']}
+                           if action == 'set' else {'action': 'get'})
+                with mock.patch.dict(sys.modules, {'playwright': types.ModuleType('playwright'), 'playwright.sync_api': api}), \
+                        mock.patch.object(self.adapter, '_visit', side_effect=effects) as visit, \
+                        self.assertRaisesRegex(web.NativeWebError, '^source_timeout$') as raised:
+                    self.adapter(request)
+                self.assertIs(raised.exception, failure)
+                self.assertEqual(failure.diagnosis['operationOutcome'], 'unknown' if action == 'set' else 'not_completed')
+                self.assertEqual(failure.diagnosis['saveAttempted'], action == 'set')
+                self.assertEqual(failure.diagnosis['platformReasonCode'], 'training_connection_limit')
+                self.assertEqual(failure.diagnosis['exitReasonCode'], 'native_exit_unproven')
+                self.assertEqual(failure.diagnosis['cleanupReasonCode'], 'browser_cleanup_failed')
+                self.assertEqual(visit.call_count, 2 if action == 'set' else 1)
+                self.assertEqual(manager.exit_calls, 1)
+                self.assertNotIn('/private', str(failure))
+
+    def test_driver_shutdown_keeps_confirmed_set_completed_and_cas_refusal_unsaved(self):
+        observed = {'status': 'ok', 'levels': ['Error'], 'period': 'Week'}
+        refused = {'status': 'conflict', 'levels': [], 'period': 'Week'}
+        cases = (({'action': 'get'}, [observed], 'completed', False),
+                 ({'action': 'set', 'expectedLevels': [], 'levels': ['Error']}, [observed, observed], 'completed', True),
+                 ({'action': 'set', 'expectedLevels': [], 'levels': ['Error']}, [refused], 'refused', False))
+        for request, visits, outcome, saved in cases:
+            with self.subTest(outcome=outcome, saveAttempted=saved):
+                class Manager:
+                    exit_calls = 0
+                    def __enter__(self):
+                        return types.SimpleNamespace(chromium=mock.Mock())
+                    def __exit__(self, *args):
+                        self.exit_calls += 1
+                        raise RuntimeError('driver shutdown failed /private/secret')
+                manager = Manager()
+                api = types.ModuleType('playwright.sync_api')
+                api.sync_playwright = mock.Mock(return_value=manager)
+                with mock.patch.dict(sys.modules, {'playwright': types.ModuleType('playwright'), 'playwright.sync_api': api}), \
+                        mock.patch.object(self.adapter, '_visit', side_effect=visits) as visit, \
+                        self.assertRaisesRegex(web.NativeWebError, '^browser_cleanup_failed$') as raised:
+                    self.adapter(request)
+                self.assertEqual(raised.exception.diagnosis, {
+                    'operationOutcome': outcome, 'saveAttempted': saved,
+                    'primaryReasonCode': None, 'platformReasonCode': None,
+                    'exitReasonCode': None, 'cleanupReasonCode': 'browser_cleanup_failed',
+                })
+                self.assertEqual(visit.call_count, len(visits))
+                self.assertEqual(manager.exit_calls, 1)
+
 
 if __name__ == '__main__':
     unittest.main()

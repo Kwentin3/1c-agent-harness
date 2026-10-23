@@ -108,7 +108,8 @@ def _project(raw: bytes, request: dict[str, object]) -> dict[str, object]:
                 or not isinstance(diagnosis, dict) or set(diagnosis) != {"operationOutcome", "saveAttempted", *reasons}
                 or type(diagnosis["saveAttempted"]) is not bool
                 or diagnosis["operationOutcome"] not in ("completed", "refused", "unknown", "not_completed")
-                or diagnosis["saveAttempted"] != (diagnosis["operationOutcome"] == "unknown")
+                or (diagnosis["operationOutcome"] == "unknown" and not diagnosis["saveAttempted"])
+                or (diagnosis["operationOutcome"] in ("refused", "not_completed") and diagnosis["saveAttempted"])
                 or any(diagnosis[key] not in allowed for key, allowed in reasons.items())):
             raise ValueError("invalid_response")
         result["diagnosis"] = dict(diagnosis)

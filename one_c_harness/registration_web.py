@@ -221,27 +221,49 @@ class RegistrationWeb:
             from playwright.sync_api import sync_playwright
         except ImportError:
             raise ValueError('browser_unavailable') from None
+        primary = result = None
         try:
             with sync_playwright() as playwright:
-                result = self._visit(playwright.chromium, deadline, desired, expected)
-                if desired is not None and result['status'] == 'ok':
-                    try:
-                        persisted = self._visit(playwright.chromium, deadline)
-                        result = _confirmed(result, persisted, desired)
-                    except NativeWebError as error:
-                        # This visit was a Get, but the enclosing request already
-                        # attempted Save. Never report that Set as a safe refusal.
-                        error.diagnosis.update(operationOutcome='unknown', saveAttempted=True)
-                        raise
-                    except ValueError as error:
-                        reason = _primary_reason(error)
-                        raise NativeWebError(reason, {
-                            'operationOutcome': 'unknown', 'saveAttempted': True,
-                            'primaryReasonCode': reason, 'platformReasonCode': None,
-                            'exitReasonCode': None, 'cleanupReasonCode': None,
-                        }) from error
-                return {'status': result['status'], 'levels': result['levels']}
-        except (ValueError, TimeoutError):
-            raise
-        except Exception:
+                try:
+                    result = self._visit(playwright.chromium, deadline, desired, expected)
+                    if desired is not None and result['status'] == 'ok':
+                        try:
+                            persisted = self._visit(playwright.chromium, deadline)
+                            result = _confirmed(result, persisted, desired)
+                        except NativeWebError as error:
+                            # This visit was a Get, but the enclosing request already
+                            # attempted Save. Never report that Set as a safe refusal.
+                            error.diagnosis.update(operationOutcome='unknown', saveAttempted=True)
+                            raise
+                        except ValueError as error:
+                            reason = _primary_reason(error)
+                            raise NativeWebError(reason, {
+                                'operationOutcome': 'unknown', 'saveAttempted': True,
+                                'primaryReasonCode': reason, 'platformReasonCode': None,
+                                'exitReasonCode': None, 'cleanupReasonCode': None,
+                            }) from error
+                except NativeWebError as error:
+                    # The framework's __exit__ can itself fail. Keep the native
+                    # operation evidence before handing it that pending error.
+                    primary = error
+                    raise
+        except Exception as error:
+            if primary is not None:
+                if error is not primary:
+                    primary.diagnosis['cleanupReasonCode'] = 'browser_cleanup_failed'
+                raise primary
+            if result is not None:
+                # Both visits and the required persisted check already finished.
+                # A later driver shutdown failure does not undo that observation.
+                raise NativeWebError('browser_cleanup_failed', {
+                    'operationOutcome': 'refused' if result['status'] == 'conflict' else 'completed',
+                    'saveAttempted': desired is not None and result['status'] == 'ok',
+                    'primaryReasonCode': None, 'platformReasonCode': None,
+                    'exitReasonCode': None, 'cleanupReasonCode': 'browser_cleanup_failed',
+                }) from error
+            if isinstance(error, (ValueError, TimeoutError)):
+                raise
             raise ValueError('native_web_unavailable') from None
+        if primary is not None:
+            raise primary  # A context manager must not suppress an owned failure.
+        return {'status': result['status'], 'levels': result['levels']}

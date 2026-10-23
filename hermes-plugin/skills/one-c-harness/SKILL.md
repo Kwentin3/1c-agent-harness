@@ -60,8 +60,10 @@ proves restoration. Already enabled levels are a no-op case, not evidence of
 adding and restoring a changed level set.
 For a blocked registration result with `diagnosis`, report `primaryReasonCode`
 and any actually observed `platformReasonCode` separately from `exitReasonCode`
-and `cleanupReasonCode`. A completed Get with a failed Exit is still a blocked
-request. `operationOutcome=unknown` and `saveAttempted=true` require a fresh
+and `cleanupReasonCode`. A completed operation with failed Exit or cleanup is
+still a blocked request. A Set confirmed by fresh persisted readback can remain
+`operationOutcome=completed` with `saveAttempted=true` after driver shutdown fails.
+`operationOutcome=unknown` and `saveAttempted=true` require a fresh
 status/readback using the existing recovery protocol before any further change;
 the failed reply alone proves neither failure to save nor restoration.
 The platform polls technological-log configuration every 60 seconds; allow that
