@@ -71,8 +71,8 @@ Private operator receipts remain outside Git under
 
 ## Delivery and final acceptance
 
-Candidate preparation is in progress; installation and final live acceptance are
-**not yet performed**. Refresh matched release IDs with the maintained
+The repair is installed on 23 October 2026; both chat captures finished, but the
+owner's true original policy is **not yet confirmed restored**. Refresh matched release IDs with the maintained
 `scripts/update_release.py`; the Hermes companion source lock must name that exact
 Git source, artifact and file hashes. Use the existing installer/pin transaction,
 immutable Agent/engineering generations and native PluginManager. Preserve the
@@ -97,3 +97,85 @@ The earlier [#99 acceptance](issue99-agent-logging.md) and
 identities and evidence. In #99 all four JR levels were already enabled; its
 successful no-op collection does not prove actual addition/restoration of missing
 levels. This goal closes that distinct acceptance gap only after the new case.
+
+### Installed source and executed case — 23 October 2026
+
+- Source `e4ea89f6b14d6d07dce350439f022e8763279365`, matched core/plugin artifact
+  `sha256:b08132ccbe0fddb1a0d2199e410ea37a4f89d21b4af238503d69f906739fa1a1`.
+  PR105 merged as `9602f28309b99707182b46fc21b13bb04b58fe6f`.
+- Hermes recipe `7c5385d693351bea989a1d20b8f50a0702bd8429`, PR182 merged as
+  `18d29bf6d9619e27c7dd3ee9854512a985425644`. The 44 Agent files, 44 engineering
+  files and six native PluginManager files were matched to this pin. HOME source
+  pin and Agent launcher switched through their existing owners. Handler bytes,
+  target binding and coding oracle did not change. Exact HOME/launcher reverse
+  previews passed; no rollback was applied. Installation needed no restart;
+  the later live-case recovery required a separately admitted service restart.
+- [Required source CI39932574657](https://github.com/Kwentin3/1c-agent-harness/actions/runs/39932574657)
+  passed 550 tests on each Python3.9/3.12 job (three/two environment skips).
+  The 31 focused Linux lifecycle/adapter checks and 27 plugin/artifact/coding
+  checks passed. Matched Hermes required Shared39932906288, Office39932906266
+  and AgentBridge39932906286 checks passed.
+
+The owner admitted temporary Error/Warning preparation, a single ordinary chat
+and restoration of the true original all-four policy, without restarts/business
+writes. Native compare-set confirmed four -> Error/Warning without changing
+lifecycle files. The new ordinary chat is `eed362c13b53`, using the supported
+private trusted-operator WebUI/Gateway/model route; public SSO is not part of this
+acceptance.
+
+The first diagnostic start genuinely added Information/Note. A separate read of
+the native settings confirmed all four levels and the owner's saved baseline
+Error/Warning. Exactly one bounded native JR export was performed. Native,
+retained and public Date/Event/Level/Comment multisets match **13/13/13**, including
+duplicates, with zero omitted or invented captured records; timestamps also
+match as exact strings. Output SHA256:
+`6ab7fd2d371b699b34b9958f1e3c3bb4db49a61e6aca9f19903c57ee4a5d06aa`.
+The same chat expanded an exact record and its first stop returned `ok/restored`.
+Temporal coverage remains partial (`capture_consistency_unproven`); this is not
+proof of complete history for the time window.
+
+The attempted next start and status returned `blocked/native_exit_unproven`.
+Read-only inspection found a new `prepared` capture, not an incorrectly completed
+operation. The native page's actual detailed error was **Training version
+limitation reached / Infobase connections limitation reached**. The generic Exit
+reason alone did not establish that cause; the revealed native details did.
+One earlier malformed extra status argument was rejected by the native tool
+schema before invocation and the model corrected it; it is retained as an error,
+not counted as a successful native operation.
+
+No artificial live failure, second export or state-file edit was used.
+There is no confirmed explanation yet for how connections accumulated.
+Read-only publication inspection found no general `<pool>` override. The native
+[file-mode administrator guide](https://1c-dn.com/library/tutorials/1c_enterprise_administrator_guide_file_mode_8_3_27/)
+documents the default idle connection age as 20 minutes. One observation after
+that idle interval failed to restore access. This does not prove a pool defect
+or authorize changing the publication. Unrelated OData/analytics pool settings
+do not establish the web-client pool's timeout.
+
+The owner then admitted one `systemctl restart 1c-jet-demo.service`. It restored
+native access. The operator's preview missed the unit's `ExecStopPost` Docker
+stop and `ExecStartPre` Docker start: despite the stated no-container-restart
+scope, that service restart stopped/started the existing demo container. Its ID
+and image were preserved; its start time changed to 23 October 10:56:31 UTC.
+Hermes and its containers were not restarted. This is a recorded operational
+scope error, not a claim that all planned boundaries were kept.
+
+A fresh native Get confirmed all four levels and the unchanged second prepared
+capture. In the **same chat**, a registered start adopted exactly that saved
+capture, its matching stop returned `ok/restored`, and final status returned
+`ok/unchanged` without an active capture. Both distinct captures are now stopped,
+with 16 matched durable tool calls/results overall. The stream ended inactive.
+No third collection or second export was requested.
+
+The subsequent operator action to return the owner's true original all-four
+policy failed. One read-only diagnostic again revealed the native training
+connection-limit error; the saved second capture remains `restored` and untouched.
+Actual current native levels are unknown. Therefore the overall goal is still
+incomplete. The owner explicitly accepts the connection limit as a normal
+training-edition restriction, not a Harness defect to repair in this goal.
+This does not itself confirm native levels or authorize another restart.
+A concrete cleanup is prepared: one separately admitted service
+restart (explicitly including demo-container stop/start), immediately followed by
+the existing guarded native compare-set and fresh confirmation; no extra chat,
+collection or export. This additional restart has **not** been executed or
+authorized. Private evidence stays under the ignored operator directory above.
