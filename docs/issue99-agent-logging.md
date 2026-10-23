@@ -122,11 +122,11 @@ rollback preview; the accepted installation was not rolled back. No Hermes
 restart, new permissions or business-data write was part of this delivery.
 Post-case Gateway/WebUI active-agent/run/stream counts were zero.
 
-Known unresolved Hermes core issue: its native failure classifier marks nested
+At the 22 October checkpoint, the unresolved Hermes core failure classifier marked nested
 diagnostic `error` data as a failed tool result and increments the failure
 streak. Both successful TJ drilldowns in this case received that annotation;
 the agent correctly read the domain results and completed restoration. The
-classifier is **not fixed in the installed runtime**. This limits any broader
+classifier was **not fixed at that checkpoint**. This limited any broader
 claim about uninterrupted longer workflows; the acceptance above is the
 demonstrated functional Harness case only.
 
@@ -146,9 +146,64 @@ the claims without publishing raw logs, credentials or private transcripts:
 | `plugin-apply.private.json` — native pinned PluginManager install | `fba9041bf69e24373cdcca638b70eb9f97556e9e790aed523c9146bbb8e725e1` |
 | `post-case-idle.safe.jsonl` — final native idle/pointer readback | `865d2f2aeaed6ad7e2db1009681e4a39c731c71e2aa0f841fa173b7a9b2cdd9a` |
 
-PR #100 and the matched Hermes PR #178 remain draft/unmerged at this checkpoint.
+PR #100 and the matched Hermes PR #178 remained draft/unmerged at that checkpoint.
 This receipt does not authorize merge/release or activation of a Hermes core fix.
 There is no new 5/10/30-second performance experiment in this goal.
+
+### Core followup installed — 23 October 2026
+
+The owner approved the final Git landing, bounded build, Agent-only recreation
+and ordinary-chat check. Source PRs #93/#100 are merged into `main`
+(`7fd0ebf419843927d0cabe3e6b3e564a16e8aad1`); Hermes #175/#178/#179 are merged
+into `master` (`23350f5ab6ed4743b39034896b28da2eb135ef4c`). The source pins
+`706b34e7`/`6a21772b` and core patch source `533ad922` remain reachable; the
+four frozen build inputs are byte-identical on that Hermes canonical revision.
+
+Installed Agent image:
+`sha256:7cd341aefa45249c79b9331650bca2f155e16743a70cd779cbc124065ba9a176`.
+It is a small layer over the retained prior image
+`sha256:5788b36f195e1710bda384ddcc0e5914492f063271c2839668888289245f284c`,
+built with the canonical Dockerfile's `tool-result-backport` target and exact
+four-file Git capsule. The upstream shape fix changes three hash-bound native
+files; the parent layers and complete image Config are preserved. The measured
+build took 3.898 seconds and added 102,925 bytes; this is not a runtime SLA.
+Native settings, source `706b34e7`/artifact `bdaa…`, 44 source files, six plugin
+files, launcher, binding and mounts remain unchanged. All nine neighbouring
+containers retained their IDs, images, start times and mounts. WebUI, sidecars
+and demo-1C were not restarted. Initial health observation was unavailable;
+the same instance subsequently returned healthy/idle without another restart.
+
+The new ordinary chat `b199323a02cd` completed six matched calls/results and
+ended inactive. A stale ref honestly returned `blocked/evidence_not_found`.
+One registered read-only TJ observation over the original historical UTC window
+returned 12 retained records; group and record expansion then both returned
+`status=ok`, the same nonempty nested diagnostic `error`, and native SSE
+`tool_complete.is_error=false` with exact matching call IDs. This accepts the
+observed structural regression; it is not a byte-for-byte replay of the old row.
+No new logging lifecycle, 1C UI visit, JR export or business write was performed.
+The original lifecycle/parity acceptance and partial JR temporal coverage stand.
+
+Seven pinned native behavior checks, including real failures reaching the actual
+guardrail stop threshold, passed in source CI. Canonical Hermes push runs
+[Shared 39916981824](https://github.com/Kwentin3/hermes/actions/runs/39916981824),
+[AgentBridge 39916981900](https://github.com/Kwentin3/hermes/actions/runs/39916981900)
+and [Office 39916981680](https://github.com/Kwentin3/hermes/actions/runs/39916981680)
+passed. The installed ordinary route provides separate product evidence.
+Post-case Gateway/WebUI active-agent/run/stream counts are zero.
+
+Private locators under the same ignored operator directory:
+
+| Evidence | SHA256 |
+| --- | --- |
+| `chat-case-core-flags.private.json` — six calls/results and exact SSE flags | `77e87bba3134864bbe4021886edef5fe5e628365db17d21d49785d6224a9ce0a` |
+| `tool-results-postcutover-parity-20261023.safe.json` — image, source, plugin and neighbours | `7879dd5258200299963ae5056c74126e5a1652d672eefd4dfcb5e78bd482676b` |
+
+The old image, task-owned local base alias, protected server-local env backup and
+forward CAS receipt remain for rollback. Use the existing 16-input Compose
+owner; restore only its Agent image pin after current-identity/idle checks,
+then recreate only Agent. Do not restore the whole env or HOME/registry state.
+No claim of a measured full clean-VPS build, arbitrary-target support, public SSO,
+complete journal history or performance SLA is added by this followup.
 
 Refresh matched core/plugin artifact IDs with `python scripts/update_release.py`.
 The existing historical eventlog EPF sources and the new deployment routes belong
