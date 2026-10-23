@@ -1,0 +1,1113 @@
+{
+  "schemaVersion": 1,
+  "issue": 97,
+  "date": "2026-10-13",
+  "installedSourceCommit": "bd40827a7e95bba9d08ed03d430559aca089c953",
+  "operatorNativeInvocations": 7,
+  "operatorDemoSessionCycles": 0,
+  "operatorEvidence": {
+    "protectedHomeLocator": "/home/roman/.local/issue97-engineering/operator/operator-evidence.json",
+    "sha256": "b54c9699f08f00b7462f0ca9b13076d6aba11090d28a57c6523374907a5c9bc4",
+    "bytes": 39360,
+    "manifest": [
+      {
+        "name": "engineering-provisioned.json",
+        "bytes": 2438,
+        "sha256": "4f698c8fdd4485f1ef47066ec11be834d69b0fb4eb5d6a76aa1cc3f703db48be"
+      },
+      {
+        "name": "engineering_probe.receipt.json",
+        "bytes": 400,
+        "sha256": "9a3a0ec51d5b30bebb8ddd46dda9b14da713cb7633e262691e994c05457ea20a"
+      },
+      {
+        "name": "engineering_refusals.receipt.json",
+        "bytes": 1397,
+        "sha256": "e8ad368ff8ccd0efce5e6c59aff6271e52354188a30027f1df7e74e13f4e9a1c"
+      },
+      {
+        "name": "journal-rehearsal.json",
+        "bytes": 1191,
+        "sha256": "a6f95e10c2d38c32aaab63f0f40752d956873c475bf8994ec891528c7a1eae4e"
+      },
+      {
+        "name": "journal-installed.json",
+        "bytes": 1577,
+        "sha256": "099f1bb2d5aa21b907d80de7d58caf503cba79aadab0afbffa1125a5efe4c3b8"
+      },
+      {
+        "name": "route_probe.receipt.json",
+        "bytes": 2140,
+        "sha256": "653a02c17a9c0c781773465b81a6feb4ac6e24958e95f57210c6e24eac7b14de"
+      },
+      {
+        "name": "check_demo_secret.receipt.json",
+        "bytes": 249,
+        "sha256": "2c894a86cd0c012aad069d1ca06756c0106f6924067b0913e18e4fda01ab9580"
+      },
+      {
+        "name": "actual_demo_policy.receipt.json",
+        "bytes": 7287,
+        "sha256": "07489c2a68a5cc77803cd7b5493e4c031c8a8a239753c86f0d1bc1befa6a6a63"
+      },
+      {
+        "name": "current_source_discovery.receipt.json",
+        "bytes": 2045,
+        "sha256": "fc6ffb6df8cff837975f236f575ab7655351009d36ccd3fd213815069bea3890"
+      },
+      {
+        "name": "allocation.receipt.json",
+        "bytes": 1916,
+        "sha256": "b7ece390a8d42d91a60b9cce9cd77f0e72eb53a4c57861439982897862763d86"
+      },
+      {
+        "name": "budget_read.receipt.json",
+        "bytes": 5178,
+        "sha256": "109d266cb6c9fa66fc30ad105650c15d8bee04b9062db10b6a4ffcb5609e877e"
+      }
+    ]
+  },
+  "engineering": {
+    "containerId": "1f3565421de9c18af24408e6a04db29297ba7c3dd61810ec8f6806fa77ffd5ba",
+    "image": "sha256:036a932ca78ec1f161b83fc3d26d663d950a8e845002c160771950ec72ce6488",
+    "handlerSha256": "141d35b42acca75de0553328fde3d859a4f792577a3abef75a380fcefd9cec68",
+    "uid": 10001,
+    "gid": 10001,
+    "operatorProbeExit": 0,
+    "refusalTransportExit": 0
+  },
+  "currentJournal": {
+    "probeStatus": "ACCESS_PROBE_PASS",
+    "probeExit": 0,
+    "uid": 33,
+    "gid": 33,
+    "files": 4,
+    "nativeInvocations": 0,
+    "probeStdoutSha256": "c8311af767e5d258f6f03be5d0e3c94e79d49d85828fd987521f89b627cbae1a"
+  },
+  "demoHttp": {
+    "status": 200,
+    "contentType": "text/html;charset=UTF-8"
+  },
+  "techlog": {
+    "configuredRoots": [
+      "/opt/1cv8t/conf",
+      "/var/lib/1c/home"
+    ],
+    "logcfgFilesFound": 0,
+    "currentCoverage": "NOT_ESTABLISHED"
+  },
+  "allocation": [
+    {
+      "path": "/home/roman/.local/issue97-engineering/source",
+      "files": 554,
+      "logicalBytes": 6784112,
+      "referencedAllocatedBytes": 8146944,
+      "newFileBytes": 8146944,
+      "symlinks": 0
+    },
+    {
+      "path": "/home/roman/.local/issue97-engineering/operator",
+      "files": 298,
+      "logicalBytes": 3815269,
+      "referencedAllocatedBytes": 4501504,
+      "newFileBytes": 4501504,
+      "symlinks": 0
+    },
+    {
+      "path": "/home/roman/.local/issue97-engineering/source.bundle",
+      "files": 1,
+      "logicalBytes": 2050260,
+      "referencedAllocatedBytes": 2052096,
+      "newFileBytes": 2052096,
+      "symlinks": 0
+    },
+    {
+      "path": "/home/roman/.local/issue97-current-journal-runtime",
+      "files": 540,
+      "logicalBytes": 1297523968,
+      "referencedAllocatedBytes": 1247125504,
+      "newFileBytes": 0,
+      "symlinks": 11
+    }
+  ],
+  "reference": {
+    "id": "d2f38aa86d7bc461712df72fc22d5eb924324cbf5f386ca44a458024fd24970c",
+    "image": "sha256:69f919497cada9a8611f3de61df902d9f94bf20f84552ef5bd93125c38608ef9",
+    "pid": 3591944,
+    "startedAt": "2026-10-13T10:05:57.302519757Z",
+    "restartPolicy": {
+      "Name": "no",
+      "MaximumRetryCount": 0
+    },
+    "running": true
+  },
+  "acceptanceStatus": "CONSUMER_SOURCE_CAPABILITY_ACCEPTED",
+  "remainingCapabilityGap": null,
+  "productAcceptanceIssue90": "NOT_RUN; one remaining export does not guarantee full fresh-selection criterion",
+  "currentHermesAcceptance": {
+    "protectedVpsLocator": "/workspace/1c-harnest/.local/issue97-consumer-binding-20261013T103456Z-51450fb5/acceptance.json",
+    "sha256": "dec73238275a9c94e8c41825a5bc79e3d5d9c91ede270b781003db09717609c5",
+    "verdict": "CONSUMER_SOURCE_CAPABILITY_ACCEPTED",
+    "startupBindingGap": "CLOSED",
+    "otherConcreteSourceCapabilityBlocker": null,
+    "verifiedAt": "2026-10-13T10:45:43.847426+00:00",
+    "sourceAdmission": "source-admission-v3.md",
+    "sourceAdmissionSha256": "6d89cd47f4e941bf06f80d211fb76242c9d53e9d254ef811e0c6882469c21882",
+    "manifest": "manifest.json",
+    "manifestSha256": "bef263e60de86fc043ebbc4828070013225e22deab02e75934e8cd0eaeb72d26",
+    "personalChecks": "21 retained startup hashes; current ledger and four export rows; fresh current-journal probe; complete Dashboard source and raw-byte hash reconstruction; server-dispatch source seam",
+    "operatorAttestationBoundary": "HOME live==copy and full XML comparison remain operator evidence, not consumer direct live-IB reads",
+    "nativeInvocations": 0,
+    "demoSessions": 0,
+    "runtimeParameterAndRightsAcceptance": "NOT_RUN"
+  },
+  "nativeSmoke": {
+    "n": 7,
+    "kind": "engineering-runtime-smoke",
+    "attemptId": "f700b97233d847dc8fd03e1f47b2c3bb",
+    "operation": "CREATEINFOBASE",
+    "issue": 97,
+    "status": "COMPLETED",
+    "nativeBudgetReservedSeconds": 0,
+    "durationSeconds": 5.590007265098393,
+    "startedAtUnix": 1791875442.092627,
+    "binarySha256": "0d11379cfd37c029a472fa500cbd8a64050cc5e53f7904036f8f6ce6a7fe0574",
+    "runtimeConfigSha256": "2086e1fddf1e6590048a596d3871c7ea9a4f9037ac0f92f25f7664739187969c",
+    "sourceCommit": "bd40827a7e95bba9d08ed03d430559aca089c953",
+    "planSha256": "4bc76b5dbb18681a5977af0886730144d404ccda1ecd058dbdbef388bf8e1f15",
+    "ownedRoot": "/workspace/1c-agent-harness/.local/runs/hermes97-empty-smoke-f700b97233d847dc8fd03e1f47b2c3bb",
+    "argv": [
+      "/workspace/1c-agent-harness/.local/platform/libs/usr/bin/xvfb-run",
+      "-a",
+      "-s",
+      "-screen 0 1280x1024x8 -nolisten tcp",
+      "/workspace/1c-agent-harness/.local/platform/1cv8t/x86_64/8.5.1.1150/1cv8t",
+      "CREATEINFOBASE",
+      "File=/workspace/1c-agent-harness/.local/runs/hermes97-empty-smoke-f700b97233d847dc8fd03e1f47b2c3bb/ib",
+      "/DisableStartupDialogs",
+      "/DisableStartupMessages",
+      "/Out",
+      "/workspace/1c-agent-harness/.local/runs/hermes97-empty-smoke-f700b97233d847dc8fd03e1f47b2c3bb/logs/create.log",
+      "/DumpResult",
+      "/workspace/1c-agent-harness/.local/runs/hermes97-empty-smoke-f700b97233d847dc8fd03e1f47b2c3bb/logs/create.result"
+    ],
+    "subprocessTimeoutSeconds": 25,
+    "nativeCeilingSeconds": 30,
+    "authority": "current owner authorisation #97 one empty disposable IB; no help/export/session",
+    "originalContractSha256": "325fbdc242d96de33774474408ce1482cb83806ab543ad398a1a7e751461fd8f",
+    "nativeInvocations": 1,
+    "receiptSha256": "27b96d6c42de717bb66f53edd3a240a37898fec2a08943f048620329640ddc83",
+    "sshExit": 0,
+    "controllerWallSeconds": 11.814282320003258,
+    "processReturn": 0,
+    "dumpResult": "0",
+    "actualIBBytes": 3203072,
+    "actualIBSha256": "e1559782df4ba4d6920cac632d0cff8e406c2e9b89eff7e06c563fa6a5ab7516",
+    "createLogSha256": "81844cd459524c12c9dd68f9ae6b6c9b8fd51208db74fc914256a2444113f009",
+    "createResultSha256": "e45825471ed10290785b62676dc5f453d228a1e1d933c45a733e9bb239c9e083",
+    "cleanup": {
+      "groupAbsent": true,
+      "leaderReaped": true,
+      "ownedChildrenRemaining": [],
+      "ownedRootAbsent": true
+    },
+    "protectedHashesUnchanged": true,
+    "nativeSecondsCeilingMet": true
+  },
+  "finalLedger": {
+    "sha256": "d43b7e247158e9c24d5b60b923e284a663068deeb4927833f0d204e936842ab9",
+    "nativeSeconds": 52.73141303029843,
+    "STARTED": 0,
+    "help": 2,
+    "exports": 11,
+    "session": 0
+  },
+  "startupEvidence": {
+    "protectedHomeLocator": "/home/roman/.local/issue97-engineering/operator/startup-effects.json",
+    "sha256": "649fd41bf23724c3bee1c79d853ae597fc383504d1c71c26f8a6164b2636726b"
+  },
+  "operatorCleanup": {
+    "operatorEnvironmentWorkCompletedAt": "2026-10-13T07:14:11.207217+00:00",
+    "removedOwnBundle": "/home/roman/.local/issue97-engineering/source.bundle",
+    "bundleSha256": "6e4fca909d6535bce04f1a89fb30a4913c8bd2c215a2058db8197081305ae9a4",
+    "hashVerifiedRetainedLocalCopy": ".local/source.bundle in issue97 operator worktree",
+    "releasedAllocatedBytes": 2052096,
+    "engineeringId": "1f3565421de9c18af24408e6a04db29297ba7c3dd61810ec8f6806fa77ffd5ba",
+    "engineeringProcesses": "PID                 UID                 COMMAND\n3350385             10001               sleep\n",
+    "temporaryWorkersRemaining": [],
+    "retainedReceipts": [
+      {
+        "path": "/home/roman/.local/issue97-engineering/operator/operator-evidence.json",
+        "sha256": "b54c9699f08f00b7462f0ca9b13076d6aba11090d28a57c6523374907a5c9bc4"
+      },
+      {
+        "path": "/home/roman/.local/issue97-engineering/operator/startup-effects.json",
+        "sha256": "649fd41bf23724c3bee1c79d853ae597fc383504d1c71c26f8a6164b2636726b"
+      },
+      {
+        "path": "/home/roman/.local/issue97-engineering/operator/provisioning.json",
+        "sha256": "c19fa80abe2a8888cc5205ca5191f9bed3d03e2881058e206c1be4641318f096"
+      }
+    ],
+    "demoLifecycleActions": 0,
+    "nativeInvocations": 0,
+    "ordinaryPostCleanupWitnessRequired": true
+  },
+  "initialHermesAcceptance": {
+    "protectedVpsLocator": "/workspace/1c-harnest/.local/issue97-hermes-intake-20261013T064825Z/acceptance.json",
+    "sha256": "83bf5b4eecda9784abea3ad94dfda1f97d964c5b00fc0daf20bb7c6d45752db7",
+    "nativeInvocations": 0
+  },
+  "postCleanupHermesAcceptance": {
+    "protectedVpsLocator": "/workspace/1c-harnest/.local/issue97-hermes-intake-20261013T064825Z/post-cleanup-acceptance.json",
+    "sha256": "679bb2004fe46cda1640dfaa63f0e9eb761be233e02abd241ae7f53e277f1014",
+    "verdict": "PARTIAL / ORDINARY_ENGINEERING_RUNTIME_AND_POST_CLEANUP_ACCEPTED",
+    "postOperatorCleanup": {
+      "allSSHStartedAfterCutoff": true,
+      "hostCleanupMechanics": "operator/user attested, not independently fetched",
+      "hostReceiptLocator": "/home/roman/.local/issue97-engineering/operator/cleanup.json",
+      "operatorReportedAt": "2026-10-13T07:14:11.207217+00:00"
+    },
+    "evidenceChecks": {
+      "post-canary": {
+        "durationSeconds": 6.003829073000816,
+        "requestSha256": "ef09b1f1ab7fab516d9d7e7c281b8eee0326b5d284c1b240f0383698c09ad16b",
+        "route": "engineering",
+        "sshExit": 0,
+        "startedAt": "2026-10-13T07:17:58.325723+00:00",
+        "stderrBytes": 0,
+        "stderrSha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+        "stdoutBytes": 3630,
+        "stdoutSha256": "84afd7002be0379eb5d157a63d936110e776dacd8552cfa8b5240335cee1d52d"
+      },
+      "post-diagnostics": {
+        "durationSeconds": 3.439326161009376,
+        "requestSha256": "145c819c77e476fa2bb051d755d923e0596b140a4430b12c1b12948fa5e44bb1",
+        "route": "diagnostics",
+        "sshExit": 0,
+        "startedAt": "2026-10-13T07:18:23.749521+00:00",
+        "stderrBytes": 0,
+        "stderrSha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+        "stdoutBytes": 2139,
+        "stdoutSha256": "82c1c59750b4993fc7f268b4fe60346caeb8ee625a0397d242a35275d37a5a29"
+      },
+      "post-identity": {
+        "durationSeconds": 5.717898404007428,
+        "requestSha256": "c2cf2f699243d5d39cc630b402c210f3d8e63cd381fed840c921fa2c3e269be7",
+        "route": "engineering",
+        "sshExit": 0,
+        "startedAt": "2026-10-13T07:18:04.794850+00:00",
+        "stderrBytes": 0,
+        "stderrSha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+        "stdoutBytes": 8418,
+        "stdoutSha256": "91fe5f9390c616e75f1699fde8049c49fc4521562ca7aad0cb0f421b16a7028e"
+      },
+      "post-journal-probe": {
+        "durationSeconds": 5.793227318004938,
+        "requestSha256": "a3a789a05c73d15654529988d4405dbf061efd37ee4d63891d5047490e1cabd8",
+        "route": "journal",
+        "sshExit": 0,
+        "startedAt": "2026-10-13T07:18:11.312108+00:00",
+        "stderrBytes": 0,
+        "stderrSha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+        "stdoutBytes": 1903,
+        "stdoutSha256": "03ef5afe1e5f7a501db1dd468d5dec3357d381777975e8c41fac2ffa51bd02c2"
+      },
+      "post-journal-refusal": {
+        "durationSeconds": 5.372881400006008,
+        "requestSha256": "1edf48b5696c41c35ff28544699250e9c58df4caba361451a2a97687bdc96025",
+        "route": "journal",
+        "sshExit": 2,
+        "startedAt": "2026-10-13T07:18:17.575429+00:00",
+        "stderrBytes": 99,
+        "stderrSha256": "4bf441ab4b700d3c016aced67d0e3d8a71a851f0f76f31f57ef136fad615ceed",
+        "stdoutBytes": 0,
+        "stdoutSha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+      },
+      "post-ledger": {
+        "durationSeconds": 3.0019427760125836,
+        "requestSha256": "acd6aba1322b10ab99e19d988cab6f3c68b2b7501ec20b475248ab5aea94d39e",
+        "route": "diagnostics",
+        "sshExit": 0,
+        "startedAt": "2026-10-13T07:18:27.603067+00:00",
+        "stderrBytes": 0,
+        "stderrSha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+        "stdoutBytes": 854,
+        "stdoutSha256": "40eb09bd6029e94fd9bf5d681fd5fd0777c1ef192c540b2b6061e4359f873abb"
+      }
+    },
+    "freshOwnCanary": {
+      "allocationBytes": 8192,
+      "canaryBytes": 32,
+      "codeSha256": "3078c340d8544e00252fecf9f5f6f5b7cccbd8401b2a390ce9bd55ffb8f9ec10",
+      "createdAndExecuted": true,
+      "exitCode": -15,
+      "inodes": 3,
+      "pid": 107,
+      "procAbsent": true,
+      "procStartTicks": "187683546",
+      "reaped": true,
+      "remainingOutputBytes": 0,
+      "taskPath": "/workspace/1c-agent-harness/.local/hermes-canary-beace30965544513ba329aa90629443a"
+    },
+    "safeRefusals": {
+      "setuid0": {
+        "after": 10001,
+        "before": 10001,
+        "denied": true,
+        "errno": 1
+      },
+      "tmpfsMount": {
+        "denied": true,
+        "errno": 1,
+        "filesystem": "tmpfs",
+        "rc": -1,
+        "target": "task-owned empty mountpoint"
+      },
+      "writeOpen": {
+        "CF": {
+          "denied": true,
+          "errno": 13,
+          "flags": "O_WRONLY|O_NOFOLLOW; no create/truncate/write",
+          "writes": 0
+        },
+        "foreign_sentinel": {
+          "denied": true,
+          "errno": 30,
+          "flags": "O_WRONLY|O_NOFOLLOW; no create/truncate/write",
+          "writes": 0
+        },
+        "manifest": {
+          "denied": true,
+          "errno": 13,
+          "flags": "O_WRONLY|O_NOFOLLOW; no create/truncate/write",
+          "writes": 0
+        },
+        "runtime": {
+          "denied": true,
+          "errno": 30,
+          "flags": "O_WRONLY|O_NOFOLLOW; no create/truncate/write",
+          "writes": 0
+        },
+        "source": {
+          "denied": true,
+          "errno": 13,
+          "flags": "O_WRONLY|O_NOFOLLOW; no create/truncate/write",
+          "writes": 0
+        }
+      }
+    },
+    "sameInitialRouteAliasAndConfigPath": true,
+    "immutableHashesMatchInitial": true,
+    "postPhaseInvocations": {
+      "demoSession": 0,
+      "deployment": 0,
+      "export": 0,
+      "help": 0,
+      "native": 0,
+      "restart": 0,
+      "review": 0,
+      "subagents": 0
+    }
+  },
+  "finalHermesAcceptance": {
+    "protectedVpsLocator": "/workspace/1c-harnest/.local/issue97-hermes-intake-20261013T064825Z/acceptance-final.json",
+    "sha256": "6c3c1d22740eadaa6d1cbde61564b0a87177f939fa36bae5448540efc14e26a3"
+  },
+  "browser": {
+    "containerId": "b547e8ac370892449a89b16148ff7f2c3a0169b25dcf0198dad6ea7077bb39f8",
+    "image": "sha256:036a932ca78ec1f161b83fc3d26d663d950a8e845002c160771950ec72ce6488",
+    "handlerSourceCommit": "c6a8c951a930117ec9f10a21b9a7df7e95ee77fc",
+    "handlerSha256": "9e76e384ae3080a69668df31a1e61be25acab09e76e9bd9ac1cf45561015e38b",
+    "configPath": "/data/hermes-home/credentials/ssh/browser97/config",
+    "configSha256": "84fce698740ba1f34aeeb5b2b3e8706c1bab93e9b8f724c4ea915144e38f5504",
+    "init": true,
+    "operatorNonNativeProbe": {
+      "uid": 10001,
+      "gid": 10001,
+      "browserVersion": "145.0.7632.6",
+      "ownDom": "issue97 isolated browser",
+      "ownPageUrl": "about:blank",
+      "headStatus": 200,
+      "headContentType": "text/html;charset=UTF-8",
+      "headError": null,
+      "nativeInvocations": 0,
+      "demoSessions": 0,
+      "pidNamespace": "pid:[4026533070]",
+      "dockerSocketPresent": false,
+      "demoFilesystemPresent": false,
+      "sourceCommit": "bd40827a7e95bba9d08ed03d430559aca089c953",
+      "seconds": 1.7288109201472253,
+      "containerId": "0d2816b5f37151cb5f03d46be0e4483be868c69fcaae252d6a6b8cd0041f02cc",
+      "phase": "initial worker before native init migration"
+    },
+    "initialHermesWitness": {
+      "verdict": "PASS",
+      "protectedVpsLocator": "/workspace/1c-harnest/.local/browser97-hermes-20261013T082233Z/receipts/browser-witness.stdout",
+      "sha256": "c072f06db5d206bd3cbefb4adcb730cafd12d58cb058dfc7d5cce38139f31dbd",
+      "transport": {
+        "actualArgv": [
+          "ssh",
+          "-F",
+          "/data/hermes-home/credentials/ssh/browser97/config",
+          "-o",
+          "BatchMode=yes",
+          "-o",
+          "StrictHostKeyChecking=yes",
+          "-o",
+          "ConnectTimeout=10",
+          "-T",
+          "browser97",
+          "python3 -B -c 'import json,sys; payload=json.load(sys.stdin); exec(compile(payload['\"'\"'code'\"'\"'],'\"'\"'<own-browser97-witness>'\"'\"','\"'\"'exec'\"'\"'))'"
+        ],
+        "codeSha256": "ccf4a3f7a811a990f5b571d52bdeb064edac1636e97096f56e9c42a8ef7ad2c8",
+        "configSha256": "84fce698740ba1f34aeeb5b2b3e8706c1bab93e9b8f724c4ea915144e38f5504",
+        "credentialSource": "native get_env_value_prefer_dotenv active profile",
+        "credentialsPersisted": false,
+        "durationSeconds": 14.990217159996973,
+        "localInterpreter": "/app/venv/bin/python",
+        "remoteInterpreter": "python3 -B; no -I for Playwright",
+        "secretDelivery": "SSH stdin JSON -> own process memory; no files/argv/env",
+        "secretNames": [
+          "ONE_C_DEMO_HTTP_USERNAME",
+          "ONE_C_DEMO_HTTP_PASSWORD"
+        ],
+        "sshExit": 0,
+        "startedAt": "2026-10-13T08:31:33.787719+00:00",
+        "stderrSanitised": {
+          "bytes": 0,
+          "firstLine": "",
+          "rawRetained": false
+        },
+        "stdoutBytes": 32394,
+        "stdoutSha256": "c072f06db5d206bd3cbefb4adcb730cafd12d58cb058dfc7d5cce38139f31dbd"
+      },
+      "checks": {
+        "baselineProcesses": {
+          "1": {
+            "comm": "sleep",
+            "ppid": "0",
+            "startTicks": "188007541",
+            "state": "S"
+          },
+          "105": {
+            "comm": "chrome-headless",
+            "ppid": "1",
+            "startTicks": "188027154",
+            "state": "Z"
+          },
+          "106": {
+            "comm": "chrome-headless",
+            "ppid": "1",
+            "startTicks": "188027154",
+            "state": "Z"
+          },
+          "176": {
+            "comm": "chrome-headless",
+            "ppid": "1",
+            "startTicks": "188041741",
+            "state": "Z"
+          },
+          "177": {
+            "comm": "chrome-headless",
+            "ppid": "1",
+            "startTicks": "188041741",
+            "state": "Z"
+          },
+          "31": {
+            "comm": "chrome-headless",
+            "ppid": "1",
+            "startTicks": "188015301",
+            "state": "Z"
+          },
+          "32": {
+            "comm": "chrome-headless",
+            "ppid": "1",
+            "startTicks": "188015301",
+            "state": "Z"
+          }
+        },
+        "boundary": {
+          "capEff": [
+            "CapEff:\t0000000000000000",
+            "NoNewPrivs:\t1"
+          ],
+          "foreignDiagnosticNamespace": "pid:[4026532199]",
+          "foreignEngineeringNamespace": "pid:[4026533009]",
+          "foreignPid57_58Visible": [],
+          "networkInterfaces": [
+            "eth0",
+            "lo"
+          ],
+          "pidNamespace": "pid:[4026533070]",
+          "privateVsKnownForeign": true,
+          "visibleSurfaces": {
+            "/home/roman": false,
+            "/run/docker.sock": false,
+            "/var/lib/1c/ib": false,
+            "/var/run/docker.sock": false
+          }
+        },
+        "calls": {
+          "demoGET": 0,
+          "demoHEADAttempts": 1,
+          "demoJS": 0,
+          "demoSession": 0,
+          "e1cib": 0,
+          "export": 0,
+          "help": 0,
+          "platformNative": 0
+        },
+        "chromiumVersion": "145.0.7632.6",
+        "cleanup": {
+          "baselineProcessesPreserved": true,
+          "baselineZombieCount": 6,
+          "foreignProcessesSignalled": false,
+          "newProcessesRemaining": {},
+          "ownedChildrenRemaining": [],
+          "ownedRootAbsent": true
+        },
+        "demoHead": {
+          "TLSVerification": true,
+          "authSend": "always",
+          "contentTypeIsHTML": true,
+          "maxRedirects": 0,
+          "method": "HEAD",
+          "origin": "https://1c-demo.speechbattle.com",
+          "requestHeadersOrCookiesRetained": false,
+          "responseBodyRead": false,
+          "seconds": 5.48430860391818,
+          "status": 200,
+          "timeoutMs": 15000
+        },
+        "elapsedSeconds": 7.249109748052433,
+        "gid": 10001,
+        "ownRoot": "/workspace/1c-agent-harness/.local/runs/hermes-browser-3fe9ad70bafd40299867abf1f8a31b9f",
+        "ownedPeakInodes": 9,
+        "ownedPeakLogicalBytes": 1053,
+        "passed": true,
+        "protectedUnchanged": true,
+        "render": {
+          "blockedRequests": [],
+          "jsComputed": "JavaScript executed",
+          "navigationScope": "own loopback page only",
+          "ownNonceMatched": true,
+          "requests": [
+            {
+              "method": "GET",
+              "path": "/index.html"
+            }
+          ],
+          "screenshotBytes": 16059,
+          "screenshotSha256": "04c81438c106c78d1164a5d9d714119bb23de8960591e9fa2597aefaadf2b6d4",
+          "seconds": 0.1575706391595304,
+          "status": 200,
+          "title": "Hermes own browser witness",
+          "visibleHeadingBounds": {
+            "height": 51,
+            "width": 724,
+            "x": 38,
+            "y": 67.46875
+          }
+        },
+        "serverCleanup": {
+          "exit": -15,
+          "pidAbsent": true,
+          "reaped": true
+        },
+        "serverIdentity": {
+          "pid": 292,
+          "startTicks": "188125280"
+        },
+        "setuid0": {
+          "after": 10001,
+          "before": 10001,
+          "denied": true,
+          "errno": 1
+        },
+        "sourceHead": "bd40827a7e95bba9d08ed03d430559aca089c953",
+        "tmpfsMount": {
+          "denied": true,
+          "errno": 1,
+          "rc": -1,
+          "target": "own empty mountpoint"
+        },
+        "uid": 10001,
+        "workerHostname": "0d2816b5f371",
+        "writeOpenRefusals": {
+          "browser_executable": {
+            "denied": true,
+            "errno": 30,
+            "flags": "O_WRONLY|O_NOFOLLOW; no create/truncate/write",
+            "writes": 0
+          },
+          "fontconfig": {
+            "denied": true,
+            "errno": 30,
+            "flags": "O_WRONLY|O_NOFOLLOW; no create/truncate/write",
+            "writes": 0
+          },
+          "foreign_sentinel": {
+            "denied": true,
+            "errno": 13,
+            "flags": "O_WRONLY|O_NOFOLLOW; no create/truncate/write",
+            "writes": 0
+          },
+          "source": {
+            "denied": true,
+            "errno": 13,
+            "flags": "O_WRONLY|O_NOFOLLOW; no create/truncate/write",
+            "writes": 0
+          }
+        }
+      }
+    },
+    "postInitHermesWitness": {
+      "verdict": "PASS",
+      "protectedVpsLocator": "/workspace/1c-harnest/.local/browser97-hermes-20261013T082233Z/receipts/post-init-browser.stdout",
+      "sha256": "047365cc71cc2334db3692022192578a6bb5cb155f83cf556b3d0637eabc7ebe",
+      "transport": {
+        "actualArgv": [
+          "ssh",
+          "-F",
+          "/data/hermes-home/credentials/ssh/browser97/config",
+          "-o",
+          "BatchMode=yes",
+          "-o",
+          "StrictHostKeyChecking=yes",
+          "-o",
+          "ConnectTimeout=10",
+          "-T",
+          "browser97",
+          "python3 -B -c 'import json,sys; payload=json.load(sys.stdin); exec(compile(payload['\"'\"'code'\"'\"'],'\"'\"'<own-browser97-witness>'\"'\"','\"'\"'exec'\"'\"'))'"
+        ],
+        "codeSha256": "7f39a80c836b3899d3d82174e966dcc770ab7b2357331cd983b58b861a8eceec",
+        "configSha256": "84fce698740ba1f34aeeb5b2b3e8706c1bab93e9b8f724c4ea915144e38f5504",
+        "credentialSource": "native get_env_value_prefer_dotenv active profile",
+        "credentialsPersisted": false,
+        "durationSeconds": 9.647289013999398,
+        "localInterpreter": "/app/venv/bin/python",
+        "remoteInterpreter": "python3 -B; no -I for Playwright",
+        "secretDelivery": "SSH stdin JSON -> own process memory; no files/argv/env",
+        "secretNames": [
+          "ONE_C_DEMO_HTTP_USERNAME",
+          "ONE_C_DEMO_HTTP_PASSWORD"
+        ],
+        "sshExit": 0,
+        "startedAt": "2026-10-13T08:44:10.014804+00:00",
+        "stderrSanitised": {
+          "bytes": 0,
+          "firstLine": "",
+          "rawRetained": false
+        },
+        "stdoutBytes": 32641,
+        "stdoutSha256": "047365cc71cc2334db3692022192578a6bb5cb155f83cf556b3d0637eabc7ebe"
+      },
+      "checks": {
+        "baselineProcesses": {
+          "1": {
+            "comm": "docker-init",
+            "ppid": "0",
+            "startTicks": "188176274",
+            "state": "S"
+          },
+          "7": {
+            "comm": "sleep",
+            "ppid": "1",
+            "startTicks": "188176288",
+            "state": "S"
+          }
+        },
+        "boundary": {
+          "capEff": [
+            "CapEff:\t0000000000000000",
+            "NoNewPrivs:\t1"
+          ],
+          "foreignDiagnosticNamespace": "pid:[4026532199]",
+          "foreignEngineeringNamespace": "pid:[4026533009]",
+          "foreignPid57_58Visible": [],
+          "networkInterfaces": [
+            "eth0",
+            "lo"
+          ],
+          "pidNamespace": "pid:[4026533133]",
+          "privateVsKnownForeign": true,
+          "visibleSurfaces": {
+            "/home/roman": false,
+            "/run/docker.sock": false,
+            "/var/lib/1c/ib": false,
+            "/var/run/docker.sock": false
+          }
+        },
+        "calls": {
+          "demoGET": 0,
+          "demoHEADAttempts": 1,
+          "demoJS": 0,
+          "demoSession": 0,
+          "e1cib": 0,
+          "export": 0,
+          "help": 0,
+          "platformNative": 0
+        },
+        "chromiumVersion": "145.0.7632.6",
+        "cleanup": {
+          "baselineProcessesPreserved": true,
+          "baselineZombieCount": 0,
+          "foreignProcessesSignalled": false,
+          "newProcessesRemaining": {},
+          "ownedChildrenRemaining": [],
+          "ownedRootAbsent": true
+        },
+        "demoHead": {
+          "TLSVerification": true,
+          "authSend": "always",
+          "contentTypeIsHTML": true,
+          "maxRedirects": 0,
+          "method": "HEAD",
+          "origin": "https://1c-demo.speechbattle.com",
+          "requestHeadersOrCookiesRetained": false,
+          "responseBodyRead": false,
+          "seconds": 0.40959211019799113,
+          "status": 200,
+          "timeoutMs": 15000
+        },
+        "elapsedSeconds": 2.1638108969200402,
+        "gid": 10001,
+        "initIdentity": {
+          "comm": "docker-init",
+          "uidLine": "Uid:\t10001\t10001\t10001\t10001"
+        },
+        "ownRoot": "/workspace/1c-agent-harness/.local/runs/hermes-browser-26ce99a69221480bbb618824ea121446",
+        "ownedPeakInodes": 9,
+        "ownedPeakLogicalBytes": 1053,
+        "passed": true,
+        "protectedUnchanged": true,
+        "render": {
+          "blockedRequests": [],
+          "jsComputed": "JavaScript executed",
+          "navigationScope": "own loopback page only",
+          "ownNonceMatched": true,
+          "requests": [
+            {
+              "method": "GET",
+              "path": "/index.html"
+            }
+          ],
+          "screenshotBytes": 16524,
+          "screenshotSha256": "8ead53dd1e0d4e205d435f127f384cbc647f05858c8786aa993655f3bb0a24e3",
+          "seconds": 0.20158138195984066,
+          "status": 200,
+          "title": "Hermes own browser witness",
+          "visibleHeadingBounds": {
+            "height": 51,
+            "width": 724,
+            "x": 38,
+            "y": 67.46875
+          }
+        },
+        "serverCleanup": {
+          "exit": -15,
+          "pidAbsent": true,
+          "reaped": true
+        },
+        "serverIdentity": {
+          "pid": 28,
+          "startTicks": "188200877"
+        },
+        "setuid0": {
+          "after": 10001,
+          "before": 10001,
+          "denied": true,
+          "errno": 1
+        },
+        "sourceHead": "bd40827a7e95bba9d08ed03d430559aca089c953",
+        "tmpfsMount": {
+          "denied": true,
+          "errno": 1,
+          "rc": -1,
+          "target": "own empty mountpoint"
+        },
+        "uid": 10001,
+        "workerHostname": "b547e8ac3708",
+        "writeOpenRefusals": {
+          "browser_executable": {
+            "denied": true,
+            "errno": 30,
+            "flags": "O_WRONLY|O_NOFOLLOW; no create/truncate/write",
+            "writes": 0
+          },
+          "fontconfig": {
+            "denied": true,
+            "errno": 30,
+            "flags": "O_WRONLY|O_NOFOLLOW; no create/truncate/write",
+            "writes": 0
+          },
+          "foreign_sentinel": {
+            "denied": true,
+            "errno": 13,
+            "flags": "O_WRONLY|O_NOFOLLOW; no create/truncate/write",
+            "writes": 0
+          },
+          "source": {
+            "denied": true,
+            "errno": 13,
+            "flags": "O_WRONLY|O_NOFOLLOW; no create/truncate/write",
+            "writes": 0
+          }
+        }
+      }
+    },
+    "protectedOperatorEvidence": {
+      "path": "/home/roman/.local/issue97-browser/operator/browser-evidence.json",
+      "bytes": 49279,
+      "sha256": "f5fd21c8923f1a6adefd6e39373d7d7c8b7d22a55e0823908910dc7eefc5da5a",
+      "atUtc": "2026-10-13T08:25:19.198096+00:00"
+    },
+    "initMigration": {
+      "receipt": {
+        "oldId": "0d2816b5f37151cb5f03d46be0e4483be868c69fcaae252d6a6b8cd0041f02cc",
+        "id": "b547e8ac370892449a89b16148ff7f2c3a0169b25dcf0198dad6ea7077bb39f8",
+        "image": "sha256:036a932ca78ec1f161b83fc3d26d663d950a8e845002c160771950ec72ce6488",
+        "init": true,
+        "sourceCommit": "bd40827a7e95bba9d08ed03d430559aca089c953",
+        "handlerSourceCommit": "c6a8c951a930117ec9f10a21b9a7df7e95ee77fc",
+        "handlerSha256": "9e76e384ae3080a69668df31a1e61be25acab09e76e9bd9ac1cf45561015e38b",
+        "archive": {
+          "path": "/home/roman/.local/issue97-browser/operator/pre-init-tmpfs.tar",
+          "bytes": 30720,
+          "sha256": "d1fa10e23792165f7a71c829e7b29a1ac4aebff53fee31d15d4bfc8b54c03f8f",
+          "files": 8
+        },
+        "restoredManifestMatches": true,
+        "originalLiveNonInitProcesses": [
+          "sleep"
+        ],
+        "oldZombieProcesses": 6,
+        "newProcesses": [
+          {
+            "Name": "docker-init",
+            "State": "S (sleeping)",
+            "Pid": "1",
+            "PPid": "0",
+            "Uid": "10001\t10001\t10001\t10001"
+          },
+          {
+            "Name": "sleep",
+            "State": "S (sleeping)",
+            "Pid": "7",
+            "PPid": "1",
+            "Uid": "10001\t10001\t10001\t10001"
+          }
+        ],
+        "authBeforeSha256": "3edebbedd8869bfa4168169c49407b0b8688004d15675ef71807f16e5bf123ce",
+        "authAfterSha256": "4ca1700ce932f80f0d7ac270065c22f622d431041f0d01b6a6836ccb375e5f40",
+        "onlyBrowserTaggedBindingChanged": true,
+        "operatorNativeInvocations": 0,
+        "operatorDemoSessions": 0,
+        "demoPidAndStartedAtUnchanged": true,
+        "operatorEnvironmentWorkComplete": true,
+        "atUtc": "2026-10-13T08:40:14.776651+00:00"
+      },
+      "path": "/home/roman/.local/issue97-browser/operator/init-migration.json",
+      "sha256": "4fdf0bc777bc16b9bac221e90cdb27127bdec558ecb9a12c68d42b407d2a3e9a"
+    },
+    "nativeInvocations": 0,
+    "demoSessions": 0,
+    "finalHermesAcceptance": {
+      "protectedVpsLocator": "/workspace/1c-harnest/.local/browser97-hermes-20261013T082233Z/final-acceptance-v2.json",
+      "sha256": "6f4b59f76213cba9fd8ed1c4d3f70215f1f3979e160377dbbfb44faaad2d0597",
+      "verdict": "PARTIAL",
+      "postCleanupVerdict": "PASS",
+      "manifest": {
+        "protectedVpsLocator": "/workspace/1c-harnest/.local/browser97-hermes-20261013T082233Z/manifest-v2.json",
+        "sha256": "d12c627aea7f53b638bdab099df5b565f6813ace3fd1f131ea320126acdfb897",
+        "files": 102,
+        "logicalBytes": 390409
+      },
+      "sourceAdmission": {
+        "protectedVpsLocator": "/workspace/1c-harnest/.local/browser97-hermes-20261013T082233Z/source-admission-v2.md",
+        "sha256": "53fcab69e032ad468ed3a8345900b4254e7ca41f7983ed741e8d32bfee79b9a8"
+      },
+      "oldRoutes": {
+        "currentJournalBinding": {
+          "currentIbPath": "/var/lib/1c/ib",
+          "journalPath": "/var/lib/1c/ib/1Cv8Log",
+          "referenceHostPid": 2763670,
+          "referenceId": "d2f38aa86d7bc461712df72fc22d5eb924324cbf5f386ca44a458024fd24970c",
+          "referenceImage": "sha256:69f919497cada9a8611f3de61df902d9f94bf20f84552ef5bd93125c38608ef9",
+          "referenceStartedAt": "2026-10-07T06:33:35.714659532Z",
+          "referenceStorageDriver": "overlay2",
+          "sourceProbe": {
+            "ibBindings": [
+              "/var/lib/1c/ib"
+            ],
+            "journalDirectory": {
+              "device": 71,
+              "inode": 6180626
+            },
+            "timeZonePath": "/usr/share/zoneinfo/Etc/UTC",
+            "vrdSha256": "e5406c8e7352b43c6499e2ff4fe189c9b239fe045eb0ac46de2960555850ac7d"
+          },
+          "vrdSha256": "e5406c8e7352b43c6499e2ff4fe189c9b239fe045eb0ac46de2960555850ac7d"
+        },
+        "currentJournalFileCount": 4,
+        "currentJournalProbe": "ACCESS_PROBE_PASS",
+        "currentJournalUIDGID": [
+          33,
+          33
+        ],
+        "diagnostics": "PASS same route; foreign namespace/process identity readable; canonical ledger read-only",
+        "engineeringCanary": true,
+        "engineeringNetworkInterfaces": [
+          "lo"
+        ],
+        "extraSourceRefusal": {
+          "nativeInvocations": 0,
+          "reasonCode": "invalid_request",
+          "schemaVersion": 1,
+          "status": "blocked"
+        },
+        "registeredTechlog": {
+          "coverage": {
+            "bytesRead": 47170,
+            "filesRead": 3,
+            "partial": false,
+            "recordLimit": 200
+          },
+          "evidenceSource": "actual registered one_c_observation_info tool response in this session",
+          "notCurrentDemoTechlog": true,
+          "observedEvents": [
+            "EXCP",
+            "EXCPCNTX"
+          ],
+          "observedInterval": {
+            "complete": true,
+            "end": "2026-09-18T15:26:22.170000+00:00",
+            "start": "2026-09-18T15:25:25.291000+00:00"
+          },
+          "source": "1c_techlog",
+          "sourceTimeZone": "UTC",
+          "status": "ok",
+          "supportedFilters": [
+            "events",
+            "text",
+            "sourceComponent",
+            "process"
+          ]
+        }
+      },
+      "ledgerUnchanged": true,
+      "initOrphanReaping": {
+        "sha256": "8e54fd3ed81b82d421fdac8f4c3fe2652f03748ec2069dd1ea9ed5c92a4f2768",
+        "bytes": 862,
+        "value": {
+          "adoptedByPID1": true,
+          "baselineProcessesUnchanged": true,
+          "customReaper": false,
+          "durationSeconds": 2.052230492932722,
+          "foreignProcessesSignalled": false,
+          "gid": 10001,
+          "grandchildActualArgv": [
+            "/usr/bin/python3",
+            "-B",
+            "-c",
+            "import time;time.sleep(2)"
+          ],
+          "grandchildPid": 103,
+          "grandchildProcAbsent": true,
+          "hostname": "b547e8ac3708",
+          "init": "docker-init",
+          "namespace": "pid:[4026533133]",
+          "nativeInvocations": 0,
+          "newProcessesRemaining": {},
+          "orphanIdentity": {
+            "comm": "python3",
+            "ppid": 1,
+            "startTicks": "188241746",
+            "state": "R"
+          },
+          "parentActualArgv": [
+            "/usr/bin/python3",
+            "-B",
+            "-c",
+            "import subprocess,json; p=subprocess.Popen(['/usr/bin/python3', '-B', '-c', 'import time;time.sleep(2)']); print(json.dumps({'grandchildPid':p.pid}),flush=True)"
+          ],
+          "parentExit": 0,
+          "parentPid": 102,
+          "parentReaped": true,
+          "passed": true,
+          "uid": 10001,
+          "zombiesAfter": 0
+        }
+      },
+      "personalComment": "https://github.com/Kwentin3/1c-agent-harness/issues/97#issuecomment-6142147442",
+      "native": 0,
+      "sessions": 0,
+      "exports": 0,
+      "help": 0
+    }
+  },
+  "currentConfigurationBinding": {
+    "protectedHomeLocator": "/home/roman/.local/issue97-current-config/05b6b7cd54224065a15a098d39bf33d2/binding.json",
+    "sha256": "55b07d1657c65df517f7f50c2fbc3895428bfe3b2d79c678c85e56c3d2312ed0",
+    "consumerCopy": "/workspace/1c-harnest/.local/issue97-current-binding/operator-binding.json",
+    "quiescedIbSha256": "a9ccb83b209f8e6e5f886c746d3f02aa7073a4f30b0034d81a1b5810f573cb50",
+    "currentDbCfSha256": "c30267b4b9737a8165eb84b56c65cfb494d7b67dda8912ef670304af78968255",
+    "nativeExtensionListExit": 0,
+    "nativeExtensionListStdoutBytes": 0,
+    "nativeExtensionListStderrBytes": 0,
+    "xmlFiles": 5100,
+    "xmlBytes": 61772537,
+    "byteIdenticalFiles": 5096,
+    "missingFiles": [],
+    "changedFiles": ["ConfigDumpInfo.xml", "Reports/Dashboard/Forms/ReportForm/Ext/Form.xml", "Reports/Dashboard/Forms/ReportForm/Ext/Form/Module.bsl"],
+    "addedFiles": ["Reports/Dashboard/Ext/ObjectModule.bsl"],
+    "startupFilesAndMetadataByteIdentical": true,
+    "dumpInfoChangesExcludingConfigVersion": "Only added Report.Dashboard.ObjectModule; no changed IDs or missing entries",
+    "liveIbStillMatchesCopyAfterExtraction": true,
+    "temporaryWorkersRemaining": 0,
+    "currentCopyNativeAttempts": 4,
+    "retainedRehearsalNativeAttempts": 3,
+    "productSessionCycles": 0,
+    "remainingIssue90BudgetBoundary": "One single-shot export remains; this alone does not guarantee first event -> selection -> later event -> fresh selection with original selection unchanged. No budget expansion."
+  },
+  "ownerApprovedMaintenance": {
+    "authority": "Owner chat 2026-10-13: permits maintenance now; confirms no open user sessions",
+    "owner": "existing 1c-jet-demo.service",
+    "unitSha256": "287c4033486292719be93603330c708f8a8fddc914fa6b121803dc779a56cccd",
+    "scope": "One consistent HOME copy and immediate restore; no standing lifecycle authority",
+    "firstAttemptSeconds": 19.420614635106176,
+    "firstAttemptResult": "No copy: operator incorrectly expected container running after service stop. Service restored; initial old-PID recovery alarm superseded by actual active/new-PID verification.",
+    "successfulWindowSeconds": 18.60350263887085,
+    "copyBytes": 121946112,
+    "copyMode": "0400 within 0700 parent",
+    "receiptLocator": "/home/roman/.local/issue97-current-copy/issue97-copy-9329e50f20f2/receipt.json",
+    "receiptSha256": "bb6c4fe27fafd759d755c23b77baad5a95783d31a0c2a7a2f6a29fe9402ef90a",
+    "serviceRestored": true,
+    "nativeInvocations": 0,
+    "productSessionCycles": 0
+  },
+  "postMaintenanceHermesAcceptance": {
+    "protectedVpsLocator": "/workspace/1c-harnest/.local/issue97-post-maintenance-20261013T100951Z-43512b28/receipt.json",
+    "sha256": "cf40a635e7bdc166b6f1157761c749883dffe5bffaffeee6e6d89ae475e365da",
+    "verdict": "POST_MAINTENANCE_NON_NATIVE_PASS",
+    "currentReferenceIdentityVerified": true,
+    "engineeringBrowserJournalRoutes": "PASS",
+    "authenticatedHEAD": 200,
+    "demoGET": 0,
+    "nativeInvocations": 0,
+    "newProcessesRemaining": 0
+  },
+  "currentCopyRetention": [
+    {"path": "/home/roman/.local/issue97-current-copy", "files": 6, "logicalBytes": 121958011, "allocatedBytes": 121966592},
+    {"path": "/home/roman/.local/issue97-current-config", "files": 5116, "logicalBytes": 80401890, "allocatedBytes": 92741632},
+    {"path": "/home/roman/.local/issue97-config-rehearsal", "files": 13, "logicalBytes": 6601, "allocatedBytes": 32768}
+  ],
+  "ownerAuthClarification": {
+    "source": "owner chat 2026-10-13",
+    "afterHttpAuth": "demo opens immediately; no separate 1C login form",
+    "extraIbPasswordRequired": false,
+    "currentIbRights": "NOT_PROVEN"
+  }
+}
