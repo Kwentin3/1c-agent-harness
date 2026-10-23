@@ -36,6 +36,20 @@ remote_runtime_config=/workspace/1c-agent-harness/.local/one-c-runtime.json
 # Routing only: the companion remains the owner of the closed request contract.
 operation=$(printf '%s' "$token" | base64 --decode | python3 -c 'import json, sys; print(json.load(sys.stdin).get("operation", ""))')
 case "$operation" in
+    eventlog_select|eventlog_page|eventlog_record)
+        # Deployment selects one locally installed data-only companion. Native
+        # capture remains on the admitted home route; no archive fallback.
+        current_companion=${ONE_C_HARNESS_CURRENT_EVENTLOG_COMPANION:-}
+        case "$current_companion" in
+            /*) ;;
+            *) printf '%s\n' 'current eventlog companion is not configured' >&2; exit 69 ;;
+        esac
+        if [ ! -f "$current_companion" ] || [ ! -x "$current_companion" ]; then
+            printf '%s\n' 'current eventlog companion is unavailable' >&2
+            exit 69
+        fi
+        exec "$current_companion" --request-base64 "$token"
+        ;;
     open|narrow|verify)
         # Set by deployment for the admitted business task, never a tool argument.
         remote_cwd=${ONE_C_HARNESS_PROJECT_CWD:-}

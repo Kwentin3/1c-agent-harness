@@ -1,0 +1,26 @@
+{
+  "reviewedHead": "e3cc3cc84bee2a5c949fd504b03cda31b61896db",
+  "reviewId": "dr-ba926b495ec84362",
+  "correctionScope": [
+    "F1 timestamp datetime equality",
+    "F2 actual stale reason propagation",
+    "F3 count/temporal reason separation",
+    "F4 malformed binding mismatch"
+  ],
+  "testCount": 373,
+  "seconds": 157.626,
+  "passed": true,
+  "artifactId": "sha256:d22e95c3317acae51cb0a059333f2ea3917f3ce1bd291f7757556097ea2e52c7",
+  "fullTestLogSha256": "2f53182a6b59724552c6a1c22b514d9368a9e44a49fda0c740d3b983aab24fe6",
+  "nativeInvocations": 0,
+  "sshInvocations": 0,
+  "deployments": 0,
+  "scope": "source/fixtures only; Goal90 PARTIAL; no installed/fresh-session acceptance",
+  "priorCorrectionHead": "1e1ae0d0ab37fcadf9d49457ba2beb32f3adbeeb",
+  "priorCorrectionCi": {
+    "runId": 37615717579,
+    "python3.9": "FAIL unsupported .5 test assumption",
+    "python3.12": "PASS"
+  },
+  "ciRegression": "unsupported ISO fraction stays invalid_request; accepted aliases compare as datetime"
+}

@@ -94,20 +94,19 @@ def _admitted_value(repo_root: Path, snapshot_ref: object) -> tuple[Path, dict[s
         raise SearchBlocked("snapshot_invalid", "SnapshotRef is not admitted") from exc
 
 
-def _fragment(line: str) -> str:
-    compact = line.strip()
-    encoded = compact.encode("utf-8")
+def _fragment(line: str) -> tuple[str, bool]:
+    encoded = line.encode("utf-8")
     if len(encoded) <= MAX_FRAGMENT_BYTES:
-        return compact
+        return line, False
     kept: list[str] = []
     used = len("…".encode("utf-8"))
-    for character in compact:
+    for character in line:
         size = len(character.encode("utf-8"))
         if used + size > MAX_FRAGMENT_BYTES:
             break
         kept.append(character)
         used += size
-    return "".join(kept) + "…"
+    return "".join(kept) + "…", True
 
 
 def _matching_lines(snapshot: Path, entries: dict[str, str], matcher: re.Pattern[str], prefix: str | None) -> Iterator[dict[str, object]]:
@@ -125,9 +124,25 @@ def _matching_lines(snapshot: Path, entries: dict[str, str], matcher: re.Pattern
             text = payload.decode("utf-8")
         except (OSError, UnicodeDecodeError, ValueError) as exc:
             raise SearchBlocked("snapshot_invalid", "Snapshot content is unreadable") from exc
-        for line_number, line in enumerate(text.splitlines(), start=1):
+        utf8_bom = payload.startswith(b"\xef\xbb\xbf")
+        for line_number, raw_line in enumerate(text.splitlines(keepends=True), start=1):
+            if raw_line.endswith("\r\n"):
+                line_ending = "\r\n"
+            elif raw_line[-1] in "\n\r\v\f\x1c\x1d\x1e\x85\u2028\u2029":
+                line_ending = raw_line[-1]
+            else:
+                line_ending = ""
+            line = raw_line[:-len(line_ending)] if line_ending else raw_line
             if matcher.search(line):
-                yield {"fragment": _fragment(line), "line": line_number, "path": relative}
+                fragment, fragment_truncated = _fragment(line)
+                yield {
+                    "fragment": fragment,
+                    "fragmentTruncated": fragment_truncated,
+                    "line": line_number,
+                    "lineEnding": line_ending,
+                    "path": relative,
+                    "utf8Bom": utf8_bom,
+                }
 
 
 def _result(query: str, mode: str, prefix: str | None, results: list[dict[str, object]], truncated: bool) -> dict[str, object]:

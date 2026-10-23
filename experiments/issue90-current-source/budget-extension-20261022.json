@@ -1,0 +1,99 @@
+{
+  "schemaVersion": 1,
+  "issue": 90,
+  "purpose": "Owner-approved task-only limit extension; prepared, not applied",
+  "approvedLimits": {
+    "help": 3,
+    "export": 18,
+    "sessionCycles": 4,
+    "callSeconds": 30,
+    "nativeTotalSeconds": 900
+  },
+  "priorContractSha256": "1322f0668a1d48b447333062bdf569946d32ecf0a75b6528b250d55441cb639e",
+  "candidateContractSha256": "929163f9aabb98aaa878b5672c6f10f901a9eab2e9706413cd27a3c8767a0faa",
+  "contractByteDelta": "Only integer export16->18 and sessionCycles2->4; other bytes preserved",
+  "actualLedgerSha256": "77163ed2ed0b487e55893bdbb79eb5baf36601dd89b658487d504476c330919c",
+  "retainedRows": 20,
+  "retainedExportAttempts": 15,
+  "retainedFailedSessionAttempts": 2,
+  "pendingStarted": 0,
+  "reservedSeconds": 0,
+  "nativeSecondsAlreadySpent": 70.81801239424385,
+  "handlerCanonicalLfSha256": "389185892a1653afabb994c4c9dcc48fb3d0af7ff82a6c564c2ef23f608a2ce0",
+  "handlerChange": "CONTRACT_SHA256 only; ACCOUNTING unchanged",
+  "immutableCorePluginArtifactId": "sha256:c0cb33198c4538830a5577c26fb418c853ea76987d0c3d23b2286fbd0ee8469f",
+  "corePluginReleaseBytesChanged": false,
+  "rehearsal": {
+    "cases": [
+      {
+        "final_export_count": 16,
+        "final_session_count": 2,
+        "limits": {
+          "callSeconds": 30,
+          "export": 16,
+          "help": 3,
+          "nativeTotalSeconds": 900,
+          "sessionCycles": 2
+        },
+        "next_export": "budget_exhausted",
+        "next_session": "budget_exhausted",
+        "original20_rows_exact": true,
+        "pending_started": 0,
+        "preserved_failed_sessions": 2,
+        "reserved_seconds": 0,
+        "synthetic_exports_added": 1,
+        "synthetic_sessions_added": 0
+      },
+      {
+        "final_export_count": 18,
+        "final_session_count": 4,
+        "limits": {
+          "callSeconds": 30,
+          "export": 18,
+          "help": 3,
+          "nativeTotalSeconds": 900,
+          "sessionCycles": 4
+        },
+        "next_export": "budget_exhausted",
+        "next_session": "budget_exhausted",
+        "original20_rows_exact": true,
+        "pending_started": 0,
+        "preserved_failed_sessions": 2,
+        "reserved_seconds": 0,
+        "synthetic_exports_added": 3,
+        "synthetic_sessions_added": 2
+      }
+    ],
+    "handler_sha256": "389185892a1653afabb994c4c9dcc48fb3d0af7ff82a6c564c2ef23f608a2ce0",
+    "input_ledger_sha256": "77163ed2ed0b487e55893bdbb79eb5baf36601dd89b658487d504476c330919c",
+    "input_rows": 20,
+    "max_accounting_stdin_bytes": 484,
+    "new_contract_sha256": "929163f9aabb98aaa878b5672c6f10f901a9eab2e9706413cd27a3c8767a0faa",
+    "old_contract_sha256": "1322f0668a1d48b447333062bdf569946d32ecf0a75b6528b250d55441cb639e",
+    "production_writeback": false,
+    "public_reserve_settle_executed": true,
+    "real_export_calls": 0,
+    "real_native_calls": 0,
+    "status": "PASS",
+    "temp_cleanup": true,
+    "transaction_mocked": false,
+    "transport_only_redirected_to_real_accounting_child": true
+  },
+  "isolation": {
+    "image": "sha256:5788b36f195e1710bda384ddcc0e5914492f063271c2839668888289245f284c",
+    "network": "none",
+    "uid": 1000,
+    "source_mount": "readonly",
+    "secrets_mounted": false,
+    "one_c_mounted": false,
+    "exit_code": 0
+  },
+  "actualContractWriteback": false,
+  "actualLedgerWriteback": false,
+  "actualNativeCalls": 0,
+  "actualExportCalls": 0,
+  "actualSessionAttempts": 0,
+  "operatorHelper": "ignored h14-raise-budget.remote.py; default preview, explicit apply; rollback exact backup only while unchanged ledger CAS holds",
+  "operatorHelperSha256": "d43640153457c5c7f8570a71f53d0dff1e320b966a26ddc1902fe7138caff284",
+  "acceptanceBoundary": "Tempfile accounting proof; not product UI/native acceptance"
+}

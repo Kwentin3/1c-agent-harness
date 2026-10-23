@@ -1,0 +1,74 @@
+{
+  "schemaVersion": 1,
+  "issue": 90,
+  "verdict": "PARTIAL / CURRENT_JOURNAL_ACCESS_BLOCKED",
+  "binarySha256": "62e72e15bb4550c4ffcf421f962c27fd1e1ddde1ba31e5bc0d7c9e0c2352dde7",
+  "calls": [
+    {
+      "n": 1,
+      "kind": "help",
+      "args": [
+        "--version"
+      ],
+      "startedAt": "2026-10-07T08:32:54.067674+00:00",
+      "status": "COMPLETED",
+      "exit": 0,
+      "durationSeconds": 0.46928298310376704,
+      "stdoutSha256": "ab2742371dd4ff9bd2dc32b4a6396128b1ea60169f33cec0a15f38f81f8baeb7",
+      "stderrSha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    },
+    {
+      "n": 2,
+      "kind": "help",
+      "args": [
+        "help",
+        "eventlog"
+      ],
+      "startedAt": "2026-10-07T08:32:54.537560+00:00",
+      "status": "COMPLETED",
+      "exit": 0,
+      "durationSeconds": 0.06507146591320634,
+      "stdoutSha256": "900f1b13df6c8120cb7415a3e90213e4a7997936e447e3b2a94ae857c4580999",
+      "stderrSha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    }
+  ],
+  "budget": {
+    "helpUsed": 2,
+    "helpLimit": 3,
+    "exportUsed": 0,
+    "exportLimit": 12,
+    "sessionCyclesUsed": 0,
+    "sessionCyclesLimit": 2,
+    "nativeSecondsUsed": 0.5343544490169734,
+    "nativeSecondsLimit": 900,
+    "perCallSecondsLimit": 30
+  },
+  "facts": {
+    "diagnosticSshUid": 10001,
+    "currentDemoIbVisible": false,
+    "currentDemoJournalVisible": false,
+    "dockerSocketVisible": false,
+    "sudoAvailable": false,
+    "retainedOperatorIbAccess": "permission_denied",
+    "publicUnauthenticatedHttpStatus": 401,
+    "currentBinding": "NOT_ESTABLISHED",
+    "installedPositiveSelectionPageRecord": "NOT_RUN",
+    "sourceConsistencyFreshness": "UNKNOWN",
+    "registeredTechlogInfo": "PASS / historical retained source"
+  },
+  "changes": {
+    "sourceImplementation": false,
+    "deployment": false,
+    "restart": false,
+    "newRights": false,
+    "revokedKeyUsed": false,
+    "businessWrites": false,
+    "legacyExport": false
+  },
+  "limits": [
+    "Filesystem discovery proves the admitted diagnostic namespace, not the current host/container state.",
+    "No export of the current source was possible, and no archived export substituted for it.",
+    "Help does not guarantee an atomic snapshot, flush fence, or rotation completeness.",
+    "Current demo bytes could not be independently read; no current-demo hash continuity is claimed."
+  ]
+}

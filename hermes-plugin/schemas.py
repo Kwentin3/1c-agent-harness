@@ -20,6 +20,22 @@ _RELATIVE_FILE = {
     "maxLength": 512,
     "description": "Project-relative task artifact path. Absolute and parent paths are rejected by the companion.",
 }
+_TASK_REF = {
+    "type": "object",
+    "description": "Exact TaskRef returned by one_c_stage_task; never caller-selected paths.",
+    "properties": {
+        "schemaVersion": {"type": "integer", "const": 1},
+        "taskId": {"type": "string", "pattern": r"^[0-9a-f]{8}-[0-9a-f]{4}-4[0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}(?![\s\S])"},
+        "manifestSha256": {"type": "string", "pattern": r"^[0-9a-f]{64}(?![\s\S])"},
+    },
+    "required": ["schemaVersion", "taskId", "manifestSha256"],
+    "additionalProperties": False,
+}
+_TASK_ORACLE = {
+    "type": "string",
+    "pattern": r"^experiments/(?!\.{1,2}/)[^/\\:\x00\r\n]+/oracle\.py(?![\s\S])",
+    "description": "Existing read-only experiments/<single-task>/oracle.py locator under the deployment-selected trusted oracle root. The companion checks the file; inline or arbitrary oracle Python is forbidden.",
+}
 
 
 def _tool(name: str, properties: dict[str, object], required: list[str], description: str) -> dict[str, object]:
@@ -61,20 +77,37 @@ TOOLS = (
         ["snapshotRef", "query"],
         "Search only the admitted SnapshotRef and return bounded matches with stable source locators.",
     ),
-    _tool(
-        "one_c_native_verify",
-        {
-            "snapshotRef": _SNAPSHOT_REF,
-            "request": _RELATIVE_FILE,
-            "productionPatch": _RELATIVE_FILE,
-            "instrumentationPatch": _RELATIVE_FILE,
-            "oracle": _RELATIVE_FILE,
-            "receipt": _RELATIVE_FILE,
-            "timeoutSeconds": {"type": "integer", "minimum": 1, "maximum": 480},
+    {
+        "name": "one_c_native_verify",
+        "description": "Run the canonical shared_task_route on the admitted SnapshotRef and return a bounded receipt summary. Pass the exact staged taskRef; the seven-argument path form is accepted only in deployments without an explicitly selected oracle root.",
+        "parameters": {
+            "type": "object",
+            "oneOf": [
+                {
+                    "properties": {
+                        "snapshotRef": _SNAPSHOT_REF,
+                        "request": _RELATIVE_FILE,
+                        "productionPatch": _RELATIVE_FILE,
+                        "instrumentationPatch": _RELATIVE_FILE,
+                        "oracle": _RELATIVE_FILE,
+                        "receipt": _RELATIVE_FILE,
+                        "timeoutSeconds": {"type": "integer", "minimum": 1, "maximum": 480},
+                    },
+                    "required": ["snapshotRef", "request", "productionPatch", "instrumentationPatch", "oracle", "receipt", "timeoutSeconds"],
+                    "additionalProperties": False,
+                },
+                {
+                    "properties": {
+                        "snapshotRef": _SNAPSHOT_REF,
+                        "taskRef": _TASK_REF,
+                        "timeoutSeconds": {"type": "integer", "minimum": 1, "maximum": 480},
+                    },
+                    "required": ["snapshotRef", "taskRef", "timeoutSeconds"],
+                    "additionalProperties": False,
+                },
+            ],
         },
-        ["snapshotRef", "request", "productionPatch", "instrumentationPatch", "oracle", "receipt", "timeoutSeconds"],
-        "Run the canonical one-call native route on the admitted SnapshotRef and return a bounded receipt summary.",
-    ),
+    },
     _tool(
         "one_c_observation_info", {}, [],
         "Inspect bounded technological-journal coverage and report the source timezone, observed interval, events and filters. For a later observe call in that same source timezone, preserve the returned calendar date/time and fractional seconds but omit its Z or numeric offset.",
@@ -161,4 +194,16 @@ TOOLS = (
             ],
         },
     },
+    _tool(
+        "one_c_stage_task",
+        {
+            "snapshotRef": _SNAPSHOT_REF,
+            "request": {"type": "object", "description": "Task request JSON data; the companion measures its serialized UTF-8 byte size."},
+            "productionPatch": {"type": "string", "minLength": 1},
+            "instrumentationPatch": {"type": "string", "minLength": 1},
+            "oracle": _TASK_ORACLE,
+        },
+        ["snapshotRef", "request", "productionPatch", "instrumentationPatch", "oracle"],
+        "Stage task data only, returning a closed taskRef. The companion enforces 4 KiB UTF-8 bytes per request/patch and 12 KiB combined; staging does not apply patches, run native code or start a service.",
+    ),
 )

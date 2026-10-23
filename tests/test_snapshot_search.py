@@ -20,7 +20,7 @@ def digest(payload: bytes) -> str:
     return hashlib.sha256(payload).hexdigest()
 
 
-def create_target(root: Path) -> tuple[Path, Path, Path]:
+def create_target(root: Path, *, module_text: str | None = None) -> tuple[Path, Path, Path]:
     snapshot = root / ".local/targets/sample/snapshot"
     files = {
         "Configuration.xml": (
@@ -29,7 +29,9 @@ def create_target(root: Path) -> tuple[Path, Path, Path]:
             "</Properties></Configuration></MetaDataObject>"
         ),
         "Documents/SalesInvoice.xml": "<Attribute><Name>PaymentDueDate</Name></Attribute>",
-        "Documents/SalesInvoice/Ext/ObjectModule.bsl": "Procedure Posting(Cancel)\nEndProcedure\n",
+        "Documents/SalesInvoice/Ext/ObjectModule.bsl": (
+            "Procedure Posting(Cancel)\nEndProcedure\n" if module_text is None else module_text
+        ),
         "Documents/SalesInvoice/Templates/PrintData/Ext/Template.xml": (
             "<field><dataPath>PaymentDueDate</dataPath></field>"
         ),
@@ -37,7 +39,7 @@ def create_target(root: Path) -> tuple[Path, Path, Path]:
     for relative, text in files.items():
         path = snapshot / relative
         path.parent.mkdir(parents=True, exist_ok=True)
-        path.write_text(text, encoding="utf-8")
+        path.write_bytes(text.encode("utf-8"))
     manifest = target_admission.tree_manifest(snapshot)
     contract = {
         "schemaVersion": 2,
@@ -101,8 +103,11 @@ class SnapshotSearchTests(unittest.TestCase):
             self.assertEqual(xml.returncode, 0, xml.stderr)
             self.assertEqual(json.loads(bsl.stdout)["results"], [{
                 "fragment": "Procedure Posting(Cancel)",
+                "fragmentTruncated": False,
                 "line": 1,
+                "lineEnding": "\n",
                 "path": "Documents/SalesInvoice/Ext/ObjectModule.bsl",
+                "utf8Bom": False,
             }])
             self.assertEqual(
                 [(item["path"], item["line"]) for item in json.loads(xml.stdout)["results"]],
@@ -112,6 +117,98 @@ class SnapshotSearchTests(unittest.TestCase):
                 ],
             )
             self.assertEqual(before, (target_admission.tree_manifest(snapshot), manifest.read_bytes()))
+
+    def test_bom_crlf_whitespace_and_unterminated_eof_round_trip_without_source_changes(self) -> None:
+        source = "\ufeffProcedure Posting(Cancel)\r\n\tValue = 1;  \t\r\n\t\r\nEndProcedure\r\n// EOF  "
+        relative = "Documents/SalesInvoice/Ext/ObjectModule.bsl"
+        with tempfile.TemporaryDirectory() as temporary:
+            root = Path(temporary)
+            snapshot, manifest, ref = create_target(root, module_text=source)
+            before = (target_admission.tree_manifest(snapshot), manifest.read_bytes())
+
+            completed = run_search(root, ref, "^", "--mode", "regex", "--path-prefix", relative)
+
+            self.assertEqual(completed.returncode, 0, completed.stderr)
+            payload = json.loads(completed.stdout)
+            hits = payload["results"]
+            self.assertFalse(payload["truncated"])
+            self.assertEqual([hit["line"] for hit in hits], [1, 2, 3, 4, 5])
+            self.assertEqual([hit["path"] for hit in hits], [relative] * 5)
+            self.assertEqual([hit["lineEnding"] for hit in hits], ["\r\n"] * 4 + [""])
+            self.assertTrue(all(hit["utf8Bom"] for hit in hits))
+            self.assertTrue(all(not hit["fragmentTruncated"] for hit in hits))
+            self.assertEqual(hits[2]["fragment"], "\t")
+            reconstructed = "".join(hit["fragment"] + hit["lineEnding"] for hit in hits).encode("utf-8")
+            self.assertEqual(reconstructed, source.encode("utf-8"))
+            self.assertEqual(before, (target_admission.tree_manifest(snapshot), manifest.read_bytes()))
+
+    def test_all_splitlines_separators_keep_line_numbers_and_do_not_enter_query_matching(self) -> None:
+        separators = ["\r\n", "\n", "\r", "\v", "\f", "\x1c", "\x1d", "\x1e", "\x85", "\u2028", "\u2029"]
+        bodies = [f"Line {number}" for number in range(1, len(separators) + 2)]
+        source = "".join(body + ending for body, ending in zip(bodies, separators + [""]))
+        relative = "Documents/SalesInvoice/Ext/ObjectModule.bsl"
+        with tempfile.TemporaryDirectory() as temporary:
+            root = Path(temporary)
+            _, _, ref = create_target(root, module_text=source)
+
+            completed = run_search(root, ref, "^", "--mode", "regex", "--path-prefix", relative)
+            ending_query = run_search(root, ref, r"[\r\n\v\f\x1c-\x1e\x85\u2028\u2029]", "--mode", "regex", "--path-prefix", relative)
+
+            self.assertEqual(completed.returncode, 0, completed.stderr)
+            hits = json.loads(completed.stdout)["results"]
+            self.assertEqual([hit["line"] for hit in hits], list(range(1, len(bodies) + 1)))
+            self.assertEqual([hit["fragment"] for hit in hits], bodies)
+            self.assertEqual([hit["lineEnding"] for hit in hits], separators + [""])
+            self.assertTrue(all(not hit["utf8Bom"] for hit in hits))
+            self.assertEqual(ending_query.returncode, 0, ending_query.stderr)
+            self.assertEqual(json.loads(ending_query.stdout)["results"], [])
+
+    def test_multibyte_fragments_preserve_body_and_mark_only_actual_byte_truncation(self) -> None:
+        complete = "\t" + "\u754c" * 169 + "  \t "
+        oversized = "\t" + "\u754c" * 170 + "  "
+        bodies = [complete, oversized, "\tLiteral ellipsis \u2026  "]
+        self.assertEqual(len(complete.encode("utf-8")), snapshot_search.MAX_FRAGMENT_BYTES)
+        with tempfile.TemporaryDirectory() as temporary:
+            root = Path(temporary)
+            _, _, ref = create_target(root, module_text="\r\n".join(bodies))
+
+            completed = run_search(root, ref, "^", "--mode", "regex", "--path-prefix", "Documents/SalesInvoice/Ext")
+
+            self.assertEqual(completed.returncode, 0, completed.stderr)
+            payload = json.loads(completed.stdout)
+            hits = payload["results"]
+            self.assertFalse(payload["truncated"])
+            self.assertEqual([hit["fragmentTruncated"] for hit in hits], [False, True, False])
+            self.assertEqual(hits[0]["fragment"], complete)
+            self.assertEqual(hits[1]["fragment"], "\t" + "\u754c" * 169 + "\u2026")
+            self.assertEqual(hits[2]["fragment"], bodies[2])
+            self.assertTrue(all(len(hit["fragment"].encode("utf-8")) <= snapshot_search.MAX_FRAGMENT_BYTES for hit in hits))
+
+    def test_line_metadata_counts_toward_the_response_byte_budget(self) -> None:
+        relative = "Documents/SalesInvoice/Ext/ObjectModule.bsl"
+        with tempfile.TemporaryDirectory() as temporary:
+            root = Path(temporary)
+            _, _, ref = create_target(root, module_text="\ufeff\tPosting();  \t\r\n")
+            args = ("--mode", "regex", "--path-prefix", relative)
+            baseline = run_search(root, ref, "^", *args)
+            self.assertEqual(baseline.returncode, 0, baseline.stderr)
+            baseline_payload = json.loads(baseline.stdout)
+            self.assertEqual(len(baseline_payload["results"]), 1)
+            self.assertIn("fragmentTruncated", baseline_payload["results"][0])
+            self.assertIn("lineEnding", baseline_payload["results"][0])
+            self.assertIn("utf8Bom", baseline_payload["results"][0])
+            maximum = len(baseline.stdout.encode("utf-8"))
+
+            exact = run_search(root, ref, "^", *args, "--max-bytes", str(maximum))
+            bounded = run_search(root, ref, "^", *args, "--max-bytes", str(maximum - 1))
+
+            self.assertEqual(exact.returncode, 0, exact.stderr)
+            self.assertEqual(exact.stdout, baseline.stdout)
+            self.assertFalse(baseline_payload["truncated"])
+            self.assertEqual(bounded.returncode, 0, bounded.stderr)
+            self.assertLessEqual(len(bounded.stdout.encode("utf-8")), maximum - 1)
+            self.assertEqual(json.loads(bounded.stdout)["results"], [])
+            self.assertTrue(json.loads(bounded.stdout)["truncated"])
 
     def test_result_is_byte_identical_deterministic_and_explicitly_truncated(self) -> None:
         with tempfile.TemporaryDirectory() as temporary:
@@ -193,8 +290,11 @@ class SnapshotSearchTests(unittest.TestCase):
             self.assertEqual(completed.returncode, 0, completed.stderr)
             self.assertEqual(json.loads(completed.stdout)["results"], [{
                 "fragment": "<field><dataPath>PaymentDueDate</dataPath></field>",
+                "fragmentTruncated": False,
                 "line": 1,
+                "lineEnding": "",
                 "path": "Documents/SalesInvoice/Templates/PrintData/Ext/Template.xml",
+                "utf8Bom": False,
             }])
 
     def test_regex_invalid_request_and_unadmitted_ref_fail_closed_without_paths_or_trace(self) -> None:

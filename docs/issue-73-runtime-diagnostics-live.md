@@ -1,5 +1,10 @@
 # Issue #73 — first live read-only Runtime Diagnostics slice
 
+Актуальная граница: source #74 MERGED; ниже сохранён исторический retained-receipt
+canary, не текущая inventory/deployment проверка. Первоначальный широкий live
+контракт не объявлен выполненным автоматически; [disposition и owner decision](issue90-debt-disposition.md).
+Новые ТЖ/ЖР приняты отдельно; свежий источник текущей ИБ — #90.
+
 ## Chosen source
 
 The first provider is `native_run_history`. It reads only retained result receipts

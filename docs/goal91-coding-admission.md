@@ -9,6 +9,9 @@ exact stop/PID0/oldPID absent доказаны; прежние service/route в�
 Native owner login/Refresh/confirmed Exit завершены 06:37UTC. Timers inactive.
 Для нового native потребуется новый допуск; текущее окно закрыто и бюджет исчерпан.
 
+#91 CLOSED; source #86/#88 MERGED. [Post-merge SHA/CI и disposition](issue90-debt-disposition.md).
+Installed/executed identity выше не заменяется merge SHA; новая native работа не разрешена.
+
 ## Текущее исправление CF materializer
 
 Первый registered cold `one_c_open` установленного кандидата

@@ -139,7 +139,8 @@ def _load_settings(*, require_epf: bool = True) -> Settings:
     )
 
 
-def _validate_request(value: object) -> dict[str, Any]:
+def validate_request(value: object) -> dict[str, Any]:
+    """Admit the closed exporter request before a deployment invokes its source."""
     if not isinstance(value, dict) or set(value) != _REQUEST_KEYS:
         raise ExportFailure("invalid_request")
     if value.get("schemaVersion") != 1 or value.get("operation") != "unloadEventLog":
@@ -284,7 +285,7 @@ def _write_request(root: Path, request: dict[str, Any]) -> None:
 
 
 def run_once(request: object) -> tuple[bytes, dict[str, object]]:
-    admitted = _validate_request(request)
+    admitted = validate_request(request)
     settings = _load_settings()
     started = time.monotonic()
     with tempfile.TemporaryDirectory(prefix="request-", dir=settings.work_root) as raw_root:
@@ -306,8 +307,16 @@ def run_once(request: object) -> tuple[bytes, dict[str, object]]:
             raise ExportFailure("source_unavailable") from None
         assert process.stderr is not None
         stderr = _BoundedStderr()
-        reader = threading.Thread(target=stderr.consume, args=(process.stderr,), daemon=True)
-        reader.start()
+        try:
+            reader = threading.Thread(target=stderr.consume, args=(process.stderr,), daemon=True)
+            reader.start()
+        except RuntimeError:
+            # The process is already owned even when stderr admission fails.
+            try:
+                _stop_group(process)
+            finally:
+                process.stderr.close()
+            raise ExportFailure("source_unavailable") from None
         deadline = started + _TIMEOUT_SECONDS
         export_started: float | None = None
         export_returned: float | None = None
