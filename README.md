@@ -247,8 +247,9 @@ Operator обязан pin-ить оба install sources к одному immutabl
 
 В исходниках добавлен `one_c_stage_task`: exact `snapshotRef`, JSON-object request,
 две текстовые правки и существующий readonly locator `experiments/<task>/oracle.py`
-превращаются в связанный хешами `taskRef`. Request и каждая правка ограничены
-4 KiB UTF-8, весь запрос companion — 16 KiB. Этот шаг сохраняет только данные;
+превращаются в связанный хешами `taskRef`. Request ограничен 4 KiB UTF-8,
+каждая правка — 8 KiB, суммарные данные — 12 KiB, весь запрос companion —
+16 KiB с JSON escaping и SnapshotRef. Этот шаг сохраняет только данные;
 он не применяет правки и не принимает тело Python-проверки. Затем
 `one_c_native_verify` принимает exact `snapshotRef`, `taskRef` и `timeoutSeconds`
 и вызывает прежний shared task route. Старая форма с семью аргументами сохранена

@@ -67,6 +67,45 @@ class CompanionTaskArtifactTests(unittest.TestCase):
         self.assertFalse((self.root / resolved["receipt_path"]).exists())
         self.assertEqual(target_admission.tree_manifest(self.snapshot), self.source_before)
 
+    def test_accepted_issue69_inputs_cross_stage_without_rewriting_or_native_execution(self) -> None:
+        # Staging is data admission, not application of this Jet patch to the
+        # synthetic admitted snapshot. The later native acceptance uses real Jet.
+        package = Path(__file__).resolve().parents[1] / "experiments/issue69-transfer-basis"
+        production = (package / "exact-production.patch").read_bytes()
+        instrumentation = (package / "exact-instrumentation.patch").read_bytes()
+        self.assertEqual(hashlib.sha256(production).hexdigest(),
+            "f1ddfef9d220d723d1279b82313b65328339f70ea05cb6651ee9498b041ce42f")
+        self.assertEqual(hashlib.sha256(instrumentation).hexdigest(),
+            "9639f0f21fbe3a97f90b7ecefe37f41e78212c18ba6d95cfe403ed3447eb285d")
+        self.assertEqual(len(instrumentation), 7406)
+        self.assertGreater(len(instrumentation), 4096)
+        self.assertLessEqual(len(instrumentation), task_artifacts.MAX_PATCH_BYTES)
+        locator = "experiments/issue69-transfer-basis/oracle.py"
+        oracle = self.root / locator
+        oracle.parent.mkdir(parents=True)
+        oracle_bytes = (package / "oracle.py").read_bytes()
+        oracle.write_bytes(oracle_bytes)
+        oracle.chmod(0o444)
+        arguments = {"snapshotRef": self.snapshot_ref,
+            "request": json.loads((package / "request.json").read_bytes()),
+            "productionPatch": production.decode("utf-8"),
+            "instrumentationPatch": instrumentation.decode("utf-8"), "oracle": locator}
+        wire = json.dumps({"schemaVersion": 1, "operation": "stage_task", "arguments": arguments},
+            ensure_ascii=False, sort_keys=True, separators=(",", ":")).encode("utf-8")
+        self.assertLessEqual(len(wire), companion.MAX_REQUEST_BYTES)
+        with mock.patch.object(companion.shared_task_route, "run_task") as native:
+            response = companion.execute(wire, self.root)
+        native.assert_not_called()
+        self.assertEqual(response["status"], "ok", response)
+        resolved = self.resolve(response["taskRef"])
+        self.assertEqual((self.root / resolved["patch_paths"][0][1]).read_bytes(), production)
+        self.assertEqual((self.root / resolved["patch_paths"][1][1]).read_bytes(), instrumentation)
+        self.assertEqual(json.loads((self.root / resolved["request_path"]).read_bytes()), arguments["request"])
+        self.assertEqual((self.root / resolved["oracle_path"]).read_bytes(), oracle_bytes)
+        self.assertFalse((self.root / resolved["receipt_path"]).exists())
+        self.assertFalse((self.root / ".local/prepared").exists())
+        self.assertEqual(target_admission.tree_manifest(self.snapshot), self.source_before)
+
     def test_staged_verify_uses_existing_runner_once_under_real_lock_then_refuses_replay(self) -> None:
         reference = self.stage()
         resolved = self.resolve(reference)

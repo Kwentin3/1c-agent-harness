@@ -15,7 +15,7 @@ from .target_admission import (
 __all__ = ["stage_task", "resolve_task"]
 
 MAX_REQUEST_BYTES = 4096
-MAX_PATCH_BYTES = 4096
+MAX_PATCH_BYTES = 8192
 MAX_INPUT_BYTES = 12288
 MAX_ORACLE_BYTES = 65536
 _MAX_MANIFEST_BYTES = 16384

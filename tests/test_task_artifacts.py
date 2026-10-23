@@ -264,8 +264,22 @@ class TaskArtifactsTests(unittest.TestCase):
         self.assertEqual(sum((task / name).stat().st_size for name in ("request.json", "production.patch", "instrumentation.patch")), 12288)
         self.resolve(reference)
 
+    def test_each_patch_accepts_eight_kib_of_utf8_bytes_without_raising_total_budget(self) -> None:
+        for patch in ("p" * 8192, "\u00e9" * 4096):
+            with self.subTest(characters=len(patch)):
+                reference = self.stage(request={"x": ""}, production_patch=patch,
+                    instrumentation_patch="i" * 4088)
+                task = self.task(reference)
+                self.assertEqual((task / "production.patch").read_bytes(), patch.encode("utf-8"))
+                self.assertEqual(sum((task / name).stat().st_size for name in
+                    ("request.json", "production.patch", "instrumentation.patch")), 12288)
+                self.resolve(reference)
+
     def test_over_budget_inputs_fail_before_task_writes(self) -> None:
-        for overrides in ({"request": {"x": "a" * 4089}}, {"production_patch": "p" * 4097}, {"instrumentation_patch": "\u00e9" * 2049}):
+        for overrides in ({"request": {"x": "a" * 4089}}, {"production_patch": "p" * 8193},
+                          {"instrumentation_patch": "\u00e9" * 4097},
+                          {"request": {"x": "a" * 4088}, "production_patch": "p" * 8192,
+                           "instrumentation_patch": "i"}):
             with self.subTest(overrides=list(overrides)), self.assertRaises(ValueError):
                 self.stage(**overrides)
         self.assertFalse((self.root / ".local/task-artifacts").exists())

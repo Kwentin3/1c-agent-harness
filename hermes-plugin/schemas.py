@@ -216,6 +216,6 @@ TOOLS = (
             "oracle": _TASK_ORACLE,
         },
         ["snapshotRef", "request", "productionPatch", "instrumentationPatch", "oracle"],
-        "Stage task data only, returning a closed taskRef. The companion enforces 4 KiB UTF-8 bytes per request/patch and 12 KiB combined; staging does not apply patches, run native code or start a service.",
+        "Stage task data only, returning a closed taskRef. The companion enforces 4 KiB UTF-8 bytes for the request, 8 KiB per patch and 12 KiB combined; the complete companion request remains limited to 16 KiB. Staging does not apply patches, run native code or start a service.",
     ),
 )
