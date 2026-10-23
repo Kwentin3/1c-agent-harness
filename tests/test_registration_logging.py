@@ -229,6 +229,39 @@ class RegistrationPolicyTests(unittest.TestCase):
                 self.assertEqual((stopped["status"], stopped["configurationState"]), ("ok", "restored"))
                 self.assertEqual(self.api.levels, original)
 
+    def test_structured_unknown_save_and_refused_reconciliation_do_not_finish_or_repeat_save(self):
+        from one_c_harness.registration_web import NativeWebError
+        started = self.control('start', profile='diagnostic')
+        def lose_reply(request):
+            raise NativeWebError('native_exit_unproven', {
+                'operationOutcome': 'unknown', 'saveAttempted': True,
+                'primaryReasonCode': None, 'platformReasonCode': None,
+                'exitReasonCode': 'native_exit_unproven', 'cleanupReasonCode': None,
+            })
+        self.api.after_set = lose_reply
+        with self.assertRaises(NativeWebError) as raised:
+            self.control('stop', capture_ref=started['captureRef'])
+        self.assertEqual(raised.exception.diagnosis['operationOutcome'], 'unknown')
+        retained = self.state_bytes()
+        self.assertEqual(self.state()['phase'], 'restoring')
+        self.api.after_set = None
+        refusal = NativeWebError('source_timeout', {
+            'operationOutcome': 'refused', 'saveAttempted': False,
+            'primaryReasonCode': 'source_timeout', 'platformReasonCode': 'training_connection_limit',
+            'exitReasonCode': 'native_exit_unproven', 'cleanupReasonCode': None,
+        })
+        failed_get = Mock(side_effect=refusal)
+        with self.assertRaises(NativeWebError) as raised:
+            registration.control('stop', failed_get, self.root, TARGET, capture_ref=started['captureRef'])
+        self.assertEqual(raised.exception.diagnosis['platformReasonCode'], 'training_connection_limit')
+        self.assertEqual(self.state_bytes(), retained)
+        failed_get.assert_called_once_with({'action': 'get'})
+        self.api.calls.clear()
+        restored = self.control('stop', capture_ref=started['captureRef'])
+        self.assertEqual(restored['configurationState'], 'restored')
+        self.assertEqual(self.state()['phase'], 'restored')
+        self.assertEqual(self.api.calls, [{'action': 'get'}])
+
     def test_final_state_write_failure_before_or_after_replace_recovers_without_native_rewrite(self):
         for committed in (False, True):
             with self.subTest(committed=committed):

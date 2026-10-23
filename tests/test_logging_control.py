@@ -30,6 +30,36 @@ def _plugin():
 
 
 class LoggingBoundaryTests(unittest.TestCase):
+    def test_diagnosis_is_closed_bounded_and_cannot_turn_unknown_save_into_success(self):
+        diagnosis = {'operationOutcome': 'unknown', 'saveAttempted': True,
+                     'primaryReasonCode': 'source_timeout', 'platformReasonCode': 'training_connection_limit',
+                     'exitReasonCode': 'native_exit_unproven', 'cleanupReasonCode': None}
+        response = dict(status='blocked', state='unknown', journal='registration', reasonCode='source_timeout',
+                        capabilities=dict(status=False, start=False, stop=False), diagnosis=diagnosis)
+        request = {'action': 'status', 'journal': 'registration'}
+        self.assertEqual(logging_control._project(json.dumps(response).encode(), request)['diagnosis'], diagnosis)
+        for field, value in [('operationOutcome', 'refused'), ('saveAttempted', False),
+                             ('platformReasonCode', 'inferred_from_timeout'), ('primaryReasonCode', '/private/secret'),
+                             ('cleanupReasonCode', 'x' * 10000), ('private', 'customer data')]:
+            with self.subTest(field=field), self.assertRaises(ValueError):
+                logging_control._project(json.dumps({**response, 'diagnosis': {**diagnosis, field: value}}).encode(), request)
+        with self.assertRaises(ValueError):
+            logging_control._project(json.dumps({**response, 'status': 'ok', 'targetRef': TARGET}).encode(), request)
+        with self.assertRaises(ValueError):
+            logging_control._project(json.dumps({**response, 'journal': 'technological'}).encode(),
+                                     {'action': 'status', 'journal': 'technological'})
+
+    def test_confirmed_set_with_shutdown_failure_stays_blocked_but_keeps_completed_fact(self):
+        diagnosis = {'operationOutcome': 'completed', 'saveAttempted': True,
+                     'primaryReasonCode': None, 'platformReasonCode': None,
+                     'exitReasonCode': None, 'cleanupReasonCode': 'browser_cleanup_failed'}
+        response = {'status': 'blocked', 'state': 'unknown', 'journal': 'registration', 'reasonCode': 'browser_cleanup_failed',
+                    'capabilities': {'start': False, 'stop': False, 'status': False}, 'diagnosis': diagnosis}
+        result = logging_control._project(json.dumps(response).encode(), {'action': 'status', 'journal': 'registration'})
+        self.assertEqual(result['diagnosis'], diagnosis)
+        self.assertEqual((result['status'], result['reasonCode']), ('blocked', 'browser_cleanup_failed'))
+        self.assertFalse(any(result['capabilities'].values()))
+
     def test_successful_projection_requires_exact_request_refs(self):
         response = dict(status="ok", state="configured", journal="technological", targetRef=TARGET,
                         captureRef=CAPTURE, capabilities=dict(status=True, start=True, stop=True))
@@ -196,6 +226,21 @@ class LoggingExecutableTests(unittest.TestCase):
         self.assertEqual(response["capabilityVersion"], CAPABILITY_VERSION)
         self.assertEqual(response["operation"], "logging_control")
         self.assertEqual(response["reasonCode"], "source_unavailable")
+
+    def test_real_backend_pipe_and_companion_preserve_separate_failed_operation_diagnosis(self):
+        from one_c_harness import companion
+        diagnosis = {'operationOutcome': 'unknown', 'saveAttempted': True,
+                     'primaryReasonCode': 'source_timeout', 'platformReasonCode': 'training_connection_limit',
+                     'exitReasonCode': 'native_exit_unproven', 'cleanupReasonCode': None}
+        failed = {'status': 'blocked', 'state': 'unknown', 'journal': 'registration', 'reasonCode': 'source_timeout',
+                  'capabilities': {'start': False, 'stop': False, 'status': False}, 'diagnosis': diagnosis}
+        # Only the external fixed owner is replaced; real subprocess pipes,
+        # bounds, projection and companion envelope remain on the product route.
+        with self.backend('import json,sys\njson.load(sys.stdin)\nprint(' + repr(json.dumps(failed)) + ')\n'):
+            response = companion.execute(json.dumps({'schemaVersion': 1, 'operation': 'logging_control',
+                                                      'arguments': {'action': 'status', 'journal': 'registration'}}).encode(), self.root)
+        self.assertEqual(response['diagnosis'], diagnosis)
+        self.assertEqual((response['status'], response['state'], response['reasonCode']), ('blocked', 'unknown', 'source_timeout'))
 
 
 if __name__ == "__main__":

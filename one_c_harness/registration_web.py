@@ -12,6 +12,24 @@ _LEVELS = ('Error', 'Warning', 'Information', 'Note')
 _RADIOS = ('form0_FollowingEvents', *(f'form0_FollowingEvents#{n}#radio' for n in range(1, 5)))
 _LABELS = ('Do not register', 'Register errors', 'Register errors and warnings',
            'Register errors, warnings, and information', 'Register errors, warnings, information, and comments')
+_PRIMARY_REASONS = {'source_timeout', 'native_form_invalid', 'native_readback_mismatch', 'native_web_unavailable'}
+
+
+class NativeWebError(ValueError):
+    """One failed native request, with safe operation and cleanup facts separate."""
+    def __init__(self, reason_code, diagnosis):
+        super().__init__(reason_code)
+        self.diagnosis = diagnosis
+
+
+def _primary_reason(error):
+    reason = str(error)
+    if reason in _PRIMARY_REASONS:
+        return reason
+    # Playwright's TimeoutError is not Python's builtin TimeoutError.
+    if isinstance(error, TimeoutError) or type(error).__name__ == 'TimeoutError':
+        return 'source_timeout'
+    return 'native_web_unavailable'
 
 
 @dataclass(frozen=True)
@@ -96,12 +114,42 @@ def _normal_exit(page, deadline):
         raise ValueError('native_exit_unproven')
 
 
+def _platform_reason(page):
+    """Inspect only the observed error details, never retry/login/restart/Save.
+
+    These exact two lines came from the admitted native error form. A timeout
+    or the generic unavailable screen alone proves no platform cause. Keep all
+    unknown text private, with a one-second total inspection allowance.
+    """
+    deadline = time.monotonic() + 1
+    try:
+        details = page.get_by_text('Show details', exact=True)
+        if details.count() != 1 or not details.is_visible():
+            return None
+        details.click(timeout=_remaining(deadline, 300))
+        expected = {'Training version limitation reached', 'Infobase connections limitation reached'}
+        for selector in ('textarea', 'pre'):
+            fields = page.locator(selector)
+            for index in range(min(fields.count(), 3)):
+                field = fields.nth(index)
+                timeout = _remaining(deadline, 300)
+                value = field.input_value(timeout=timeout) if selector == 'textarea' else field.inner_text(timeout=timeout)
+                if len(value) <= 16384 and expected.issubset(value.splitlines()):
+                    return 'training_connection_limit'
+    except Exception:
+        pass
+    return None
+
+
 class RegistrationWeb:
     def __init__(self, settings):
         self.settings = settings
 
     def _visit(self, chromium, deadline, desired=None, expected=None):
         browser = context = page = None
+        primary = result = None
+        save_attempted = False
+        exit_reason = cleanup_reason = platform_reason = None
         try:
             browser = chromium.launch(executable_path=str(self.settings.browser), headless=True,
                                       args=['--no-sandbox', '--disable-dev-shm-usage'], timeout=_remaining(deadline))
@@ -122,28 +170,43 @@ class RegistrationWeb:
                     selected = _read_form(page)
                     if selected['levels'] != desired or selected['period'] != before['period']:
                         raise ValueError('native_form_invalid')
-                    page.locator(_selector('form0_FormOK')).click(timeout=_remaining(deadline))
+                    # A click may reach the platform even if its reply is lost.
+                    save_timeout = _remaining(deadline)
+                    save_attempted = True
+                    page.locator(_selector('form0_FormOK')).click(timeout=save_timeout)
                     page.locator(_selector('form0_FormCancel')).wait_for(state='hidden', timeout=_remaining(deadline))
                     result = {'status': 'ok', **selected}
-            return result
+        except Exception as error:
+            primary = error
         finally:
             # Only this visit's normal Exit and resources; never another session.
-            cleanup_error = None
             if page is not None:
                 try:
                     # Keep an independent cleanup allowance after the 30s UI work
                     # deadline; the enclosing fixed backend bounds this at 40s.
                     _normal_exit(page, time.monotonic() + 5)
                 except Exception:
-                    cleanup_error = 'native_exit_unproven'
+                    exit_reason = 'native_exit_unproven'
+                if primary is not None or exit_reason is not None:
+                    platform_reason = _platform_reason(page)
             for resource in (context, browser):
                 if resource is not None:
                     try:
                         resource.close()
                     except Exception:
-                        cleanup_error = cleanup_error or 'browser_cleanup_failed'
-            if cleanup_error is not None:
-                raise ValueError(cleanup_error) from None
+                        cleanup_reason = 'browser_cleanup_failed'
+        if primary is not None or exit_reason is not None or cleanup_reason is not None:
+            primary_reason = _primary_reason(primary) if primary is not None else None
+            outcome = ('unknown' if save_attempted else
+                       'refused' if result is not None and result['status'] == 'conflict' else
+                       'completed' if result is not None and primary is None else
+                       'refused' if platform_reason else 'not_completed')
+            raise NativeWebError(primary_reason or exit_reason or cleanup_reason, {
+                'operationOutcome': outcome, 'saveAttempted': save_attempted,
+                'primaryReasonCode': primary_reason, 'platformReasonCode': platform_reason,
+                'exitReasonCode': exit_reason, 'cleanupReasonCode': cleanup_reason,
+            }) from primary
+        return result
 
     def __call__(self, request):
         if request == {'action': 'get'}:
@@ -158,14 +221,49 @@ class RegistrationWeb:
             from playwright.sync_api import sync_playwright
         except ImportError:
             raise ValueError('browser_unavailable') from None
+        primary = result = None
         try:
             with sync_playwright() as playwright:
-                result = self._visit(playwright.chromium, deadline, desired, expected)
-                if desired is not None and result['status'] == 'ok':
-                    persisted = self._visit(playwright.chromium, deadline)
-                    result = _confirmed(result, persisted, desired)
-                return {'status': result['status'], 'levels': result['levels']}
-        except (ValueError, TimeoutError):
-            raise
-        except Exception:
+                try:
+                    result = self._visit(playwright.chromium, deadline, desired, expected)
+                    if desired is not None and result['status'] == 'ok':
+                        try:
+                            persisted = self._visit(playwright.chromium, deadline)
+                            result = _confirmed(result, persisted, desired)
+                        except NativeWebError as error:
+                            # This visit was a Get, but the enclosing request already
+                            # attempted Save. Never report that Set as a safe refusal.
+                            error.diagnosis.update(operationOutcome='unknown', saveAttempted=True)
+                            raise
+                        except ValueError as error:
+                            reason = _primary_reason(error)
+                            raise NativeWebError(reason, {
+                                'operationOutcome': 'unknown', 'saveAttempted': True,
+                                'primaryReasonCode': reason, 'platformReasonCode': None,
+                                'exitReasonCode': None, 'cleanupReasonCode': None,
+                            }) from error
+                except NativeWebError as error:
+                    # The framework's __exit__ can itself fail. Keep the native
+                    # operation evidence before handing it that pending error.
+                    primary = error
+                    raise
+        except Exception as error:
+            if primary is not None:
+                if error is not primary:
+                    primary.diagnosis['cleanupReasonCode'] = 'browser_cleanup_failed'
+                raise primary
+            if result is not None:
+                # Both visits and the required persisted check already finished.
+                # A later driver shutdown failure does not undo that observation.
+                raise NativeWebError('browser_cleanup_failed', {
+                    'operationOutcome': 'refused' if result['status'] == 'conflict' else 'completed',
+                    'saveAttempted': desired is not None and result['status'] == 'ok',
+                    'primaryReasonCode': None, 'platformReasonCode': None,
+                    'exitReasonCode': None, 'cleanupReasonCode': 'browser_cleanup_failed',
+                }) from error
+            if isinstance(error, (ValueError, TimeoutError)):
+                raise
             raise ValueError('native_web_unavailable') from None
+        if primary is not None:
+            raise primary  # A context manager must not suppress an owned failure.
+        return {'status': result['status'], 'levels': result['levels']}

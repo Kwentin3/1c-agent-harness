@@ -504,7 +504,13 @@ def select(
         record_value["recordRef"] = f"eventlog:{selection_id}:record:{index}:{token}"
         record_value["selectionIndex"] = index
     reason = None
-    if source_count > maximum_count:
+    # Validated Capture v1 comes only from the deployment-owned ibcmd adapter,
+    # which admits an uncapped native argv and verifies its complete output.
+    # Legacy EPF exports may stop at maximumCount before local filters run.
+    if capture_metadata is not None:
+        if matched_count > maximum_count:
+            reason = "maximum_count_exceeded"
+    elif source_count > maximum_count:
         reason = "maximum_count_exceeded"
     elif source_count == maximum_count:
         reason = "maximum_count_boundary"
