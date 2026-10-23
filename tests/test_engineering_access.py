@@ -30,6 +30,17 @@ ADMITTED = {
 
 
 class EngineeringAccessTests(unittest.TestCase):
+    def test_public_local_seam_forwards_stdin_with_clean_docker_environment(self):
+        raw = b'{"schemaVersion":1,"operation":"stage_task","arguments":{}}'
+        environment = {'PATH': '/usr/bin:/bin'}
+        with patch.object(ACCESS.subprocess, 'check_output', return_value=json.dumps([ADMITTED])) as inspection, \
+                patch.object(ACCESS.subprocess, 'run', return_value=subprocess.CompletedProcess([], 0)) as execution:
+            self.assertEqual(ACCESS.execute('exec python3 companion --request-stdin', CID,
+                                           input=raw, env=environment), 0)
+        self.assertEqual(inspection.call_args.kwargs['env'], environment)
+        self.assertEqual(execution.call_args.kwargs, {'input': raw, 'env': environment})
+        self.assertEqual(execution.call_args.args[0][:5], ['/usr/bin/docker', 'exec', '-i', '--user', '10001:10001'])
+
     def invoke(self, inspected, command='id', container=CID):
         return patch.object(ACCESS.os, 'environ', {
             'ONE_C_ENGINEERING_CONTAINER': container,

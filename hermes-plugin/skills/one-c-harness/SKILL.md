@@ -8,6 +8,23 @@ version: 0.3.0
 
 Use only the registered tools. Do not replace them with shell or SSH calls.
 
+## Selected computer and interrupted execution
+
+Deployment selects the transport. In Relay mode, select the prepared computer
+for this chat before calling Harness. Tools use that selection through native
+Relay jobs; the model never supplies a device ID, launcher or connection path.
+Preserve every returned reference exactly. References belong to the computer
+that produced them; switching computers does not transfer an existing operation.
+An unbound or foreign reference is a blocker, not a reason to use a server tool.
+
+If a response contains `relay_outcome.status=unknown`, the operation may have
+run. Do not repeat it automatically. Preserve `relay_job.job_id` and its exact
+`device_id` when present, and reconcile that native job using the selected
+computer's read-only job status/logs before deciding what happened. A running
+job, lost response, cancellation request or revoked access does not establish
+that an operation stopped or a logging policy was restored. Do not fall back
+to SSH, AgentBridge, the Hermes server or another computer.
+
 ## Configuration
 
 1. Call `one_c_open` first.

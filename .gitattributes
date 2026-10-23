@@ -17,5 +17,6 @@ experiments/issue85-owner-dashboard/evidence/**/run--evidence--* -text whitespac
 /hermes-plugin/** text eol=lf
 /deployment/goal91/*.py text eol=lf
 /deployment/goal91/*.json text eol=lf
+/deployment/relay/** text eol=lf
 /pyproject.toml text eol=lf
 /scripts/update_release.py text eol=lf

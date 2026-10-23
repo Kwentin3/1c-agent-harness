@@ -11,6 +11,7 @@ from typing import Any, Callable
 from uuid import uuid4
 
 from .schemas import ARTIFACT_ID, CAPABILITY_VERSION
+from . import relay_transport
 
 SCHEMA_VERSION = 1
 MAX_TERMINAL_OUTPUT_BYTES = 40 * 1024
@@ -37,7 +38,7 @@ def _request(operation: str, arguments: object) -> bytes:
         "schemaVersion": SCHEMA_VERSION,
         "operation": operation,
         "arguments": arguments,
-    }, ensure_ascii=False, sort_keys=True, separators=(",", ":")).encode("utf-8")
+    }, ensure_ascii=False, sort_keys=True, separators=(",", ":"), allow_nan=False).encode("utf-8")
 
 
 def _parse_terminal(raw: object) -> str:
@@ -281,10 +282,19 @@ def _compact_diagnostic_response(response: dict[str, Any], operation: str) -> di
     return compact
 
 
-def _call(ctx: Any, operation: str, arguments: object, timeout: int) -> str:
+def _call(ctx: Any, operation: str, arguments: object, timeout: int, **kwargs: object) -> str:
+    relay_job = None
     try:
         request = _request(operation, arguments)
-        if operation == "stage_task":
+        mode = relay_transport.setting(ctx, "transport", "terminal")
+        device = None
+        if not isinstance(mode, str) or mode not in {"terminal", "relay"}:
+            return _blocked("transport_unconfigured", "Harness transport mode is invalid")
+        if mode == "relay":
+            if len(request) > MAX_REQUEST_BYTES:
+                return _blocked("invalid_request", "request exceeds transport byte limit")
+            device, output, relay_job = relay_transport.execute(ctx, request, arguments, timeout, kwargs)
+        elif operation == "stage_task":
             if len(request) > MAX_REQUEST_BYTES:
                 return _blocked("invalid_request", "request exceeds transport byte limit")
             try:
@@ -294,20 +304,44 @@ def _call(ctx: Any, operation: str, arguments: object, timeout: int) -> str:
         else:
             encoded = base64.b64encode(request).decode("ascii")
             command = f'"$HERMES_HOME/bin/one-c-harness" --request-base64 {encoded}'
-        raw = ctx.dispatch_tool("terminal", {"command": command, "timeout": timeout})
-        response = json.loads(_parse_terminal(raw))
+        if mode == "terminal":
+            raw = ctx.dispatch_tool("terminal", {"command": command, "timeout": timeout})
+            output = _parse_terminal(raw)
+        response = json.loads(output)
         if not isinstance(response, dict) or response.get("capabilityVersion") != CAPABILITY_VERSION:
+            if relay_job is not None:
+                raise relay_transport.RelayFailure("companion_version_mismatch")
             return _blocked("companion_version_mismatch", "installed executor companion version does not match plugin")
         if response.get("artifactId") != ARTIFACT_ID:
+            if relay_job is not None:
+                raise relay_transport.RelayFailure("companion_artifact_mismatch")
             return _blocked("companion_artifact_mismatch", "installed executor companion artifact does not match plugin")
+        if device is not None:
+            relay_transport.bind_refs(ctx, response, device)
         response = _compact_registration_response(response, operation)
         response = _compact_diagnostic_response(response, operation)
+        if relay_job is not None:
+            response["relay_source"] = relay_job
         return json.dumps(response, ensure_ascii=False, sort_keys=True, separators=(",", ":"))
+    except relay_transport.RelayFailure as exc:
+        failure = json.loads(_blocked(exc.reason, "Relay-bound Harness operation could not complete"))
+        if relay_job is not None:
+            exc.job = relay_job
+            exc.outcome = exc.outcome or relay_transport._unknown()
+        if exc.outcome is not None:
+            failure["relay_outcome"] = exc.outcome
+        if exc.job is not None:
+            failure["relay_job"] = exc.job
+        return json.dumps(failure, ensure_ascii=False, sort_keys=True)
     except ValueError as exc:
+        if relay_job is not None:
+            return json.dumps({**json.loads(_blocked("relay_job_output_invalid", "Harness response is invalid")),
+                               "relay_outcome": relay_transport._unknown(), "relay_job": relay_job})
         return _blocked("invalid_request", str(exc))
-    except (OSError, RuntimeError, json.JSONDecodeError):
-        return _blocked("terminal_failed", "terminal-bound companion command could not complete")
     except Exception:
+        if relay_job is not None:
+            return json.dumps({**json.loads(_blocked("relay_job_output_invalid", "Harness response is invalid")),
+                               "relay_outcome": relay_transport._unknown(), "relay_job": relay_job})
         return _blocked("terminal_failed", "terminal-bound companion command could not complete")
 
 
@@ -316,13 +350,13 @@ def open_target(ctx: Any) -> Callable[[object], str]:
         if arguments != {}:
             return _blocked("invalid_request", "open does not accept arguments")
         # Full cold lifecycle; the deployment watchdog owns remote abort.
-        return _call(ctx, "open", arguments, 2160)
+        return _call(ctx, "open", arguments, 2160, **_kwargs)
     return handler
 
 
 def narrow_context(ctx: Any) -> Callable[[object], str]:
     def handler(arguments: object, **_kwargs: object) -> str:
-        return _call(ctx, "narrow", arguments, 90)
+        return _call(ctx, "narrow", arguments, 90, **_kwargs)
     return handler
 
 
@@ -330,50 +364,50 @@ def observation_info(ctx: Any) -> Callable[[object], str]:
     def handler(arguments: object, **_kwargs: object) -> str:
         if arguments != {}:
             return _blocked("invalid_request", "observation_info does not accept arguments")
-        return _call(ctx, "observation_info", arguments, 60)
+        return _call(ctx, "observation_info", arguments, 60, **_kwargs)
     return handler
 
 
 def logging_control(ctx: Any) -> Callable[[object], str]:
     def handler(arguments: object, **_kwargs: object) -> str:
         # Native transport timeout is60s; terminal also covers dispatch/cleanup.
-        return _call(ctx, "logging_control", arguments, 75)
+        return _call(ctx, "logging_control", arguments, 75, **_kwargs)
     return handler
 
 
 def observe(ctx: Any) -> Callable[[object], str]:
     def handler(arguments: object, **_kwargs: object) -> str:
-        return _call(ctx, "observe", arguments, 60)
+        return _call(ctx, "observe", arguments, 60, **_kwargs)
     return handler
 
 
 def expand_observation(ctx: Any) -> Callable[[object], str]:
     def handler(arguments: object, **_kwargs: object) -> str:
-        return _call(ctx, "expand_observation", arguments, 60)
+        return _call(ctx, "expand_observation", arguments, 60, **_kwargs)
     return handler
 
 
 def select_registration_log(ctx: Any) -> Callable[[object], str]:
     def handler(arguments: object, **_kwargs: object) -> str:
-        return _call(ctx, "eventlog_select", arguments, 150)
+        return _call(ctx, "eventlog_select", arguments, 150, **_kwargs)
     return handler
 
 
 def page_registration_log(ctx: Any) -> Callable[[object], str]:
     def handler(arguments: object, **_kwargs: object) -> str:
-        return _call(ctx, "eventlog_page", arguments, 60)
+        return _call(ctx, "eventlog_page", arguments, 60, **_kwargs)
     return handler
 
 
 def read_registration_log_record(ctx: Any) -> Callable[[object], str]:
     def handler(arguments: object, **_kwargs: object) -> str:
-        return _call(ctx, "eventlog_record", arguments, 60)
+        return _call(ctx, "eventlog_record", arguments, 60, **_kwargs)
     return handler
 
 
 def stage_task(ctx: Any) -> Callable[[object], str]:
     def handler(arguments: object, **_kwargs: object) -> str:
-        return _call(ctx, "stage_task", arguments, 60)
+        return _call(ctx, "stage_task", arguments, 60, **_kwargs)
     return handler
 
 
@@ -384,5 +418,5 @@ def native_verify(ctx: Any) -> Callable[[object], str]:
         if not 1 <= arguments["timeoutSeconds"] <= 480:
             return _blocked("invalid_request", "verify timeoutSeconds is invalid")
         # timeoutSeconds still limits ENTERPRISE only, not create/load/cleanup.
-        return _call(ctx, "verify", arguments, 2160)
+        return _call(ctx, "verify", arguments, 2160, **_kwargs)
     return handler
