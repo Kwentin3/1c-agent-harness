@@ -1,0 +1,12 @@
+{
+  "schemaVersion": 1,
+  "techlogConfig": "/opt/1cv8t/conf/logcfg.xml",
+  "techlogDirectory": "/evidence/.one-c-harness/techlog",
+  "techlogState": "/evidence/.one-c-harness/techlog-control",
+  "registrationState": "/evidence/.one-c-harness/registration",
+  "observationRoot": "/evidence/.one-c-harness/observations",
+  "browserExecutable": "/opt/issue87-browsers/chromium_headless_shell-1208/chrome-headless-shell-linux64/chrome-headless-shell",
+  "python": "/opt/issue87-browser/bin/python",
+  "registrationUrl": "http://127.0.0.1:18090/jetcontrol/ru/?C=DisableSystemStartupLogic&DisableHomePageForms#e1cib/system/EventLogSettings",
+  "timeZone": "UTC"
+}

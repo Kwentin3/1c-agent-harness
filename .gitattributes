@@ -11,3 +11,11 @@ experiments/**/exact-*.patch binary
 
 # Native #85 receipts are literal UTF-8/BOM/CRLF evidence, not normalized text.
 experiments/issue85-owner-dashboard/evidence/**/run--evidence--* -text whitespace=cr-at-eol
+
+# Release IDs bind Git bytes; keep the installed Linux source identical on Windows.
+/one_c_harness/** text eol=lf
+/hermes-plugin/** text eol=lf
+/deployment/goal91/*.py text eol=lf
+/deployment/goal91/*.json text eol=lf
+/pyproject.toml text eol=lf
+/scripts/update_release.py text eol=lf

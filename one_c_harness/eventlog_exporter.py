@@ -201,12 +201,16 @@ def _connection(settings: Settings) -> list[str]:
 
 def _stop_group(process: subprocess.Popen[bytes]) -> None:
     try:
-        os.killpg(process.pid, signal.SIGTERM)
-    except ProcessLookupError:
-        pass
-    try:
-        process.wait(timeout=1)
-    except subprocess.TimeoutExpired:
+        try:
+            os.killpg(process.pid, signal.SIGTERM)
+        except ProcessLookupError:
+            pass
+        try:
+            process.wait(timeout=1)
+        except subprocess.TimeoutExpired:
+            pass
+    finally:
+        # A departed leader does not prove its descendants have exited.
         try:
             os.killpg(process.pid, signal.SIGKILL)
         except ProcessLookupError:
@@ -287,6 +291,9 @@ def _write_request(root: Path, request: dict[str, Any]) -> None:
 def run_once(request: object) -> tuple[bytes, dict[str, object]]:
     admitted = validate_request(request)
     settings = _load_settings()
+    maximum_bytes = admitted["maximumBytes"]
+    started_marker = "export-started"
+    returned_marker = "export-returned"
     started = time.monotonic()
     with tempfile.TemporaryDirectory(prefix="request-", dir=settings.work_root) as raw_root:
         root = Path(raw_root)
@@ -298,61 +305,71 @@ def run_once(request: object) -> tuple[bytes, dict[str, object]]:
             "/Execute", str(settings.epf), "/C", str(root),
             "/Out", str(root / "runtime.log"), "/DumpResult", str(root / "runtime.result"),
         ]
-        try:
-            process = subprocess.Popen(
-                argv, env=_environment(settings, home, temporary), stdin=subprocess.DEVNULL,
-                stdout=subprocess.DEVNULL, stderr=subprocess.PIPE, start_new_session=True,
-            )
-        except OSError:
-            raise ExportFailure("source_unavailable") from None
-        assert process.stderr is not None
+        process = None
+        reader = None
         stderr = _BoundedStderr()
+        failure = None
         try:
-            reader = threading.Thread(target=stderr.consume, args=(process.stderr,), daemon=True)
-            reader.start()
-        except RuntimeError:
-            # The process is already owned even when stderr admission fails.
             try:
-                _stop_group(process)
-            finally:
-                process.stderr.close()
-            raise ExportFailure("source_unavailable") from None
-        deadline = started + _TIMEOUT_SECONDS
-        export_started: float | None = None
-        export_returned: float | None = None
-        output = root / "output.xml"
-        while process.poll() is None:
-            now = time.monotonic()
-            if export_started is None and (root / "export-started").is_file():
-                export_started = now
-            if export_returned is None and (root / "export-returned").is_file():
-                export_returned = now
-            try:
-                output_size = output.stat().st_size
+                process = subprocess.Popen(
+                    argv, env=_environment(settings, home, temporary), stdin=subprocess.DEVNULL,
+                    stdout=subprocess.DEVNULL, stderr=subprocess.PIPE, start_new_session=True,
+                )
+            except TimeoutError:
+                raise
             except OSError:
-                output_size = 0
-            if output_size > admitted["maximumBytes"]:
-                _stop_group(process)
-                stderr.join(reader)
-                process.stderr.close()
-                raise ExportFailure("source_byte_limit", _runtime_diagnostic(root, process, stderr, started))
-            if now >= deadline:
-                _stop_group(process)
-                stderr.join(reader)
-                process.stderr.close()
-                raise ExportFailure("source_timeout", _runtime_diagnostic(root, process, stderr, started))
-            time.sleep(.02)
-        ended = time.monotonic()
-        stderr.join(reader)
-        process.stderr.close()
+                raise ExportFailure("source_unavailable") from None
+            assert process.stderr is not None
+            try:
+                reader = threading.Thread(target=stderr.consume, args=(process.stderr,), daemon=True)
+                reader.start()
+            except RuntimeError:
+                raise ExportFailure("source_unavailable") from None
+            deadline = started + _TIMEOUT_SECONDS
+            export_started: float | None = None
+            export_returned: float | None = None
+            output = root / "output.xml"
+            while process.poll() is None:
+                now = time.monotonic()
+                if export_started is None and (root / started_marker).is_file():
+                    export_started = now
+                if export_returned is None and (root / returned_marker).is_file():
+                    export_returned = now
+                try:
+                    output_size = output.stat().st_size
+                except TimeoutError:
+                    raise
+                except OSError:
+                    output_size = 0
+                if output_size > maximum_bytes:
+                    failure = "source_byte_limit"
+                    break
+                if now >= deadline:
+                    failure = "source_timeout"
+                    break
+                time.sleep(.02)
+            ended = time.monotonic()
+        finally:
+            if process is not None:
+                try:
+                    _stop_group(process)
+                finally:
+                    try:
+                        if reader is not None and reader.ident is not None:
+                            stderr.join(reader)
+                    finally:
+                        if process.stderr is not None:
+                            process.stderr.close()
         diagnostic = _runtime_diagnostic(root, process, stderr, started)
+        if failure is not None:
+            raise ExportFailure(failure, diagnostic)
         if process.returncode != 0:
             raise ExportFailure("source_process_failed", diagnostic)
-        required = ("client-entered", "server-entered", "export-started", "export-returned", "complete")
+        required = ("client-entered", "server-entered", started_marker, returned_marker, "complete")
         if any(not (root / name).is_file() for name in required) or not output.is_file():
             raise ExportFailure("source_incomplete_receipt", diagnostic)
         xml = output.read_bytes()
-        if len(xml) > admitted["maximumBytes"]:
+        if len(xml) > maximum_bytes:
             raise ExportFailure("source_byte_limit", diagnostic)
         if export_started is None:
             export_started = started

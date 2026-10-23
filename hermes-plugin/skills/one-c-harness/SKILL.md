@@ -25,6 +25,19 @@ Use no shell/SSH fallback, new privileges or global terminal-backend override.
 
 ## Technological journal
 
+For logging control, use `one_c_logging` with `action=status` and the intended `journal`
+(`registration` or `technological`). Only when needed and authorized, start the supported
+`errors` or `diagnostic` profile with the exact returned opaque `targetRef`. Use the existing
+read tools; they never start logging automatically. Preserve the returned `captureRef`
+and call `stop` with both exact refs in a finally step. Report a restore conflict rather
+than overwriting another owner's changes. `configured` alone does not prove collection;
+`source_unavailable` means no usable deployment backend, not successful enablement.
+The platform polls technological-log configuration every 60 seconds; allow that
+native reload before reproducing a diagnostic case. `diagnostic` collects errors
+and server-connection events, not all activity. An empty selection proves neither
+a failed collector nor successful collection. Do not broaden logging or manufacture
+business changes just to obtain a positive test record.
+
 1. If coverage is unknown, call `one_c_observation_info`. Its interval describes only the bounded inspection. `partial=true` or `complete=false` means more history may exist.
 2. Call `one_c_observe` with inclusive calendar `start` and `end` in the reported `sourceTimeZone`, **without `Z` or a numeric offset**. When reusing a discovery time from that same source timezone, keep its calendar date/time and all fractional seconds and omit only the offset; do not apply this rule to a time from another timezone. Use selected events, a small limit and optional AND filters.
 3. In a successful complete response, `groupCommon` applies to every item in `groups`; `recordCommon` applies only to the record collections named by `recordCommonAppliesTo`. Combine those common fields with each item when interpreting it. Missing, null and empty fields are not implied.

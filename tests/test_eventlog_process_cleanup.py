@@ -1,4 +1,4 @@
-"""Real harmless child processes; only thread admission is fault-injected."""
+"""Real harmless child processes with faults after native-process ownership."""
 from __future__ import annotations
 
 import json
@@ -8,6 +8,7 @@ import signal
 import subprocess
 import sys
 import tempfile
+import time
 import unittest
 from unittest import mock
 
@@ -122,6 +123,125 @@ class ProcessAdmissionCleanupTests(unittest.TestCase):
     def test_enterprise_exporter_reaps_actual_child_when_thread_start_fails(self) -> None:
         self.run_failed_admission(lambda: enterprise.run_once(self.request))
         self.assertEqual(list((self.root / "work").glob("request-*")), [])
+
+    def test_enterprise_exporter_reaps_actual_child_on_base_exception_after_ownership(self) -> None:
+        class OwnerAbort(BaseException):
+            pass
+        with mock.patch.object(subprocess, "Popen", side_effect=self.launch), \
+             mock.patch.object(enterprise, "time", wraps=time) as clock:
+            # Replace the exporter's reference, not the shared stdlib module:
+            # POSIX Popen.wait(timeout=...) must keep its real time.sleep.
+            clock.sleep.side_effect = OwnerAbort
+            with self.assertRaises(OwnerAbort):
+                enterprise.run_once(self.request)
+        self.assert_reaped_and_closed()
+        self.assertEqual(list((self.root / "work").glob("request-*")), [])
+
+    @unittest.skipUnless(hasattr(signal, "setitimer"), "requires a real SIGALRM")
+    def test_real_alarm_timeout_after_ownership_reaps_child_and_closes_pipe(self) -> None:
+        if signal.getitimer(signal.ITIMER_REAL)[0]:
+            self.skipTest("preserve an already owned test-runner alarm")
+        previous = signal.getsignal(signal.SIGALRM)
+        real_sleep = time.sleep
+        def alarm_handler(signum, frame):
+            raise TimeoutError("test-owned parent deadline")
+        def alarm_after_ownership(interval):
+            signal.setitimer(signal.ITIMER_REAL, .01)
+            real_sleep(1)
+        signal.signal(signal.SIGALRM, alarm_handler)
+        try:
+            with mock.patch.object(subprocess, "Popen", side_effect=self.launch), \
+                 mock.patch.object(enterprise, "time", wraps=time) as clock:
+                clock.sleep.side_effect = alarm_after_ownership
+                with self.assertRaisesRegex(TimeoutError, "test-owned parent deadline"):
+                    enterprise.run_once(self.request)
+        finally:
+            signal.setitimer(signal.ITIMER_REAL, 0)
+            signal.signal(signal.SIGALRM, previous)
+        self.assert_reaped_and_closed()
+
+    def test_existing_export_does_not_timeout_at_15_seconds_and_still_stops_at_115(self) -> None:
+        ticks = iter((0, 15.01, 115.01))
+        with mock.patch.object(subprocess, "Popen", side_effect=self.launch), \
+             mock.patch.object(enterprise, "time", wraps=time) as clock:
+            clock.monotonic.side_effect = lambda: next(ticks, 115.01)
+            clock.sleep = mock.Mock()
+            with self.assertRaisesRegex(enterprise.ExportFailure, "source_timeout"):
+                enterprise.run_once(self.request)
+        clock.sleep.assert_called_once_with(.02)
+        self.assert_reaped_and_closed()
+
+    @unittest.skipUnless(sys.platform.startswith("linux"), "requires own orphan adoption for fixture cleanup")
+    def test_timeout_kills_term_ignoring_descendant_after_leader_has_exited(self) -> None:
+        import ctypes
+        libc = ctypes.CDLL(None, use_errno=True)
+        old_subreaper = ctypes.c_int()
+        self.assertEqual(libc.prctl(37, ctypes.byref(old_subreaper), 0, 0, 0), 0)
+        self.assertEqual(libc.prctl(36, 1, 0, 0, 0), 0)
+        child_ready = self.root / "owned-descendant.json"
+        child_code = ("import json,os,signal,time\nfrom pathlib import Path\n"
+                      "signal.signal(signal.SIGTERM,signal.SIG_IGN)\n"
+                      "Path(" + repr(str(child_ready)) + ").write_text(json.dumps(os.getpid()))\n"
+                      "time.sleep(60)\n")
+        self.command.write_text(
+            f"#!{sys.executable}\nimport subprocess,sys,time\n"
+            "subprocess.Popen([sys.executable,'-c'," + repr(child_code) + "],"
+            "stdin=subprocess.DEVNULL,stdout=subprocess.DEVNULL,stderr=subprocess.DEVNULL)\n"
+            "time.sleep(60)\n", encoding="utf-8")
+        real_sleep = time.sleep
+        descendant = None
+        def deadline_after_descendant_ready(interval):
+            nonlocal descendant
+            until = time.monotonic() + 3
+            while time.monotonic() < until:
+                try:
+                    descendant = json.loads(child_ready.read_text())
+                    break
+                except (FileNotFoundError, ValueError):
+                    pass
+                real_sleep(.005)
+            self.assertIsNotNone(descendant, "synthetic child did not acknowledge signal readiness")
+            raise TimeoutError("test-owned deadline after group is ready")
+        try:
+            with mock.patch.object(subprocess, "Popen", side_effect=self.launch), \
+                 mock.patch.object(enterprise, "time", wraps=time) as clock:
+                clock.sleep.side_effect = deadline_after_descendant_ready
+                with self.assertRaises(TimeoutError):
+                    enterprise.run_once(self.request)
+            until = time.monotonic() + 1
+            waited = (0, 0)
+            while time.monotonic() < until:
+                waited = os.waitpid(descendant, os.WNOHANG)
+                if waited[0]:
+                    break
+                real_sleep(.005)
+            self.assertEqual(waited[0], descendant, "production left its TERM-ignoring descendant alive")
+            self.assertTrue(os.WIFSIGNALED(waited[1]))
+            self.assertEqual(os.WTERMSIG(waited[1]), signal.SIGKILL)
+            descendant = None  # Fixture reaped its adopted child; product reaps the leader.
+            self.assert_reaped_and_closed()
+        finally:
+            # Also clean a RED implementation before restoring orphan adoption.
+            try:
+                for process in self.processes:
+                    try:
+                        os.killpg(process.pid, signal.SIGKILL)
+                    except ProcessLookupError:
+                        pass
+                    process.wait(timeout=3)
+                if descendant is None and child_ready.exists():
+                    descendant = json.loads(child_ready.read_text())
+                if descendant is not None:
+                    try:
+                        os.kill(descendant, signal.SIGKILL)
+                    except ProcessLookupError:
+                        pass
+                    try:
+                        os.waitpid(descendant, 0)
+                    except ChildProcessError:
+                        pass
+            finally:
+                libc.prctl(36, old_subreaper.value, 0, 0, 0)
 
     def test_ibcmd_exporter_reaps_actual_child_when_thread_start_fails(self) -> None:
         self.run_failed_admission(lambda: file_exporter.run_once(self.request))
