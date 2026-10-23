@@ -165,6 +165,9 @@ def main():
                           'native_form_invalid', 'native_readback_mismatch', 'browser_cleanup_failed'}:
             reason = 'source_unavailable'
         failure = {'schemaVersion': 1, 'status': 'blocked', 'reasonCode': reason}
+        from .registration_web import NativeWebError
+        if isinstance(error, NativeWebError):
+            failure['diagnosis'] = error.diagnosis
         # Preserve only public error context, never raw arguments.
         try:
             value = json.loads(raw, object_pairs_hook=_unique) if len(raw) <= _MAX_BYTES else None

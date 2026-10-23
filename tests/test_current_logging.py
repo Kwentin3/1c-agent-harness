@@ -176,6 +176,26 @@ class CurrentLoggingTests(unittest.TestCase):
                 self.assertEqual(public['state'], 'unknown')
                 self.assertFalse(any(public['capabilities'].values()))
 
+    def test_native_primary_platform_exit_and_cleanup_diagnosis_reaches_public_projection(self):
+        from one_c_harness.registration_web import NativeWebError
+        diagnosis = {'operationOutcome': 'unknown', 'saveAttempted': True,
+                     'primaryReasonCode': 'source_timeout', 'platformReasonCode': 'training_connection_limit',
+                     'exitReasonCode': 'native_exit_unproven', 'cleanupReasonCode': 'browser_cleanup_failed'}
+        error = NativeWebError('source_timeout', diagnosis)
+        error.__cause__ = RuntimeError('/private/customer/path password=secret')
+        with mock.patch.object(sys, 'argv', ['backend']), \
+                mock.patch.object(sys, 'stdin', io.TextIOWrapper(io.BytesIO(request(journal='registration')))), \
+                mock.patch.object(backend, 'execute', side_effect=error), contextlib.redirect_stdout(io.StringIO()) as output:
+            backend.main()
+        raw = output.getvalue()
+        self.assertLessEqual(len(raw.encode()), 16384)
+        self.assertNotIn('/private', raw)
+        self.assertNotIn('password', raw)
+        public = backend.logging_control._project(raw.encode(), {'action': 'status', 'journal': 'registration'})
+        self.assertEqual(public['diagnosis'], diagnosis)
+        self.assertEqual((public['status'], public['state'], public['reasonCode']), ('blocked', 'unknown', 'source_timeout'))
+        self.assertFalse(any(public['capabilities'].values()))
+
 
 if __name__ == '__main__':
     unittest.main()

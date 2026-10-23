@@ -95,7 +95,7 @@ class EventLogObservationTests(unittest.TestCase):
         self.assertEqual(empty["summary"]["recordCount"], 0)
         self.assertFalse(empty["summary"]["coverage"]["temporalComplete"])
 
-    def test_count_boundary_keeps_temporal_reason_through_retained_reads(self) -> None:
+    def test_uncapped_exact_count_keeps_temporal_reason_through_retained_reads(self) -> None:
         from test_eventlog_capture import exporter, receipt, BINDING, REQUEST, NOW
         for changed in (False, True):
             with self.subTest(changed=changed):
@@ -107,7 +107,9 @@ class EventLogObservationTests(unittest.TestCase):
                 selected = self._select(start=REQUEST['start'], end=REQUEST['end'], maximumCount=1)
                 coverage = selected['summary']['coverage']
                 self.assertEqual(coverage.get('temporalReasonCode'), 'source_changed' if changed else 'capture_consistency_unproven')
-                self.assertEqual(coverage.get('countReasonCode'), 'maximum_count_boundary')
+                self.assertIsNone(coverage.get('countReasonCode'))
+                self.assertTrue(coverage['retainedCountComplete'])
+                self.assertFalse(coverage['temporalComplete'])
                 paged = eventlog_observation.page(self.project, selected['selectionRef'], 0, 1)
                 record = eventlog_observation.record(self.project, paged['records'][0]['recordRef'])
                 self.assertEqual(paged['summary']['coverage'], {**coverage, 'limitedToRetainedSelection': True})
@@ -389,6 +391,64 @@ class EventLogObservationTests(unittest.TestCase):
             self.assertGreater(continuation["nextOffsetBytes"], offset)
             offset = continuation["nextOffsetBytes"]
         self.assertEqual("".join(pieces), "Я😀Я")
+
+
+class CurrentCaptureCountCoverageTests(unittest.TestCase):
+    def test_native_uncapped_count_and_legacy_capped_count_remain_distinct(self) -> None:
+        import base64
+        import hashlib
+        import xml.etree.ElementTree as ET
+        from test_eventlog_capture import exporter, receipt, BINDING, REQUEST, NOW
+
+        records = [
+            {"Date": "2026-10-07T10:14:59", "Level": "Information",
+             "Event": "Test.Event", "User": user, "Comment": "same-second event"}
+            for user in ("alice", "alice", "bob")
+        ]
+        value = receipt()
+        value["sourceAfter"] = value["sourceBefore"]
+        payload = "\n".join(json.dumps(record) for record in records).encode()
+        value.update(outputBase64=base64.b64encode(payload).decode(), outputBytes=len(payload),
+                     outputSha256=hashlib.sha256(payload).hexdigest())
+        native_xml = exporter.capture_to_xml(value, BINDING, REQUEST, now=NOW)
+        legacy = ET.fromstring(native_xml)
+        legacy.remove(legacy.find("{urn:one-c-harness:eventlog-capture:1}Capture"))
+        legacy_xml = ET.tostring(legacy)
+        cases = (
+            # Same-second duplicate records are distinct retained occurrences.
+            (True, 3, {}, 3, 3, None),
+            (True, 1, {"user": "bob"}, 1, 1, None),
+            (True, 1, {"user": "alice"}, 2, 1, "maximum_count_exceeded"),
+            (True, 2, {}, 3, 2, "maximum_count_exceeded"),
+            (False, 3, {}, 3, 3, "maximum_count_boundary"),
+            (False, 3, {"user": "bob"}, 1, 1, "maximum_count_boundary"),
+            (False, 2, {"user": "bob"}, 1, 1, "maximum_count_exceeded"),
+        )
+        for native, maximum, filters, matched, retained, reason in cases:
+            with self.subTest(native=native, maximum=maximum, filters=filters), tempfile.TemporaryDirectory() as raw:
+                project = Path(raw)
+                with mock.patch.object(eventlog_observation, "_source", return_value=(Path("fixed-exporter"), "UTC")), \
+                        mock.patch.object(eventlog_observation, "_export", return_value=(native_xml if native else legacy_xml, None)) as boundary:
+                    selected = eventlog_observation.select(project, REQUEST["start"], REQUEST["end"], filters, maximum, 1)
+                    self.assertEqual(selected["summary"]["sourceRecordCount"], 3)
+                    self.assertEqual(selected["summary"]["matchedRecordCount"], matched)
+                    self.assertEqual(selected["summary"]["recordCount"], retained)
+                    coverage = selected["summary"]["coverage"]
+                    if native:
+                        self.assertEqual(coverage["countReasonCode"], reason)
+                        self.assertEqual(coverage["retainedCountComplete"], reason is None)
+                        self.assertFalse(coverage["temporalComplete"])
+                        self.assertEqual(coverage["temporalReasonCode"], "capture_consistency_unproven")
+                        self.assertIsNone(selected["summary"]["sourceCapture"]["freshness"]["completeThrough"])
+                    else:
+                        self.assertEqual(coverage["reasonCode"], reason)
+                    self.assertEqual(selected["status"], "partial")
+                    page = eventlog_observation.page(project, selected["selectionRef"], 0, 20)
+                    self.assertEqual(len(page["records"]), retained)
+                    self.assertEqual(page["summary"]["coverage"], {**coverage, "limitedToRetainedSelection": True})
+                    record = eventlog_observation.record(project, selected["records"][0]["recordRef"])
+                    self.assertEqual(record["coverage"], coverage)
+                    boundary.assert_called_once()
 
 
 if __name__ == "__main__":

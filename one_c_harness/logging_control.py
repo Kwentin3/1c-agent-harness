@@ -96,6 +96,22 @@ def _project(raw: bytes, request: dict[str, object]) -> dict[str, object]:
         if not isinstance(value["reasonCode"], str) or not re.fullmatch(r"[a-z][a-z0-9_]{0,79}", value["reasonCode"]):
             raise ValueError("invalid_response")
         result["reasonCode"] = value["reasonCode"]
+    if "diagnosis" in value:
+        diagnosis = value["diagnosis"]
+        reasons = {
+            "primaryReasonCode": (None, "source_timeout", "native_form_invalid", "native_readback_mismatch", "native_web_unavailable"),
+            "platformReasonCode": (None, "training_connection_limit"),
+            "exitReasonCode": (None, "native_exit_unproven"),
+            "cleanupReasonCode": (None, "browser_cleanup_failed"),
+        }
+        if (value["status"] != "blocked" or request["journal"] != "registration"
+                or not isinstance(diagnosis, dict) or set(diagnosis) != {"operationOutcome", "saveAttempted", *reasons}
+                or type(diagnosis["saveAttempted"]) is not bool
+                or diagnosis["operationOutcome"] not in ("completed", "refused", "unknown", "not_completed")
+                or diagnosis["saveAttempted"] != (diagnosis["operationOutcome"] == "unknown")
+                or any(diagnosis[key] not in allowed for key, allowed in reasons.items())):
+            raise ValueError("invalid_response")
+        result["diagnosis"] = dict(diagnosis)
     return result
 
 
