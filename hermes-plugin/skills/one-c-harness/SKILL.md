@@ -8,6 +8,23 @@ version: 0.3.0
 
 Use only the registered tools. Do not replace them with shell or SSH calls.
 
+## Selected computer and interrupted execution
+
+Deployment selects the transport. In Relay mode, select the prepared computer
+for this chat before calling Harness. Tools use that selection through native
+Relay jobs; the model never supplies a device ID, launcher or connection path.
+Preserve every returned reference exactly. References belong to the computer
+that produced them; switching computers does not transfer an existing operation.
+An unbound or foreign reference is a blocker, not a reason to use a server tool.
+
+If a response contains `relay_outcome.status=unknown`, the operation may have
+run. Do not repeat it automatically. Preserve `relay_job.job_id` and its exact
+`device_id` when present, and reconcile that native job using the selected
+computer's read-only job status/logs before deciding what happened. A running
+job, lost response, cancellation request or revoked access does not establish
+that an operation stopped or a logging policy was restored. Do not fall back
+to SSH, AgentBridge, the Hermes server or another computer.
+
 ## Configuration
 
 1. Call `one_c_open` first.
@@ -16,7 +33,7 @@ Use only the registered tools. Do not replace them with shell or SSH calls.
 
 ## Task data and native verification
 
-1. For explicitly authorized development, call `one_c_stage_task` with the exact `snapshotRef`, a JSON-object `request`, nonempty text `productionPatch` and `instrumentationPatch`, and an `oracle` locator. These are staging data, not shell commands. The companion owns the limits: 4 KiB of UTF-8 bytes for the serialized request and each patch, 12 KiB combined; character counts do not replace byte counts.
+1. For explicitly authorized development, call `one_c_stage_task` with the exact `snapshotRef`, a JSON-object `request`, nonempty text `productionPatch` and `instrumentationPatch`, and an `oracle` locator. These are staging data, not shell commands. The companion owns the limits: 4 KiB of UTF-8 bytes for the serialized request, 8 KiB for each patch and 12 KiB combined; the complete companion request remains limited to 16 KiB, including JSON escaping and the SnapshotRef. Character counts do not replace byte counts.
 2. The oracle must already exist as a read-only trusted deployment-owned file selected by the logical locator `experiments/<single-task>/oracle.py`. Deployment chooses its single root; tools cannot change it. Do not supply inline Python, arbitrary oracle paths or a new oracle body. If that prerequisite is missing, stop with the missing prerequisite rather than bypassing the route.
 3. Preserve the exact returned `taskRef` object (`schemaVersion: 1`, canonical UUID4 `taskId`, lowercase-hex `manifestSha256`). Call `one_c_native_verify` with only that `taskRef`, the same `snapshotRef` and `timeoutSeconds` from 1 through 480. Do not invent caller paths or a receipt path in this form. Deployments with an explicitly selected oracle root require this form. The existing seven-argument path form remains compatible only in environments without that setting and cannot address managed task artifacts.
 4. Staging does not apply a patch, execute native code or start a service. Verification delegates to the existing `shared_task_route`, which creates a separate workcopy, applies the exact patches, freezes the input, runs the native cycle/oracle and discards the workcopy. Source, snapshot and live IB stay immutable; development and native execution use only that separate copy and disposable test IB. `timeoutSeconds` bounds ENTERPRISE, not the whole create/load/cleanup lifecycle. A staged handle alone is not a verified task result.

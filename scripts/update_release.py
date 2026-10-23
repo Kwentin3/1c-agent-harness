@@ -12,7 +12,8 @@ for pattern in ('one_c_harness/*.py', 'hermes-plugin/*.py',
 paths += [root/'hermes-plugin/plugin.yaml', root/'hermes-plugin/skills/one-c-harness/SKILL.md', root/'pyproject.toml']
 paths += [root/'deployment/goal91'/name for name in (
     'current-journal.py', 'current-harness-client.py', 'current-capture-client.py',
-    'current-logging-client.py', 'current-logging.json')]
+    'current-logging-client.py', 'current-logging.json', 'engineering-shell.py')]
+paths += [root/'deployment/relay/one-c-harness-local']
 digest = hashlib.sha256()
 for path in sorted(paths):
     relative, payload = path.relative_to(root).as_posix().encode(), path.read_bytes()

@@ -98,7 +98,8 @@ class HermesPluginTests(unittest.TestCase):
             paths.extend(path for path in ROOT.glob(pattern) if path.is_file())
         paths += [ROOT / 'deployment/goal91' / name for name in (
             'current-journal.py', 'current-harness-client.py', 'current-capture-client.py',
-            'current-logging-client.py', 'current-logging.json')]
+            'current-logging-client.py', 'current-logging.json', 'engineering-shell.py')]
+        paths += [ROOT / 'deployment/relay/one-c-harness-local']
         paths += [PLUGIN / "plugin.yaml", PLUGIN / "skills/one-c-harness/SKILL.md", ROOT / "pyproject.toml"]
         digest = hashlib.sha256()
         for path in sorted(path for path in paths if path.name != "release.json"):

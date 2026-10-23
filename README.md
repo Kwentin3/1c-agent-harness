@@ -1,5 +1,12 @@
 # 1C Agent Harness
 
+> [Goal #107](docs/issue107-relay.md#живая-проверка-linux--23-октября-2026): Linux-полигон
+> использует Hermes Relay. Установленный source `285750aa`, artifact `ef59b235`,
+> matched Hermes recipe `a0a946e4`. Ordinary-chat open/narrow/native verify и свежие
+> ЖР/ТЖ проверены; явный возврат транспорта также проверен. Оба сбора завершены,
+> исходные настройки подтверждены нативно после отдельно разрешённого restart
+> учебной 1С. Ограничение её подключений сохраняется. Windows и полная Goal открыты.
+
 > [Goal #104](https://github.com/Kwentin3/1c-agent-harness/issues/104): registration
 > restoration repair installed on 23 October, source `e4ea89f6`, artifact `b08132cc`,
 > matched Hermes recipe `7c5385d6`. Required CI passed. The first ordinary-chat
@@ -29,7 +36,7 @@
 > matched logging source/plugin generation described above.
 
 > The #90/#91 runtime identities and tool counts below describe the earlier checkpoint;
-> the current installed source is the Goal104 pin above; Goal99 records its own
+> the current installed source is the Goal107 pin above; Goal99 records its own
 > historical acceptance.
 >
 > [Goal #91](https://github.com/Kwentin3/1c-agent-harness/issues/91) завершена (CLOSED).
@@ -247,8 +254,9 @@ Operator обязан pin-ить оба install sources к одному immutabl
 
 В исходниках добавлен `one_c_stage_task`: exact `snapshotRef`, JSON-object request,
 две текстовые правки и существующий readonly locator `experiments/<task>/oracle.py`
-превращаются в связанный хешами `taskRef`. Request и каждая правка ограничены
-4 KiB UTF-8, весь запрос companion — 16 KiB. Этот шаг сохраняет только данные;
+превращаются в связанный хешами `taskRef`. Request ограничен 4 KiB UTF-8,
+каждая правка — 8 KiB, суммарные данные — 12 KiB, весь запрос companion —
+16 KiB с JSON escaping и SnapshotRef. Этот шаг сохраняет только данные;
 он не применяет правки и не принимает тело Python-проверки. Затем
 `one_c_native_verify` принимает exact `snapshotRef`, `taskRef` и `timeoutSeconds`
 и вызывает прежний shared task route. Старая форма с семью аргументами сохранена

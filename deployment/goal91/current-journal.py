@@ -252,7 +252,13 @@ class CaptureAttemptError(ValueError):
     """A reserved capture failed; its native execution cannot be called zero."""
 
 
-def main():
+def main(argv=None):
+    argv = [] if argv is None else argv
+    if argv == ['--request-stdin']:
+        print(json.dumps(execute_product(sys.stdin.buffer.read(16385)), sort_keys=True))
+        return
+    if argv:
+        raise ValueError('invalid_request')
     command = os.environ.get('SSH_ORIGINAL_COMMAND', '')
     if command.startswith('current-harness-v1 '):
         print(json.dumps(_product_command(command), sort_keys=True))
@@ -429,6 +435,14 @@ def _product_command(command):
         raise ValueError('invalid_request')
     try:
         raw = base64.b64decode(match[1], validate=True)
+    except (ValueError, UnicodeError):
+        raise ValueError('invalid_request') from None
+    return execute_product(raw)
+
+
+def execute_product(raw):
+    """Closed local/SSH product seam; binding, lock and backend keep one owner."""
+    try:
         if len(raw) > 16384:
             raise ValueError
         value = json.loads(raw)
@@ -478,7 +492,7 @@ def _product_command(command):
 
 if __name__ == '__main__':
     try:
-        main()
+        main(sys.argv[1:])
     except (ValueError,KeyError,OSError,subprocess.SubprocessError) as error:
         reason=str(error) if isinstance(error,ValueError) and str(error) in ['invalid_request','binding_unavailable','capability_failed','access_busy','budget_busy','budget_exhausted','budget_unavailable'] else 'capability_unavailable'
         result={'schemaVersion':1,'status':'blocked','reasonCode':reason}

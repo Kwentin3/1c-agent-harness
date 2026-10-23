@@ -98,6 +98,7 @@ class CurrentJournalBudgetTests(unittest.TestCase):
         entry = ast.get_source_segment(SOURCE.read_text(), ast.parse(SOURCE.read_text()).body[-1])
         output, errors = io.StringIO(), io.StringIO()
         with mock.patch.dict(os.environ, {'SSH_ORIGINAL_COMMAND': command}), \
+                mock.patch.object(sys, 'argv', [str(SOURCE)]), \
                 mock.patch.object(self.handler, '__name__', '__main__'), \
                 contextlib.redirect_stdout(output), contextlib.redirect_stderr(errors):
             with self.assertRaises(SystemExit) as exit:

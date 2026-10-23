@@ -1,0 +1,196 @@
+#!/usr/bin/python3
+"""Linux deployment adapter; domain operations remain with existing Harness owners.
+
+Install the same bytes at the five regular executable names in ROLES. Only the
+controller name is admitted by sudo, without arguments. Configuration is fixed.
+"""
+import hashlib
+import json
+import os
+from pathlib import Path
+import re
+import runpy
+import shlex
+import stat
+import subprocess
+import sys
+
+CONFIG = Path('/etc/one-c-harness/relay-local.json')
+CONTROLLER = '/usr/local/libexec/one-c-harness-local-controller'
+BIN = Path('/usr/local/bin')
+ROLES = {'one-c-harness-local': 'request', 'one-c-harness-local-controller': 'controller',
+         'one-c-harness-local-capture': 'capture', 'one-c-harness-local-logging': 'logging',
+         'one-c-harness-local-exporter': 'exporter'}
+PRODUCT = {'logging_control', 'observation_info', 'observe', 'expand_observation', 'eventlog_capture'}
+CODING = {'open', 'narrow', 'stage_task', 'verify'}
+CACHED = {'eventlog_select', 'eventlog_page', 'eventlog_record'}
+MAX_BYTES = 16384
+
+
+def unique(pairs):
+    result = {}
+    for key, value in pairs:
+        if key in result:
+            raise ValueError('invalid_request')
+        result[key] = value
+    return result
+
+
+def request(raw):
+    if not 0 < len(raw) <= MAX_BYTES:
+        raise ValueError('invalid_request')
+    value = json.loads(raw, object_pairs_hook=unique)
+    if (not isinstance(value, dict) or set(value) != {'schemaVersion', 'operation', 'arguments'}
+            or type(value['schemaVersion']) is not int or value['schemaVersion'] != 1
+            or value['operation'] not in PRODUCT | CODING | CACHED
+            or not isinstance(value['arguments'], dict)):
+        raise ValueError('invalid_request')
+    return value
+
+
+def path(value, *, trusted=False, directory=False):
+    if not isinstance(value, str):
+        raise ValueError('configuration_invalid')
+    result = Path(value)
+    if (not result.is_absolute() or '..' in result.parts
+            or any(item.is_symlink() for item in (result, *result.parents))):
+        raise ValueError('configuration_invalid')
+    info = result.stat()
+    if not (stat.S_ISDIR(info.st_mode) if directory else stat.S_ISREG(info.st_mode)):
+        raise ValueError('configuration_invalid')
+    if trusted and (info.st_uid != 0 or info.st_mode & 0o022):
+        raise ValueError('configuration_invalid')
+    return result
+
+
+def configuration():
+    config_path = path(str(CONFIG), trusted=True)
+    raw = config_path.read_bytes()
+    if len(raw) > MAX_BYTES:
+        raise ValueError('configuration_invalid')
+    value = json.loads(raw, object_pairs_hook=unique)
+    fields = {'schemaVersion', 'source', 'workspace', 'captureBinding', 'journalController',
+              'journalControllerSha256', 'engineeringController', 'engineeringControllerSha256',
+              'engineeringContainer', 'codingSource', 'codingRuntime', 'codingOracleRoot',
+              'journalRuntimeRoot'}
+    if not isinstance(value, dict) or set(value) != fields or type(value['schemaVersion']) is not int or value['schemaVersion'] != 1:
+        raise ValueError('configuration_invalid')
+    for key in ('source', 'journalRuntimeRoot'):
+        path(value[key], trusted=True, directory=True)
+    path(value['captureBinding'], trusted=True)
+    for key in ('journalController', 'engineeringController'):
+        item = path(value[key], trusted=True)
+        expected = value[key + 'Sha256']
+        if not isinstance(expected, str) or not re.fullmatch('[0-9a-f]{64}', expected) or hashlib.sha256(item.read_bytes()).hexdigest() != expected:
+            raise ValueError('configuration_invalid')
+    if not isinstance(value['engineeringContainer'], str) or not re.fullmatch('[0-9a-f]{64}', value['engineeringContainer']):
+        raise ValueError('configuration_invalid')
+    for key in ('workspace', 'codingSource', 'codingRuntime'):
+        selected = value[key]
+        if not isinstance(selected, str) or not re.fullmatch('/[A-Za-z0-9_./-]+', selected) or '..' in Path(selected).parts:
+            raise ValueError('configuration_invalid')
+    oracle = value['codingOracleRoot']
+    if not isinstance(oracle, str) or not re.fullmatch(r'\.local/[A-Za-z0-9_./-]+', oracle) or '..' in Path(oracle).parts:
+        raise ValueError('configuration_invalid')
+    return value
+
+
+def environment(config):
+    # In particular, never inherit CURRENT_HARNESS_SOURCE, PYTHONPATH, SSH or
+    # Docker endpoint overrides from the model's execution environment.
+    return {'PATH': '/usr/bin:/bin', 'LANG': 'C.UTF-8', 'TZ': 'UTC', 'HOME': '/nonexistent',
+            'CURRENT_JOURNAL_RUNTIME_ROOT': config['journalRuntimeRoot']}
+
+
+def broker(raw, config):
+    value = request(raw)
+    clean = environment(config)
+    if value['operation'] in PRODUCT:
+        return subprocess.run(['/usr/bin/python3', '-I', '-B', config['journalController'], '--request-stdin'],
+                              input=raw, env=clean).returncode
+    if value['operation'] not in CODING:
+        raise ValueError('invalid_request')
+    # No shell fragment originates in the request; companion consumes raw stdin.
+    code = ('import os,sys,runpy; '
+            'sys.path.insert(0,' + repr(config['codingSource']) + '); '
+            'os.environ.update(PYTHONPATH=' + repr(config['codingSource']) +
+            ',PYTHONSAFEPATH="1",PYTHONNOUSERSITE="1",ONE_C_HARNESS_RUNTIME_CONFIG=' + repr(config['codingRuntime']) +
+            ',ONE_C_HARNESS_TASK_ORACLE_ROOT=' + repr(config['codingOracleRoot']) + '); '
+            'runpy.run_module("one_c_harness.companion",run_name="__main__")')
+    command = 'exec python3 -I -B -c ' + shlex.quote(code) + ' --request-stdin'
+    owner = runpy.run_path(config['engineeringController'])
+    # Existing owner validates CID/image/isolation before local Docker execution.
+    return owner['execute'](command, config['engineeringContainer'], input=raw, env=clean)
+
+
+def call_controller(raw):
+    return subprocess.run(['/usr/bin/sudo', '-n', CONTROLLER], input=raw,
+                          env={'PATH': '/usr/bin:/bin', 'LANG': 'C.UTF-8'}).returncode
+
+
+def local_companion(raw, config):
+    workspace = path(config['workspace'], directory=True)
+    info = workspace.stat()
+    if info.st_uid != os.geteuid() or info.st_mode & 0o077:
+        raise ValueError('configuration_invalid')
+    clean = environment(config)
+    clean.update(ONE_C_HARNESS_SOURCE=config['source'],
+                 ONE_C_HARNESS_EVENTLOG_COMMAND=str(BIN / 'one-c-harness-local-exporter'),
+                 ONE_C_HARNESS_EVENTLOG_CAPTURE_COMMAND=str(BIN / 'one-c-harness-local-capture'),
+                 ONE_C_HARNESS_LOGGING_COMMAND=str(BIN / 'one-c-harness-local-logging'),
+                 ONE_C_HARNESS_EVENTLOG_CAPTURE_BINDING=config['captureBinding'],
+                 ONE_C_HARNESS_EVENTLOG_WORK_ROOT=str(workspace / '.local/current-journal-capture'),
+                 ONE_C_HARNESS_EVENTLOG_REQUIRE_CAPTURE='1', ONE_C_HARNESS_EVENTLOG_TIME_ZONE='UTC')
+    code = ('import sys,runpy; sys.path.insert(0,' + repr(config['source']) + '); '
+            'runpy.run_module("one_c_harness.companion",run_name="__main__")')
+    return subprocess.run(['/usr/bin/python3', '-I', '-B', '-c', code, '--request-stdin'],
+                          input=raw, cwd=str(workspace), env=clean).returncode
+
+
+def execute(role, raw, config):
+    if role == 'exporter':
+        code = ('import sys,runpy; sys.path.insert(0,' + repr(config['source']) + '); '
+                'runpy.run_module("one_c_harness.eventlog_file_exporter",run_name="__main__")')
+        # Reuse exactly the local companion's explicitly selected exporter config.
+        clean = environment(config)
+        clean.update(ONE_C_HARNESS_EVENTLOG_CAPTURE_COMMAND=str(BIN / 'one-c-harness-local-capture'),
+                     ONE_C_HARNESS_EVENTLOG_CAPTURE_BINDING=config['captureBinding'],
+                     ONE_C_HARNESS_EVENTLOG_WORK_ROOT=str(Path(config['workspace']) / '.local/current-journal-capture'),
+                     ONE_C_HARNESS_EVENTLOG_REQUIRE_CAPTURE='1')
+        return subprocess.run(['/usr/bin/python3', '-I', '-B', '-c', code], input=raw, env=clean).returncode
+    if role in {'capture', 'logging'}:
+        arguments = json.loads(raw, object_pairs_hook=unique)
+        if not isinstance(arguments, dict):
+            raise ValueError('invalid_request')
+        if role == 'logging':
+            schema = arguments.pop('schemaVersion', None)
+            if type(schema) is not int or schema != 1:
+                raise ValueError('invalid_request')
+        raw = json.dumps({'schemaVersion': 1, 'operation': 'eventlog_capture' if role == 'capture' else 'logging_control',
+                          'arguments': arguments}, separators=(',', ':'), allow_nan=False).encode()
+    value = request(raw)
+    if role == 'controller':
+        if os.geteuid() != 0:
+            raise ValueError('access_denied')
+        return broker(raw, config)
+    if value['operation'] in CACHED:
+        return local_companion(raw, config)
+    return call_controller(raw)
+
+
+def main():
+    try:
+        role = ROLES.get(Path(sys.argv[0]).name)
+        if role is None or sys.argv[1:] != (['--request-stdin'] if role == 'request' else []):
+            raise ValueError('invalid_request')
+        raw = sys.stdin.buffer.read(MAX_BYTES + 1)
+        if not 0 < len(raw) <= MAX_BYTES:
+            raise ValueError('invalid_request')
+        return execute(role, raw, configuration())
+    except (ValueError, TypeError, KeyError, OSError, subprocess.SubprocessError):
+        print(json.dumps({'schemaVersion': 1, 'status': 'blocked', 'reasonCode': 'local_execution_unavailable'}))
+        return 2
+
+
+if __name__ == '__main__':
+    raise SystemExit(main())
