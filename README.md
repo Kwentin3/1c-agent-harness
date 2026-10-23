@@ -1,5 +1,12 @@
 # 1C Agent Harness
 
+> [Goal #107](docs/issue107-relay.md#живая-проверка-linux--23-октября-2026): Linux-полигон
+> использует Hermes Relay. Установленный source `285750aa`, artifact `ef59b235`,
+> matched Hermes recipe `a0a946e4`. Ordinary-chat open/narrow/native verify и свежие
+> ЖР/ТЖ проверены; явный возврат транспорта также проверен. Оба сбора завершены,
+> исходные настройки подтверждены нативно после отдельно разрешённого restart
+> учебной 1С. Ограничение её подключений сохраняется. Windows и полная Goal открыты.
+
 > [Goal #104](https://github.com/Kwentin3/1c-agent-harness/issues/104): registration
 > restoration repair installed on 23 October, source `e4ea89f6`, artifact `b08132cc`,
 > matched Hermes recipe `7c5385d6`. Required CI passed. The first ordinary-chat
@@ -29,7 +36,7 @@
 > matched logging source/plugin generation described above.
 
 > The #90/#91 runtime identities and tool counts below describe the earlier checkpoint;
-> the current installed source is the Goal104 pin above; Goal99 records its own
+> the current installed source is the Goal107 pin above; Goal99 records its own
 > historical acceptance.
 >
 > [Goal #91](https://github.com/Kwentin3/1c-agent-harness/issues/91) завершена (CLOSED).
